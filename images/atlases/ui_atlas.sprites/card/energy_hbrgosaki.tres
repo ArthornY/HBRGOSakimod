@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3 uid="uid://b26g5qj2f3kwx"]
+
+[ext_resource type="Texture2D" uid="uid://dqujs1ph85hqf" path="res://images/ui/energys/hbrgosaki_energy_icon.png" id="1_energy_icon"]
+
+[resource]
+atlas = ExtResource("1_energy_icon")
+region = Rect2(0, 0, 1254, 1254)
+filter_clip = true

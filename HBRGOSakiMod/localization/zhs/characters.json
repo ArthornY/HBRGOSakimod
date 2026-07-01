@@ -1,0 +1,13 @@
+{
+  "HBRGO_SAKI.title": "人造救世主",
+  "HBRGO_SAKI.titleObject": "人造救世主",
+  "HBRGO_SAKI.description": "丰川祥子，为了人类的未来而战。",
+  "HBRGO_SAKI.pronounSubject": "她",
+  "HBRGO_SAKI.pronounObject": "她",
+  "HBRGO_SAKI.pronounPossessive": "她的",
+  "HBRGO_SAKI.possessiveAdjective": "她的",
+  "HBRGO_SAKI.cardsModifierTitle": "人造救世主卡牌",
+  "HBRGO_SAKI.cardsModifierDescription": "人造救世主的卡牌现在会出现在奖励和商店中。",
+  "HBRGO_SAKI.eventDeathPrevention": "现在还不能倒下。",
+  "HBRGO_SAKI.unlockText": "这个角色已经解锁。"
+}

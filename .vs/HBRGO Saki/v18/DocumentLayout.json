@@ -1,0 +1,70 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\stsmod\\HBRGOSakiMod\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{BF6A8037-2FBF-4E83-B3D3-062D5064DCBF}|HBRGO Saki.csproj|e:\\stsmod\\hbrgosakimod\\hbrgo saki.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{BF6A8037-2FBF-4E83-B3D3-062D5064DCBF}|HBRGO Saki.csproj|solutionrelative:hbrgo saki.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BF6A8037-2FBF-4E83-B3D3-062D5064DCBF}|HBRGO Saki.csproj|e:\\stsmod\\hbrgosakimod\\hbrgosakimodinitializer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BF6A8037-2FBF-4E83-B3D3-062D5064DCBF}|HBRGO Saki.csproj|solutionrelative:hbrgosakimodinitializer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BF6A8037-2FBF-4E83-B3D3-062D5064DCBF}|HBRGO Saki.csproj|e:\\stsmod\\hbrgosakimod\\hbrgo saki.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{BF6A8037-2FBF-4E83-B3D3-062D5064DCBF}|HBRGO Saki.csproj|solutionrelative:hbrgo saki.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "HBRGO Saki",
+              "DocumentMoniker": "E:\\stsmod\\HBRGOSakiMod\\HBRGO Saki.csproj",
+              "RelativeDocumentMoniker": "HBRGO Saki.csproj",
+              "ToolTip": "E:\\stsmod\\HBRGOSakiMod\\HBRGO Saki.csproj",
+              "RelativeToolTip": "HBRGO Saki.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-24T13:19:23.963Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "HBRGOSakiModInitializer.cs",
+              "DocumentMoniker": "E:\\stsmod\\HBRGOSakiMod\\HBRGOSakiModInitializer.cs",
+              "RelativeDocumentMoniker": "HBRGOSakiModInitializer.cs",
+              "ToolTip": "E:\\stsmod\\HBRGOSakiMod\\HBRGOSakiModInitializer.cs",
+              "RelativeToolTip": "HBRGOSakiModInitializer.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-24T13:15:09.167Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "HBRGO Saki",
+              "DocumentMoniker": "E:\\stsmod\\HBRGOSakiMod\\HBRGO Saki.csproj",
+              "RelativeDocumentMoniker": "HBRGO Saki.csproj",
+              "ToolTip": "E:\\stsmod\\HBRGOSakiMod\\HBRGO Saki.csproj",
+              "RelativeToolTip": "HBRGO Saki.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-06-24T12:53:13.976Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

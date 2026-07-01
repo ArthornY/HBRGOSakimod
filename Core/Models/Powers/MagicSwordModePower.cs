@@ -1,0 +1,239 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.ValueProps;
+
+namespace HBRGOSakiMod.Core.Models.Powers;
+
+public sealed class MagicSwordModePower : PowerModel
+{
+    public const int RollBonus = 77;
+
+    private const decimal _dpRecoverThreshold = 0.75m;
+    private const decimal _dpRecoverPercent = 0.25m;
+
+    private bool _pendingDpBreak;
+    private bool _isExiting;
+
+    public override PowerType Type => PowerType.Buff;
+
+    public override PowerStackType StackType => PowerStackType.Single;
+
+    public override Color AmountLabelColor => new("F8D36A");
+
+    public void MarkDpBrokenByDamage()
+    {
+        if (!IsMutable)
+        {
+            return;
+        }
+
+        AssertMutable();
+        _pendingDpBreak = true;
+    }
+
+    public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature dealer, CardModel cardSource)
+    {
+        if (target != Owner || !_pendingDpBreak)
+        {
+            return;
+        }
+
+        _pendingDpBreak = false;
+        await SetSwordheartToZero(choiceContext);
+    }
+
+    public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+    {
+        if (!participants.Contains(Owner))
+        {
+            return;
+        }
+
+        DeflectorProtection deflectorProtection = Owner.Player?.GetRelic<DeflectorProtection>();
+        if (DisabledPower.IsAtMax(Owner))
+        {
+            return;
+        }
+
+        if (deflectorProtection != null && deflectorProtection.IsDpBelowPercent(_dpRecoverThreshold))
+        {
+            int restoredDp = deflectorProtection.RestoreDpByMaxPercent(_dpRecoverPercent);
+            if (restoredDp > 0)
+            {
+                Flash();
+            }
+
+            await PowerCmd.Apply<DisabledPower>(choiceContext, Owner, 1m, Owner, null);
+            await SpendSwordheart(choiceContext, 1m);
+        }
+    }
+
+    public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature applier, CardModel cardSource)
+    {
+        if (power is SwordheartPower && power.Owner == Owner && power.Amount <= 0)
+        {
+            await ExitAndLuckySeven(choiceContext);
+        }
+    }
+
+    public override async Task BeforeCardPlayed(CardPlay cardPlay)
+    {
+        if (cardPlay.Card.Owner?.Creature != Owner)
+        {
+            return;
+        }
+
+        if (!MagicSwordEnergyPaymentHelper.TryTakePendingSwordheartCost(cardPlay.Card, out int swordheartCost))
+        {
+            return;
+        }
+
+        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
+        if (swordheart == null || swordheart.Amount <= 0)
+        {
+            await ExitAndLuckySeven(new ThrowingPlayerChoiceContext());
+            return;
+        }
+
+        Flash();
+        await PowerCmd.ModifyAmount(new ThrowingPlayerChoiceContext(), swordheart, -Math.Min(swordheart.Amount, swordheartCost), Owner, cardPlay.Card);
+    }
+
+    public override async Task AfterRemoved(Creature oldOwner)
+    {
+        await RemoveFeintCards(oldOwner);
+    }
+
+    protected override void AfterCloned()
+    {
+        base.AfterCloned();
+        _pendingDpBreak = false;
+        _isExiting = false;
+    }
+
+    public override async Task AfterApplied(Creature applier, CardModel cardSource)
+    {
+        await AddFeintCardToCombat();
+    }
+
+    public async Task AddFeintCardToCombat()
+    {
+        Player player = Owner.Player;
+        if (player?.PlayerCombatState == null || Owner.CombatState == null)
+        {
+            return;
+        }
+
+        bool alreadyHasFeint = player.PlayerCombatState.AllCards
+            .Any(card => card is FeintHbrgoSaki);
+        if (alreadyHasFeint)
+        {
+            return;
+        }
+
+        CardModel feint = Owner.CombatState.CreateCard<FeintHbrgoSaki>(player);
+        await CardPileCmd.AddGeneratedCardToCombat(feint, PileType.Hand, player);
+    }
+
+    private async Task SpendSwordheart(PlayerChoiceContext choiceContext, decimal amount)
+    {
+        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
+        if (swordheart == null || swordheart.Amount <= 0)
+        {
+            await ExitAndLuckySeven(choiceContext);
+            return;
+        }
+
+        await PowerCmd.ModifyAmount(choiceContext, swordheart, -Math.Min(swordheart.Amount, amount), Owner, null);
+    }
+
+    private async Task SetSwordheartToZero(PlayerChoiceContext choiceContext)
+    {
+        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
+        if (swordheart == null || swordheart.Amount <= 0)
+        {
+            await ExitAndLuckySeven(choiceContext);
+            return;
+        }
+
+        await PowerCmd.ModifyAmount(choiceContext, swordheart, -swordheart.Amount, Owner, null);
+    }
+
+    private async Task ExitAndLuckySeven(PlayerChoiceContext choiceContext)
+    {
+        if (_isExiting)
+        {
+            return;
+        }
+
+        _isExiting = true;
+        Creature owner = Owner;
+        Flash();
+        await PowerCmd.Remove(this);
+        await PlayMagicSwordLuckySeven(choiceContext, owner);
+    }
+
+    private static async Task PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner)
+    {
+        Player player = owner.Player;
+        if (player == null || owner.CombatState == null)
+        {
+            return;
+        }
+
+        MagicSwordLuckySevenHbrgoSaki deckCard = player.Deck.Cards
+            .OfType<MagicSwordLuckySevenHbrgoSaki>()
+            .FirstOrDefault();
+        MagicSwordLuckySevenHbrgoSaki luckySeven = deckCard != null
+            ? (MagicSwordLuckySevenHbrgoSaki)owner.CombatState.CloneCard(deckCard)
+            : owner.CombatState.CreateCard<MagicSwordLuckySevenHbrgoSaki>(player);
+        if (deckCard != null)
+        {
+            luckySeven.DeckVersion = deckCard;
+            SyncUpgradeLevelFromDeck(luckySeven, deckCard);
+        }
+
+        await CardCmd.AutoPlay(choiceContext, luckySeven, null);
+        await CombatFlowHelper.FinishAutoPlayedCard(luckySeven);
+    }
+
+    private static void SyncUpgradeLevelFromDeck(CardModel card, CardModel deckCard)
+    {
+        while (card.CurrentUpgradeLevel < deckCard.CurrentUpgradeLevel && card.IsUpgradable)
+        {
+            card.UpgradeInternal();
+            card.FinalizeUpgradeInternal();
+        }
+    }
+
+    private static async Task RemoveFeintCards(Creature oldOwner)
+    {
+        Player player = oldOwner.Player;
+        if (player?.PlayerCombatState == null)
+        {
+            return;
+        }
+
+        List<CardModel> feints = player.PlayerCombatState.AllCards
+            .Where(card => card is FeintHbrgoSaki)
+            .ToList();
+        if (feints.Count > 0)
+        {
+            await CardPileCmd.RemoveFromCombat(feints, skipVisuals: true);
+        }
+    }
+}
