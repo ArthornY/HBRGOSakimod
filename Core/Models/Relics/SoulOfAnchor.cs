@@ -520,7 +520,7 @@ public sealed class SoulOfAnchor : RelicModel
     {
         int amount = IsCriticalRoll(roll) ? _criticalSwordheartAmount : 0;
         amount += CountSevens(roll);
-        return Math.Min(SwordheartPower.MaxAmount, amount);
+        return Math.Min(SwordheartPower.BaseMaxAmount, amount);
     }
 
     private int GetSwordheartAmountToApply(int amount)
@@ -532,7 +532,7 @@ public sealed class SoulOfAnchor : RelicModel
 
         SwordheartPower swordheart = Owner.Creature.GetPower<SwordheartPower>();
         int currentAmount = swordheart?.Amount ?? 0;
-        int remainingAmount = Math.Max(0, SwordheartPower.MaxAmount - currentAmount);
+        int remainingAmount = Math.Max(0, SwordheartPower.GetMaxAmount(Owner.Creature) - currentAmount);
         return Math.Min(amount, remainingAmount);
     }
 

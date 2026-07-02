@@ -166,9 +166,9 @@ public sealed class StrongestShieldPower : PowerModel
 
     private int GetSwordheartAmount(int roll)
     {
-        int amount = roll == _rollMax ? SwordheartPower.MaxAmount : 0;
+        int amount = roll == _rollMax ? SwordheartPower.BaseMaxAmount : 0;
         amount += CountSevens(roll);
-        return Math.Min(amount, SwordheartPower.MaxAmount);
+        return Math.Min(amount, SwordheartPower.BaseMaxAmount);
     }
 
     private int CountSevens(int roll)
@@ -189,7 +189,7 @@ public sealed class StrongestShieldPower : PowerModel
     {
         SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
         int current = swordheart?.Amount ?? 0;
-        int remaining = Math.Max(0, SwordheartPower.MaxAmount - current);
+        int remaining = Math.Max(0, SwordheartPower.GetMaxAmount(Owner) - current);
         return Math.Min(amount, remaining);
     }
 

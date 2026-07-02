@@ -50,6 +50,7 @@ public sealed class HBRGOSakiCardPool : CardPoolModel
                 ModelDb.Card<CrossSlashHbrgoSaki>(),
                 ModelDb.Card<EhehePeroroHbrgoSaki>(),
                 ModelDb.Card<AnonAidHbrgoSaki>(),
+                ModelDb.Card<SwordheartClarityHbrgoSaki>(),
                 ModelDb.Card<ImitateHbrgoSaki>(),
                 ModelDb.Card<MagicSwordLuckySevenHbrgoSaki>(),
                 ModelDb.Card<ChihayaClassmateHbrgoSaki>(),

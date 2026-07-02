@@ -18,6 +18,7 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 {
     private const int _swordheartRollMin = 1;
     private const int _swordheartRollExclusiveMax = 4;
+    private int _magicSwordModeHitCount = -1;
 
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/magic_sword_lucky_seven_hbrgo_saki.png");
 
@@ -46,14 +47,24 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
         cards.RemoveAll(card => card is MagicSwordLuckySevenHbrgoSaki);
     }
 
+    public void SetMagicSwordModeHitCount(int hitCount)
+    {
+        AssertMutable();
+        _magicSwordModeHitCount = hitCount < 0 ? 0 : hitCount;
+    }
+
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
-            .WithHitCount(base.DynamicVars.Repeat.IntValue)
-            .FromCard(this)
-            .TargetingRandomOpponents(base.CombatState)
-            .WithHitFx("vfx/vfx_attack_slash")
-            .Execute(choiceContext);
+        int hitCount = GetHitCount();
+        if (hitCount > 0)
+        {
+            await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+                .WithHitCount(hitCount)
+                .FromCard(this)
+                .TargetingRandomOpponents(base.CombatState)
+                .WithHitFx("vfx/vfx_attack_slash")
+                .Execute(choiceContext);
+        }
 
         if (IsUpgradedVersion && !CombatManager.Instance.IsOverOrEnding)
         {
@@ -67,6 +78,11 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
     protected override PileType GetResultPileTypeForCardPlay()
     {
         return PileType.None;
+    }
+
+    private int GetHitCount()
+    {
+        return _magicSwordModeHitCount >= 0 ? _magicSwordModeHitCount : base.DynamicVars.Repeat.IntValue;
     }
 
     protected override void OnUpgrade()

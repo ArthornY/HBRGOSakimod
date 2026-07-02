@@ -25,21 +25,27 @@ public sealed class FeintHbrgoSaki : CardModel
             return true;
         }
 
+        MagicSwordModePower magicSwordMode = Owner.Creature.GetPower<MagicSwordModePower>();
         SwordheartPower swordheart = Owner.Creature.GetPower<SwordheartPower>();
-        return Owner.Creature.HasPower<MagicSwordModePower>() && swordheart != null && swordheart.Amount > 0;
+        return magicSwordMode != null
+            && swordheart != null
+            && swordheart.Amount >= SwordheartClarityPower.GetSwordheartConsumptionAmount(Owner.Creature, 1m);
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         SwordheartPower swordheart = Owner.Creature.GetPower<SwordheartPower>();
-        if (!Owner.Creature.HasPower<MagicSwordModePower>() || swordheart == null || swordheart.Amount <= 0)
+        MagicSwordModePower magicSwordMode = Owner.Creature.GetPower<MagicSwordModePower>();
+        if (magicSwordMode == null
+            || swordheart == null
+            || swordheart.Amount < SwordheartClarityPower.GetSwordheartConsumptionAmount(Owner.Creature, 1m))
         {
             return;
         }
 
         await PowerCmd.Apply<FeintMarkPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, null);
         await CardPileCmd.Draw(choiceContext, 2m, Owner);
-        await PowerCmd.ModifyAmount(choiceContext, swordheart, -1m, Owner.Creature, this);
+        await magicSwordMode.SpendSwordheart(choiceContext, 1m, this);
     }
 
     protected override PileType GetResultPileTypeForCardPlay()

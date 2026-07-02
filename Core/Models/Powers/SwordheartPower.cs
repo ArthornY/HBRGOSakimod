@@ -11,13 +11,20 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class SwordheartPower : PowerModel
 {
-    public const int MaxAmount = 7;
+    public const int BaseMaxAmount = 7;
+
+    public const int MaxAmount = BaseMaxAmount;
 
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Counter;
 
     public override Color AmountLabelColor => new("F8D36A");
+
+    public static int GetMaxAmount(Creature creature)
+    {
+        return BaseMaxAmount + SwordheartClarityPower.GetSwordheartMaxBonus(creature);
+    }
 
     public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature applier, out decimal modifiedAmount)
     {
@@ -34,7 +41,7 @@ public sealed class SwordheartPower : PowerModel
             return true;
         }
 
-        int remaining = MaxAmount - Amount;
+        int remaining = GetMaxAmount(target) - Amount;
         decimal cappedAmount = Math.Min(amount, Math.Max(0, remaining));
         if (cappedAmount == amount)
         {
@@ -47,7 +54,7 @@ public sealed class SwordheartPower : PowerModel
 
     public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature applier, CardModel cardSource)
     {
-        if (power is not SwordheartPower || power.Owner != Owner || power.Amount < MaxAmount || Owner.HasPower<MagicSwordModePower>())
+        if (power is not SwordheartPower || power.Owner != Owner || power.Amount < GetMaxAmount(Owner) || Owner.HasPower<MagicSwordModePower>())
         {
             return;
         }

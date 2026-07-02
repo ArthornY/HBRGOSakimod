@@ -4,7 +4,7 @@
   "ELECTRONIC_SOLDIER_MANUAL.flavor": "记录着人造救世主的作战规程。",
   "SIX_SENSE_REWARD.description": "提升六感",
   "SOUL_OF_ANCHOR.title": "安科之魂",
-  "SOUL_OF_ANCHOR.description": "攻击/技能牌掷1d100：50-75/76-90/91+使数值+费用x1/x2/x3，100改为翻倍。能力牌同档返还1/2/3能量，100返还费用+2。每个7获1剑心，100获7剑心（上限7）。",
+  "SOUL_OF_ANCHOR.description": "攻击/技能牌掷1d100：50-75/76-90/91+使数值+费用x1/x2/x3，100改为翻倍。能力牌同档返还1/2/3能量，100返还费用+2。每个7获1剑心，100获7剑心（初始上限7）。",
   "SOUL_OF_ANCHOR.flavor": "锚定在灵魂深处的偶然性。",
   "DEFLECTOR_PROTECTION.title": "偏导护盾",
   "DEFLECTOR_PROTECTION.description": "无法获得格挡。获得格挡时，改为获得其一半数值的闪避。拥有[blue]DP[/blue]，上限为最大生命的[blue]2[/blue]倍；受到非生命移除伤害时，优先扣除DP。休息和先古之民回血时，DP等比例回复。",

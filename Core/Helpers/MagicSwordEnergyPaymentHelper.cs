@@ -41,7 +41,8 @@ internal static class MagicSwordEnergyPaymentHelper
         }
 
         deficit = energyToSpend - currentEnergy;
-        if (deficit <= 0 || swordheart.Amount < deficit)
+        decimal swordheartCost = SwordheartClarityPower.GetSwordheartConsumptionAmount(card.Owner.Creature, deficit);
+        if (deficit <= 0 || swordheart.Amount < swordheartCost)
         {
             return false;
         }

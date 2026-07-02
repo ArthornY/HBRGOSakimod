@@ -7,5 +7,6 @@
 .dotnet/
 .dotnet-x64/
 .dotnet-home/
+.godot-home/
 .nuget/
 .tools/

@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
@@ -27,6 +28,9 @@ public sealed class MagicSwordModePower : PowerModel
 
     private bool _pendingDpBreak;
     private bool _isExiting;
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int ConsumedSwordheartAmount { get; private set; }
 
     public override PowerType Type => PowerType.Buff;
 
@@ -78,7 +82,7 @@ public sealed class MagicSwordModePower : PowerModel
             }
 
             await PowerCmd.Apply<DisabledPower>(choiceContext, Owner, 1m, Owner, null);
-            await SpendSwordheart(choiceContext, 1m);
+            await SpendSwordheart(choiceContext, 1m, null);
         }
     }
 
@@ -110,7 +114,7 @@ public sealed class MagicSwordModePower : PowerModel
         }
 
         Flash();
-        await PowerCmd.ModifyAmount(new ThrowingPlayerChoiceContext(), swordheart, -Math.Min(swordheart.Amount, swordheartCost), Owner, cardPlay.Card);
+        await ConsumeSwordheart(new ThrowingPlayerChoiceContext(), swordheartCost, cardPlay.Card);
     }
 
     public override async Task AfterRemoved(Creature oldOwner)
@@ -149,7 +153,7 @@ public sealed class MagicSwordModePower : PowerModel
         await CardPileCmd.AddGeneratedCardToCombat(feint, PileType.Hand, player);
     }
 
-    private async Task SpendSwordheart(PlayerChoiceContext choiceContext, decimal amount)
+    public async Task SpendSwordheart(PlayerChoiceContext choiceContext, decimal amount, CardModel cardSource)
     {
         SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
         if (swordheart == null || swordheart.Amount <= 0)
@@ -158,7 +162,7 @@ public sealed class MagicSwordModePower : PowerModel
             return;
         }
 
-        await PowerCmd.ModifyAmount(choiceContext, swordheart, -Math.Min(swordheart.Amount, amount), Owner, null);
+        await ConsumeSwordheart(choiceContext, amount, cardSource);
     }
 
     private async Task SetSwordheartToZero(PlayerChoiceContext choiceContext)
@@ -170,7 +174,33 @@ public sealed class MagicSwordModePower : PowerModel
             return;
         }
 
-        await PowerCmd.ModifyAmount(choiceContext, swordheart, -swordheart.Amount, Owner, null);
+        await ConsumeSwordheart(choiceContext, swordheart.Amount, null);
+    }
+
+    private async Task ConsumeSwordheart(PlayerChoiceContext choiceContext, decimal amount, CardModel cardSource)
+    {
+        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
+        if (swordheart == null || swordheart.Amount <= 0)
+        {
+            await ExitAndLuckySeven(choiceContext);
+            return;
+        }
+
+        decimal amountToConsume = SwordheartClarityPower.GetSwordheartConsumptionAmount(Owner, amount);
+        decimal consumedAmount = Math.Min(swordheart.Amount, amountToConsume);
+        if (consumedAmount <= 0)
+        {
+            return;
+        }
+
+        AddConsumedSwordheartAmount(consumedAmount);
+        await PowerCmd.ModifyAmount(choiceContext, swordheart, -consumedAmount, Owner, cardSource);
+    }
+
+    private void AddConsumedSwordheartAmount(decimal amount)
+    {
+        AssertMutable();
+        ConsumedSwordheartAmount += (int)Math.Ceiling(amount);
     }
 
     private async Task ExitAndLuckySeven(PlayerChoiceContext choiceContext)
@@ -182,12 +212,13 @@ public sealed class MagicSwordModePower : PowerModel
 
         _isExiting = true;
         Creature owner = Owner;
+        int hitCount = ConsumedSwordheartAmount;
         Flash();
         await PowerCmd.Remove(this);
-        await PlayMagicSwordLuckySeven(choiceContext, owner);
+        await PlayMagicSwordLuckySeven(choiceContext, owner, hitCount);
     }
 
-    private static async Task PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner)
+    private static async Task PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner, int hitCount)
     {
         Player player = owner.Player;
         if (player == null || owner.CombatState == null)
@@ -207,6 +238,7 @@ public sealed class MagicSwordModePower : PowerModel
             SyncUpgradeLevelFromDeck(luckySeven, deckCard);
         }
 
+        luckySeven.SetMagicSwordModeHitCount(hitCount);
         await CardCmd.AutoPlay(choiceContext, luckySeven, null);
         await CombatFlowHelper.FinishAutoPlayedCard(luckySeven);
     }
