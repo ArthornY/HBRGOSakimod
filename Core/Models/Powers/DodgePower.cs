@@ -77,7 +77,7 @@ public sealed class DodgePower : PowerModel
 
     private static int GetSpendAmount(decimal amount)
     {
-        return Math.Max(1, (int)Math.Ceiling(amount));
+        return Math.Max(1, (int)Math.Floor(amount));
     }
 
     private void Spend(int amount)

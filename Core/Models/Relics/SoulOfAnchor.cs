@@ -347,7 +347,8 @@ public sealed class SoulOfAnchor : RelicModel
 
         if (cardPlay.Card.Owner == Owner && cardPlay.Card.Type == CardType.Power)
         {
-            int energyRefund = GetPowerEnergyRefund(CurrentRoll, cardPlay.Resources.EnergySpent);
+            int energyRefund = GetPowerEnergyRefund(CurrentRoll, cardPlay.Resources.EnergySpent)
+                * CrimsonBladeFlowPower.GetSoulOfAnchorEffectMultiplier(Owner.Creature);
             if (energyRefund > 0)
             {
                 Flash();
@@ -423,11 +424,12 @@ public sealed class SoulOfAnchor : RelicModel
         }
 
         int roll = RollD100(includeMagicSwordBonus);
+        int effectMultiplier = CrimsonBladeFlowPower.GetSoulOfAnchorEffectMultiplier(Owner.Creature);
         TriggeringCard = card;
         CurrentRoll = roll;
-        CurrentBonus = GetAttackOrSkillBonus(roll, energyCost);
-        CurrentValueMultiplier = IsCriticalRoll(roll) ? 2m : 1m;
-        CurrentSwordheartAmount = IsMagicSwordModeActive() ? 0 : GetSwordheartAmount(roll);
+        CurrentBonus = GetAttackOrSkillBonus(roll, energyCost) * effectMultiplier;
+        CurrentValueMultiplier = IsCriticalRoll(roll) ? 2m * effectMultiplier : 1m;
+        CurrentSwordheartAmount = IsMagicSwordModeActive() ? 0 : GetSwordheartAmount(roll) * effectMultiplier;
         PendingSwordheartAmount += CurrentSwordheartAmount;
         AttackOrSkillRollCount++;
         ActivateIfCriticalRoll(roll);
@@ -441,9 +443,10 @@ public sealed class SoulOfAnchor : RelicModel
         }
 
         int roll = RollD100(includeMagicSwordBonus);
+        int effectMultiplier = CrimsonBladeFlowPower.GetSoulOfAnchorEffectMultiplier(Owner.Creature);
         TriggeringCard = card;
         CurrentRoll = roll;
-        CurrentSwordheartAmount = IsMagicSwordModeActive() ? 0 : GetSwordheartAmount(roll);
+        CurrentSwordheartAmount = IsMagicSwordModeActive() ? 0 : GetSwordheartAmount(roll) * effectMultiplier;
         PendingSwordheartAmount += CurrentSwordheartAmount;
         ActivateIfCriticalRoll(roll);
     }

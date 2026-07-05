@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -65,19 +66,22 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
     private async Task EnterSelectedRepture(PlayerChoiceContext choiceContext, CardModel selectedMode)
     {
-        if (Owner.Creature.HasPower<NormalStatePower>())
+        using (ModeTransitionHelper.SuppressDualSwordsOnModeExit())
         {
-            await PowerCmd.Remove(Owner.Creature.GetPower<NormalStatePower>());
-        }
+            if (Owner.Creature.HasPower<NormalStatePower>())
+            {
+                await PowerCmd.Remove(Owner.Creature.GetPower<NormalStatePower>());
+            }
 
-        if (Owner.Creature.HasPower<ReptureBowPower>())
-        {
-            await PowerCmd.Remove(Owner.Creature.GetPower<ReptureBowPower>());
-        }
+            if (Owner.Creature.HasPower<ReptureBowPower>())
+            {
+                await PowerCmd.Remove(Owner.Creature.GetPower<ReptureBowPower>());
+            }
 
-        if (Owner.Creature.HasPower<ReptureDualSwordsPower>())
-        {
-            await PowerCmd.Remove(Owner.Creature.GetPower<ReptureDualSwordsPower>());
+            if (Owner.Creature.HasPower<ReptureDualSwordsPower>())
+            {
+                await PowerCmd.Remove(Owner.Creature.GetPower<ReptureDualSwordsPower>());
+            }
         }
 
         if (selectedMode is ReptureDualSwordsChoiceHbrgoSaki)

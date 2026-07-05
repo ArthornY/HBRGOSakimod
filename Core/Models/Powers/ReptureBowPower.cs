@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -34,8 +35,15 @@ public sealed class ReptureBowPower : PowerModel
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
-        await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
+        using (ModeTransitionHelper.SuppressDualSwordsOnModeExit())
+        {
+            await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
+            await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
+            await PowerCmd.Remove(Owner.GetPower<MagicSwordModePower>());
+            await PowerCmd.Remove(Owner.GetPower<CrimsonBladeFlowPower>());
+        }
+
+        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
     }
 
     public override Task BeforeAttack(AttackCommand command)

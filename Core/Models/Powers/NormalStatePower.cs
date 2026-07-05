@@ -23,9 +23,9 @@ public sealed class NormalStatePower : PowerModel
 
     public override Color AmountLabelColor => new("6ED7FF");
 
-    public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+    public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
     {
-        if (!participants.Contains(Owner))
+        if (side != Owner.Side || !participants.Contains(Owner))
         {
             return;
         }

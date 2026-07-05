@@ -120,6 +120,27 @@ public sealed class MagicSwordModePower : PowerModel
     public override async Task AfterRemoved(Creature oldOwner)
     {
         await RemoveFeintCards(oldOwner);
+        await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
+    }
+
+    public override async Task AfterEnergyReset(Player player)
+    {
+        if (player != Owner.Player || player.PlayerCombatState == null)
+        {
+            return;
+        }
+
+        Flash();
+        player.PlayerCombatState.LoseEnergy(1);
+        await Task.CompletedTask;
+    }
+
+    public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+    {
+        if (card is SwitchHbrgoSaki && card.Owner?.Creature == Owner)
+        {
+            await ModeTransitionHelper.MoveSwitchesOutOfHandWhileBlocked(Owner);
+        }
     }
 
     protected override void AfterCloned()
@@ -131,7 +152,12 @@ public sealed class MagicSwordModePower : PowerModel
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
+        await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
+        await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
+        await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
         await AddFeintCardToCombat();
+        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
+        await ModeTransitionHelper.MoveSwitchesOutOfHandWhileBlocked(Owner);
     }
 
     public async Task AddFeintCardToCombat()

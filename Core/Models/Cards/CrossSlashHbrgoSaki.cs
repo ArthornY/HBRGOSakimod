@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -19,9 +20,16 @@ public sealed class CrossSlashHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DamageVar[] { new DamageVar(9m, ValueProp.Move) };
 
+    protected override bool IsPlayable => CanUseCrossSlash();
+
     public CrossSlashHbrgoSaki()
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
+    }
+
+    public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
+    {
+        return card != this || CanUseCrossSlash();
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -35,5 +43,12 @@ public sealed class CrossSlashHbrgoSaki : CardModel
     protected override void OnUpgrade()
     {
         base.DynamicVars.Damage.UpgradeValueBy(3m);
+    }
+
+    private bool CanUseCrossSlash()
+    {
+        return Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true ||
+               Owner?.Creature?.HasPower<MagicSwordModePower>() == true ||
+               Owner?.Creature?.HasPower<CrimsonBladeFlowPower>() == true;
     }
 }

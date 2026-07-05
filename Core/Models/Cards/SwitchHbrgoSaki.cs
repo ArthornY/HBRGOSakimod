@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -21,7 +22,8 @@ public sealed class SwitchHbrgoSaki : CardModel
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<ReptureBowPower>(),
-        HoverTipFactory.FromPower<ReptureDualSwordsPower>()
+        HoverTipFactory.FromPower<ReptureDualSwordsPower>(),
+        HoverTipFactory.FromPower<CrimsonBladeFlowPower>()
     };
 
     public SwitchHbrgoSaki()
@@ -43,14 +45,41 @@ public sealed class SwitchHbrgoSaki : CardModel
         await PowerCmd.Apply<ReptureBowPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
     }
 
+    public void ReduceCostUntilPlayed()
+    {
+        EnergyCost.AddUntilPlayed(-1);
+    }
+
+    public void MakeNextPlayFree()
+    {
+        EnergyCost.AddUntilPlayed(-99);
+    }
+
     public override Task BeforeFlush(PlayerChoiceContext choiceContext, Player player)
     {
         if (player == Owner && Pile?.Type == PileType.Hand)
         {
-            EnergyCost.AddUntilPlayed(-1);
+            ReduceCostUntilPlayed();
         }
 
         return Task.CompletedTask;
+    }
+
+    public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        if (cardPlay.Card.Owner == Owner && IsModeRestrictedCard(cardPlay.Card))
+        {
+            ReduceCostUntilPlayed();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    protected override PileType GetResultPileTypeForCardPlay()
+    {
+        return Owner.Creature.HasPower<MagicSwordModePower>() || Owner.Creature.HasPower<CrimsonBladeFlowPower>()
+            ? base.GetResultPileTypeForCardPlay()
+            : PileType.Hand;
     }
 
     protected override void OnUpgrade()
@@ -60,8 +89,22 @@ public sealed class SwitchHbrgoSaki : CardModel
 
     private async Task RemoveAllModes()
     {
-        await PowerCmd.Remove(Owner.Creature.GetPower<NormalStatePower>());
-        await PowerCmd.Remove(Owner.Creature.GetPower<ReptureBowPower>());
-        await PowerCmd.Remove(Owner.Creature.GetPower<ReptureDualSwordsPower>());
+        using (ModeTransitionHelper.SuppressDualSwordsOnModeExit())
+        {
+            await PowerCmd.Remove(Owner.Creature.GetPower<NormalStatePower>());
+            await PowerCmd.Remove(Owner.Creature.GetPower<ReptureBowPower>());
+            await PowerCmd.Remove(Owner.Creature.GetPower<ReptureDualSwordsPower>());
+            await PowerCmd.Remove(Owner.Creature.GetPower<CrimsonBladeFlowPower>());
+        }
+    }
+
+    private static bool IsModeRestrictedCard(CardModel card)
+    {
+        return card is ArrowRainHbrgoSaki
+            or CrossSlashHbrgoSaki
+            or SwallowReversalHbrgoSaki
+            or SlideStepHbrgoSaki
+            or BladeDanceHbrgoSaki
+            or StrongShotHbrgoSaki;
     }
 }

@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
@@ -27,8 +28,26 @@ public sealed class ReptureDualSwordsPower : PowerModel
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
-        await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
+        using (ModeTransitionHelper.SuppressDualSwordsOnModeExit())
+        {
+            await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
+            await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
+            await PowerCmd.Remove(Owner.GetPower<MagicSwordModePower>());
+            await PowerCmd.Remove(Owner.GetPower<CrimsonBladeFlowPower>());
+        }
+
+        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
+    }
+
+    public override async Task AfterEnergyReset(Player player)
+    {
+        if (player != Owner.Player)
+        {
+            return;
+        }
+
+        Flash();
+        await PlayerCmd.GainEnergy(1, player);
     }
 
     public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -64,7 +83,7 @@ public sealed class ReptureDualSwordsPower : PowerModel
         {
             Flash();
             await CardCmd.AutoPlay(choiceContext, copy, target, AutoPlayType.Default, skipXCapture: card.EnergyCost.CostsX);
-            await CombatFlowHelper.FinishAutoPlayedCard(copy, checkWinCondition: false);
+            await CombatFlowHelper.FinishAutoPlayedCard(copy);
         }
         finally
         {

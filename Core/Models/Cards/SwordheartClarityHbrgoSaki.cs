@@ -25,7 +25,7 @@ public sealed class SwordheartClarityHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<SwordheartClarityPower>(1m)
+        new PowerVar<SwordheartClarityPower>(2m)
     };
 
     public SwordheartClarityHbrgoSaki()
@@ -45,6 +45,6 @@ public sealed class SwordheartClarityHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars["SwordheartClarityPower"].UpgradeValueBy(1m);
+        DynamicVars["SwordheartClarityPower"].UpgradeValueBy(2m);
     }
 }

@@ -90,6 +90,7 @@ internal static class ModelDbAllPowersPatch
             .Append(ModelDb.Power<DodgePower>())
             .Append(ModelDb.Power<SwordheartPower>())
             .Append(ModelDb.Power<SwordheartClarityPower>())
+            .Append(ModelDb.Power<CrimsonBladeFlowPower>())
             .Append(ModelDb.Power<MagicSwordModePower>())
             .Append(ModelDb.Power<FeintMarkPower>())
             .Append(ModelDb.Power<NormalStatePower>())
