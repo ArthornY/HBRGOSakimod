@@ -20,7 +20,7 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DamageVar[] { new DamageVar(5m, ValueProp.Move) };
 
-    protected override bool IsPlayable => Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true;
+    protected override bool IsPlayable => CanUseDualSwordsCard();
 
     public SwallowReversalHbrgoSaki()
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
@@ -29,7 +29,7 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
 
     public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
     {
-        return card != this || Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true;
+        return card != this || CanUseDualSwordsCard();
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -45,5 +45,12 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
     protected override void OnUpgrade()
     {
         base.DynamicVars.Damage.UpgradeValueBy(2m);
+    }
+
+    private bool CanUseDualSwordsCard()
+    {
+        return Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true ||
+               Owner?.Creature?.HasPower<MagicSwordModePower>() == true ||
+               Owner?.Creature?.HasPower<CrimsonBladeFlowPower>() == true;
     }
 }

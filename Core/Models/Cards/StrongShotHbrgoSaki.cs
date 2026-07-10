@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -28,7 +29,7 @@ public sealed class StrongShotHbrgoSaki : CardModel
     protected override bool IsPlayable => Owner?.Creature?.HasPower<ReptureBowPower>() == true;
 
     public StrongShotHbrgoSaki()
-        : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AllEnemies)
+        : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AllEnemies)
     {
     }
 
@@ -39,12 +40,14 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
-            .WithHitCount(_hitCount)
-            .FromCard(this)
-            .TargetingAllOpponents(base.CombatState)
-            .WithHitFx("vfx/vfx_attack_slash")
-            .Execute(choiceContext);
+        for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
+        {
+            await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+                .FromCard(this)
+                .TargetingAllOpponents(base.CombatState)
+                .WithHitFx("vfx/vfx_attack_slash")
+                .Execute(choiceContext);
+        }
     }
 
     protected override void OnUpgrade()

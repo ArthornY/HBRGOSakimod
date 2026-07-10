@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 
@@ -13,9 +14,9 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class SwitchHbrgoSaki : CardModel
 {
-    public override string PortraitPath => MissingPortraitPath;
+    public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/switch_hbrgo_saki.png");
 
-    public override string BetaPortraitPath => MissingPortraitPath;
+    public override string BetaPortraitPath => PortraitPath;
 
     public override IEnumerable<CardKeyword> CanonicalKeywords => new CardKeyword[] { CardKeyword.Retain };
 
@@ -67,7 +68,7 @@ public sealed class SwitchHbrgoSaki : CardModel
 
     public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (cardPlay.Card.Owner == Owner && IsModeRestrictedCard(cardPlay.Card))
+        if (cardPlay.IsFirstInSeries && !cardPlay.Card.IsDupe && cardPlay.Card.Owner == Owner && IsModeRestrictedCard(cardPlay.Card))
         {
             ReduceCostUntilPlayed();
         }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -12,9 +13,9 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class StrikeHbrgoSaki : CardModel
 {
-	public override string PortraitPath => MissingPortraitPath;
+	public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/strike_hbrgo_saki.png");
 
-	public override string BetaPortraitPath => MissingPortraitPath;
+	public override string BetaPortraitPath => PortraitPath;
 
 	protected override HashSet<CardTag> CanonicalTags => new HashSet<CardTag> { CardTag.Strike };
 

@@ -8,9 +8,9 @@
   "SWORDHEART_CLARITY_POWER.title": "剑心通明",
   "SWORDHEART_CLARITY_POWER.description": "剑心上限+7。每回合获得等同层数的剑心。消耗剑心翻倍。",
   "MAGIC_SWORD_MODE_POWER.title": "魔剑模式",
-  "MAGIC_SWORD_MODE_POWER.description": "安科之魂出值+77；大于100视为91-99档。每回合恢复能量-1。能量不足时可用剑心补足。回合结束时，若DP小于75%，回复25%DP，失去1层剑心并获得1层失能。失能2层时残心不触发；即将被打破DP时清除失能，使DP至少恢复至50%，免疫此次伤害并将剑心归0。魔剑模式下无法获得剑心。拥有魔剑模式时，切换不会回到手牌。退出时获得[gold]Repture-双剑[/gold]。剑心归0时退出并打出魔剑幸运七，次数等于本次魔剑模式消耗的剑心层数。",
+  "MAGIC_SWORD_MODE_POWER.description": "安科之魂出值+77；大于100视为91-99档。每回合恢复能量-1。能量不足时可用剑心补足。可以打出只能在[gold]Repture-双剑[/gold]时打出的牌。回合结束时，若DP小于75%，回复25%DP，失去1层剑心并获得1层失能。失能2层时残心不触发；即将被打破DP时清除失能，使DP至少恢复至50%，免疫此次伤害并将剑心归0。魔剑模式下无法获得剑心。拥有魔剑模式时，切换不会回到手牌。退出时获得[gold]Repture-双剑[/gold]。剑心归0时退出并打出魔剑幸运七，次数等于本次魔剑模式消耗的剑心层数。",
   "CRIMSON_BLADE_FLOW_POWER.title": "绯刀流",
-  "CRIMSON_BLADE_FLOW_POWER.description": "造成和受到的伤害翻倍。安科之魂效果翻倍。获得闪避翻倍。回合开始时额外抽1张牌。回合结束时，层数减少1。层数归零时，将牌库中的切换放入手牌，且下一次打出无需能量。退出时获得[gold]Repture-双剑[/gold]。",
+  "CRIMSON_BLADE_FLOW_POWER.description": "造成和受到的伤害翻倍。安科之魂效果翻倍。获得闪避翻倍。可以打出只能在[gold]Repture-双剑[/gold]时打出的牌。回合开始时额外抽1张牌。回合结束时，失去当前DP的10%，层数减少1。层数归零时，将牌库中的切换放入手牌，且下一次打出无需能量。退出时获得[gold]Repture-双剑[/gold]。",
   "FEINT_MARK_POWER.title": "佯动",
   "FEINT_MARK_POWER.description": "敌方攻击行动前，对其打出一张打击，层数减少1。",
   "STRONGEST_SHIELD_POWER.title": "最强之盾",
@@ -22,5 +22,5 @@
   "REPTURE_BOW_POWER.title": "Repture-\u5f13",
   "REPTURE_BOW_POWER.description": "\u9020\u6210\u7684\u653b\u51fb\u4f24\u5bb3\u5bf9\u6240\u6709\u76ee\u6807\u751f\u6548\u3002\u82e5\u672c\u6765\u5c31\u662f\u5168\u4f53\u751f\u6548\uff0c\u4f24\u5bb3\u53d8\u4e3a150%\u3002\u82e5\u53ea\u67091\u4e2a\u76ee\u6807\uff0c\u4f24\u5bb3\u53d8\u4e3a150%\u3002\u4e24\u8005\u53ef\u53e0\u52a0\u3002",
   "REPTURE_DUAL_SWORDS_POWER.title": "Repture-\u53cc\u5251",
-  "REPTURE_DUAL_SWORDS_POWER.description": "\u6bcf\u56de\u5408\u6062\u590d\u80fd\u91cf+1\u3002\u6253\u51fa\u653b\u51fb\u724c\u540e\uff0c\u989d\u5916\u6253\u51fa\u4e00\u5f20\u5b83\u7684\u590d\u5236\u3002\u82e5\u4e3aX\u724c\uff0c\u5219\u5148\u8fd4\u8fd8\u5176\u6d88\u8017\u7684\u80fd\u91cf\u3002\u5b89\u79d1\u4e4b\u9b427/77\u89c6\u4e3a100\u3002\u9020\u6210\u7684\u653b\u51fb\u4f24\u5bb3\u53d8\u4e3a75%\u3002\u83b7\u5f97\u7684\u95ea\u907f\u53d8\u4e3a150%\uff08\u5411\u4e0a\u53d6\u6574\uff09\u3002"
+  "REPTURE_DUAL_SWORDS_POWER.description": "\u6bcf\u56de\u5408\u6062\u590d\u80fd\u91cf+1\u3002\u6253\u51fa\u653b\u51fb\u724c\u540e\uff0c\u989d\u5916\u6253\u51fa\u4e00\u5f20\u5b83\u7684\u590d\u5236\u3002\u82e5\u4e3aX\u724c\uff0c\u590d\u5236\u724c\u4f7f\u7528\u76f8\u540cX\u503c\u3002\u5b89\u79d1\u4e4b\u9b427/77\u89c6\u4e3a100\u3002\u9020\u6210\u7684\u653b\u51fb\u4f24\u5bb3\u53d8\u4e3a75%\u3002\u83b7\u5f97\u7684\u95ea\u907f\u53d8\u4e3a150%\uff08\u5411\u4e0a\u53d6\u6574\uff09\u3002"
 }

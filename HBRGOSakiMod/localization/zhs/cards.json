@@ -32,7 +32,7 @@
   "ARROW_RAIN_HBRGO_SAKI.title": "\u7bad\u96e8",
   "ARROW_RAIN_HBRGO_SAKI.description": "仅在拥有[gold]Repture-弓[/gold]时可打出。对敌方全体造成{Damage:diff()}点伤害。",
   "CROSS_SLASH_HBRGO_SAKI.title": "\u5341\u5b57\u65a9",
-  "CROSS_SLASH_HBRGO_SAKI.description": "仅在拥有[gold]Repture-双剑[/gold]、[gold]魔剑模式[/gold]或[gold]绯刀流[/gold]时可打出。造成{Damage:diff()}点伤害。",
+  "CROSS_SLASH_HBRGO_SAKI.description": "仅在拥有[gold]Repture-双剑[/gold]时可打出。造成{Damage:diff()}点伤害。",
   "EHEHE_PERORO_HBRGO_SAKI.title": "\u6b38\u563f\u5478\u7565\u7565",
   "EHEHE_PERORO_HBRGO_SAKI.description": "\u83b7\u5f97{DodgePower:diff()}\u5c42[gold]\u95ea\u907f[/gold]\u3002\u83b7\u5f97{AngryIzumiYukiPower:diff()}\u5c42[gold]\u66b4\u6012\u7684\u548c\u6cc9\u7531\u5e0c[/gold]\u3002",
   "IMITATE_HBRGO_SAKI.title": "\u6a21\u4eff",

@@ -52,7 +52,7 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        AddKeyword(CardKeyword.Retain);
+        EnergyCost.UpgradeBy(-1);
     }
 
     private async Task ReplaceWithSwitchInHand(PlayerChoiceContext choiceContext)

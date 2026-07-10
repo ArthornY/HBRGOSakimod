@@ -300,6 +300,26 @@ public sealed class DeflectorProtection : RelicModel
         return actualRestoredDp;
     }
 
+    public int LoseDpByCurrentPercent(decimal percent)
+    {
+        EnsureDpInitialized();
+        if (Dp <= 0 || percent <= 0m)
+        {
+            return 0;
+        }
+
+        int lostDp = Math.Min(Dp, (int)Math.Floor(Dp * percent));
+        if (lostDp <= 0)
+        {
+            return 0;
+        }
+
+        SetDpClamped(Dp - lostDp);
+        Flash();
+
+        return lostDp;
+    }
+
     public bool WouldDpBeDepletedBy(decimal amount)
     {
         if (amount <= 0m)

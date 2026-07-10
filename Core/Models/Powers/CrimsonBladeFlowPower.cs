@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,6 +20,8 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 public sealed class CrimsonBladeFlowPower : PowerModel
 {
     public const int SoulOfAnchorEffectMultiplier = 2;
+
+    private const decimal _currentDpLossPercent = 0.1m;
 
     private bool _putSwitchInHandAfterRemoved;
 
@@ -80,6 +83,12 @@ public sealed class CrimsonBladeFlowPower : PowerModel
         bool willExpire = Amount <= 1;
         Creature owner = Owner;
         _putSwitchInHandAfterRemoved |= willExpire;
+        int lostDp = owner.Player?.GetRelic<DeflectorProtection>()?.LoseDpByCurrentPercent(_currentDpLossPercent) ?? 0;
+        if (lostDp > 0)
+        {
+            Flash();
+        }
+
         await PowerCmd.ModifyAmount(choiceContext, this, -1m, owner, null);
     }
 

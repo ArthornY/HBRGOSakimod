@@ -56,10 +56,9 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         int hitCount = GetHitCount();
-        if (hitCount > 0)
+        for (int i = 0; i < hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
             await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
-                .WithHitCount(hitCount)
                 .FromCard(this)
                 .TargetingRandomOpponents(base.CombatState)
                 .WithHitFx("vfx/vfx_attack_slash")

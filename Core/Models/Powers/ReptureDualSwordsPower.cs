@@ -69,14 +69,12 @@ public sealed class ReptureDualSwordsPower : PowerModel
             return;
         }
 
-        if (card.EnergyCost.CostsX && cardPlay.Resources.EnergySpent > 0)
-        {
-            Flash();
-            await PlayerCmd.GainEnergy(cardPlay.Resources.EnergySpent, Owner.Player);
-        }
-
         CardModel copy = card.CreateDupe();
         copy.BaseReplayCount = 0;
+        if (card.EnergyCost.CostsX)
+        {
+            DualSwordsCopyHelper.RecordXEnergySpent(copy, cardPlay.Resources.EnergySpent);
+        }
 
         _isPlayingCopy = true;
         try
@@ -87,6 +85,7 @@ public sealed class ReptureDualSwordsPower : PowerModel
         }
         finally
         {
+            DualSwordsCopyHelper.Clear(copy);
             _isPlayingCopy = false;
         }
     }
