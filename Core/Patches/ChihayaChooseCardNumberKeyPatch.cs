@@ -68,9 +68,14 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
 
     internal NChooseACardSelectionScreen Screen { get; set; }
 
-    public override void _UnhandledInput(InputEvent inputEvent)
+    public override void _Ready()
     {
-        if (inputEvent is not InputEventKey { Pressed: true, Echo: false } keyEvent)
+        SetProcessInput(true);
+    }
+
+    public override void _Input(InputEvent inputEvent)
+    {
+        if (inputEvent is not InputEventKey keyEvent || !IsScreenAvailable())
         {
             return;
         }
@@ -81,21 +86,19 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
             return;
         }
 
-        if (!TrySelectHolder(selectedIndex))
+        GetViewport().SetInputAsHandled();
+
+        if (!keyEvent.Pressed || keyEvent.Echo)
         {
             return;
         }
 
-        GetViewport().SetInputAsHandled();
+        BlockNextRelease(keyEvent);
+        TrySelectHolder(selectedIndex);
     }
 
     private bool TrySelectHolder(int selectedIndex)
     {
-        if (Screen == null || !GodotObject.IsInstanceValid(Screen))
-        {
-            return false;
-        }
-
         IReadOnlyList<CardModel> cards = ChihayaChooseCardNumberKeyPatch.GetCards(Screen);
         if (selectedIndex >= cards.Count)
         {
@@ -111,6 +114,29 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
 
         SelectHolderMethod.Invoke(Screen, new object[] { holder });
         return true;
+    }
+
+    private bool IsScreenAvailable()
+    {
+        return Screen != null && GodotObject.IsInstanceValid(Screen);
+    }
+
+    private void BlockNextRelease(InputEventKey keyEvent)
+    {
+        Window root = GetTree()?.Root;
+        if (root == null)
+        {
+            return;
+        }
+
+        const string blockerName = "HBRGOChihayaChooseCardNumberKeyReleaseBlocker";
+        root.GetNodeOrNull<ChihayaChooseCardNumberKeyReleaseBlocker>(blockerName)?.QueueFree();
+        root.AddChild(new ChihayaChooseCardNumberKeyReleaseBlocker
+        {
+            Name = blockerName,
+            Keycode = keyEvent.Keycode,
+            PhysicalKeycode = keyEvent.PhysicalKeycode
+        });
     }
 
     private static int GetSelectedIndex(InputEventKey keyEvent)
@@ -150,5 +176,51 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
                 yield return descendant;
             }
         }
+    }
+}
+
+internal sealed partial class ChihayaChooseCardNumberKeyReleaseBlocker : Node
+{
+    private const double LifetimeSeconds = 1.0;
+
+    private double _lifetime;
+
+    internal Key Keycode { get; set; }
+
+    internal Key PhysicalKeycode { get; set; }
+
+    public override void _Ready()
+    {
+        ProcessMode = ProcessModeEnum.Always;
+        SetProcess(true);
+        SetProcessInput(true);
+    }
+
+    public override void _Input(InputEvent inputEvent)
+    {
+        if (inputEvent is not InputEventKey { Pressed: false } keyEvent || !Matches(keyEvent))
+        {
+            return;
+        }
+
+        GetViewport().SetInputAsHandled();
+        QueueFree();
+    }
+
+    public override void _Process(double delta)
+    {
+        _lifetime += delta;
+        if (_lifetime >= LifetimeSeconds)
+        {
+            QueueFree();
+        }
+    }
+
+    private bool Matches(InputEventKey keyEvent)
+    {
+        return (Keycode != Key.None &&
+                (keyEvent.Keycode == Keycode || keyEvent.PhysicalKeycode == Keycode)) ||
+               (PhysicalKeycode != Key.None &&
+                (keyEvent.Keycode == PhysicalKeycode || keyEvent.PhysicalKeycode == PhysicalKeycode));
     }
 }
