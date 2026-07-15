@@ -36,6 +36,7 @@ internal static class HBRGOSakiCardRewardPoolHelper
         return GetRewardCardPools(includeColorless)
             .SelectMany(pool => pool.GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint))
             .Where(card => IsRewardCard(card, includeColorless))
+            .Where(card => CanOfferCard(player, card))
             .Distinct();
     }
 
@@ -56,6 +57,16 @@ internal static class HBRGOSakiCardRewardPoolHelper
         }
     }
 
+    internal static bool CanOfferCard(Player player, CardModel card)
+    {
+        if (card.Type != CardType.Power)
+        {
+            return true;
+        }
+
+        return player.Deck?.Cards?.Any(deckCard => deckCard.Id == card.Id) != true;
+    }
+
     internal static CardCreationOptions RestrictRewardOptions(Player player, CardCreationOptions options)
     {
         if (!IsHBRGOSaki(player))
@@ -71,11 +82,14 @@ internal static class HBRGOSakiCardRewardPoolHelper
         bool includeColorless = options.CardPools.Any(pool => pool is ColorlessCardPool);
         if (options.CustomCardPool == null)
         {
-            return options.WithCardPools(GetRewardCardPools(includeColorless));
+            CardModel[] rewardCards = GetUnlockedRewardCards(player, includeColorless).ToArray();
+            CardRarityOddsType rewardOdds = UsesSingleRarity(rewardCards) ? CardRarityOddsType.Uniform : options.RarityOdds;
+            return options.WithCustomPool(rewardCards, rewardOdds);
         }
 
         CardModel[] customCards = options.CustomCardPool
             .Where(card => IsRewardCard(card, includeColorless))
+            .Where(card => CanOfferCard(player, card))
             .Distinct()
             .ToArray();
         if (customCards.Length == 0)
@@ -129,13 +143,16 @@ internal static class HookModifyMerchantCardPoolPatch
         CardModel[] originalCards = __result.ToArray();
         if (originalCards.Length > 0 && originalCards.All(card => card.Pool is ColorlessCardPool))
         {
-            __result = originalCards.Distinct();
+            __result = originalCards
+                .Where(card => HBRGOSakiCardRewardPoolHelper.CanOfferCard(player, card))
+                .Distinct();
             return;
         }
 
         __result = originalCards
             .Concat(HBRGOSakiCardRewardPoolHelper.GetUnlockedRewardCards(player))
             .Where(card => HBRGOSakiCardRewardPoolHelper.IsRewardCard(card))
+            .Where(card => HBRGOSakiCardRewardPoolHelper.CanOfferCard(player, card))
             .Distinct();
     }
 }
