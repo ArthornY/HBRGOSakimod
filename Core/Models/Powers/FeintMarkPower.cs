@@ -59,7 +59,7 @@ public sealed class FeintMarkPower : PowerModel
         try
         {
             await CardCmd.AutoPlay(choiceContext, strike, attacker, AutoPlayType.Default, skipCardPileVisuals: true);
-            await CombatFlowHelper.FinishAutoPlayedCard(strike, checkWinCondition: false);
+            await CombatFlowHelper.FinishAutoPlayedCard(strike);
         }
         finally
         {

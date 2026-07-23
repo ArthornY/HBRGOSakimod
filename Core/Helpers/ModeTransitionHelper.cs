@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -52,29 +53,75 @@ internal static class ModeTransitionHelper
                owner?.HasPower<CrimsonBladeFlowPower>() == true;
     }
 
-    public static async Task MoveSwitchesOutOfHandWhileBlocked(Creature owner, PileType destinationPileType = PileType.Discard)
+    public static async Task RemoveChihayaAndSwitchFromCombat(Creature owner)
     {
         Player player = owner?.Player;
-        if (!ShouldKeepSwitchOutOfHand(owner) || player?.PlayerCombatState == null || owner.CombatState == null)
+        if (player?.PlayerCombatState == null)
         {
             return;
         }
 
-        List<SwitchHbrgoSaki> handSwitches = player.PlayerCombatState.AllCards
-            .OfType<SwitchHbrgoSaki>()
-            .Where(card => card.Pile?.Type == PileType.Hand)
+        List<CardModel> modeCards = player.PlayerCombatState.AllCards
+            .Where(card => card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki)
+            .Where(card => card.Pile?.IsCombatPile == true && card.Pile.Type != PileType.Play)
             .ToList();
-
-        foreach (SwitchHbrgoSaki handSwitch in handSwitches)
+        if (modeCards.Count > 0)
         {
-            SwitchHbrgoSaki switchCard = owner.CombatState.CreateCard<SwitchHbrgoSaki>(player);
-            SyncUpgradeLevel(switchCard, handSwitch);
+            await CardPileCmd.RemoveFromCombat(modeCards, skipVisuals: true);
+        }
+    }
 
-            await CardPileCmd.AddGeneratedCardToCombat(switchCard, destinationPileType, player);
-            if (!handSwitch.HasBeenRemovedFromState && handSwitch.Pile?.IsCombatPile == true)
+    public static async Task RestoreSwitchToHandAfterModeExit(Creature owner, bool makeNextPlayFree = false)
+    {
+        Player player = owner?.Player;
+        if (ShouldKeepSwitchOutOfHand(owner) ||
+            player?.PlayerCombatState == null ||
+            owner.CombatState == null ||
+            CombatManager.Instance.IsOverOrEnding)
+        {
+            return;
+        }
+
+        SwitchHbrgoSaki handSwitch = player.PlayerCombatState.Hand.Cards
+            .OfType<SwitchHbrgoSaki>()
+            .FirstOrDefault();
+        if (handSwitch != null)
+        {
+            if (makeNextPlayFree)
             {
-                await CardPileCmd.RemoveFromCombat(handSwitch, skipVisuals: true);
+                handSwitch.MakeNextPlayFree();
             }
+
+            return;
+        }
+
+        CardModel combatSource = player.PlayerCombatState.AllCards
+            .FirstOrDefault(card =>
+                card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+                card.Pile?.IsCombatPile == true &&
+                card.Pile.Type != PileType.Play);
+        CardModel deckSource = player.Deck.Cards
+            .FirstOrDefault(card => card is SwitchHbrgoSaki)
+            ?? player.Deck.Cards.FirstOrDefault(card => card is ChihayaClassmateHbrgoSaki);
+        CardModel upgradeSource = combatSource ?? deckSource;
+
+        SwitchHbrgoSaki switchCard = owner.CombatState.CreateCard<SwitchHbrgoSaki>(player);
+        if (upgradeSource != null)
+        {
+            SyncUpgradeLevel(switchCard, upgradeSource);
+        }
+
+        if (makeNextPlayFree)
+        {
+            switchCard.MakeNextPlayFree();
+        }
+
+        await CardPileCmd.AddGeneratedCardToCombat(switchCard, PileType.Hand, player);
+        if (combatSource != null &&
+            !combatSource.HasBeenRemovedFromState &&
+            combatSource.Pile?.IsCombatPile == true)
+        {
+            await CardPileCmd.RemoveFromCombat(combatSource, skipVisuals: true);
         }
     }
 

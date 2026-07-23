@@ -41,17 +41,18 @@ public sealed class CrimsonBladeFlowPower : PowerModel
         await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
-        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
-        await ModeTransitionHelper.MoveSwitchesOutOfHandWhileBlocked(Owner);
+        await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
     }
 
     public override async Task AfterRemoved(Creature oldOwner)
     {
-        await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
         if (_putSwitchInHandAfterRemoved)
         {
-            await PutSwitchIntoHand(oldOwner, oldOwner.Player);
+            oldOwner.GetPower<MagicSwordModePower>()?.MarkRestoredSwitchFree();
         }
+
+        await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
+        await ModeTransitionHelper.RestoreSwitchToHandAfterModeExit(oldOwner, _putSwitchInHandAfterRemoved);
     }
 
     public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
@@ -65,11 +66,14 @@ public sealed class CrimsonBladeFlowPower : PowerModel
         await CardPileCmd.Draw(choiceContext, 1m, Owner.Player);
     }
 
-    public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+    public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
     {
-        if (card is SwitchHbrgoSaki && card.Owner?.Creature == Owner)
+        if (card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+            card.Owner?.Creature == Owner &&
+            card.Pile?.IsCombatPile == true &&
+            card.Pile.Type != PileType.Play)
         {
-            await ModeTransitionHelper.MoveSwitchesOutOfHandWhileBlocked(Owner);
+            await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
         }
     }
 
@@ -120,47 +124,4 @@ public sealed class CrimsonBladeFlowPower : PowerModel
         _putSwitchInHandAfterRemoved = false;
     }
 
-    private static async Task PutSwitchIntoHand(Creature owner, Player player)
-    {
-        if (ModeTransitionHelper.ShouldKeepSwitchOutOfHand(owner) ||
-            player?.PlayerCombatState == null ||
-            owner.CombatState == null)
-        {
-            return;
-        }
-
-        SwitchHbrgoSaki source = player.PlayerCombatState.DrawPile.Cards
-            .OfType<SwitchHbrgoSaki>()
-            .FirstOrDefault();
-        if (source == null)
-        {
-            source = player.PlayerCombatState.AllCards
-                .OfType<SwitchHbrgoSaki>()
-                .FirstOrDefault(card => card.Pile?.Type != PileType.Hand);
-        }
-
-        if (source == null)
-        {
-            return;
-        }
-
-        SwitchHbrgoSaki switchCard = owner.CombatState.CreateCard<SwitchHbrgoSaki>(player);
-        SyncUpgradeLevel(switchCard, source);
-        switchCard.MakeNextPlayFree();
-
-        await CardPileCmd.AddGeneratedCardToCombat(switchCard, PileType.Hand, player);
-        if (!source.HasBeenRemovedFromState && source.Pile?.IsCombatPile == true)
-        {
-            await CardPileCmd.RemoveFromCombat(source, skipVisuals: true);
-        }
-    }
-
-    private static void SyncUpgradeLevel(CardModel target, CardModel source)
-    {
-        while (target.CurrentUpgradeLevel < source.CurrentUpgradeLevel && target.IsUpgradable)
-        {
-            target.UpgradeInternal();
-            target.FinalizeUpgradeInternal();
-        }
-    }
 }

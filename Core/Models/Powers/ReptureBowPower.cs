@@ -19,6 +19,8 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class ReptureBowPower : PowerModel
 {
+    private const decimal _damageMultiplier = 1.25m;
+
     private static readonly FieldInfo SingleTargetField = AccessTools.Field(typeof(AttackCommand), "_singleTarget");
     private static readonly FieldInfo CombatStateField = AccessTools.Field(typeof(AttackCommand), "_combatState");
     private static readonly FieldInfo IsRandomlyTargetedField = AccessTools.Field(typeof(AttackCommand), "<IsRandomlyTargeted>k__BackingField");
@@ -93,12 +95,12 @@ public sealed class ReptureBowPower : PowerModel
         AttackCommand activeAttack = _activeAttacks.LastOrDefault();
         if (activeAttack != null && _amplifiedAllTargetAttacks.Contains(activeAttack))
         {
-            multiplier *= 1.5m;
+            multiplier *= _damageMultiplier;
         }
 
         if (activeAttack != null && _singleOpponentAttacks.Contains(activeAttack))
         {
-            multiplier *= 1.5m;
+            multiplier *= _damageMultiplier;
         }
 
         return multiplier;

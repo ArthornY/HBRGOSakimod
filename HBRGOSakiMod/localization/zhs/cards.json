@@ -22,7 +22,7 @@
   "REPTURE_DUAL_SWORDS_CHOICE_HBRGO_SAKI.title": "Repture-\u53cc\u5251",
   "REPTURE_DUAL_SWORDS_CHOICE_HBRGO_SAKI.description": "\u8fdb\u5165[gold]Repture-\u53cc\u5251[/gold]\u3002",
   "SWITCH_HBRGO_SAKI.title": "\u5207\u6362",
-  "SWITCH_HBRGO_SAKI.description": "处于[gold]Repture-弓[/gold]时，移除它并获得[gold]Repture-双剑[/gold]。处于[gold]Repture-双剑[/gold]时，移除它并获得[gold]Repture-弓[/gold]。打出后回到手牌。拥有[gold]魔剑模式[/gold]或[gold]绯刀流[/gold]时不会回到手牌。打出模式限定的牌后，能量消耗减少1。回合结束时，若在手牌中，能量消耗减少1。",
+  "SWITCH_HBRGO_SAKI.description": "处于[gold]Repture-弓[/gold]时，移除它并获得[gold]Repture-双剑[/gold]。处于[gold]Repture-双剑[/gold]时，移除它并获得[gold]Repture-弓[/gold]。打出后回到手牌。进入[gold]魔剑模式[/gold]或[gold]绯刀流[/gold]时暂时移除，退出后放入手牌。打出模式限定的牌后，能量消耗减少1。回合结束时，若在手牌中，能量消耗减少1。",
   "ANON_AID_HBRGO_SAKI.title": "爱音的援助",
   "ANON_AID_HBRGO_SAKI.description": "获得{StrongestShieldPower:diff()}层[gold]最强之盾[/gold]。",
   "SWORDHEART_CLARITY_HBRGO_SAKI.title": "剑心通明",

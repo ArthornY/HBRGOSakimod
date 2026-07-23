@@ -32,6 +32,9 @@ public sealed class MagicSwordModePower : PowerModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ConsumedSwordheartAmount { get; private set; }
 
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool MakeRestoredSwitchFree { get; private set; }
+
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Single;
@@ -121,6 +124,7 @@ public sealed class MagicSwordModePower : PowerModel
     {
         await RemoveFeintCards(oldOwner);
         await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
+        await ModeTransitionHelper.RestoreSwitchToHandAfterModeExit(oldOwner, MakeRestoredSwitchFree);
     }
 
     public override async Task AfterEnergyReset(Player player)
@@ -135,12 +139,26 @@ public sealed class MagicSwordModePower : PowerModel
         await Task.CompletedTask;
     }
 
-    public override async Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
+    public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
     {
-        if (card is SwitchHbrgoSaki && card.Owner?.Creature == Owner)
+        if (card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+            card.Owner?.Creature == Owner &&
+            card.Pile?.IsCombatPile == true &&
+            card.Pile.Type != PileType.Play)
         {
-            await ModeTransitionHelper.MoveSwitchesOutOfHandWhileBlocked(Owner);
+            await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
         }
+    }
+
+    public void MarkRestoredSwitchFree()
+    {
+        if (!IsMutable)
+        {
+            return;
+        }
+
+        AssertMutable();
+        MakeRestoredSwitchFree = true;
     }
 
     protected override void AfterCloned()
@@ -156,8 +174,7 @@ public sealed class MagicSwordModePower : PowerModel
         await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
         await AddFeintCardToCombat();
-        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
-        await ModeTransitionHelper.MoveSwitchesOutOfHandWhileBlocked(Owner);
+        await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
     }
 
     public async Task AddFeintCardToCombat()

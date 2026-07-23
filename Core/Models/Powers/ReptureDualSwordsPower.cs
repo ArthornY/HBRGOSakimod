@@ -37,6 +37,7 @@ public sealed class ReptureDualSwordsPower : PowerModel
         }
 
         await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
+        await GainEntryEnergy();
     }
 
     public override async Task AfterEnergyReset(Player player)
@@ -104,12 +105,24 @@ public sealed class ReptureDualSwordsPower : PowerModel
 
     public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        if (dealer != Owner || target == null || target.Side == Owner.Side || !props.IsPoweredAttack())
+        if (amount <= 0m || dealer != Owner || target == null || target.Side == Owner.Side || !props.IsPoweredAttack())
         {
             return 1m;
         }
 
-        return 0.75m;
+        return Math.Ceiling(amount * 0.75m) / amount;
+    }
+
+    private async Task GainEntryEnergy()
+    {
+        Player player = Owner.Player;
+        if (player?.PlayerCombatState == null)
+        {
+            return;
+        }
+
+        Flash();
+        await PlayerCmd.GainEnergy(1, player);
     }
 
     protected override void AfterCloned()
