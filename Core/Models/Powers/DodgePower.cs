@@ -26,6 +26,7 @@ public sealed class DodgePower : PowerModel
         }
 
         _pendingSpend = GetSpendAmount(amount);
+        Owner.GetPower<FeintMarkPower>()?.NotifyDamageNegatedByDodge(target, props, dealer);
         return 0m;
     }
 

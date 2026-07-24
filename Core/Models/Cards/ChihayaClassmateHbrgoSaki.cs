@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -47,6 +48,7 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
         }
 
         await EnterSelectedRepture(choiceContext, selectedMode);
+        await DrawModeRestrictedCard(choiceContext, selectedMode);
         await ReplaceWithSwitchInHand(choiceContext);
     }
 
@@ -91,6 +93,40 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
         }
 
         await PowerCmd.Apply<ReptureBowPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
+    }
+
+    private async Task DrawModeRestrictedCard(PlayerChoiceContext choiceContext, CardModel selectedMode)
+    {
+        CardPile drawPile = Owner.PlayerCombatState.DrawPile;
+        CardModel restrictedCard = drawPile.Cards.FirstOrDefault(card =>
+            IsRestrictedToSelectedMode(card, selectedMode));
+        if (restrictedCard == null)
+        {
+            return;
+        }
+
+        await CardPileCmd.Add(
+            restrictedCard,
+            drawPile,
+            CardPilePosition.Top,
+            this,
+            skipVisuals: true);
+        await CardPileCmd.Draw(choiceContext, Owner);
+    }
+
+    private static bool IsRestrictedToSelectedMode(CardModel card, CardModel selectedMode)
+    {
+        return selectedMode switch
+        {
+            ReptureBowChoiceHbrgoSaki =>
+                card is ArrowRainHbrgoSaki or SlideStepHbrgoSaki or StrongShotHbrgoSaki,
+            ReptureDualSwordsChoiceHbrgoSaki =>
+                card is CrossSlashHbrgoSaki
+                    or SwallowReversalHbrgoSaki
+                    or BladeDanceHbrgoSaki
+                    or MimicDreamBubbleHbrgoSaki,
+            _ => false
+        };
     }
 
     private void SyncUpgradeLevel(CardModel card)

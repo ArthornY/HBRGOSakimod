@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3 uid="uid://hbrgosaki_i_only_know_what_i_know_power"]
+
+[ext_resource type="Texture2D" path="res://images/powers/i_only_know_what_i_know_power.png" id="1"]
+
+[resource]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 1456, 1080)
+filter_clip = true

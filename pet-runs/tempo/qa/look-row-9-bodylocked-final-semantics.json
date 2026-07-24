@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "directions": [
+    {"direction": "000", "verdict": "pass", "expected": "up", "observed": "Both eyes look upward and the beak and head pitch upward while the torso stays frontal.", "reason": "Reads as up rather than neutral."},
+    {"direction": "022.5", "verdict": "pass", "expected": "up-right", "observed": "The gaze and beak begin a restrained screen-right shift while retaining upward pitch.", "reason": "Coherent first interpolation step."},
+    {"direction": "045", "verdict": "pass", "expected": "up-right", "observed": "The eye surfaces and beak bias screen-right with residual upward aim and a stable frontal body.", "reason": "Direction remains legible without profile collapse."},
+    {"direction": "067.5", "verdict": "pass", "expected": "up-right", "observed": "The face continues smoothly rightward while both eyes remain readable and the upward component persists.", "reason": "Consistent interpolation into the right cardinal."},
+    {"direction": "090", "verdict": "pass", "expected": "right", "observed": "Strongest rightward face and beak offset, with both eyes, flippers, belly, and feet visible.", "reason": "Clear maximum yaw without a side-profile torso."},
+    {"direction": "112.5", "verdict": "pass", "expected": "down-right", "observed": "Eyes and beak angle down-right while the head eases back from the 090 three-quarter pose.", "reason": "Distinctly down-right rather than lingering pure right."},
+    {"direction": "135", "verdict": "pass", "expected": "down-right", "observed": "Downward eye and beak pitch is clear, screen-right bias remains, and the face is more frontal.", "reason": "Legible diagonal with both eyes preserved."},
+    {"direction": "157.5", "verdict": "pass", "expected": "down-right", "observed": "The pose is strongly downward and near-frontal with a subtle screen-right eye and beak bias.", "reason": "Clean final interpolation toward the 180 family."}
+  ],
+  "continuity": {
+    "verdict": "pass",
+    "reason": "All eight cells retain a fixed frontal torso, belly width, flippers, feet, center, and baseline. Scale and silhouette area are stable; yaw peaks at 090 and returns progressively toward frontal by 157.5 with no clipping, replacement eyes, reversal, or registration pop."
+  },
+  "comparison": "Clear improvement over body-locked attempt 2: the strongest yaw is confined to 090 and the final three poses make a coherent down-right return with both eyes visible.",
+  "repair_note": "none"
+}

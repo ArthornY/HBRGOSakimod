@@ -77,6 +77,7 @@ internal static class ModelDbAllRelicsPatch
             .Append(ModelDb.Relic<SoulOfAnchor>())
             .Append(ModelDb.Relic<DeflectorProtection>())
             .Append(ModelDb.Relic<GuideLittleHand>())
+            .Append(ModelDb.Relic<FeintLikeWind>())
             .Distinct();
     }
 }
@@ -91,8 +92,18 @@ internal static class ModelDbAllPowersPatch
             .Append(ModelDb.Power<SwordheartPower>())
             .Append(ModelDb.Power<SwordheartClarityPower>())
             .Append(ModelDb.Power<CrimsonBladeFlowPower>())
+            .Append(ModelDb.Power<NotOverYetPower>())
+            .Append(ModelDb.Power<IOnlyKnowWhatIKnowPower>())
+            .Append(ModelDb.Power<AngryIzumiYukiPower>())
+            .Append(ModelDb.Power<AngryIzumiYukiTemporaryStrengthPower>())
+            .Append(ModelDb.Power<FragilePower>())
             .Append(ModelDb.Power<MagicSwordModePower>())
             .Append(ModelDb.Power<FeintMarkPower>())
+            .Append(ModelDb.Power<FeintDamageRedirectPower>())
+            .Append(ModelDb.Power<SakuraRainPower>())
+            .Append(ModelDb.Power<MagicSwordEnhancementPower>())
+            .Append(ModelDb.Power<NoSelfInDreamPower>())
+            .Append(ModelDb.Power<NoSelfInDreamTemporaryStrengthPower>())
             .Append(ModelDb.Power<NormalStatePower>())
             .Append(ModelDb.Power<ReptureBowPower>())
             .Append(ModelDb.Power<ReptureDualSwordsPower>())

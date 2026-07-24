@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,6 +20,10 @@ public sealed class FeintHbrgoSaki : CardModel
     {
     }
 
+    protected override bool IsPlayable =>
+        Owner?.Creature?.HasPower<MagicSwordModePower>() == true &&
+        CombatModeHelper.HasEnemyAttackIntent(Owner?.Creature);
+
     public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
     {
         if (card != this)
@@ -26,27 +31,28 @@ public sealed class FeintHbrgoSaki : CardModel
             return true;
         }
 
-        MagicSwordModePower magicSwordMode = Owner.Creature.GetPower<MagicSwordModePower>();
-        SwordheartPower swordheart = Owner.Creature.GetPower<SwordheartPower>();
-        return magicSwordMode != null
-            && swordheart != null
-            && swordheart.Amount >= SwordheartClarityPower.GetSwordheartConsumptionAmount(Owner.Creature, 1m);
+        return IsPlayable;
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        SwordheartPower swordheart = Owner.Creature.GetPower<SwordheartPower>();
-        MagicSwordModePower magicSwordMode = Owner.Creature.GetPower<MagicSwordModePower>();
-        if (magicSwordMode == null
-            || swordheart == null
-            || swordheart.Amount < SwordheartClarityPower.GetSwordheartConsumptionAmount(Owner.Creature, 1m))
+        if (!IsPlayable)
         {
             return;
         }
 
         await PowerCmd.Apply<FeintMarkPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, null);
+        if (CombatModeHelper.IsMultiplayer(Owner.Creature))
+        {
+            await PowerCmd.Apply<FeintDamageRedirectPower>(
+                choiceContext,
+                Owner.Creature,
+                1m,
+                Owner.Creature,
+                this);
+        }
+
         await CardPileCmd.Draw(choiceContext, 2m, Owner);
-        await magicSwordMode.SpendSwordheart(choiceContext, 1m, this);
     }
 
     protected override PileType GetResultPileTypeForCardPlay()

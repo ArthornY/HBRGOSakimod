@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "directions_ok": true,
+  "continuity": {
+    "verdict": "fail",
+    "reason": "The strategy change produced a near-frontal two-eyed 337.5 pose, but 157.5 to 180 still changes abruptly from a narrow right/down profile to a larger centered frontal down pose, and 337.5 to 000 still has a conspicuous body-area and center jump."
+  },
+  "comparison": "improvement in pose family, not a pass",
+  "metric_warnings_review": "The visible 337.5 to 000 jump matches a 15.6 px center shift and 1.28 area ratio; 157.5 to 180 also remains visibly discontinuous.",
+  "repair_note": "Replace the full-profile look system with body-locked two-eyed cardinals and resynthesize both coherent rows."
+}

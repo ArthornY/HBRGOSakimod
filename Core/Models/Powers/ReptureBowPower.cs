@@ -60,7 +60,9 @@ public sealed class ReptureBowPower : PowerModel
             _singleOpponentAttacks.Add(command);
         }
 
-        bool wasAllTarget = command.IsMultiTargeted && !command.IsRandomlyTargeted;
+        bool wasAllTarget =
+            command.IsMultiTargeted && !command.IsRandomlyTargeted ||
+            command.ModelSource is CardModel card && NotOverYetPower.IsAllTargetGeneratedAttack(card);
         _activeAttacks.Add(command);
         if (wasAllTarget)
         {

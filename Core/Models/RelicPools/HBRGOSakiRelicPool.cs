@@ -19,7 +19,8 @@ public sealed class HBRGOSakiRelicPool : RelicPoolModel
             ModelDb.Relic<ElectronicSoldierManual>(),
             ModelDb.Relic<SoulOfAnchor>(),
             ModelDb.Relic<DeflectorProtection>(),
-            ModelDb.Relic<GuideLittleHand>()
+            ModelDb.Relic<GuideLittleHand>(),
+            ModelDb.Relic<FeintLikeWind>()
         };
     }
 }

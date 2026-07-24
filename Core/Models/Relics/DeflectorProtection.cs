@@ -15,6 +15,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -31,6 +32,7 @@ public sealed class DeflectorProtection : RelicModel
     private ValueProp _pendingDodgeProps;
     private bool _hasPendingDodgeBlock;
     private bool _isCalculatingDodgeBlock;
+    private decimal _pendingDexterityConversion;
     private int _dp;
     private bool _hasInitializedDp;
 
@@ -143,6 +145,42 @@ public sealed class DeflectorProtection : RelicModel
         Creature ownerCreature = Owner.Creature;
         // The card already affected the block value; the converted Dodge should not receive card power bonuses again.
         await PowerCmd.Apply<DodgePower>(new ThrowingPlayerChoiceContext(), ownerCreature, dodgeAmount, ownerCreature, null);
+    }
+
+    public override bool TryModifyPowerAmountReceived(
+        PowerModel canonicalPower,
+        Creature target,
+        decimal amount,
+        Creature applier,
+        out decimal modifiedAmount)
+    {
+        modifiedAmount = amount;
+        if (!IsOwnerCreature(target) || canonicalPower is not DexterityPower || amount == 0m)
+        {
+            return false;
+        }
+
+        _pendingDexterityConversion += amount;
+        modifiedAmount = 0m;
+        return true;
+    }
+
+    public override async Task AfterModifyingPowerAmountReceived(PowerModel power)
+    {
+        decimal amount = _pendingDexterityConversion;
+        _pendingDexterityConversion = 0m;
+        if (amount == 0m || GetOwnerOrNull()?.Creature.CombatState == null)
+        {
+            return;
+        }
+
+        Flash();
+        await PowerCmd.Apply<StrengthPower>(
+            new ThrowingPlayerChoiceContext(),
+            Owner.Creature,
+            amount,
+            Owner.Creature,
+            null);
     }
 
     public override Task AfterRestSiteHeal(Player player, bool isMimicked)
@@ -365,6 +403,7 @@ public sealed class DeflectorProtection : RelicModel
     {
         base.AfterCloned();
         ClearPendingDodgeBlock();
+        _pendingDexterityConversion = 0m;
     }
 
     private decimal GetBlockToConvert(CardModel cardSource, CardPlay cardPlay)

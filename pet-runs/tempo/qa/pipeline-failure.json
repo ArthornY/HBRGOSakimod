@@ -1,0 +1,14 @@
+{
+  "ok": false,
+  "stage": "final-v2-validation",
+  "despill_report": "qa/chroma-despill-extended.json",
+  "despill_ok": true,
+  "validation_report": "final/validation-extended.json",
+  "validation_ok": false,
+  "error": "look-180-to-337.5 row 10 column 7 has 1 visible edge pixels contaminated by chroma key #FF00FF",
+  "png_diagnostic": "qa/validation-extended-png-diagnostic.json",
+  "png_diagnostic_matches": true,
+  "packaged": false,
+  "installed": false,
+  "resolution": "Stopped without rerunning despill, relaxing validation, regenerating art, or packaging, as required by the Hatch Pet deterministic-failure contract."
+}

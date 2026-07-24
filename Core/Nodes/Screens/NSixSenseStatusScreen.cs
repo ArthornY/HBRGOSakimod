@@ -17,11 +17,15 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     private const string QuestionImagePath = "ui/six_sense_question.png";
 
     private static readonly Vector2 SourceImageSize = new(1351f, 1164f);
+    private static NSixSenseStatusScreen _activeScreen;
 
     private ElectronicSoldierManual _manual;
+    private readonly Dictionary<SixSenseAttribute, Label> _valueLabels = new();
     private Control _panel;
     private PanelContainer _helpPanel;
+    private RichTextLabel _helpText;
     private Button _closeButton;
+    private SixSenseRadarOverlay _radarOverlay;
     private Tween _fadeTween;
 
     public NetScreenType ScreenType => NetScreenType.Room;
@@ -38,11 +42,20 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             return;
         }
 
+        if (GodotObject.IsInstanceValid(_activeScreen) &&
+            !_activeScreen.IsQueuedForDeletion() &&
+            _activeScreen.IsInsideTree())
+        {
+            _activeScreen.Refresh(manual);
+            return;
+        }
+
         NSixSenseStatusScreen screen = new()
         {
             Name = "SixSenseStatusScreen",
             _manual = manual
         };
+        _activeScreen = screen;
         overlayStack.Push(screen);
     }
 
@@ -73,6 +86,11 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     public void AfterOverlayClosed()
     {
         _fadeTween?.Kill();
+        if (ReferenceEquals(_activeScreen, this))
+        {
+            _activeScreen = null;
+        }
+
         this.QueueFreeSafely();
     }
 
@@ -106,14 +124,14 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         SetFullRect(background);
         _panel.AddChild(background);
 
-        SixSenseRadarOverlay radarOverlay = new()
+        _radarOverlay = new SixSenseRadarOverlay
         {
             Name = "SixSenseRadarOverlay",
             Manual = _manual,
             MouseFilter = MouseFilterEnum.Ignore
         };
-        SetFullRect(radarOverlay);
-        _panel.AddChild(radarOverlay);
+        SetFullRect(_radarOverlay);
+        _panel.AddChild(_radarOverlay);
 
         AddValueLabels();
         AddHelpButton();
@@ -135,6 +153,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             label.OffsetRight = 34f;
             label.OffsetBottom = 18f;
             _panel.AddChild(label);
+            _valueLabels[attribute] = label;
         }
     }
 
@@ -180,7 +199,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         _helpPanel.AddThemeStyleboxOverride("panel", CreatePanelStyle(new Color(0.08f, 0.08f, 0.11f, 0.94f), new Color(0.92f, 0.78f, 1f, 0.9f)));
         _panel.AddChild(_helpPanel);
 
-        RichTextLabel helpText = new()
+        _helpText = new RichTextLabel
         {
             Text = BuildHelpText(),
             FitContent = true,
@@ -194,9 +213,9 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             OffsetBottom = -16f,
             MouseFilter = MouseFilterEnum.Ignore
         };
-        helpText.AddThemeFontSizeOverride(ThemeConstants.RichTextLabel.NormalFontSize, 20);
-        helpText.AddThemeColorOverride(ThemeConstants.RichTextLabel.DefaultColor, Colors.White);
-        _helpPanel.AddChild(helpText);
+        _helpText.AddThemeFontSizeOverride(ThemeConstants.RichTextLabel.NormalFontSize, 20);
+        _helpText.AddThemeColorOverride(ThemeConstants.RichTextLabel.DefaultColor, Colors.White);
+        _helpPanel.AddChild(_helpText);
     }
 
     private void AddCloseButton()
@@ -265,6 +284,26 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     private void Close()
     {
         NOverlayStack.Instance?.Remove(this);
+    }
+
+    private void Refresh(ElectronicSoldierManual manual)
+    {
+        _manual = manual;
+        foreach ((SixSenseAttribute attribute, Label label) in _valueLabels)
+        {
+            label.Text = _manual.GetSenseAmount(attribute).ToString();
+        }
+
+        if (_radarOverlay != null)
+        {
+            _radarOverlay.Manual = _manual;
+            _radarOverlay.QueueRedraw();
+        }
+
+        if (_helpText != null)
+        {
+            _helpText.Text = BuildHelpText();
+        }
     }
 
     private string BuildHelpText()

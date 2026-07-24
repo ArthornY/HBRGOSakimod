@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Audio;
+using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Multiplayer.Game.Lobby;
@@ -40,17 +42,31 @@ internal static class CharacterSelectButtonOnPressPatch
 [HarmonyPatch(typeof(NCharacterSelectScreen), nameof(NCharacterSelectScreen.SelectCharacter))]
 internal static class CharacterSelectScreenSelectCharacterPatch
 {
-    private static void Postfix(NCharacterSelectButton charSelectButton, CharacterModel characterModel)
+    private static void Postfix(
+        NCharacterSelectScreen __instance,
+        NCharacterSelectButton charSelectButton,
+        CharacterModel characterModel)
     {
         if (charSelectButton.IsRandom)
         {
+            HbrgoSakiCharacterSelectVoice.Stop();
             CharacterSelectSyncState.Clear();
             return;
         }
 
         if (charSelectButton.IsLocked)
         {
+            HbrgoSakiCharacterSelectVoice.Stop();
             return;
+        }
+
+        if (characterModel is HbrgoSaki)
+        {
+            HbrgoSakiCharacterSelectVoice.Play(__instance);
+        }
+        else
+        {
+            HbrgoSakiCharacterSelectVoice.Stop();
         }
 
         CharacterSelectSyncState.Set(characterModel);

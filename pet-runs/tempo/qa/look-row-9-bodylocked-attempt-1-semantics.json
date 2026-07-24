@@ -1,0 +1,18 @@
+{
+  "ok": false,
+  "directions": [
+    {"direction": "000", "verdict": "pass", "expected": "up", "observed": "unmistakable upward gaze", "reason": "both complete original eyes and lifted lids look upward; beak pitches up"},
+    {"direction": "022.5", "verdict": "pass", "expected": "up-right", "observed": "slight up-right gaze", "reason": "eyes and beak advance screen-right while retaining the upward cue"},
+    {"direction": "045", "verdict": "pass", "expected": "up-right", "observed": "clear up-right gaze", "reason": "screen-right eye and beak aim retain visible upward eyelid and eye cues"},
+    {"direction": "067.5", "verdict": "pass", "expected": "up-right", "observed": "stronger up-right gaze", "reason": "correct ordered interpolation toward the right cardinal"},
+    {"direction": "090", "verdict": "pass", "expected": "right", "observed": "unmistakable screen-right gaze", "reason": "both original eyes remain visible and aim screen-right; beak is right-offset"},
+    {"direction": "112.5", "verdict": "warning", "expected": "down-right", "observed": "mostly right", "reason": "downward eye and beak pitch is very weak"},
+    {"direction": "135", "verdict": "warning", "expected": "down-right", "observed": "strong right with subtle down cue", "reason": "the vertical axis is not clearly legible at normal size"},
+    {"direction": "157.5", "verdict": "fail", "expected": "down-right", "observed": "pronounced screen-right three-quarter or profile turn", "reason": "downward gaze is not confirmable and the torso, belly, flippers, silhouette area, and center violate the body lock"}
+  ],
+  "continuity": {
+    "verdict": "fail",
+    "reason": "The first five poses progress cleanly, but 112.5 through 157.5 increasingly turn the whole penguin and create visible torso, belly-width, flipper, area, and center changes."
+  },
+  "repair_note": "Redraw the complete row with the same frontal body in every cell; express 112.5 through 157.5 using full-eye rotation, downward eyelid and beak pitch, and restrained face detail shifts only."
+}

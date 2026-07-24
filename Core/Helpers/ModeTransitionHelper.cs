@@ -42,7 +42,7 @@ internal static class ModeTransitionHelper
             await CardPileCmd.AddGeneratedCardToCombat(switchCard, pileType, player);
             if (!chihayaCard.HasBeenRemovedFromState && chihayaCard.Pile?.IsCombatPile == true)
             {
-                await CardPileCmd.RemoveFromCombat(chihayaCard, skipVisuals: true);
+                await CardPileCmd.RemoveFromCombat(chihayaCard);
             }
         }
     }
@@ -67,7 +67,7 @@ internal static class ModeTransitionHelper
             .ToList();
         if (modeCards.Count > 0)
         {
-            await CardPileCmd.RemoveFromCombat(modeCards, skipVisuals: true);
+            await CardPileCmd.RemoveFromCombat(modeCards);
         }
     }
 
@@ -121,7 +121,7 @@ internal static class ModeTransitionHelper
             !combatSource.HasBeenRemovedFromState &&
             combatSource.Pile?.IsCombatPile == true)
         {
-            await CardPileCmd.RemoveFromCombat(combatSource, skipVisuals: true);
+            await CardPileCmd.RemoveFromCombat(combatSource);
         }
     }
 

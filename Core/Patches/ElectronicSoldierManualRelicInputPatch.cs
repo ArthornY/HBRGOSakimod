@@ -17,17 +17,23 @@ internal static class ElectronicSoldierManualRelicInputPatch
             return;
         }
 
-        if (relicHolder.Relic?.Model is not ElectronicSoldierManual manual)
-        {
-            return;
-        }
-
         if (inputEvent is not InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false })
         {
             return;
         }
 
+        switch (relicHolder.Relic?.Model)
+        {
+            case ElectronicSoldierManual manual:
+                NSixSenseStatusScreen.Show(manual);
+                break;
+            case SoulOfAnchor soulOfAnchor:
+                NSoulRollHistoryScreen.Show(soulOfAnchor);
+                break;
+            default:
+                return;
+        }
+
         relicHolder.GetViewport().SetInputAsHandled();
-        NSixSenseStatusScreen.Show(manual);
     }
 }

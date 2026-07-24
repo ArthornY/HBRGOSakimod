@@ -106,6 +106,7 @@ public sealed class SwitchHbrgoSaki : CardModel
             or SwallowReversalHbrgoSaki
             or SlideStepHbrgoSaki
             or BladeDanceHbrgoSaki
-            or StrongShotHbrgoSaki;
+            or StrongShotHbrgoSaki
+            or MimicDreamBubbleHbrgoSaki;
     }
 }

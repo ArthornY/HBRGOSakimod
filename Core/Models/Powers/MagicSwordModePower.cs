@@ -8,6 +8,7 @@ using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -308,7 +309,7 @@ public sealed class MagicSwordModePower : PowerModel
             .ToList();
         if (feints.Count > 0)
         {
-            await CardPileCmd.RemoveFromCombat(feints, skipVisuals: true);
+            await CardPileCmd.RemoveFromCombat(feints);
         }
     }
 }

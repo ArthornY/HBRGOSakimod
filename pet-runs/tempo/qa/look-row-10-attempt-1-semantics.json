@@ -1,0 +1,67 @@
+{
+  "ok": false,
+  "directions": [
+    {
+      "direction": "180",
+      "verdict": "pass",
+      "expected": "down",
+      "observed": "unmistakable frontal downward tuck",
+      "reason": "horizontal: beak and paired eyes stay centered between balanced cheeks; vertical: beak points into the belly, lids and eye line compress downward, and crown faces forward"
+    },
+    {
+      "direction": "202.5",
+      "verdict": "pass",
+      "expected": "down-left",
+      "observed": "clear down-left three-quarter gaze",
+      "reason": "horizontal: beak tip and visible near eye shift to screen-left of the head center; vertical: lowered eye line and forward beak tuck retain the downward axis"
+    },
+    {
+      "direction": "225",
+      "verdict": "pass",
+      "expected": "down-left",
+      "observed": "stronger down-left three-quarter pose",
+      "reason": "horizontal: beak and eye construction remain distinctly screen-left with leftward head yaw; vertical: the beak pitches down and crown and tuft become more prominent"
+    },
+    {
+      "direction": "247.5",
+      "verdict": "pass",
+      "expected": "down-left",
+      "observed": "near-profile down-left pose",
+      "reason": "horizontal: visible eye and beak aim are firmly screen-left; vertical: the eye line and beak remain lowered before rising toward the left cardinal"
+    },
+    {
+      "direction": "270",
+      "verdict": "pass",
+      "expected": "left",
+      "observed": "unmistakable screen-left profile",
+      "reason": "horizontal: beak tip and single visible eye are clearly left of the head center; vertical: head remains level without an up or down pitch"
+    },
+    {
+      "direction": "292.5",
+      "verdict": "pass",
+      "expected": "up-left",
+      "observed": "clear rising up-left pose",
+      "reason": "horizontal: beak and eye line stay screen-left; vertical: the beak and head pitch lift and the gaze rises from the level left profile"
+    },
+    {
+      "direction": "315",
+      "verdict": "pass",
+      "expected": "up-left",
+      "observed": "strong up-left three-quarter gaze",
+      "reason": "horizontal: leftward beak aim and near eye stay on the screen-left side; vertical: raised beak, elevated eye line, and lifted tuft carry the upward axis"
+    },
+    {
+      "direction": "337.5",
+      "verdict": "pass",
+      "expected": "up-left",
+      "observed": "near-frontal up-left pose",
+      "reason": "horizontal: beak and visible eye retain a modest screen-left offset; vertical: head and eye line remain lifted toward the approaching up cardinal"
+    }
+  ],
+  "continuity": {
+    "verdict": "fail",
+    "reason": "Row 10 advances smoothly internally, but the ordered loop visibly snaps at 157.5 to 180 from a compact side/down-right pose to a much larger centered frontal down pose, and again at 337.5 to 000 from up-left to the larger frontal-up pose."
+  },
+  "metric_warnings_review": "failed: the 157.5 to 180 and 337.5 to 000 warnings correspond to visible boundary snaps; other metric warnings are not visibly defective",
+  "repair_note": "Resynthesize the complete coherent row 10 with 180 matched one incremental step from 157.5 and 337.5 matched one incremental step before 000."
+}

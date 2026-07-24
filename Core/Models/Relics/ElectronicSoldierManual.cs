@@ -28,7 +28,9 @@ public sealed class ElectronicSoldierManual : RelicModel
 
     public const decimal TalentGoldMultiplierPerLayer = 0.05m;
 
-    public const decimal SimplicityDpRecoveryMultiplierPerLayer = 0.02m;
+    public const decimal MentalStrengthMaxHpPerLayer = 2m;
+
+    public const decimal SimplicityDpRecoveryMultiplierPerLayer = 0.04m;
 
     public const decimal MadnessDamageTakenMultiplierPerLayer = 0.01m;
 
@@ -240,8 +242,8 @@ public sealed class ElectronicSoldierManual : RelicModel
             SixSenseAttribute.LeadershipCharm => "每2点使我方开战获得1点力量。",
             SixSenseAttribute.Talent => "获得金钱增加5%*层数。",
             SixSenseAttribute.Gentleness => "每2点使我方每回合开始获得1层闪避。",
-            SixSenseAttribute.MentalStrength => "每层使生命上限增加1。",
-            SixSenseAttribute.Simplicity => "每层使DP恢复增加2%。",
+            SixSenseAttribute.MentalStrength => "每层使生命上限增加2。",
+            SixSenseAttribute.Simplicity => "每层使DP恢复增加4%。",
             SixSenseAttribute.Madness => "每层使受到伤害+1%，造成伤害+2%。",
             _ => string.Empty
         };
@@ -259,7 +261,7 @@ public sealed class ElectronicSoldierManual : RelicModel
 
         if (attribute == SixSenseAttribute.MentalStrength)
         {
-            await CreatureCmd.GainMaxHp(Owner.Creature, 1m);
+            await CreatureCmd.GainMaxHp(Owner.Creature, MentalStrengthMaxHpPerLayer);
         }
     }
 

@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -72,6 +73,12 @@ public sealed class ReptureDualSwordsPower : PowerModel
 
         CardModel copy = card.CreateDupe();
         copy.BaseReplayCount = 0;
+        if (card is MimicDreamBubbleHbrgoSaki originalDreamBubble &&
+            copy is MimicDreamBubbleHbrgoSaki copiedDreamBubble)
+        {
+            copiedDreamBubble.SetOriginalPrimaryDamageTotal(originalDreamBubble.TakeLastPrimaryDamageTotal());
+        }
+
         if (card.EnergyCost.CostsX)
         {
             DualSwordsCopyHelper.RecordXEnergySpent(copy, cardPlay.Resources.EnergySpent);

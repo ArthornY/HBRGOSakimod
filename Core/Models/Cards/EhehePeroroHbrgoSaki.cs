@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -19,29 +20,32 @@ public sealed class EhehePeroroHbrgoSaki : CardModel
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
-        HoverTipFactory.FromPower<DodgePower>(),
         HoverTipFactory.FromPower<AngryIzumiYukiPower>()
     };
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<DodgePower>(5m),
-        new PowerVar<AngryIzumiYukiPower>(1m)
+        new PowerVar<AngryIzumiYukiPower>(3m)
     };
 
     public EhehePeroroHbrgoSaki()
-        : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self)
+        : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.AnyEnemy)
     {
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await PowerCmd.Apply<DodgePower>(choiceContext, Owner.Creature, DynamicVars["DodgePower"].BaseValue, Owner.Creature, this);
-        await PowerCmd.Apply<AngryIzumiYukiPower>(choiceContext, Owner.Creature, DynamicVars["AngryIzumiYukiPower"].BaseValue, Owner.Creature, this);
+        ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
+        await PowerCmd.Apply<AngryIzumiYukiPower>(
+            choiceContext,
+            cardPlay.Target,
+            DynamicVars["AngryIzumiYukiPower"].BaseValue,
+            Owner.Creature,
+            this);
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars["DodgePower"].UpgradeValueBy(3m);
+        DynamicVars["AngryIzumiYukiPower"].UpgradeValueBy(-1m);
     }
 }
