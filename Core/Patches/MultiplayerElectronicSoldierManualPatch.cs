@@ -22,15 +22,21 @@ internal static class MultiplayerElectronicSoldierManualPatch
 
         foreach (Player player in state.Players)
         {
-            if (player.GetRelic<ElectronicSoldierManual>() != null)
+            if (player.GetRelic<ElectronicSoldierManual>() == null)
             {
-                continue;
+                ElectronicSoldierManual manual =
+                    (ElectronicSoldierManual)ModelDb.Relic<ElectronicSoldierManual>().ToMutable();
+                manual.FloorAddedToDeck = 1;
+                player.AddRelicInternal(manual);
             }
 
-            ElectronicSoldierManual manual =
-                (ElectronicSoldierManual)ModelDb.Relic<ElectronicSoldierManual>().ToMutable();
-            manual.FloorAddedToDeck = 1;
-            player.AddRelicInternal(manual);
+            if (player.GetRelic<FabricatedSoulOfAnchor>() == null)
+            {
+                FabricatedSoulOfAnchor soul =
+                    (FabricatedSoulOfAnchor)ModelDb.Relic<FabricatedSoulOfAnchor>().ToMutable();
+                soul.FloorAddedToDeck = 1;
+                player.AddRelicInternal(soul);
+            }
         }
     }
 }

@@ -13,6 +13,8 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class StrikeHbrgoSaki : CardModel
 {
+	internal bool TargetsAllOpponents { get; set; }
+
 	public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/strike_hbrgo_saki.png");
 
 	public override string BetaPortraitPath => PortraitPath;
@@ -29,7 +31,20 @@ public sealed class StrikeHbrgoSaki : CardModel
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
 		ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
-		await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue).FromCard(this).Targeting(cardPlay.Target)
+		if (TargetsAllOpponents)
+		{
+			await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+				.FromCard(this)
+				.TargetingAllOpponents(Owner.Creature.CombatState)
+				.WithHitFx("vfx/vfx_attack_slash")
+				.SpawningHitVfxOnEachCreature()
+				.Execute(choiceContext);
+			return;
+		}
+
+		await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+			.FromCard(this)
+			.Targeting(cardPlay.Target)
 			.WithHitFx("vfx/vfx_attack_slash")
 			.Execute(choiceContext);
 	}

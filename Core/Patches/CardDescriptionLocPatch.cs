@@ -41,6 +41,12 @@ internal static class CardDescriptionLocPatch
                 "FRAGILE_HBRGO_SAKI.upgradedDescription",
             MagicSwordLuckySevenHbrgoSaki when isUpgraded =>
                 "MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI.upgradedDescription",
+            ShadowDanceSongHbrgoSaki shadowDance =>
+                $"SHADOW_DANCE_SONG_HBRGO_SAKI.level{shadowDance.SongLevel}Description",
+            BlueSkySongHbrgoSaki blueSky =>
+                $"BLUE_SKY_SONG_HBRGO_SAKI.level{blueSky.SongLevel}Description",
+            LostDaysSongHbrgoSaki lostDays =>
+                $"LOST_DAYS_SONG_HBRGO_SAKI.level{lostDays.SongLevel}Description",
             _ => null
         };
     }

@@ -75,6 +75,7 @@ internal static class ModelDbAllRelicsPatch
         __result = __result
             .Append(ModelDb.Relic<ElectronicSoldierManual>())
             .Append(ModelDb.Relic<SoulOfAnchor>())
+            .Append(ModelDb.Relic<FabricatedSoulOfAnchor>())
             .Append(ModelDb.Relic<DeflectorProtection>())
             .Append(ModelDb.Relic<GuideLittleHand>())
             .Append(ModelDb.Relic<FeintLikeWind>())
@@ -109,6 +110,16 @@ internal static class ModelDbAllPowersPatch
             .Append(ModelDb.Power<ReptureDualSwordsPower>())
             .Append(ModelDb.Power<StrongestShieldPower>())
             .Append(ModelDb.Power<DisabledPower>())
+            .Append(ModelDb.Power<SingTogetherPower>())
+            .Append(ModelDb.Power<PreparationPower>())
+            .Append(ModelDb.Power<HighSongPower>())
+            .Append(ModelDb.Power<ShadowDanceTemporaryStrengthPower>())
+            .Append(ModelDb.Power<ShadowDanceExtraTurnPower>())
+            .Append(ModelDb.Power<BlueSkyPower>())
+            .Append(ModelDb.Power<BlueSkyGuardPower>())
+            .Append(ModelDb.Power<ChargePower>())
+            .Append(ModelDb.Power<TinyMomentsPower>())
+            .Append(ModelDb.Power<LostMelodyPower>())
             .Distinct();
     }
 }

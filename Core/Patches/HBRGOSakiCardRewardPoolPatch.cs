@@ -42,7 +42,12 @@ internal static class HBRGOSakiCardRewardPoolHelper
 
     internal static bool IsRewardCard(CardModel card, bool includeColorless = false)
     {
-        if (card is MagicSwordLuckySevenHbrgoSaki or FeintHbrgoSaki)
+        if (card is MagicSwordLuckySevenHbrgoSaki
+            or FeintHbrgoSaki
+            or HighSongHbrgoSaki
+            or ShadowDanceSongHbrgoSaki
+            or BlueSkySongHbrgoSaki
+            or LostDaysSongHbrgoSaki)
         {
             return false;
         }

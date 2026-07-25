@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
@@ -34,17 +35,21 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
             return new CmdResult(false, "This command only works during a run.");
         }
 
-        SoulOfAnchor soulOfAnchor = player.GetRelic<SoulOfAnchor>();
-        if (soulOfAnchor == null)
+        SoulOfAnchor[] souls = player.Relics.OfType<SoulOfAnchor>().ToArray();
+        if (souls.Length == 0)
         {
             return new CmdResult(false, "The player does not have Soul of Anchor.");
         }
 
-        soulOfAnchor.SetRollsFixedToOneHundred(enabled);
+        foreach (SoulOfAnchor soul in souls)
+        {
+            soul.SetRollsFixedToOneHundred(enabled);
+        }
+
         return new CmdResult(
             true,
             enabled
-                ? "Soul of Anchor rolls are now fixed at 100."
-                : "Soul of Anchor rolls are random again.");
+                ? "All Soul of Anchor rolls are now fixed at 100."
+                : "All Soul of Anchor rolls are random again.");
     }
 }

@@ -79,7 +79,9 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
     {
-        if (!participants.Contains(Owner) || Amount <= 0)
+        if (!participants.Contains(Owner) ||
+            Amount <= 0 ||
+            ExtraTurnDurationHelper.ShouldSuppressDurationTick(Owner))
         {
             return;
         }

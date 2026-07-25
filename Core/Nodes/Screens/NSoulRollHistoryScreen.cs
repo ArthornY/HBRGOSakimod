@@ -14,6 +14,7 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
     private SoulOfAnchor _soulOfAnchor;
     private PanelContainer _panel;
+    private Label _titleLabel;
     private Label _summaryLabel;
     private VBoxContainer _historyList;
     private Button _closeButton;
@@ -130,9 +131,9 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         layout.AddThemeConstantOverride("separation", 14);
         _panel.AddChild(layout);
 
-        Label title = CreateLabel("安科之魂 · 出目记录", 30, Colors.White);
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        layout.AddChild(title);
+        _titleLabel = CreateLabel(string.Empty, 30, Colors.White);
+        _titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        layout.AddChild(_titleLabel);
 
         _summaryLabel = CreateLabel(string.Empty, 19, new Color(0.72f, 0.82f, 0.90f));
         _summaryLabel.HorizontalAlignment = HorizontalAlignment.Center;
@@ -172,10 +173,13 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
     private void Refresh(SoulOfAnchor soulOfAnchor)
     {
         _soulOfAnchor = soulOfAnchor;
-        if (_historyList == null || _summaryLabel == null)
+        if (_historyList == null || _summaryLabel == null || _titleLabel == null)
         {
             return;
         }
+
+        _titleLabel.Text =
+            $"{_soulOfAnchor?.Title?.GetFormattedText() ?? "安科之魂"} · 出目记录";
 
         foreach (Node child in _historyList.GetChildren())
         {
@@ -227,7 +231,7 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         rollLabel.AddThemeFontSizeOverride(ThemeConstants.RichTextLabel.NormalFontSize, 30);
         rollLabel.AddThemeColorOverride(
             ThemeConstants.RichTextLabel.DefaultColor,
-            GetRollColor(entry.Roll));
+            GetRollColor(_soulOfAnchor?.GetRollTier(entry.Roll) ?? SoulRollTier.None));
         rollContainer.AddChild(rollLabel);
         row.AddChild(rollContainer);
 
@@ -282,24 +286,24 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         return label;
     }
 
-    private static Color GetRollColor(int roll)
+    private static Color GetRollColor(SoulRollTier tier)
     {
-        if (roll == 100)
+        if (tier == SoulRollTier.Critical)
         {
             return new Color(1f, 0.82f, 0.28f);
         }
 
-        if (roll >= 91)
+        if (tier == SoulRollTier.Third)
         {
             return new Color(0.92f, 0.55f, 1f);
         }
 
-        if (roll >= 76)
+        if (tier == SoulRollTier.Second)
         {
             return new Color(0.40f, 0.86f, 1f);
         }
 
-        if (roll >= 50)
+        if (tier == SoulRollTier.First)
         {
             return new Color(0.55f, 0.92f, 0.65f);
         }

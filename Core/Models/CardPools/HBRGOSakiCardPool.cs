@@ -36,7 +36,11 @@ public sealed class HBRGOSakiCardPool : CardPoolModel
                 and not ChihayaClassmateHbrgoSaki
                 and not SwitchHbrgoSaki
                 and not ReptureBowChoiceHbrgoSaki
-                and not ReptureDualSwordsChoiceHbrgoSaki)
+                and not ReptureDualSwordsChoiceHbrgoSaki
+                and not HighSongHbrgoSaki
+                and not ShadowDanceSongHbrgoSaki
+                and not BlueSkySongHbrgoSaki
+                and not LostDaysSongHbrgoSaki)
             .Distinct();
     }
 
@@ -65,12 +69,17 @@ public sealed class HBRGOSakiCardPool : CardPoolModel
                 ModelDb.Card<SakuraRainHbrgoSaki>(),
                 ModelDb.Card<MagicSwordEnhancementHbrgoSaki>(),
                 ModelDb.Card<FragileHbrgoSaki>(),
+                ModelDb.Card<LostStarSongHbrgoSaki>(),
                 ModelDb.Card<MagicSwordLuckySevenHbrgoSaki>(),
                 ModelDb.Card<ChihayaClassmateHbrgoSaki>(),
                 ModelDb.Card<SwitchHbrgoSaki>(),
                 ModelDb.Card<ReptureBowChoiceHbrgoSaki>(),
                 ModelDb.Card<ReptureDualSwordsChoiceHbrgoSaki>(),
-                ModelDb.Card<FeintHbrgoSaki>()
+                ModelDb.Card<FeintHbrgoSaki>(),
+                ModelDb.Card<HighSongHbrgoSaki>(),
+                ModelDb.Card<ShadowDanceSongHbrgoSaki>(),
+                ModelDb.Card<BlueSkySongHbrgoSaki>(),
+                ModelDb.Card<LostDaysSongHbrgoSaki>()
             }
             .Distinct()
             .ToArray();
