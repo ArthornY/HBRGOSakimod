@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
+using HarmonyLib;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -18,6 +20,8 @@ public sealed class AngryIzumiYukiPower : PowerModel
 {
     private const string _forcedAttackMoveId = "ANGRY_IZUMI_YUKI_ATTACK";
     private const int _forcedAttackBaseDamage = 1;
+    private static readonly FieldInfo PerformedAtLeastOnceField =
+        AccessTools.Field(typeof(MoveState), "_performedAtLeastOnce");
 
     public override PowerType Type => PowerType.Debuff;
 
@@ -42,30 +46,58 @@ public sealed class AngryIzumiYukiPower : PowerModel
             null);
 
         MoveState currentMove = Owner.Monster.NextMove;
-        MoveState forcedAttackMove = new(
-            _forcedAttackMoveId,
-            PerformForcedAttack,
-            new SingleAttackIntent(_forcedAttackBaseDamage))
-        {
-            FollowUpState = currentMove.FollowUpState,
-            FollowUpStateId = currentMove.FollowUpStateId ?? currentMove.Id,
-            MustPerformOnceBeforeTransitioning = true
-        };
+        MoveState replacedMove = currentMove is ForcedAttackMoveState previousForcedMove
+            ? previousForcedMove.ReplacedMove
+            : currentMove;
+        MoveState forcedAttackMove = new ForcedAttackMoveState(this, replacedMove);
 
         Flash();
         Owner.Monster.SetMoveImmediate(forcedAttackMove, forceTransition: true);
     }
 
-    private async Task PerformForcedAttack(IReadOnlyList<Creature> targets)
+    private async Task PerformForcedAttack(IReadOnlyList<Creature> targets, MoveState replacedMove)
     {
-        if (Owner.Monster == null || Owner.IsDead || targets.Count == 0)
+        try
+        {
+            if (Owner.Monster == null || Owner.IsDead || targets.Count == 0)
+            {
+                return;
+            }
+
+            await DamageCmd.Attack(_forcedAttackBaseDamage)
+                .FromMonster(Owner.Monster)
+                .WithAttackerAnim("Attack", 0.15f)
+                .Execute(null);
+        }
+        finally
+        {
+            RestoreReplacedMove(replacedMove);
+        }
+    }
+
+    private void RestoreReplacedMove(MoveState replacedMove)
+    {
+        if (Owner.Monster?.MoveStateMachine == null || Owner.IsDead)
         {
             return;
         }
 
-        await DamageCmd.Attack(_forcedAttackBaseDamage)
-            .FromMonster(Owner.Monster)
-            .WithAttackerAnim("Attack", 0.15f)
-            .Execute(null);
+        PerformedAtLeastOnceField.SetValue(replacedMove, true);
+        Owner.Monster.MoveStateMachine.ForceCurrentState(replacedMove);
+    }
+
+    private sealed class ForcedAttackMoveState : MoveState
+    {
+        public MoveState ReplacedMove { get; }
+
+        public ForcedAttackMoveState(AngryIzumiYukiPower power, MoveState replacedMove)
+            : base(
+                _forcedAttackMoveId,
+                targets => power.PerformForcedAttack(targets, replacedMove),
+                new SingleAttackIntent(_forcedAttackBaseDamage))
+        {
+            ReplacedMove = replacedMove;
+            MustPerformOnceBeforeTransitioning = true;
+        }
     }
 }

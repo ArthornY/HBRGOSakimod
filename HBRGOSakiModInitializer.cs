@@ -27,6 +27,10 @@ namespace HBRGOSakiMod{
             ModHelper.AddModelToPool(typeof(HBRGOSakiRelicPool), typeof(ElectronicSoldierManual));
             ModHelper.AddModelToPool(typeof(HBRGOSakiRelicPool), typeof(SoulOfAnchor));
             ModHelper.AddModelToPool(typeof(HBRGOSakiRelicPool), typeof(DeflectorProtection));
+            ModHelper.AddModelToPool(
+                typeof(HBRGOSakiRelicPool),
+                typeof(HBRGOSakiMod.Core.Models.Relics.Overclock)
+            );
 
             new Harmony(ModId).PatchAll();
             LookupScriptsInThisAssembly();

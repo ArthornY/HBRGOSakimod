@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
@@ -152,12 +153,33 @@ public sealed class ReptureDualSwordsPower : PowerModel
         return card.TargetType is TargetType.AnyEnemy or TargetType.AnyAlly;
     }
 
-    private static Creature GetCopyTarget(CardPlay cardPlay)
+    private Creature GetCopyTarget(CardPlay cardPlay)
     {
         return cardPlay.Card.TargetType switch
         {
-            TargetType.AnyEnemy or TargetType.AnyAlly when cardPlay.Target?.IsAlive == true => cardPlay.Target,
+            TargetType.AnyEnemy => GetEnemyCopyTarget(cardPlay.Target),
+            TargetType.AnyAlly when cardPlay.Target?.IsAlive == true => cardPlay.Target,
             _ => null
         };
+    }
+
+    private Creature GetEnemyCopyTarget(Creature originalTarget)
+    {
+        if (originalTarget?.IsHittable == true && originalTarget.Side != Owner.Side)
+        {
+            return originalTarget;
+        }
+
+        Creature[] candidates = Owner.CombatState
+            .GetOpponentsOf(Owner)
+            .Where(creature => creature.IsHittable)
+            .ToArray();
+        if (candidates.Length == 0)
+        {
+            return null;
+        }
+
+        int selectedIndex = Owner.CombatState.RunState.Rng.CombatTargets.NextInt(0, candidates.Length);
+        return candidates[selectedIndex];
     }
 }

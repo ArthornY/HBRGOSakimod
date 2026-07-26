@@ -128,6 +128,7 @@ public sealed class NotOverYetPower : PowerModel
             Creature target = GetCardTarget(generatedCard, primaryTarget);
             if (generatedCard.TargetType == TargetType.AnyEnemy && target == null)
             {
+                await RemoveGeneratedCardFromCombat(generatedCard);
                 return;
             }
 
@@ -223,7 +224,24 @@ public sealed class NotOverYetPower : PowerModel
         {
             DualSwordsCopyHelper.Clear(card);
             RemoveAllTargetGeneratedCard(card);
+            await RemoveGeneratedCardFromCombat(card);
         }
+    }
+
+    private static async Task RemoveGeneratedCardFromCombat(CardModel card)
+    {
+        if (card == null || card.HasBeenRemovedFromState)
+        {
+            return;
+        }
+
+        if (card.Pile?.IsCombatPile == true)
+        {
+            await CardPileCmd.RemoveFromCombat(card, skipVisuals: true);
+            return;
+        }
+
+        card.RemoveFromState();
     }
 
     private async Task DealFinisherDamage(

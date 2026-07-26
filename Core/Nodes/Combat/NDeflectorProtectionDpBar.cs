@@ -1,7 +1,10 @@
+using System;
 using Godot;
+using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Nodes.Combat;
 
@@ -25,12 +28,17 @@ public partial class NDeflectorProtectionDpBar : Control
     private Control _hpBarContainer;
     private Creature _creature;
     private DeflectorProtection _relic;
+    private HighDimensionalShellPower _shell;
+    private bool _subscribed;
+    private double _refreshElapsed;
 
     public void SetCreature(Creature creature, Control hpBarContainer)
     {
+        Unsubscribe();
         _creature = creature;
         _hpBarContainer = hpBarContainer;
         _relic = creature.Player?.GetRelic<DeflectorProtection>();
+        _shell = creature.GetPower<HighDimensionalShellPower>();
         Subscribe();
         SyncLayoutToHpBar();
         Refresh();
@@ -44,6 +52,19 @@ public partial class NDeflectorProtectionDpBar : Control
 
         BuildUi();
         SyncLayoutToHpBar();
+        Refresh();
+    }
+
+    public override void _Process(double delta)
+    {
+        _refreshElapsed += delta;
+        if (_refreshElapsed < 0.1)
+        {
+            return;
+        }
+
+        _refreshElapsed = 0;
+        RefreshBindings();
         Refresh();
     }
 
@@ -62,22 +83,39 @@ public partial class NDeflectorProtectionDpBar : Control
 
     public void Refresh()
     {
-        if (_relic == null || _foreground == null || _label == null)
+        if (_foreground == null || _label == null)
         {
             return;
         }
 
         SyncLayoutToHpBar();
-        _relic.EnsureDpInitialized();
-        int maxDp = _relic.MaxDp;
-        int currentDp = maxDp > 0 ? Mathf.Clamp(_relic.Dp, 0, maxDp) : _relic.Dp;
-        Visible = maxDp > 0;
+        int maxAmount;
+        int currentAmount;
+        if (_relic != null)
+        {
+            _relic.EnsureDpInitialized();
+            maxAmount = _relic.MaxDp;
+            currentAmount = maxAmount > 0 ? Mathf.Clamp(_relic.Dp, 0, maxAmount) : _relic.Dp;
+        }
+        else if (_shell != null)
+        {
+            maxAmount = Math.Max(
+                HighDimensionalShellPower.CalculateAmount(_creature),
+                _shell.Amount);
+            currentAmount = Mathf.Clamp(_shell.Amount, 0, maxAmount);
+        }
+        else
+        {
+            Visible = false;
+            return;
+        }
 
-        float ratio = maxDp > 0 ? (float)currentDp / maxDp : 0f;
+        Visible = maxAmount > 0;
+        float ratio = maxAmount > 0 ? (float)currentAmount / maxAmount : 0f;
         float maxWidth = _mask.Size.X > 0f ? _mask.Size.X : Size.X - 10f;
         _foreground.OffsetRight = maxWidth * ratio - maxWidth;
-        _foreground.Visible = currentDp > 0;
-        _label.SetTextAutoSize($"{currentDp}/{maxDp}");
+        _foreground.Visible = currentAmount > 0;
+        _label.SetTextAutoSize($"{currentAmount}/{maxAmount}");
     }
 
     private void BuildUi()
@@ -187,32 +225,120 @@ public partial class NDeflectorProtectionDpBar : Control
 
     private void Subscribe()
     {
+        if (_subscribed)
+        {
+            return;
+        }
+
+        _subscribed = true;
         if (_creature != null)
         {
             _creature.MaxHpChanged += OnCreatureMaxHpChanged;
+            _creature.PowerApplied += OnPowerApplied;
+            _creature.PowerRemoved += OnPowerRemoved;
         }
 
         if (_relic != null)
         {
             _relic.DisplayAmountChanged += Refresh;
         }
+
+        if (_shell != null)
+        {
+            _shell.DisplayAmountChanged += Refresh;
+        }
+    }
+
+    private void RefreshBindings()
+    {
+        if (_creature == null)
+        {
+            return;
+        }
+
+        DeflectorProtection nextRelic = _creature.Player?.GetRelic<DeflectorProtection>();
+        HighDimensionalShellPower nextShell = _creature.GetPower<HighDimensionalShellPower>();
+        if (ReferenceEquals(_relic, nextRelic) && ReferenceEquals(_shell, nextShell))
+        {
+            return;
+        }
+
+        Unsubscribe();
+        _relic = nextRelic;
+        _shell = nextShell;
+        Subscribe();
     }
 
     private void Unsubscribe()
     {
+        if (!_subscribed)
+        {
+            return;
+        }
+
+        _subscribed = false;
         if (_creature != null)
         {
             _creature.MaxHpChanged -= OnCreatureMaxHpChanged;
+            _creature.PowerApplied -= OnPowerApplied;
+            _creature.PowerRemoved -= OnPowerRemoved;
         }
 
         if (_relic != null)
         {
             _relic.DisplayAmountChanged -= Refresh;
         }
+
+        if (_shell != null)
+        {
+            _shell.DisplayAmountChanged -= Refresh;
+        }
     }
 
     private void OnCreatureMaxHpChanged(int oldMaxHp, int newMaxHp)
     {
         Refresh();
+    }
+
+    private void OnPowerApplied(PowerModel power)
+    {
+        if (power is not HighDimensionalShellPower shell)
+        {
+            return;
+        }
+
+        BindShell(shell);
+        Refresh();
+    }
+
+    private void OnPowerRemoved(PowerModel power)
+    {
+        if (!ReferenceEquals(power, _shell))
+        {
+            return;
+        }
+
+        BindShell(null);
+        Refresh();
+    }
+
+    private void BindShell(HighDimensionalShellPower shell)
+    {
+        if (ReferenceEquals(_shell, shell))
+        {
+            return;
+        }
+
+        if (_shell != null)
+        {
+            _shell.DisplayAmountChanged -= Refresh;
+        }
+
+        _shell = shell;
+
+        if (_shell != null && _subscribed)
+        {
+            _shell.DisplayAmountChanged += Refresh;
+        }
     }
 }

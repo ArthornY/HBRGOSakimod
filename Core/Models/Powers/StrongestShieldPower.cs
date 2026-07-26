@@ -62,7 +62,8 @@ public sealed class StrongestShieldPower : PowerModel
 
     private bool RollSucceeds(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource)
     {
-        int roll = RollD100(target, dealer, amount, props, cardSource, 0);
+        int roll = RollD100(target, dealer, amount, props, cardSource, 0, out int? discardedRoll);
+        RecordRollHistory(roll, discardedRoll, cardSource);
         PendingSwordheartAmount += GetSwordheartAmount(roll);
         return roll > GetThreshold();
     }
@@ -84,16 +85,40 @@ public sealed class StrongestShieldPower : PowerModel
         await PowerCmd.Apply<SwordheartPower>(choiceContext, Owner, swordheartAmount, Owner, null);
     }
 
-    private int RollD100(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource, int rollIndex)
+    private int RollD100(
+        Creature target,
+        Creature dealer,
+        decimal amount,
+        ValueProp props,
+        CardModel cardSource,
+        int rollIndex,
+        out int? discardedRoll)
     {
         int roll = RollDeterministicD100(target, dealer, amount, props, cardSource, rollIndex);
+        discardedRoll = null;
         GuideLittleHand guideLittleHand = Owner.Player?.GetRelic<GuideLittleHand>();
         if (guideLittleHand != null)
         {
-            roll = guideLittleHand.TakeHigherRoll(roll, RollDeterministicD100(target, dealer, amount, props, cardSource, rollIndex + 1));
+            int secondRoll = RollDeterministicD100(target, dealer, amount, props, cardSource, rollIndex + 1);
+            int higherRoll = guideLittleHand.TakeHigherRoll(roll, secondRoll);
+            discardedRoll = higherRoll == roll ? secondRoll : roll;
+            roll = higherRoll;
         }
 
         return roll;
+    }
+
+    private void RecordRollHistory(int roll, int? discardedRoll, CardModel cardSource)
+    {
+        string trigger = string.IsNullOrWhiteSpace(cardSource?.Title)
+            ? "一次攻击"
+            : $"「{cardSource.Title}」";
+        string source = $"能力「最强之盾」判定，由{trigger}触发";
+
+        foreach (SoulOfAnchor soul in Owner.Player?.Relics.OfType<SoulOfAnchor>() ?? Enumerable.Empty<SoulOfAnchor>())
+        {
+            soul.RecordAbilityRoll(roll, discardedRoll, source);
+        }
     }
 
     private int RollDeterministicD100(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource, int rollIndex)

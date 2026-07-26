@@ -1,6 +1,5 @@
 using Godot;
 using HarmonyLib;
-using HBRGOSakiMod.Core.Models.Relics;
 using HBRGOSakiMod.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
@@ -15,17 +14,17 @@ internal static class NHealthBarSetCreaturePatch
 
     private static void Postfix(NHealthBar __instance, Creature creature)
     {
-        DeflectorProtection relic = creature.Player?.GetRelic<DeflectorProtection>();
-        if (relic == null || __instance.GetNodeOrNull<NDeflectorProtectionDpBar>(DpBarName) != null)
+        NDeflectorProtectionDpBar dpBar =
+            __instance.GetNodeOrNull<NDeflectorProtectionDpBar>(DpBarName);
+        if (dpBar == null)
         {
-            return;
+            dpBar = new NDeflectorProtectionDpBar
+            {
+                Name = DpBarName
+            };
+            __instance.AddChildSafely(dpBar);
         }
 
-        NDeflectorProtectionDpBar dpBar = new()
-        {
-            Name = DpBarName
-        };
-        __instance.AddChildSafely(dpBar);
         dpBar.SetCreature(creature, __instance.HpBarContainer);
     }
 }

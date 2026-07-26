@@ -49,7 +49,8 @@ public sealed class HbrgoSaki : CharacterModel
     {
         ModelDb.Relic<ElectronicSoldierManual>(),
         ModelDb.Relic<SoulOfAnchor>(),
-        ModelDb.Relic<DeflectorProtection>()
+        ModelDb.Relic<DeflectorProtection>(),
+        ModelDb.Relic<Overclock>()
     };
 
     protected override string CharacterSelectIconPath => ImageHelper.GetImagePath("packed/character_select/sakikowin.png");

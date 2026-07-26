@@ -40,7 +40,7 @@
   "REPTURE_DUAL_SWORDS_POWER.title": "Repture-\u53cc\u5251",
   "REPTURE_DUAL_SWORDS_POWER.description": "\u8fdb\u5165\u65f6\u83b7\u5f971\u70b9\u80fd\u91cf\u3002\u6bcf\u56de\u5408\u6062\u590d\u80fd\u91cf+1\u3002\u6253\u51fa\u653b\u51fb\u724c\u540e\uff0c\u989d\u5916\u6253\u51fa\u4e00\u5f20\u5b83\u7684\u590d\u5236\u3002\u82e5\u4e3aX\u724c\uff0c\u590d\u5236\u724c\u4f7f\u7528\u76f8\u540cX\u503c\u3002\u5b89\u79d1\u4e4b\u9b427/77\u89c6\u4e3a100\u3002\u9020\u6210\u7684\u653b\u51fb\u4f24\u5bb3\u53d8\u4e3a75%\uff08\u5411\u4e0a\u53d6\u6574\uff09\u3002\u83b7\u5f97\u7684\u95ea\u907f\u53d8\u4e3a150%\uff08\u5411\u4e0a\u53d6\u6574\uff09\u3002",
   "FRAGILE_POWER.title": "脆弱",
-  "FRAGILE_POWER.description": "受到攻击时，本次伤害变为150%。回合结束时，失去1层脆弱。",
+  "FRAGILE_POWER.description": "受到攻击时，本次伤害变为150%。",
   "SING_TOGETHER_POWER.title": "一同歌唱、一同奏响",
   "SING_TOGETHER_POWER.description": "立刻且每回合开始时获得1层计数，最多3层。计数达到3层时，移除[gold]预备[/gold]，获得1层[gold]高歌[/gold]并将卡牌[gold]高歌[/gold]放入手牌。",
   "PREPARATION_POWER.title": "预备",
@@ -59,5 +59,11 @@
   "TINY_MOMENTS_POWER.title": "想聚集起那些微小的瞬间",
   "TINY_MOMENTS_POWER.description": "下回合开始前，安科之魂与安科之魂-拟造的大成功效果翻倍。",
   "LOST_MELODY_POWER.title": "《迷路旋律》",
-  "LOST_MELODY_POWER.description": "打出能量消耗大于1的牌时，不消耗能量，改为消耗1层《迷路旋律》。"
+  "LOST_MELODY_POWER.description": "打出能量消耗大于1的牌时，不消耗能量，改为消耗1层《迷路旋律》。",
+  "HIGH_DIMENSIONAL_SHELL_POWER.title": "高维外壳",
+  "HIGH_DIMENSIONAL_SHELL_POWER.description": "吸收受到的非生命移除且可格挡伤害。层数归零时，获得3层[gold]Break[/gold]与[gold]破坏率[/gold]，并将当前意图改为眩晕。",
+  "BREAK_POWER.title": "Break",
+  "BREAK_POWER.description": "回合开始时层数减少1。层数归零时，失去[gold]破坏率[/gold]，并重新获得[gold]高维外壳[/gold]。",
+  "DESTRUCTION_RATE_POWER.title": "破坏率",
+  "DESTRUCTION_RATE_POWER.description": "受到伤害后，增加等同于该次伤害的破坏率。每层使受到的伤害增加1%。"
 }

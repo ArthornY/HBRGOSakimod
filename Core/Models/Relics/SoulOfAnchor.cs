@@ -44,12 +44,15 @@ public class SoulOfAnchor : RelicModel
     private bool _forceRollsToOneHundred;
     private bool _hasCheckedFullSwordheartRound;
     private int _criticalSuccessCountThisCombat;
+    private int _lastRoll;
     private List<SoulRollHistoryEntry> _rollHistory = new();
     private Stack<SuspendedRollState> _suspendedRollStates = new();
 
     public override RelicRarity Rarity => RelicRarity.Starter;
 
-    public override bool ShowCounter => false;
+    public override bool ShowCounter => IsMutable;
+
+    public override int DisplayAmount => LastRoll;
 
     public override string PackedIconPath => ImageHelper.GetImagePath("relics/soul_of_anchor.png");
 
@@ -86,6 +89,24 @@ public class SoulOfAnchor : RelicModel
         {
             AssertMutable();
             _forceRollsToOneHundred = value;
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int LastRoll
+    {
+        get => _lastRoll;
+        private set
+        {
+            AssertMutable();
+            int nextValue = Math.Max(0, value);
+            if (_lastRoll == nextValue)
+            {
+                return;
+            }
+
+            _lastRoll = nextValue;
+            InvokeDisplayAmountChanged();
         }
     }
 
@@ -276,6 +297,12 @@ public class SoulOfAnchor : RelicModel
     public void SetRollsFixedToOneHundred(bool enabled)
     {
         RollsAreFixedToOneHundred = enabled;
+    }
+
+    public void RecordAbilityRoll(int roll, int? discardedRoll, string source)
+    {
+        SoulRollResult result = RegisterRollResult(new SoulRollResult(roll, discardedRoll));
+        RecordRoll(result, source);
     }
 
     public override Task BeforeCombatStart()
@@ -522,7 +549,7 @@ public class SoulOfAnchor : RelicModel
     {
         if (RollsAreFixedToOneHundred)
         {
-            return new SoulRollResult(_rollMax, null);
+            return RegisterRollResult(new SoulRollResult(_rollMax, null));
         }
 
         int roll = RollReptureAdjustedD100();
@@ -547,9 +574,15 @@ public class SoulOfAnchor : RelicModel
             bonus += NotOverYetPower.RollBonus;
         }
 
-        return new SoulRollResult(
+        return RegisterRollResult(new SoulRollResult(
             roll + bonus,
-            discardedRoll.HasValue ? discardedRoll.Value + bonus : null);
+            discardedRoll.HasValue ? discardedRoll.Value + bonus : null));
+    }
+
+    private SoulRollResult RegisterRollResult(SoulRollResult result)
+    {
+        LastRoll = result.Roll;
+        return result;
     }
 
     private int RollReptureAdjustedD100()

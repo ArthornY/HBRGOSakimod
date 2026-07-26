@@ -10,6 +10,7 @@ namespace HBRGOSakiMod.Core.DevConsole;
 public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 {
     private const string _subcommand = "watashikakamininanimashu";
+    public const string ActivateOverclockSubcommand = "__activate_overclock";
 
     public override string CmdName => "hbrgosakimod";
 
@@ -23,6 +24,13 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 
     public override CmdResult Process(Player player, string[] args)
     {
+        if (args.Length == 2 &&
+            args[0].Equals(ActivateOverclockSubcommand, StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(args[1], out int requestedLevel))
+        {
+            return ActivateOverclock(player, requestedLevel);
+        }
+
         if (args.Length != 2 ||
             !args[0].Equals(_subcommand, StringComparison.OrdinalIgnoreCase) ||
             !bool.TryParse(args[1], out bool enabled))
@@ -51,5 +59,26 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
             enabled
                 ? "All Soul of Anchor rolls are now fixed at 100."
                 : "All Soul of Anchor rolls are random again.");
+    }
+
+    private static CmdResult ActivateOverclock(Player player, int requestedLevel)
+    {
+        if (player == null)
+        {
+            return new CmdResult(false, "This command only works during a run.");
+        }
+
+        Overclock overclock = player.GetRelic<Overclock>();
+        if (overclock == null)
+        {
+            return new CmdResult(false, "The player does not have Overclock.");
+        }
+
+        if (!overclock.TryActivate(requestedLevel))
+        {
+            return new CmdResult(false, "Overclock cannot be activated right now.");
+        }
+
+        return new CmdResult(true, $"Overclock level {requestedLevel} activated.");
     }
 }

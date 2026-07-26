@@ -77,6 +77,7 @@ internal static class ModelDbAllRelicsPatch
             .Append(ModelDb.Relic<SoulOfAnchor>())
             .Append(ModelDb.Relic<FabricatedSoulOfAnchor>())
             .Append(ModelDb.Relic<DeflectorProtection>())
+            .Append(ModelDb.Relic<Overclock>())
             .Append(ModelDb.Relic<GuideLittleHand>())
             .Append(ModelDb.Relic<FeintLikeWind>())
             .Distinct();
@@ -120,6 +121,9 @@ internal static class ModelDbAllPowersPatch
             .Append(ModelDb.Power<ChargePower>())
             .Append(ModelDb.Power<TinyMomentsPower>())
             .Append(ModelDb.Power<LostMelodyPower>())
+            .Append(ModelDb.Power<HighDimensionalShellPower>())
+            .Append(ModelDb.Power<BreakPower>())
+            .Append(ModelDb.Power<DestructionRatePower>())
             .Distinct();
     }
 }

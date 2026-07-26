@@ -22,6 +22,14 @@ internal static class CreatureDamageBlockInternalPatch
             return;
         }
 
+        HighDimensionalShellPower shell = __instance.GetPower<HighDimensionalShellPower>();
+        if (shell?.TryAbsorb(amount) == true)
+        {
+            __state += amount;
+            amount = 0m;
+            return;
+        }
+
         DeflectorProtection deflectorProtection = __instance.Player?.GetRelic<DeflectorProtection>();
         if (deflectorProtection == null)
         {

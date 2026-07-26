@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,8 +29,7 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(7m, ValueProp.Move),
-        new RepeatVar(7)
+        new DamageVar(7m, ValueProp.Move)
     };
 
     public MagicSwordLuckySevenHbrgoSaki()
@@ -81,7 +81,7 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     private int GetHitCount()
     {
-        return _magicSwordModeHitCount >= 0 ? _magicSwordModeHitCount : base.DynamicVars.Repeat.IntValue;
+        return Math.Max(0, _magicSwordModeHitCount);
     }
 
     protected override void OnUpgrade()

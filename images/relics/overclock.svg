@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dffaff"/>
+      <stop offset="0.48" stop-color="#61ddff"/>
+      <stop offset="1" stop-color="#d56dff"/>
+    </linearGradient>
+    <linearGradient id="charge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#45eaff"/>
+      <stop offset="0.55" stop-color="#72bfff"/>
+      <stop offset="1" stop-color="#ef7cff"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 42h172l20 20v132l-20 20H52l-20-20z" fill="#071326" stroke="url(#frame)" stroke-width="7"/>
+  <path d="M52 66h116l22 10h18" fill="none" stroke="#ec9dff" stroke-width="5"/>
+  <text x="52" y="116" fill="#ebfbff" font-family="sans-serif" font-size="38" font-weight="700">OD</text>
+  <g fill="#030a16" stroke="#9be9ff" stroke-width="4">
+    <rect x="52" y="142" width="43" height="28" rx="3"/>
+    <rect x="106" y="142" width="43" height="28" rx="3"/>
+    <rect x="160" y="142" width="43" height="28" rx="3"/>
+  </g>
+  <g fill="url(#charge)">
+    <rect x="57" y="147" width="33" height="18" rx="2"/>
+    <rect x="111" y="147" width="33" height="18" rx="2"/>
+    <rect x="165" y="147" width="33" height="18" rx="2"/>
+  </g>
+  <path d="M52 187h151" stroke="#69e8ff" stroke-width="4"/>
+</svg>
