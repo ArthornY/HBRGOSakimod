@@ -33,9 +33,6 @@ public sealed class MagicSwordModePower : PowerModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ConsumedSwordheartAmount { get; private set; }
 
-    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public bool MakeRestoredSwitchFree { get; private set; }
-
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Single;
@@ -125,7 +122,6 @@ public sealed class MagicSwordModePower : PowerModel
     {
         await RemoveFeintCards(oldOwner);
         await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
-        await ModeTransitionHelper.RestoreSwitchToHandAfterModeExit(oldOwner, MakeRestoredSwitchFree);
     }
 
     public override async Task AfterEnergyReset(Player player)
@@ -142,24 +138,18 @@ public sealed class MagicSwordModePower : PowerModel
 
     public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
     {
-        if (card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+        if (card is ChihayaClassmateHbrgoSaki &&
             card.Owner?.Creature == Owner &&
             card.Pile?.IsCombatPile == true &&
             card.Pile.Type != PileType.Play)
         {
-            await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
-        }
-    }
-
-    public void MarkRestoredSwitchFree()
-    {
-        if (!IsMutable)
-        {
-            return;
+            await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
         }
 
-        AssertMutable();
-        MakeRestoredSwitchFree = true;
+        await ModeTransitionHelper.HandleIncompatibleCardEnteredHand(
+            Owner,
+            card,
+            oldPileType);
     }
 
     protected override void AfterCloned()
@@ -174,8 +164,15 @@ public sealed class MagicSwordModePower : PowerModel
         await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
+        await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
+        await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
+        int discardedCardCount =
+            await ModeTransitionHelper.DiscardIncompatibleCardsFromHandAndRedraw(Owner);
         await AddFeintCardToCombat();
-        await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
+        if (discardedCardCount > 0)
+        {
+            Flash();
+        }
     }
 
     public async Task AddFeintCardToCombat()
@@ -244,7 +241,7 @@ public sealed class MagicSwordModePower : PowerModel
     private void AddConsumedSwordheartAmount(decimal amount)
     {
         AssertMutable();
-        ConsumedSwordheartAmount += (int)Math.Ceiling(amount);
+        ConsumedSwordheartAmount += (int)amount;
     }
 
     private async Task ExitAndLuckySeven(PlayerChoiceContext choiceContext)
@@ -258,8 +255,13 @@ public sealed class MagicSwordModePower : PowerModel
         Creature owner = Owner;
         int hitCount = ConsumedSwordheartAmount;
         Flash();
-        await PowerCmd.Remove(this);
+        await RemoveForModeTransition();
         await PlayMagicSwordLuckySeven(choiceContext, owner, hitCount);
+    }
+
+    internal Task RemoveForModeTransition()
+    {
+        return PowerCmd.Remove(this);
     }
 
     private static async Task PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner, int hitCount)

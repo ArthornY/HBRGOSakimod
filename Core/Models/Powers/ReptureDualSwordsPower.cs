@@ -18,7 +18,7 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class ReptureDualSwordsPower : PowerModel
 {
-    private const decimal _dodgeMultiplier = 1.5m;
+    private const decimal _blockMultiplier = 1.5m;
 
     private bool _isPlayingCopy;
 
@@ -28,18 +28,32 @@ public sealed class ReptureDualSwordsPower : PowerModel
 
     public override Color AmountLabelColor => new("F8D36A");
 
+    internal static decimal GetProjectedDamageMultiplier(
+        Creature owner)
+    {
+        return owner?
+            .GetPower<DualSwordsEnhancementPower>()?
+            .DamageMultiplier ?? 0.75m;
+    }
+
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
         using (ModeTransitionHelper.SuppressDualSwordsOnModeExit())
         {
             await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
             await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
-            await PowerCmd.Remove(Owner.GetPower<MagicSwordModePower>());
+            await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
+            MagicSwordModePower magicSwordMode =
+                Owner.GetPower<MagicSwordModePower>();
+            if (magicSwordMode != null)
+            {
+                await magicSwordMode.RemoveForModeTransition();
+            }
+
             await PowerCmd.Remove(Owner.GetPower<CrimsonBladeFlowPower>());
         }
 
-        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
-        await GainEntryEnergy();
+        await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
     }
 
     public override async Task AfterEnergyReset(Player player)
@@ -74,11 +88,7 @@ public sealed class ReptureDualSwordsPower : PowerModel
 
         CardModel copy = card.CreateDupe();
         copy.BaseReplayCount = 0;
-        if (card is MimicDreamBubbleHbrgoSaki originalDreamBubble &&
-            copy is MimicDreamBubbleHbrgoSaki copiedDreamBubble)
-        {
-            copiedDreamBubble.SetOriginalPrimaryDamageTotal(originalDreamBubble.TakeLastPrimaryDamageTotal());
-        }
+        DualSwordsCopyHelper.RecordCopy(copy);
 
         if (card.EnergyCost.CostsX)
         {
@@ -99,38 +109,32 @@ public sealed class ReptureDualSwordsPower : PowerModel
         }
     }
 
-    public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature applier, out decimal modifiedAmount)
+    public override decimal ModifyBlockMultiplicative(
+        Creature target,
+        decimal block,
+        ValueProp props,
+        CardModel cardSource,
+        CardPlay cardPlay)
     {
-        modifiedAmount = amount;
-        if (canonicalPower is not DodgePower || target != Owner || amount <= 0m)
-        {
-            return false;
-        }
-
-        modifiedAmount = Math.Ceiling(amount * _dodgeMultiplier);
-        return modifiedAmount != amount;
-    }
-
-    public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
-    {
-        if (amount <= 0m || dealer != Owner || target == null || target.Side == Owner.Side || !props.IsPoweredAttack())
+        if (target != Owner || block <= 0m)
         {
             return 1m;
         }
 
-        return Math.Ceiling(amount * 0.75m) / amount;
+        return _blockMultiplier;
     }
 
-    private async Task GainEntryEnergy()
+    public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        Player player = Owner.Player;
-        if (player?.PlayerCombatState == null)
+        if (amount <= 0m ||
+            dealer != Owner ||
+            target?.Side == Owner.Side ||
+            !props.IsPoweredAttack())
         {
-            return;
+            return 1m;
         }
 
-        Flash();
-        await PlayerCmd.GainEnergy(1, player);
+        return GetProjectedDamageMultiplier(Owner);
     }
 
     protected override void AfterCloned()

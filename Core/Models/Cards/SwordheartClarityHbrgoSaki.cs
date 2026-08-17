@@ -13,7 +13,8 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class SwordheartClarityHbrgoSaki : CardModel
 {
-    public override string PortraitPath => ImageHelper.GetImagePath("packed/character_select/sakikowin.png");
+    public override string PortraitPath =>
+        ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/swordheart_clarity_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
 

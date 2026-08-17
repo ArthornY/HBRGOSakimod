@@ -1,0 +1,12 @@
+{
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.title": "掷骰",
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.cardText": "[gold]掷骰[/gold]。",
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.description": "#打出后进行[gold]1d100[/gold]，按结果对卡牌的[gold]基础数值[/gold]进行增幅。\n50-75：增加15%。\n76-90：增加20%。\n91-99：增加30%。\n100：增加50%，[gold]大成功[/gold]。",
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.attackSkillDescription": "#打出后进行[gold]1d100[/gold]，按结果对卡牌的[gold]基础数值[/gold]进行增幅。\n50-75：增加15%。\n76-90：增加20%。\n91-99：增加30%。\n100：增加50%，[gold]大成功[/gold]。",
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.powerDescription": "#打出后进行[gold]1d100[/gold]，按结果进行[gold]额外抽牌[/gold]并获得[gold]额外能量[/gold]。\n50-75：抽取1张牌。\n76-90：抽取1张牌，获得[E]。\n91-99：抽取2张牌，获得[E]。\n100：抽取2张牌，获得[EE]，[gold]大成功[/gold]。",
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.sakiAttackSkillDescription": "#打出后进行[gold]1d100[/gold]，按结果对卡牌的[gold]基础数值[/gold]进行增幅。[gold]不为复制牌[/gold]引出的掷骰结果每含有1个7，获得1层[gold]剑心[/gold]（17获得1层，77获得2层）；每张牌获得的剑心上限为它的能量消耗。\n50-75：增加15%。\n76-90：增加20%。\n91-99：增加30%。\n100：增加50%，[gold]大成功[/gold]。",
+  "HBRGO_SAKI_MOD_KEYWORD_ROLL.sakiPowerDescription": "#打出后进行[gold]1d100[/gold]，按结果进行[gold]额外抽牌[/gold]并获得[gold]额外能量[/gold]。[gold]不为复制牌[/gold]引出的掷骰结果每含有1个7，获得1层[gold]剑心[/gold]（17获得1层，77获得2层）；每张牌获得的剑心上限为它的能量消耗。\n50-75：抽取1张牌。\n76-90：抽取1张牌，获得[E]。\n91-99：抽取2张牌，获得[E]。\n100：抽取2张牌，获得[EE]，[gold]大成功[/gold]。",
+  "HBRGO_SAKI_MOD_KEYWORD_CRITICAL_SUCCESS.title": "大成功",
+  "HBRGO_SAKI_MOD_KEYWORD_CRITICAL_SUCCESS.description": "战斗结束后，额外获得一次3选1六感奖励。",
+  "HBRGO_SAKI_MOD_KEYWORD_CRITICAL_SUCCESS.sakiDescription": "战斗结束后，额外获得一次3选1六感奖励，并立刻获得满层[gold]剑心[/gold]。"
+}

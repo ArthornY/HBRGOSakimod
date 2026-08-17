@@ -23,8 +23,6 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     private const decimal _currentDpLossPercent = 0.1m;
 
-    private bool _putSwitchInHandAfterRemoved;
-
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Counter;
@@ -41,18 +39,20 @@ public sealed class CrimsonBladeFlowPower : PowerModel
         await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
-        await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
+        await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
+        await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
+        if (await ModeTransitionHelper.DiscardIncompatibleCardsFromHandAndRedraw(Owner) > 0)
+        {
+            Flash();
+        }
+
+        await CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
     }
 
     public override async Task AfterRemoved(Creature oldOwner)
     {
-        if (_putSwitchInHandAfterRemoved)
-        {
-            oldOwner.GetPower<MagicSwordModePower>()?.MarkRestoredSwitchFree();
-        }
-
         await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
-        await ModeTransitionHelper.RestoreSwitchToHandAfterModeExit(oldOwner, _putSwitchInHandAfterRemoved);
+        await CombatPreviewRefreshHelper.RefreshOpponentIntents(oldOwner);
     }
 
     public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
@@ -68,13 +68,18 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
     {
-        if (card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+        if (card is ChihayaClassmateHbrgoSaki &&
             card.Owner?.Creature == Owner &&
             card.Pile?.IsCombatPile == true &&
             card.Pile.Type != PileType.Play)
         {
-            await ModeTransitionHelper.RemoveChihayaAndSwitchFromCombat(Owner);
+            await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
         }
+
+        await ModeTransitionHelper.HandleIncompatibleCardEnteredHand(
+            Owner,
+            card,
+            oldPileType);
     }
 
     public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
@@ -86,9 +91,7 @@ public sealed class CrimsonBladeFlowPower : PowerModel
             return;
         }
 
-        bool willExpire = Amount <= 1;
         Creature owner = Owner;
-        _putSwitchInHandAfterRemoved |= willExpire;
         int lostDp = owner.Player?.GetRelic<DeflectorProtection>()?.LoseDpByCurrentPercent(_currentDpLossPercent) ?? 0;
         if (lostDp > 0)
         {
@@ -100,30 +103,28 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        if (amount <= 0m || target == null)
+        if (amount <= 0m)
         {
             return 1m;
         }
 
-        return dealer == Owner || target == Owner ? 2m : 1m;
+        decimal multiplier =
+            dealer == Owner || target == Owner ? 2m : 1m;
+        return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }
 
-    public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature applier, out decimal modifiedAmount)
+    public override decimal ModifyBlockMultiplicative(
+        Creature target,
+        decimal block,
+        ValueProp props,
+        CardModel cardSource,
+        CardPlay cardPlay)
     {
-        modifiedAmount = amount;
-        if (canonicalPower is not DodgePower || target != Owner || amount <= 0m)
+        if (target != Owner || block <= 0m)
         {
-            return false;
+            return 1m;
         }
 
-        modifiedAmount = amount * 2m;
-        return true;
+        return 2m;
     }
-
-    protected override void AfterCloned()
-    {
-        base.AfterCloned();
-        _putSwitchInHandAfterRemoved = false;
-    }
-
 }

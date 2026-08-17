@@ -1,5 +1,6 @@
 using System;
-using System.Linq;
+using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
@@ -11,12 +12,14 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 {
     private const string _subcommand = "watashikakamininanimashu";
     public const string ActivateOverclockSubcommand = "__activate_overclock";
+    public const string SummonRedCrimsonSubcommand =
+        "__summon_red_crimson";
 
     public override string CmdName => "hbrgosakimod";
 
     public override string Args => $"{_subcommand} <true|false>";
 
-    public override string Description => "开启或关闭安科之魂掷骰固定为100。";
+    public override string Description => "开启或关闭“掷骰”词条出目固定为100。";
 
     public override bool DebugOnly => false;
 
@@ -24,6 +27,14 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 
     public override CmdResult Process(Player player, string[] args)
     {
+        if (args.Length == 1 &&
+            args[0].Equals(
+                SummonRedCrimsonSubcommand,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return SummonRedCrimson(player);
+        }
+
         if (args.Length == 2 &&
             args[0].Equals(ActivateOverclockSubcommand, StringComparison.OrdinalIgnoreCase) &&
             int.TryParse(args[1], out int requestedLevel))
@@ -43,22 +54,51 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
             return new CmdResult(false, "This command only works during a run.");
         }
 
-        SoulOfAnchor[] souls = player.Relics.OfType<SoulOfAnchor>().ToArray();
-        if (souls.Length == 0)
+        if (!RollKeywordRules.IsRollEnabled(player))
         {
-            return new CmdResult(false, "The player does not have Soul of Anchor.");
+            return new CmdResult(false, "The player does not have the Roll keyword.");
         }
 
-        foreach (SoulOfAnchor soul in souls)
-        {
-            soul.SetRollsFixedToOneHundred(enabled);
-        }
+        RollKeywordCombatState.SetRollsFixedToOneHundred(
+            player,
+            enabled);
 
         return new CmdResult(
             true,
             enabled
-                ? "All Soul of Anchor rolls are now fixed at 100."
-                : "All Soul of Anchor rolls are random again.");
+                ? "All Roll keyword results are now fixed at 100."
+                : "All Roll keyword results are random again.");
+    }
+
+    private static CmdResult SummonRedCrimson(Player player)
+    {
+        if (player == null)
+        {
+            return new CmdResult(
+                false,
+                "This command only works during a run.");
+        }
+
+        RestorationMoment relic =
+            player.GetRelic<RestorationMoment>();
+        if (relic == null)
+        {
+            return new CmdResult(
+                false,
+                "The player does not have Restoration Moment.");
+        }
+
+        if (!relic.TryBeginSummon(out Task summonTask))
+        {
+            return new CmdResult(
+                false,
+                "Red Crimson cannot be summoned right now.");
+        }
+
+        return new CmdResult(
+            summonTask,
+            true,
+            "Red Crimson summoned.");
     }
 
     private static CmdResult ActivateOverclock(Player player, int requestedLevel)

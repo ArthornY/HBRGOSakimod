@@ -28,6 +28,28 @@ public sealed class BlueSkyPower : PowerModel
 
     public override Color AmountLabelColor => new("70D9FF");
 
+    public override Task AfterApplied(Creature applier, CardModel cardSource)
+    {
+        return CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
+    }
+
+    public override Task AfterPowerAmountChanged(
+        PlayerChoiceContext choiceContext,
+        PowerModel power,
+        decimal amount,
+        Creature applier,
+        CardModel cardSource)
+    {
+        return power == this
+            ? CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner)
+            : Task.CompletedTask;
+    }
+
+    public override Task AfterRemoved(Creature oldOwner)
+    {
+        return CombatPreviewRefreshHelper.RefreshOpponentIntents(oldOwner);
+    }
+
     public override decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
@@ -45,8 +67,9 @@ public sealed class BlueSkyPower : PowerModel
         }
 
         decimal reduction = Math.Clamp(Amount, 0, 100) / 100m;
-        decimal reducedDamage = Math.Floor(amount * (1m - reduction));
-        return reducedDamage / amount;
+        return HbrgoSakiDamageMultiplierHelper.Add(
+            1m - reduction,
+            this);
     }
 
     public override async Task AfterDamageReceived(

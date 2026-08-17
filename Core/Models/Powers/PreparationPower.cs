@@ -1,8 +1,10 @@
 using System;
 using Godot;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
@@ -14,20 +16,18 @@ public sealed class PreparationPower : PowerModel
 
     public override Color AmountLabelColor => new("F27C79");
 
-    public override bool TryModifyPowerAmountReceived(
-        PowerModel canonicalPower,
+    public override decimal ModifyBlockAdditive(
         Creature target,
-        decimal amount,
-        Creature applier,
-        out decimal modifiedAmount)
+        decimal block,
+        ValueProp props,
+        CardModel cardSource,
+        CardPlay cardPlay)
     {
-        modifiedAmount = amount;
-        if (canonicalPower is not DodgePower || target != Owner || amount <= 0m)
+        if (target != Owner || block <= 0m)
         {
-            return false;
+            return 0m;
         }
 
-        modifiedAmount = Math.Max(0m, amount - 1m);
-        return true;
+        return -Math.Min(2m, block);
     }
 }

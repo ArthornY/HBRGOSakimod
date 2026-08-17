@@ -6,13 +6,17 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class MagicSwordEnhancementHbrgoSaki : CardModel
 {
-    private bool HasSwordheartUpgrade => IsUpgraded || DeckVersion?.IsUpgraded == true;
+    private const string DamageDivisorVar = "DamageDivisor";
+
+    internal bool HasEnhancedHpDamage =>
+        IsUpgraded || DeckVersion?.IsUpgraded == true;
 
     public override string PortraitPath =>
         ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/magic_sword_enhancement_hbrgo_saki.png");
@@ -22,9 +26,14 @@ public sealed class MagicSwordEnhancementHbrgoSaki : CardModel
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<MagicSwordEnhancementPower>(),
-        HoverTipFactory.FromPower<MagicSwordModePower>(),
-        HoverTipFactory.FromPower<SwordheartPower>()
+        HoverTipFactory.FromPower<MagicSwordModePower>()
     };
+
+    protected override IEnumerable<DynamicVar> CanonicalVars =>
+        new DynamicVar[]
+        {
+            new IntVar(DamageDivisorVar, 3m)
+        };
 
     public MagicSwordEnhancementHbrgoSaki()
         : base(1, CardType.Power, CardRarity.Uncommon, TargetType.Self)
@@ -39,15 +48,10 @@ public sealed class MagicSwordEnhancementHbrgoSaki : CardModel
             1m,
             Owner.Creature,
             this);
+    }
 
-        if (HasSwordheartUpgrade)
-        {
-            await PowerCmd.Apply<SwordheartPower>(
-                choiceContext,
-                Owner.Creature,
-                1m,
-                Owner.Creature,
-                this);
-        }
+    protected override void OnUpgrade()
+    {
+        DynamicVars[DamageDivisorVar].UpgradeValueBy(-1m);
     }
 }

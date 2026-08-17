@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -15,6 +17,7 @@ public sealed class DestructionRatePower : PowerModel
 {
     public const int BaselineAmount = 1;
 
+    private const decimal DamageConversionMultiplier = 0.5m;
     private const decimal DamageIncreasePerStack = 0.01m;
 
     public override PowerType Type => PowerType.Debuff;
@@ -32,9 +35,10 @@ public sealed class DestructionRatePower : PowerModel
         Creature dealer,
         CardModel cardSource)
     {
-        return target == Owner && amount > 0m
+        decimal multiplier = target == Owner && amount > 0m
             ? 1m + DisplayAmount * DamageIncreasePerStack
             : 1m;
+        return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }
 
     public override async Task AfterDamageReceived(
@@ -56,7 +60,10 @@ public sealed class DestructionRatePower : PowerModel
         await PowerCmd.Apply<DestructionRatePower>(
             choiceContext,
             Owner,
-            result.UnblockedDamage,
+            result.UnblockedDamage *
+            DamageConversionMultiplier *
+            MimicEvilEyeTidalSlashHbrgoSaki
+                .GetDestructionRateMultiplier(cardSource),
             dealer ?? Owner,
             cardSource);
     }

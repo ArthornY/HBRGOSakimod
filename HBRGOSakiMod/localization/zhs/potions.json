@@ -1,0 +1,9 @@
+{
+  "DP_POTION_HBRGO_SAKI.title": "DP药水",
+  "DP_POTION_HBRGO_SAKI.description": "恢复{Dp}点DP。",
+  "FRAGILE_POTION_HBRGO_SAKI.title": "脆弱药水",
+  "FRAGILE_POTION_HBRGO_SAKI.description": "给予一名敌人{FragilePower}层[gold]脆弱[/gold]。",
+  "FRAGILE_POTION_HBRGO_SAKI.selectionScreenPrompt": "选择一名敌人给予脆弱。",
+  "SOUL_POTION_HBRGO_SAKI.title": "灵魂药水",
+  "SOUL_POTION_HBRGO_SAKI.description": "使[gold]此刻、即是复权之刻[/gold]计数增加{Soul}。"
+}

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -18,7 +19,8 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DamageVar[] { new DamageVar(5m, ValueProp.Move) };
+    protected override IEnumerable<DynamicVar> CanonicalVars =>
+        new DamageVar[] { new DamageVar(6m, ValueProp.Move) };
 
     protected override bool IsPlayable => CanUseDualSwordsCard();
 
@@ -35,11 +37,17 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
-        await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue).FromCard(this).Targeting(cardPlay.Target)
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            base.DynamicVars.Damage.BaseValue);
+        await DamageCmd.Attack(damage).FromCard(this).Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        await CardPileCmd.Draw(choiceContext, 1m, Owner);
+        await CardPileCmd.Draw(
+            choiceContext,
+            ModeTransitionHelper.GetAdjustedEffectAmount(this, 1m),
+            Owner);
     }
 
     protected override void OnUpgrade()
@@ -49,8 +57,7 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
 
     private bool CanUseDualSwordsCard()
     {
-        return Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true ||
-               Owner?.Creature?.HasPower<MagicSwordModePower>() == true ||
-               Owner?.Creature?.HasPower<CrimsonBladeFlowPower>() == true;
+        return ModeTransitionHelper.CanPlayDualSwordsRestrictedCard(
+            Owner?.Creature);
     }
 }

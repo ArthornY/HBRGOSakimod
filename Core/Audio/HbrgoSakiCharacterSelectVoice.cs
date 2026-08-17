@@ -1,64 +1,47 @@
-using System;
-using Godot;
-using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using STS2RitsuLib.Audio;
 
 namespace HBRGOSakiMod.Core.Audio;
 
 internal static class HbrgoSakiCharacterSelectVoice
 {
     private const string VoicePath = "res://audio/hbrgo_saki/character_select_intro.ogg";
+    private const string VoiceChannel = "HBRGOSakiMod.CharacterSelectVoice";
 
-    private static readonly StringName SfxBus = new("SFX");
+    private static IAudioHandle player;
 
-    private static AudioStream voice;
-    private static AudioStreamPlayer player;
-
-    internal static void Play(NCharacterSelectScreen screen)
+    internal static void Play()
     {
         Stop();
 
-        voice ??= ResourceLoader.Load<AudioStream>(VoicePath);
-        if (voice == null)
+        AudioPlayResult result = GameFmod.Playback.PlayOneShot(
+            AudioSource.ResourceFile(VoicePath),
+            new AudioPlaybackOptions
+            {
+                Scope = AudioLifecycleScope.Screen,
+                AllowFadeOutOnStop = false,
+                Routing = new AudioRoutingOptions
+                {
+                    Channel = VoiceChannel,
+                    ChannelMode = AudioChannelMode.ReplaceExisting,
+                    AllowFadeOutOnReplace = false
+                }
+            });
+        if (result.Succeeded)
         {
-            return;
+            player = result.Handle;
         }
-
-        AudioStreamPlayer newPlayer = new()
-        {
-            Name = "HbrgoSakiCharacterSelectVoice",
-            Stream = voice,
-            Bus = SfxBus
-        };
-
-        player = newPlayer;
-        screen.AddChild(newPlayer);
-        newPlayer.Finished += new Action(() => OnFinished(newPlayer));
-        newPlayer.Play();
     }
 
     internal static void Stop()
     {
-        AudioStreamPlayer currentPlayer = player;
+        IAudioHandle currentPlayer = player;
         player = null;
-        if (currentPlayer == null || !GodotObject.IsInstanceValid(currentPlayer))
+        if (currentPlayer == null)
         {
             return;
         }
 
-        currentPlayer.Stop();
-        currentPlayer.QueueFree();
-    }
-
-    private static void OnFinished(AudioStreamPlayer finishedPlayer)
-    {
-        if (player == finishedPlayer)
-        {
-            player = null;
-        }
-
-        if (GodotObject.IsInstanceValid(finishedPlayer))
-        {
-            finishedPlayer.QueueFree();
-        }
+        currentPlayer.TryStop(allowFadeOut: false);
+        currentPlayer.Dispose();
     }
 }

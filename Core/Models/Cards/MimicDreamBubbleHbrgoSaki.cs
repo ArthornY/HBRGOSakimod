@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -18,14 +17,9 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
 {
     private const int _hitCount = 4;
 
-    private int _lastPrimaryDamageTotal;
-    private int _originalPrimaryDamageTotal;
-
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/mimic_dream_bubble_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
-
-    public override IEnumerable<CardKeyword> CanonicalKeywords => new CardKeyword[] { CardKeyword.Exhaust };
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
@@ -45,28 +39,17 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
         return card != this || CanUseDualSwordsCard();
     }
 
-    internal int TakeLastPrimaryDamageTotal()
-    {
-        AssertMutable();
-        int total = _lastPrimaryDamageTotal;
-        _lastPrimaryDamageTotal = 0;
-        return total;
-    }
-
-    internal void SetOriginalPrimaryDamageTotal(int total)
-    {
-        AssertMutable();
-        _originalPrimaryDamageTotal = Math.Max(0, total);
-    }
-
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
+        System.ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
 
         int primaryDamageTotal = 0;
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            base.DynamicVars.Damage.BaseValue);
         for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
-            var attack = await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+            var attack = await DamageCmd.Attack(damage)
                 .FromCard(this)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
@@ -78,25 +61,25 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
                 .Sum(result => result.TotalDamage);
         }
 
-        if (!IsDupe)
-        {
-            _lastPrimaryDamageTotal = primaryDamageTotal;
-            return;
-        }
-
-        int combinedDamageTotal = _originalPrimaryDamageTotal + primaryDamageTotal;
-        _originalPrimaryDamageTotal = 0;
-        if (combinedDamageTotal <= 0 || !cardPlay.Target.IsAlive || CombatManager.Instance.IsOverOrEnding)
+        if (primaryDamageTotal <= 0 ||
+            !cardPlay.Target.IsAlive ||
+            CombatManager.Instance.IsOverOrEnding)
         {
             return;
         }
 
-        await DamageCmd.Attack(combinedDamageTotal)
-            .FromCard(this)
-            .Targeting(cardPlay.Target)
-            .Unpowered()
-            .WithHitFx("vfx/vfx_attack_slash")
-            .Execute(choiceContext);
+        using (PrecalculatedDamageContext.Begin(
+            this,
+            cardPlay.Target,
+            primaryDamageTotal))
+        {
+            await DamageCmd.Attack(primaryDamageTotal)
+                .FromCard(this)
+                .Targeting(cardPlay.Target)
+                .Unpowered()
+                .WithHitFx("vfx/vfx_attack_slash")
+                .Execute(choiceContext);
+        }
     }
 
     protected override void OnUpgrade()
@@ -104,17 +87,9 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
         base.DynamicVars.Damage.UpgradeValueBy(1m);
     }
 
-    protected override void AfterCloned()
-    {
-        base.AfterCloned();
-        _lastPrimaryDamageTotal = 0;
-        _originalPrimaryDamageTotal = 0;
-    }
-
     private bool CanUseDualSwordsCard()
     {
-        return Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true ||
-               Owner?.Creature?.HasPower<MagicSwordModePower>() == true ||
-               Owner?.Creature?.HasPower<CrimsonBladeFlowPower>() == true;
+        return ModeTransitionHelper.CanPlayDualSwordsRestrictedCard(
+            Owner?.Creature);
     }
 }

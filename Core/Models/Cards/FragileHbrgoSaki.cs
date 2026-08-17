@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
@@ -19,9 +20,14 @@ public sealed class FragileHbrgoSaki : CardModel
 
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[]
     {
-        CardKeyword.Unplayable,
-        CardKeyword.Exhaust
+        CardKeyword.Unplayable
     };
+
+    protected override IEnumerable<DynamicVar> CanonicalVars =>
+        new DynamicVar[]
+        {
+            new PowerVar<FragilePower>(2m)
+        };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
@@ -39,13 +45,13 @@ public sealed class FragileHbrgoSaki : CardModel
         await PowerCmd.Apply<FragilePower>(
             choiceContext,
             cardPlay.Target,
-            1m,
+            DynamicVars["FragilePower"].BaseValue,
             Owner.Creature,
             this);
     }
 
     protected override void OnUpgrade()
     {
-        RemoveKeyword(CardKeyword.Exhaust);
+        DynamicVars["FragilePower"].UpgradeValueBy(1m);
     }
 }

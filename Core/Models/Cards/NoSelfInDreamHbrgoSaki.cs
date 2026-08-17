@@ -13,7 +13,7 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class NoSelfInDreamHbrgoSaki : CardModel
 {
-    private const int _dodgePerTemporaryStrength = 4;
+    private const int _blockPerTemporaryStrength = 3;
     private const decimal _currentDpLossPercent = 0.5m;
 
     public override string PortraitPath =>
@@ -30,7 +30,7 @@ public sealed class NoSelfInDreamHbrgoSaki : CardModel
     {
         HoverTipFactory.FromPower<NoSelfInDreamPower>(),
         HoverTipFactory.FromPower<NoSelfInDreamTemporaryStrengthPower>(),
-        HoverTipFactory.FromPower<DodgePower>()
+        HoverTipFactory.Static(StaticHoverTip.Block)
     };
 
     public NoSelfInDreamHbrgoSaki()
@@ -40,11 +40,14 @@ public sealed class NoSelfInDreamHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DodgePower dodge = Owner.Creature.GetPower<DodgePower>();
-        int temporaryStrength = dodge?.Amount / _dodgePerTemporaryStrength ?? 0;
-        if (dodge != null)
+        int startingBlock = Owner.Creature.Block;
+        int temporaryStrength =
+            startingBlock / _blockPerTemporaryStrength;
+        if (startingBlock > 0)
         {
-            await PowerCmd.Remove(dodge);
+            await CreatureCmd.LoseBlock(
+                Owner.Creature,
+                startingBlock);
         }
 
         if (temporaryStrength > 0)

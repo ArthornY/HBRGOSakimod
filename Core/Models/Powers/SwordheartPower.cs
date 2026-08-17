@@ -1,7 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -59,10 +62,22 @@ public sealed class SwordheartPower : PowerModel
             return;
         }
 
-        MagicSwordModePower magicSwordMode = await PowerCmd.Apply<MagicSwordModePower>(choiceContext, Owner, 1m, applier, null);
-        if (magicSwordMode != null)
+        if (Owner.Player?.PlayerCombatState == null ||
+            Owner.CombatState == null ||
+            Owner.Player.PlayerCombatState.AllCards.Any(card =>
+                card is MagicSwordModeHbrgoSaki &&
+                !card.HasBeenRemovedFromState &&
+                card.Pile?.IsCombatPile == true &&
+                card.Pile.Type != PileType.Exhaust))
         {
-            await magicSwordMode.AddFeintCardToCombat();
+            return;
         }
+
+        CardModel magicSwordModeCard =
+            Owner.CombatState.CreateCard<MagicSwordModeHbrgoSaki>(Owner.Player);
+        await CardPileCmd.AddGeneratedCardToCombat(
+            magicSwordModeCard,
+            PileType.Hand,
+            Owner.Player);
     }
 }

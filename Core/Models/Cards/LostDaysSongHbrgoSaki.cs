@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Powers;
-using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -40,8 +40,7 @@ public sealed class LostDaysSongHbrgoSaki : HighSongChoiceCard
         if (songLevel >= 3 && highSong != null)
         {
             int teamCriticalSuccesses = Owner.Creature.CombatState.Players
-                .SelectMany(player => player.Relics.OfType<SoulOfAnchor>())
-                .Sum(soul => soul.CriticalSuccessCountThisCombat);
+                .Sum(RollKeywordCombatState.GetCriticalSuccessCount);
             if (teamCriticalSuccesses > 0)
             {
                 await PowerCmd.ModifyAmount(

@@ -1,20 +1,12 @@
-using System;
 using System.Reflection;
+using BaseLib.Config;
 using HarmonyLib;
 using Godot;
+using HBRGOSakiMod.Core.Config;
+using HBRGOSakiMod.Core.Integration;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
-using MegaCrit.Sts2.Core.Models.CardPools;
-using MegaCrit.Sts2.Core.Models.Cards;
-using MegaCrit.Sts2.Core.Models.PotionPools;
-using MegaCrit.Sts2.Core.Models.RelicPools;
-using MegaCrit.Sts2.Core.Saves.Runs;
-using HBRGOSakiMod.Core.Models.CardPools;
-using HBRGOSakiMod.Core.Models.Cards;
-using HBRGOSakiMod.Core.Models.PotionPools;
-using HBRGOSakiMod.Core.Models.Powers;
-using HBRGOSakiMod.Core.Models.RelicPools;
-using HBRGOSakiMod.Core.Models.Relics;
+using STS2RitsuLib;
 
 namespace HBRGOSakiMod{
     [ModInitializer(nameof(Initialize))]
@@ -24,30 +16,22 @@ namespace HBRGOSakiMod{
 
         private static void Initialize()
         {
-            ModHelper.AddModelToPool(typeof(HBRGOSakiRelicPool), typeof(ElectronicSoldierManual));
-            ModHelper.AddModelToPool(typeof(HBRGOSakiRelicPool), typeof(SoulOfAnchor));
-            ModHelper.AddModelToPool(typeof(HBRGOSakiRelicPool), typeof(DeflectorProtection));
-            ModHelper.AddModelToPool(
-                typeof(HBRGOSakiRelicPool),
-                typeof(HBRGOSakiMod.Core.Models.Relics.Overclock)
-            );
+            ModConfigRegistry.Register(ModId, new HBRGOSakiConfig());
+            HBRGOSakiRewards.Register();
+            SixSenseNetActions.Initialize();
+            HBRGOSakiTargetTypes.Register();
+            HbrgoSakiVariantPreference.Register();
+            HBRGOSakiContentPack.Register();
+            HBRGOSakiRightClickIntegration.Register();
+            HBRGOSakiRunLifecycle.Register();
+            HBRGOSakiCombatUiIntegration.Register();
 
             new Harmony(ModId).PatchAll();
-            LookupScriptsInThisAssembly();
+            RitsuLibFramework.EnsureGodotScriptsRegistered(Assembly.GetExecutingAssembly());
 
             Log.Info($"{ModId} initialized.");
             GD.Print($"{ModId} initialized.");
         }
 
-        private static void LookupScriptsInThisAssembly()
-        {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            Type scriptManagerBridge = typeof(GD).Assembly.GetType("Godot.Bridge.ScriptManagerBridge");
-            MethodInfo lookupScripts = scriptManagerBridge?.GetMethod(
-                "LookupScriptsInAssembly",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
-            lookupScripts?.Invoke(null, new object[] { assembly });
-        }
     }
 }

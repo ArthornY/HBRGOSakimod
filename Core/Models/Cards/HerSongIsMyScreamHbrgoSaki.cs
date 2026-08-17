@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -21,13 +20,15 @@ public sealed class HerSongIsMyScreamHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[] { HoverTipFactory.FromPower<DodgePower>() };
+        new IHoverTip[] { HoverTipFactory.Static(StaticHoverTip.Block) };
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
         new DamageVar(9m, ValueProp.Move),
-        new PowerVar<DodgePower>(7m)
+        new BlockVar(7m, ValueProp.Move)
     };
+
+    public override bool GainsBlock => true;
 
     public HerSongIsMyScreamHbrgoSaki()
         : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
@@ -44,17 +45,15 @@ public sealed class HerSongIsMyScreamHbrgoSaki : CardModel
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        await PowerCmd.Apply<DodgePower>(
-            choiceContext,
+        await CreatureCmd.GainBlock(
             Owner.Creature,
-            DynamicVars["DodgePower"].BaseValue,
-            Owner.Creature,
-            this);
+            DynamicVars.Block,
+            cardPlay);
     }
 
     protected override void OnUpgrade()
     {
         DynamicVars.Damage.UpgradeValueBy(2m);
-        DynamicVars["DodgePower"].UpgradeValueBy(2m);
+        DynamicVars.Block.UpgradeValueBy(7m);
     }
 }

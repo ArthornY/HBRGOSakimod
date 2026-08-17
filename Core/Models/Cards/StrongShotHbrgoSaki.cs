@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -15,6 +17,7 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class StrongShotHbrgoSaki : CardModel
 {
     private const int _hitCount = 3;
+    private const string _fragileBonusVar = "FragileBonus";
 
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/strong_shot_hbrgo_saki.png");
 
@@ -22,11 +25,13 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(5m, ValueProp.Move),
-        new RepeatVar(_hitCount)
+        new DamageVar(3m, ValueProp.Move),
+        new RepeatVar(_hitCount),
+        new IntVar(_fragileBonusVar, 1m)
     };
 
-    protected override bool IsPlayable => Owner?.Creature?.HasPower<ReptureBowPower>() == true;
+    protected override bool IsPlayable =>
+        ModeTransitionHelper.CanPlayBowRestrictedCard(Owner?.Creature);
 
     public StrongShotHbrgoSaki()
         : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AllEnemies)
@@ -35,14 +40,26 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
     {
-        return card != this || Owner?.Creature?.HasPower<ReptureBowPower>() == true;
+        return card != this ||
+               ModeTransitionHelper.CanPlayBowRestrictedCard(Owner?.Creature);
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        int highestFragile = base.CombatState
+            .GetOpponentsOf(Owner.Creature)
+            .Where(target => target.IsHittable)
+            .Select(target => target.GetPower<FragilePower>()?.Amount ?? 0)
+            .DefaultIfEmpty(0)
+            .Max();
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            base.DynamicVars.Damage.BaseValue +
+            highestFragile *
+            DynamicVars[_fragileBonusVar].BaseValue);
         for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
-            await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+            await DamageCmd.Attack(damage)
                 .FromCard(this)
                 .TargetingAllOpponents(base.CombatState)
                 .WithHitFx("vfx/vfx_attack_slash")
@@ -52,6 +69,7 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        base.DynamicVars.Damage.UpgradeValueBy(2m);
+        base.DynamicVars.Damage.UpgradeValueBy(1m);
+        DynamicVars[_fragileBonusVar].UpgradeValueBy(1m);
     }
 }

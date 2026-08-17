@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -13,22 +15,26 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Relics.Visibility;
 
 namespace HBRGOSakiMod.Core.Models.Relics;
 
-public sealed class Overclock : RelicModel
+public sealed class Overclock : RelicModel, IModRelicVisibility
 {
     public const int ChargePerLevel = 100;
     public const int MaxLevel = 3;
     public const int MaxCharge = ChargePerLevel * MaxLevel;
 
     private int _charge;
+    private int _chargeFractionHundredths;
     private int _activeLevel;
     private bool _hasQueuedExtraTurn;
 
     public override RelicRarity Rarity => RelicRarity.Starter;
 
     public override bool ShowCounter => false;
+
+    public bool IsRelicVisible => false;
 
     public override int DisplayAmount => Charge;
 
@@ -45,13 +51,59 @@ public sealed class Overclock : RelicModel
         private set
         {
             AssertMutable();
-            int nextCharge = Math.Clamp(value, 0, ChargeCapacity);
+            int nextCharge = Math.Clamp(
+                value,
+                0,
+                MaxCharge + MaxLevel * ChargePerLevel);
             if (_charge == nextCharge)
             {
                 return;
             }
 
             _charge = nextCharge;
+            InvokeDisplayAmountChanged();
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int ChargeFractionHundredths
+    {
+        get => _chargeFractionHundredths;
+        private set
+        {
+            AssertMutable();
+            int nextFraction = Math.Clamp(value, 0, 99);
+            if (_chargeFractionHundredths == nextFraction)
+            {
+                return;
+            }
+
+            _chargeFractionHundredths = nextFraction;
+            InvokeDisplayAmountChanged();
+        }
+    }
+
+    public decimal PreciseCharge
+    {
+        get => Charge + ChargeFractionHundredths / 100m;
+        private set
+        {
+            AssertMutable();
+            decimal nextCharge = Math.Clamp(
+                decimal.Round(value, 2, MidpointRounding.AwayFromZero),
+                0m,
+                ChargeCapacity);
+            int nextWhole = (int)Math.Floor(nextCharge);
+            int nextFraction =
+                (int)((nextCharge - nextWhole) * 100m);
+            if (_charge == nextWhole &&
+                _chargeFractionHundredths == nextFraction)
+            {
+                return;
+            }
+
+            _charge = nextWhole;
+            _chargeFractionHundredths = nextFraction;
             InvokeDisplayAmountChanged();
         }
     }
@@ -85,9 +137,14 @@ public sealed class Overclock : RelicModel
         }
     }
 
-    public int Level => Math.Min(MaxLevel, Charge / ChargePerLevel);
+    public int Level => Math.Min(
+        MaxLevel,
+        Charge / ChargePerLevel);
 
-    public int ChargeIntoLevel => Charge % ChargePerLevel;
+    public decimal ChargeIntoLevel => PreciseCharge % ChargePerLevel;
+
+    public int DisplayChargeIntoLevel =>
+        (int)Math.Floor(ChargeIntoLevel);
 
     public bool IsMaxLevel => Level >= MaxLevel;
 
@@ -103,7 +160,18 @@ public sealed class Overclock : RelicModel
         Owner.Creature.CombatState?.CurrentSide == CombatSide.Player &&
         Owner.Creature.IsAlive;
 
-    private int ChargeCapacity => MaxCharge + ActiveLevel * ChargePerLevel;
+    private decimal ChargeCapacity =>
+        MaxCharge + ActiveLevel * ChargePerLevel;
+
+    internal void GainCharge(decimal amount)
+    {
+        if (amount <= 0m || PreciseCharge >= ChargeCapacity)
+        {
+            return;
+        }
+
+        PreciseCharge += amount;
+    }
 
     public bool TryActivate(int requestedLevel)
     {
@@ -148,19 +216,19 @@ public sealed class Overclock : RelicModel
         if (ActiveLevel <= 0 ||
             amount <= 0m ||
             dealer == null ||
-            target == null ||
             dealer.Side != Owner.Creature.Side ||
-            target.Side == Owner.Creature.Side)
+            target?.Side == Owner.Creature.Side)
         {
             return 1m;
         }
 
-        return ActiveLevel switch
+        decimal multiplier = ActiveLevel switch
         {
             1 => 1.2m,
             2 => 1.5m,
             _ => 2m
         };
+        return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }
 
     public override async Task AfterEnergyResetLate(Player player)
@@ -178,6 +246,17 @@ public sealed class Overclock : RelicModel
         return IsSpecialExtraTurnFor(player)
             ? GetExtraTurnDraw()
             : count;
+    }
+
+    public override bool ShouldFlush(Player player)
+    {
+        bool isEnteringOverclockTurn =
+            ActiveLevel > 0 &&
+            CombatManager.Instance.PlayersTakingExtraTurn.Count == 0 &&
+            player?.Creature != null &&
+            player.Creature.IsAlive &&
+            player.Creature.Side == Owner.Creature.Side;
+        return !isEnteringOverclockTurn;
     }
 
     public override Task BeforeSideTurnEnd(
@@ -221,9 +300,9 @@ public sealed class Overclock : RelicModel
 
     public override Task AfterCombatEnd(CombatRoom _)
     {
-        if (Charge > MaxCharge)
+        if (PreciseCharge > MaxCharge)
         {
-            Charge = MaxCharge;
+            PreciseCharge = MaxCharge;
         }
 
         ActiveLevel = 0;
@@ -240,7 +319,7 @@ public sealed class Overclock : RelicModel
         Creature target,
         CardModel cardSource)
     {
-        if (Charge >= ChargeCapacity ||
+        if (PreciseCharge >= ChargeCapacity ||
             result.TotalDamage <= 0 ||
             dealer == null ||
             dealer.Side != Owner.Creature.Side ||
@@ -250,10 +329,17 @@ public sealed class Overclock : RelicModel
             return Task.CompletedTask;
         }
 
-        int gainedCharge = (int)Math.Ceiling(result.TotalDamage / 10m);
+        decimal gainMultiplier =
+            MaidCultivationPower.GetOverclockMultiplier(
+                dealer,
+                cardSource);
+        decimal gainedCharge = decimal.Round(
+            result.TotalDamage / 10m * gainMultiplier,
+            2,
+            MidpointRounding.AwayFromZero);
         if (gainedCharge > 0)
         {
-            Charge += gainedCharge;
+            PreciseCharge += gainedCharge;
         }
 
         return Task.CompletedTask;
@@ -287,7 +373,7 @@ public sealed class Overclock : RelicModel
             return;
         }
 
-        Charge -= consumedLevel * ChargePerLevel;
+        PreciseCharge -= consumedLevel * ChargePerLevel;
         ActiveLevel = 0;
         HasQueuedExtraTurn = false;
         Status = RelicStatus.Normal;

@@ -1,0 +1,99 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.ValueProps;
+
+namespace HBRGOSakiMod.Core.Models.Cards;
+
+public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
+{
+    public override string PortraitPath =>
+        ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/mimic_ice_flower_thousand_arrows_hbrgo_saki.png");
+
+    public override string BetaPortraitPath => PortraitPath;
+
+    protected override bool IsPlayable =>
+        ModeTransitionHelper.CanPlayBowRestrictedCard(Owner?.Creature);
+
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
+    {
+        new DamageVar(21m, ValueProp.Move),
+        new PowerVar<VulnerablePower>(3m),
+        new PowerVar<FragilePower>(3m)
+    };
+
+    protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
+    {
+        HoverTipFactory.FromPower<VulnerablePower>(),
+        HoverTipFactory.FromPower<FragilePower>()
+    };
+
+    public MimicIceFlowerThousandArrowsHbrgoSaki()
+        : base(3, CardType.Attack, CardRarity.Rare, TargetType.AllEnemies)
+    {
+    }
+
+    public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
+    {
+        return card != this ||
+               ModeTransitionHelper.CanPlayBowRestrictedCard(Owner?.Creature);
+    }
+
+    protected override async Task OnPlay(
+        PlayerChoiceContext choiceContext,
+        CardPlay cardPlay)
+    {
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            DynamicVars.Damage.BaseValue);
+        await DamageCmd.Attack(damage)
+            .FromCard(this)
+            .TargetingAllOpponents(CombatState)
+            .WithHitFx("vfx/vfx_attack_slash")
+            .Execute(choiceContext);
+
+        Creature[] targets = CombatState
+            .GetOpponentsOf(Owner.Creature)
+            .Where(creature => creature.IsAlive)
+            .ToArray();
+        if (targets.Length == 0 || CombatManager.Instance.IsOverOrEnding)
+        {
+            return;
+        }
+
+        await PowerCmd.Apply<VulnerablePower>(
+            choiceContext,
+            targets,
+            ModeTransitionHelper.GetAdjustedEffectAmount(
+                this,
+                DynamicVars["VulnerablePower"].BaseValue),
+            Owner.Creature,
+            this);
+        await PowerCmd.Apply<FragilePower>(
+            choiceContext,
+            targets,
+            ModeTransitionHelper.GetAdjustedEffectAmount(
+                this,
+                DynamicVars["FragilePower"].BaseValue),
+            Owner.Creature,
+            this);
+    }
+
+    protected override void OnUpgrade()
+    {
+        DynamicVars["VulnerablePower"].UpgradeValueBy(2m);
+        DynamicVars["FragilePower"].UpgradeValueBy(2m);
+    }
+}

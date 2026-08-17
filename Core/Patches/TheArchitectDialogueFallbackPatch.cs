@@ -3,15 +3,16 @@ using HarmonyLib;
 using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Entities.Ancients;
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models.Events;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Patches;
 
 internal static class TheArchitectDialogueFallback
 {
-    private static readonly FieldInfo DialogueField = AccessTools.Field(
-        typeof(TheArchitect),
-        "_dialogue");
+    private static readonly FieldInfo DialogueField =
+        PrivateAccess.Field<TheArchitect>("_dialogue");
 
     internal static void EnsureDialogue(TheArchitect architect)
     {
@@ -21,13 +22,41 @@ internal static class TheArchitectDialogueFallback
             return;
         }
 
-        DialogueField.SetValue(
-            architect,
-            new AncientDialogue(string.Empty)
+        AncientDialogue dialogue =
+            new(string.Empty, string.Empty)
             {
                 EndAttackers = ArchitectAttackers.Both
-            });
-        Log.Info("[HBRGOSakiMod] Added an empty Architect finale with both attack animations for HBRGO Saki.");
+            };
+        dialogue.Lines[0].LineText =
+            new LocString(
+                "ancients",
+                "HBRGO_SAKI_ARCHITECT_GREETING.char");
+        dialogue.Lines[0].Speaker =
+            AncientDialogueSpeaker.Character;
+        dialogue.Lines[1].LineText =
+            new LocString(
+                "ancients",
+                "HBRGO_SAKI_ARCHITECT_GREETING.ancient");
+        dialogue.Lines[1].Speaker =
+            AncientDialogueSpeaker.Ancient;
+        DialogueField.SetValue(architect, dialogue);
+        Log.Info("[HBRGOSakiMod] Added HBRGO Saki's Architect finale dialogue.");
+    }
+}
+
+[HarmonyPatch(typeof(TheArchitect), "LoadDialogue")]
+internal static class TheArchitectLoadDialoguePatch
+{
+    private static bool Prefix(TheArchitect __instance)
+    {
+        if (__instance.Owner?.Character is not HbrgoSaki)
+        {
+            return true;
+        }
+
+        TheArchitectDialogueFallback.EnsureDialogue(
+            __instance);
+        return false;
     }
 }
 

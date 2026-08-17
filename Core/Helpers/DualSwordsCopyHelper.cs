@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Helpers;
@@ -6,6 +7,23 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class DualSwordsCopyHelper
 {
     private static readonly Dictionary<CardModel, int> XEnergySpentByCopy = new();
+    private static readonly ConditionalWeakTable<CardModel, CopyMarker>
+        DualSwordsCopies = new();
+
+    public static void RecordCopy(CardModel card)
+    {
+        if (card != null)
+        {
+            DualSwordsCopies.GetValue(
+                card,
+                static _ => new CopyMarker());
+        }
+    }
+
+    public static bool IsDualSwordsCopy(CardModel card)
+    {
+        return card != null && DualSwordsCopies.TryGetValue(card, out _);
+    }
 
     public static void RecordXEnergySpent(CardModel card, int energySpent)
     {
@@ -35,5 +53,10 @@ internal static class DualSwordsCopyHelper
         }
 
         XEnergySpentByCopy.Remove(card);
+        DualSwordsCopies.Remove(card);
+    }
+
+    private sealed class CopyMarker
+    {
     }
 }

@@ -3,22 +3,48 @@ using System.Collections.Generic;
 using Godot;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Entities.Players;
+using STS2RitsuLib.Audio;
 
 namespace HBRGOSakiMod.Core.Nodes.Combat;
 
 public partial class NOverclockExtraTurnOverlay : CanvasLayer
 {
-    private const float CutInDurationSeconds = 0.6f;
-    private const float CutInEnterEndSeconds = 0.2f;
-    private const float CutInHoldEndSeconds = 0.43f;
-    private const float RushStartSeconds = 0.52f;
-    private const float RushDurationSeconds = 0.58f;
-    private const float EntryDurationSeconds = RushStartSeconds + RushDurationSeconds;
+    private const float DefaultCutInDurationSeconds = 1.8f;
+    private const float CutInEnterEndRatio = 0.6f / DefaultCutInDurationSeconds;
+    private const float CutInHoldEndRatio = 1.29f / DefaultCutInDurationSeconds;
+    private const float RushStartRatio = 0.52f / DefaultCutInDurationSeconds;
+    private const float RushDurationRatio = 0.58f / DefaultCutInDurationSeconds;
     private const float ExitDurationSeconds = 0.28f;
     private const float PersistentTintStrength = 0.2f;
     private const int StreakCount = 42;
     private const string CutInImagePath =
         "res://images/packed/character_select/sakikowin.png";
+    private const string VoiceChannel = "HBRGOSakiMod.OverclockCutInVoice";
+    private static readonly CutInLine[] CutInLines =
+    [
+        new("wish_you_happiness", "祝你幸福"),
+        new("thoughts_and_solace", "思虑万千，仅得慰藉"),
+        new("interested_in_bands", "你对乐队有兴趣吗？"),
+        new("thank_you_for_the_call", "感谢您百忙之中抽空接听电话"),
+        new("my_weak_past_is_dead", "过去软弱的我，已经死了"),
+        new("tell_her_i_moved", "可以告诉她我搬家了吗"),
+        new("rock_solid_lineup", "这个阵容可以说是坚如磐石"),
+        new("let_me_forget", "让我忘掉一切"),
+        new("tomori_have_some_water", "灯，要不要喝点水？"),
+        new("trust_only_yourself", "一旦登上舞台，能相信的只有自己"),
+        new("you_should_leave", "你也离开这里为宜"),
+        new("leave_anxiety_and_regret", "将焦虑和后悔全部留在这里吧"),
+        new("i_want_to_be_human", "我想要成为人类"),
+        new("useless_father", "废物老爹"),
+        new("announcement_today", "今天我是来宣布一件事的"),
+        new("wind_band_practice", "管乐部的练习时间快到了"),
+        new("the_car_is_ready", "工作人员已经准备好车子了"),
+        new("anon_call_together", "(爱音同学)在这里怎么叫都没问题，我们一起叫吧！"),
+        new("karaoke_is_fun", "卡拉OK也太好玩了"),
+        new("morfonica_song", "那么我就来点Morfonica的歌吧"),
+        new("so_high_and_mighty", "还真是高高在上呢"),
+        new("what_could_i_do", "我哪可能有办法……")
+    ];
 
     private const string ScreenEffectShader = """
         shader_type canvas_item;
@@ -83,8 +109,16 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
         public required float Speed { get; init; }
     }
 
+    private sealed class CutInLine(string id, string text)
+    {
+        public string Id { get; } = id;
+
+        public string Text { get; } = text;
+    }
+
     private readonly List<StreakVisual> _streaks = [];
     private readonly Line2D[] _cutInTrails = new Line2D[4];
+    private readonly RandomNumberGenerator _cutInRandom = new();
 
     private Overclock _relic;
     private Player _viewedPlayer;
@@ -94,10 +128,12 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     private TextureRect _cutInPortrait;
     private Polygon2D _speechBubbleShape;
     private Label _speechBubbleLabel;
+    private IAudioHandle _voiceHandle;
     private ColorRect _inputBlocker;
     private ShaderMaterial _screenMaterial;
     private ShaderMaterial _cutInMaterial;
     private float _entryElapsed;
+    private float _cutInDuration = DefaultCutInDurationSeconds;
     private float _exitRemaining;
     private bool _effectVisible;
     private bool _wasInSpecialExtraTurn;
@@ -106,6 +142,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     {
         Layer = 100;
         ProcessMode = ProcessModeEnum.Always;
+        _cutInRandom.Randomize();
         BuildUi();
         GetViewport().SizeChanged += LayoutEffect;
         LayoutEffect();
@@ -114,6 +151,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= LayoutEffect;
+        StopCutInVoice();
         BindRelic(null);
     }
 
@@ -309,7 +347,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
         _speechBubbleLabel = new Label
         {
             Name = "CutInSpeech",
-            Text = "今天我是来\n宣布一件事的",
+            Text = CutInLines[0].Text,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
@@ -322,6 +360,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void BeginEffect()
     {
+        PrepareCutIn();
         _entryElapsed = 0f;
         _exitRemaining = 0f;
         _effectVisible = true;
@@ -351,10 +390,14 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void UpdateEntry(float delta)
     {
-        _entryElapsed = Math.Min(EntryDurationSeconds, _entryElapsed + delta);
-        float progress = Mathf.Clamp(_entryElapsed / EntryDurationSeconds, 0f, 1f);
+        _entryElapsed = Math.Min(_cutInDuration, _entryElapsed + delta);
+        float progress = Mathf.Clamp(_entryElapsed / _cutInDuration, 0f, 1f);
+        float rushStart = _cutInDuration * RushStartRatio;
+        float rushDuration = Math.Max(
+            0.01f,
+            _cutInDuration * RushDurationRatio);
         float rushProgress = Mathf.Clamp(
-            (_entryElapsed - RushStartSeconds) / RushDurationSeconds,
+            (_entryElapsed - rushStart) / rushDuration,
             0f,
             1f);
         float rushPulse = Mathf.Sin(rushProgress * Mathf.Pi);
@@ -369,7 +412,8 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
             flashStrength: rushPulse * 0.11f);
 
         float streakAlpha = Mathf.Clamp(
-            (_entryElapsed - RushStartSeconds) / 0.18f,
+            (_entryElapsed - rushStart) /
+                Math.Max(0.01f, _cutInDuration * 0.1f),
             0f,
             1f);
         _streakLayer.Modulate = new Color(1f, 1f, 1f, streakAlpha);
@@ -381,12 +425,18 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void UpdateCutIn(float elapsed)
     {
-        if (elapsed >= CutInDurationSeconds)
+        if (elapsed >= _cutInDuration)
         {
             HideCutIn();
             return;
         }
 
+        float enterEnd = Math.Max(
+            0.01f,
+            _cutInDuration * CutInEnterEndRatio);
+        float holdEnd = Math.Max(
+            enterEnd + 0.01f,
+            _cutInDuration * CutInHoldEndRatio);
         Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
         float portraitSize = Math.Min(viewportSize.Y * 1.16f, viewportSize.X * 0.68f);
         Vector2 startCenter = new(viewportSize.X * 0.84f, viewportSize.Y * 0.34f);
@@ -401,9 +451,9 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
         float whiten;
         float trailAlpha;
 
-        if (elapsed < CutInEnterEndSeconds)
+        if (elapsed < enterEnd)
         {
-            float rawProgress = Mathf.Clamp(elapsed / CutInEnterEndSeconds, 0f, 1f);
+            float rawProgress = Mathf.Clamp(elapsed / enterEnd, 0f, 1f);
             float eased = EaseOutCubic(rawProgress);
             center = startCenter.Lerp(holdCenter, eased);
             scale = Mathf.Lerp(0.34f, 1.08f, eased);
@@ -414,11 +464,11 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
             trailVector = (startCenter - holdCenter).Normalized()
                 * viewportSize.X * 0.12f * (1f - rawProgress);
         }
-        else if (elapsed < CutInHoldEndSeconds)
+        else if (elapsed < holdEnd)
         {
             float rawProgress = Mathf.Clamp(
-                (elapsed - CutInEnterEndSeconds) /
-                (CutInHoldEndSeconds - CutInEnterEndSeconds),
+                (elapsed - enterEnd) /
+                Math.Max(0.01f, holdEnd - enterEnd),
                 0f,
                 1f);
             float eased = EaseOutCubic(rawProgress);
@@ -433,8 +483,8 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
         else
         {
             float rawProgress = Mathf.Clamp(
-                (elapsed - CutInHoldEndSeconds) /
-                (CutInDurationSeconds - CutInHoldEndSeconds),
+                (elapsed - holdEnd) /
+                Math.Max(0.01f, _cutInDuration - holdEnd),
                 0f,
                 1f);
             float eased = rawProgress * rawProgress;
@@ -505,7 +555,11 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void LayoutSpeechBubble(float portraitSize, float elapsed, float portraitAlpha)
     {
-        float bubbleAlpha = Mathf.Clamp((elapsed - 0.12f) / 0.08f, 0f, 1f)
+        float bubbleAlpha = Mathf.Clamp(
+            (elapsed - _cutInDuration / 15f) /
+                Math.Max(0.01f, _cutInDuration / 22.5f),
+            0f,
+            1f)
             * portraitAlpha;
         bool isVisible = bubbleAlpha > 0.01f;
         _speechBubbleShape.Visible = isVisible;
@@ -563,9 +617,17 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
         _speechBubbleShape.Color = new Color(1f, 0.992f, 0.97f, bubbleAlpha);
         _speechBubbleLabel.Position = origin + new Vector2(width * 0.09f, height * 0.13f);
         _speechBubbleLabel.Size = new Vector2(width * 0.82f, height * 0.64f);
+        int textLength = _speechBubbleLabel.Text?.Length ?? 0;
+        float fontRatio = textLength switch
+        {
+            <= 10 => 0.048f,
+            <= 18 => 0.04f,
+            <= 28 => 0.033f,
+            _ => 0.027f
+        };
         _speechBubbleLabel.AddThemeFontSizeOverride(
             "font_size",
-            Math.Max(22, (int)(portraitSize * 0.048f)));
+            Math.Max(18, (int)(portraitSize * fontRatio)));
         _speechBubbleLabel.Modulate = new Color(1f, 1f, 1f, bubbleAlpha);
     }
 
@@ -603,7 +665,10 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     private void UpdateStreaks(float delta)
     {
         Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
-        float entryProgress = Mathf.Clamp(_entryElapsed / EntryDurationSeconds, 0f, 1f);
+        float entryProgress = Mathf.Clamp(
+            _entryElapsed / _cutInDuration,
+            0f,
+            1f);
         float speedMultiplier = Mathf.Lerp(3.8f, 1f, entryProgress);
         foreach (StreakVisual streak in _streaks)
         {
@@ -667,6 +732,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void HideEffect()
     {
+        StopCutInVoice();
         _entryElapsed = 0f;
         _exitRemaining = 0f;
         _effectVisible = false;
@@ -679,6 +745,79 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
         _overlay.Modulate = Colors.White;
         _inputBlocker.Visible = false;
         HideCutIn();
+    }
+
+    private void PrepareCutIn()
+    {
+        StopCutInVoice();
+        int index = _cutInRandom.RandiRange(0, CutInLines.Length - 1);
+        CutInLine line = CutInLines[index];
+        _speechBubbleLabel.Text = line.Text;
+        _cutInDuration = DefaultCutInDurationSeconds;
+
+        if (!TryLoadCutInVoice(line.Id, out string path, out AudioStream voice))
+        {
+            return;
+        }
+
+        AudioPlayResult result = GameFmod.Playback.PlayOneShot(
+            AudioSource.ResourceFile(path),
+            new AudioPlaybackOptions
+            {
+                Scope = AudioLifecycleScope.Combat,
+                AllowFadeOutOnStop = false,
+                Routing = new AudioRoutingOptions
+                {
+                    Channel = VoiceChannel,
+                    ChannelMode = AudioChannelMode.ReplaceExisting,
+                    AllowFadeOutOnReplace = false
+                }
+            });
+        if (result.Succeeded)
+        {
+            _voiceHandle = result.Handle;
+        }
+
+        double voiceLength = voice.GetLength();
+        if (voiceLength > 0d)
+        {
+            _cutInDuration = Math.Max(0.25f, (float)voiceLength);
+        }
+    }
+
+    private static bool TryLoadCutInVoice(
+        string id,
+        out string resourcePath,
+        out AudioStream voice)
+    {
+        string basePath = $"res://audio/hbrgo_saki/overclock/{id}";
+        foreach (string extension in new[] { ".ogg", ".mp3", ".wav" })
+        {
+            string path = basePath + extension;
+            if (ResourceLoader.Exists(path))
+            {
+                resourcePath = path;
+                voice = ResourceLoader.Load<AudioStream>(path);
+                return voice != null;
+            }
+        }
+
+        resourcePath = null;
+        voice = null;
+        return false;
+    }
+
+    private void StopCutInVoice()
+    {
+        IAudioHandle handle = _voiceHandle;
+        _voiceHandle = null;
+        if (handle == null)
+        {
+            return;
+        }
+
+        handle.TryStop(allowFadeOut: false);
+        handle.Dispose();
     }
 
     private static float EaseOutCubic(float value)

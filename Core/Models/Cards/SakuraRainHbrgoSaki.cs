@@ -34,6 +34,19 @@ public sealed class SakuraRainHbrgoSaki : CardModel
     {
     }
 
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        description.Add(
+            "UpgradeEffect",
+            HasRetaliationUpgrade
+                ? new LocString(
+                        "cards",
+                        "SAKURA_RAIN_HBRGO_SAKI.upgradeEffect")
+                    .GetFormattedText()
+                : string.Empty);
+    }
+
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await PowerCmd.Apply<SakuraRainPower>(

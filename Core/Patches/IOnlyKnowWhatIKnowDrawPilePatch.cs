@@ -6,13 +6,15 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Patches;
 
 [HarmonyPatch(typeof(NCardPileScreen), "OnPileContentsChanged")]
 internal static class IOnlyKnowWhatIKnowDrawPilePatch
 {
-    private static readonly FieldInfo GridField = AccessTools.Field(typeof(NCardPileScreen), "_grid");
+    private static readonly FieldInfo GridField =
+        PrivateAccess.Field<NCardPileScreen>("_grid");
 
     private static bool Prefix(NCardPileScreen __instance)
     {

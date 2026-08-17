@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,7 +20,7 @@ public sealed class ShadowDanceSongHbrgoSaki : HighSongChoiceCard
     public override string BetaPortraitPath => PortraitPath;
 
     public ShadowDanceSongHbrgoSaki()
-        : base(TargetType.AnyAlly)
+        : base(HBRGOSakiTargetTypes.FriendlyPlayerIncludingSelf)
     {
     }
 

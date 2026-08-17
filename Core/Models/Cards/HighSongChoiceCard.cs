@@ -40,6 +40,16 @@ public abstract class HighSongChoiceCard : CardModel
         CardKeyword.Retain
     };
 
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        string descriptionKey = GetTitleLocKey(SongLevel)
+            .Replace("Title", "Description", StringComparison.Ordinal);
+        description.Add(
+            "SongDescription",
+            new LocString("cards", descriptionKey));
+    }
+
     protected HighSongChoiceCard(TargetType targetType)
         : base(0, CardType.Power, CardRarity.Token, targetType)
     {

@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Godot;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Combat;
@@ -8,8 +7,6 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Cards;
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 
 namespace HBRGOSakiMod.Core.Patches;
 
@@ -67,43 +64,5 @@ internal static class CardModelSpendResourcesPatch
         }
 
         return new ValueTuple<int, int>(energyToSpend, starsToSpend);
-    }
-}
-
-[HarmonyPatch(typeof(NHandCardHolder), nameof(NHandCardHolder.UpdateCard))]
-internal static class NHandCardHolderUpdateCardPatch
-{
-    private static readonly Color SupplementGlowColor = new(1f, 0.86f, 0.32f, 0.98f);
-
-    private static void Postfix(NHandCardHolder __instance)
-    {
-        CardModel card = __instance.CardNode?.Model;
-        if (card == null)
-        {
-            return;
-        }
-
-        if (!MagicSwordEnergyPaymentHelper.CanPayWithSwordheart(card, out _, out _, out _))
-        {
-            return;
-        }
-
-        if (!CanPlayIgnoringSwordheartEnergyDeficit(card))
-        {
-            return;
-        }
-
-        __instance.CardNode.CardHighlight.AnimShow();
-        __instance.CardNode.CardHighlight.Modulate = SupplementGlowColor;
-    }
-
-    private static bool CanPlayIgnoringSwordheartEnergyDeficit(CardModel card)
-    {
-        if (card.CanPlay(out UnplayableReason reason, out _))
-        {
-            return true;
-        }
-
-        return (reason & ~UnplayableReason.EnergyCostTooHigh) == UnplayableReason.None;
     }
 }

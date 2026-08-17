@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
@@ -9,32 +8,36 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
 
 [HarmonyPatch]
 internal static class StrongestShieldDamagePatch
 {
+    [ThreadStatic]
+    private static int _actualDamageDepth;
+
+    internal static bool IsResolvingActualDamage =>
+        _actualDamageDepth > 0;
+
     private static MethodBase TargetMethod()
     {
-        MethodInfo damageMethod = AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-            .Single(method =>
-            {
-                if (method.Name != nameof(CreatureCmd.Damage))
-                {
-                    return false;
-                }
-
-                ParameterInfo[] parameters = method.GetParameters();
-                return parameters.Length == 6 &&
-                       parameters[1].ParameterType == typeof(IEnumerable<Creature>) &&
-                       parameters[2].ParameterType == typeof(decimal) &&
-                       parameters[3].ParameterType == typeof(ValueProp);
-            });
+        MethodInfo damageMethod =
+            PrivateAccess.DeclaredMethod(
+                typeof(CreatureCmd),
+                nameof(CreatureCmd.Damage),
+                typeof(PlayerChoiceContext),
+                typeof(IEnumerable<Creature>),
+                typeof(decimal),
+                typeof(ValueProp),
+                typeof(Creature),
+                typeof(CardModel));
 
         AsyncStateMachineAttribute attribute = damageMethod.GetCustomAttribute<AsyncStateMachineAttribute>();
         if (attribute == null)
@@ -42,15 +45,17 @@ internal static class StrongestShieldDamagePatch
             throw new InvalidOperationException("CreatureCmd.Damage no longer uses an async state machine.");
         }
 
-        return AccessTools.Method(attribute.StateMachineType, "MoveNext");
+        return PrivateAccess.Method(attribute.StateMachineType, "MoveNext");
     }
 
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        MethodInfo originalModifyDamage = AccessTools.Method(typeof(Hook), nameof(Hook.ModifyDamage));
-        MethodInfo replacementModifyDamage = AccessTools.Method(
-            typeof(StrongestShieldDamagePatch),
-            nameof(ModifyDamageWithStrongestShield));
+        MethodInfo originalModifyDamage =
+            PrivateAccess.Method(typeof(Hook), nameof(Hook.ModifyDamage));
+        MethodInfo replacementModifyDamage =
+            PrivateAccess.Method(
+                typeof(StrongestShieldDamagePatch),
+                nameof(ModifyDamageWithStrongestShield));
 
         int replacementCount = 0;
         foreach (CodeInstruction instruction in instructions)
@@ -86,18 +91,24 @@ internal static class StrongestShieldDamagePatch
         CardPreviewMode previewMode,
         out IEnumerable<AbstractModel> modifiers)
     {
-        decimal modifiedDamage = Hook.ModifyDamage(
-            runState,
-            combatState,
-            target,
-            dealer,
-            damage,
-            props,
-            cardSource,
-            modifyDamageHookType,
-            previewMode,
-            out modifiers);
-
-        return StrongestShieldPower.ModifyIncomingAttackDamage(target, dealer, modifiedDamage, props, cardSource);
+        _actualDamageDepth++;
+        try
+        {
+            return Hook.ModifyDamage(
+                runState,
+                combatState,
+                target,
+                dealer,
+                damage,
+                props,
+                cardSource,
+                modifyDamageHookType,
+                previewMode,
+                out modifiers);
+        }
+        finally
+        {
+            _actualDamageDepth--;
+        }
     }
 }

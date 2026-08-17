@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using BaseLib.Abstracts;
 using Godot;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
@@ -8,7 +9,7 @@ using MegaCrit.Sts2.Core.Unlocks;
 
 namespace HBRGOSakiMod.Core.Models.PotionPools;
 
-public sealed class HBRGOSakiPotionPool : PotionPoolModel
+public sealed class HBRGOSakiPotionPool : CustomPotionPoolModel
 {
     public override string EnergyColorName => "regent";
 
@@ -21,6 +22,9 @@ public sealed class HBRGOSakiPotionPool : PotionPoolModel
 
     public override IEnumerable<PotionModel> GetUnlockedPotions(UnlockState unlockState)
     {
-        return ModelDb.PotionPool<SharedPotionPool>().GetUnlockedPotions(unlockState);
+        PotionPoolModel sharedPool = ModelDb.PotionPool<SharedPotionPool>();
+        var sharedPotionIds = sharedPool.AllPotionIds.ToHashSet();
+        return sharedPool.GetUnlockedPotions(unlockState)
+            .Concat(AllPotions.Where(potion => !sharedPotionIds.Contains(potion.Id)));
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
-using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -10,13 +9,12 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class BladeDanceHbrgoSaki : CardModel
 {
-    private const int _hitsPerEnergy = 2;
+    private const int _baseHitCount = 4;
 
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/blade_dance_hbrgo_saki.png");
 
@@ -26,8 +24,7 @@ public sealed class BladeDanceHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(1m, ValueProp.Move),
-        new RepeatVar(_hitsPerEnergy)
+        new RepeatVar(_baseHitCount)
     };
 
     protected override bool IsPlayable => CanUseDualSwordsCard();
@@ -46,15 +43,18 @@ public sealed class BladeDanceHbrgoSaki : CardModel
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
         int energySpent = DualSwordsCopyHelper.TakeXEnergySpent(this, cardPlay.Resources.EnergySpent);
-        int hitCount = energySpent * _hitsPerEnergy;
-        if (hitCount <= 0)
+        int hitCount = (int)base.DynamicVars["Repeat"].BaseValue;
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            energySpent);
+        if (damage <= 0m || hitCount <= 0)
         {
             return;
         }
 
         for (int i = 0; i < hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
-            await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
+            await DamageCmd.Attack(damage)
                 .FromCard(this)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
@@ -64,13 +64,12 @@ public sealed class BladeDanceHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        base.DynamicVars.Damage.UpgradeValueBy(1m);
+        base.DynamicVars["Repeat"].UpgradeValueBy(2m);
     }
 
     private bool CanUseDualSwordsCard()
     {
-        return Owner?.Creature?.HasPower<ReptureDualSwordsPower>() == true ||
-               Owner?.Creature?.HasPower<MagicSwordModePower>() == true ||
-               Owner?.Creature?.HasPower<CrimsonBladeFlowPower>() == true;
+        return ModeTransitionHelper.CanPlayDualSwordsRestrictedCard(
+            Owner?.Creature);
     }
 }

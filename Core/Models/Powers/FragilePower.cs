@@ -1,7 +1,14 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -17,6 +24,23 @@ public sealed class FragilePower : PowerModel
 
     public override Color AmountLabelColor => new("DDA0DD");
 
+    public override async Task AfterSideTurnEnd(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IEnumerable<Creature> participants)
+    {
+        if (side != Owner.Side ||
+            !participants.Contains(Owner) ||
+            Amount <= 0 ||
+            ExtraTurnDurationHelper.ShouldSuppressDurationTick(Owner))
+        {
+            return;
+        }
+
+        Flash();
+        await PowerCmd.TickDownDuration(this);
+    }
+
     public override decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
@@ -24,8 +48,11 @@ public sealed class FragilePower : PowerModel
         Creature dealer,
         CardModel cardSource)
     {
-        return target == Owner && amount > 0m && props.IsPoweredAttack()
+        decimal multiplier = target == Owner &&
+            amount > 0m &&
+            Owner.HasPower<BreakPower>()
             ? _damageMultiplier
             : 1m;
+        return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }
 }

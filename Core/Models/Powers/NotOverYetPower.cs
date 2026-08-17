@@ -4,10 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
-using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Cards;
-using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -18,6 +17,8 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Models.Capabilities;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
@@ -31,9 +32,12 @@ public sealed class NotOverYetPower : PowerModel
     private const int _allTargetAttackStartIndex = 4;
     private const decimal _finisherMaxHpPercent = 0.3m;
 
-    private static readonly FieldInfo SingleTargetField = AccessTools.Field(typeof(AttackCommand), "_singleTarget");
-    private static readonly FieldInfo CombatStateField = AccessTools.Field(typeof(AttackCommand), "_combatState");
-    private static readonly FieldInfo IsRandomlyTargetedField = AccessTools.Field(typeof(AttackCommand), "<IsRandomlyTargeted>k__BackingField");
+    private static readonly FieldInfo SingleTargetField =
+        PrivateAccess.Field<AttackCommand>("_singleTarget");
+    private static readonly FieldInfo CombatStateField =
+        PrivateAccess.Field<AttackCommand>("_combatState");
+    private static readonly FieldInfo IsRandomlyTargetedField =
+        PrivateAccess.Field<AttackCommand>("<IsRandomlyTargeted>k__BackingField");
     private static readonly object AllTargetGeneratedCardsLock = new();
     private static readonly HashSet<CardModel> AllTargetGeneratedCards = new();
 
@@ -80,13 +84,108 @@ public sealed class NotOverYetPower : PowerModel
             return;
         }
 
-        SoulOfAnchor soulOfAnchor = Owner.Player?.GetRelic<SoulOfAnchor>();
-        if (soulOfAnchor == null)
+        RollGlossaryCapability rollCapability =
+            cardPlay.Card.Capability<RollGlossaryCapability>();
+        if (rollCapability == null)
         {
             return;
         }
 
-        await ResolveExtraRollChain(choiceContext, soulOfAnchor, cardPlay.Card, primaryTarget);
+        await ResolveExtraRollChain(
+            choiceContext,
+            rollCapability,
+            cardPlay.Card,
+            primaryTarget);
+    }
+
+    internal async Task TriggerAdditionalChains(
+        PlayerChoiceContext choiceContext,
+        CardModel triggeringCard,
+        Creature primaryTarget,
+        int count)
+    {
+        if (count <= 0 ||
+            triggeringCard?.Owner?.Creature != Owner ||
+            Owner.CombatState == null ||
+            CombatManager.Instance.IsOverOrEnding)
+        {
+            return;
+        }
+
+        RollGlossaryCapability rollCapability =
+            triggeringCard.Capability<RollGlossaryCapability>();
+        if (rollCapability == null)
+        {
+            return;
+        }
+
+        for (int index = 0; index < count; index++)
+        {
+            Creature target = primaryTarget?.IsHittable == true
+                ? primaryTarget
+                : GetHittableOpponent();
+            if (target == null ||
+                CombatManager.Instance.IsOverOrEnding)
+            {
+                return;
+            }
+
+            await ResolveExtraRollChain(
+                choiceContext,
+                rollCapability,
+                triggeringCard,
+                target);
+        }
+    }
+
+    internal static async Task TriggerAdditionalChainsForCard(
+        PlayerChoiceContext choiceContext,
+        Creature owner,
+        CardModel triggeringCard,
+        Creature primaryTarget,
+        int count)
+    {
+        NotOverYetPower activePower =
+            owner?.GetPower<NotOverYetPower>();
+        if (activePower != null)
+        {
+            await activePower.TriggerAdditionalChains(
+                choiceContext,
+                triggeringCard,
+                primaryTarget,
+                count);
+            return;
+        }
+
+        if (owner?.CombatState == null ||
+            count <= 0 ||
+            CombatManager.Instance.IsOverOrEnding)
+        {
+            return;
+        }
+
+        NotOverYetPower transientPower =
+            (NotOverYetPower)ModelDb
+                .Power<NotOverYetPower>()
+                .ToMutable();
+        transientPower.ApplyInternal(owner, 1m, silent: true);
+        try
+        {
+            await transientPower.TriggerAdditionalChains(
+                choiceContext,
+                triggeringCard,
+                primaryTarget,
+                count);
+        }
+        finally
+        {
+            if (ReferenceEquals(
+                    owner.GetPower<NotOverYetPower>(),
+                    transientPower))
+            {
+                transientPower.RemoveInternal();
+            }
+        }
     }
 
     public override Task BeforeAttack(AttackCommand command)
@@ -105,7 +204,7 @@ public sealed class NotOverYetPower : PowerModel
 
     private async Task ResolveExtraRollChain(
         PlayerChoiceContext choiceContext,
-        SoulOfAnchor soulOfAnchor,
+        RollGlossaryCapability rollCapability,
         CardModel triggeringCard,
         Creature primaryTarget)
     {
@@ -116,7 +215,9 @@ public sealed class NotOverYetPower : PowerModel
                 return;
             }
 
-            int roll = await soulOfAnchor.RollExtraD100(choiceContext, triggeringCard);
+            int roll = await rollCapability.RollExtraD100(
+                choiceContext,
+                triggeringCard);
             int threshold = _firstRollThreshold + (attackIndex - 1) * _rollThresholdStep;
             if (roll < threshold)
             {
@@ -153,6 +254,10 @@ public sealed class NotOverYetPower : PowerModel
         List<CardModel> candidates = Owner.Player.Deck.Cards
             .Where(card => card.Type == CardType.Attack)
             .Where(card => card.Rarity == rarity)
+            .Where(card =>
+                ModeTransitionHelper.IsCardCompatibleWithCurrentMode(
+                    Owner,
+                    card))
             .Where(card => card.ShouldPlay(card, AutoPlayType.Default))
             .ToList();
 
@@ -162,6 +267,7 @@ public sealed class NotOverYetPower : PowerModel
             CardModel deckCard = candidates[selectedIndex];
             CardModel copy = Owner.CombatState.CloneCard(deckCard);
             copy.DeckVersion = deckCard;
+            DualSwordsCopyHelper.RecordCopy(copy);
             SyncUpgradeLevelFromDeck(copy, deckCard);
             return copy;
         }
@@ -249,7 +355,7 @@ public sealed class NotOverYetPower : PowerModel
         Creature primaryTarget,
         CardModel cardSource)
     {
-        decimal damage = Math.Max(1m, Math.Floor(primaryTarget.MaxHp * _finisherMaxHpPercent));
+        decimal damage = Math.Max(1m, primaryTarget.MaxHp * _finisherMaxHpPercent);
         Flash();
         await CreatureCmd.Damage(
             choiceContext,

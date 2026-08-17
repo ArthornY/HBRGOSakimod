@@ -3,8 +3,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
-using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -14,16 +14,22 @@ using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class ReptureBowPower : PowerModel
 {
     private const decimal _damageMultiplier = 1.25m;
+    private const decimal _destructionRateMultiplier = 1.5m;
+    private const decimal _deckBonusPerBowCard = 0.05m;
 
-    private static readonly FieldInfo SingleTargetField = AccessTools.Field(typeof(AttackCommand), "_singleTarget");
-    private static readonly FieldInfo CombatStateField = AccessTools.Field(typeof(AttackCommand), "_combatState");
-    private static readonly FieldInfo IsRandomlyTargetedField = AccessTools.Field(typeof(AttackCommand), "<IsRandomlyTargeted>k__BackingField");
+    private static readonly FieldInfo SingleTargetField =
+        PrivateAccess.Field<AttackCommand>("_singleTarget");
+    private static readonly FieldInfo CombatStateField =
+        PrivateAccess.Field<AttackCommand>("_combatState");
+    private static readonly FieldInfo IsRandomlyTargetedField =
+        PrivateAccess.Field<AttackCommand>("<IsRandomlyTargeted>k__BackingField");
 
     private HashSet<AttackCommand> _amplifiedAllTargetAttacks = new();
     private HashSet<AttackCommand> _singleOpponentAttacks = new();
@@ -41,11 +47,18 @@ public sealed class ReptureBowPower : PowerModel
         {
             await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
             await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
-            await PowerCmd.Remove(Owner.GetPower<MagicSwordModePower>());
+            await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
+            MagicSwordModePower magicSwordMode =
+                Owner.GetPower<MagicSwordModePower>();
+            if (magicSwordMode != null)
+            {
+                await magicSwordMode.RemoveForModeTransition();
+            }
+
             await PowerCmd.Remove(Owner.GetPower<CrimsonBladeFlowPower>());
         }
 
-        await ModeTransitionHelper.ReplaceChihayaInLibraryWithSwitch(Owner, cardSource);
+        await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
     }
 
     public override Task BeforeAttack(AttackCommand command)
@@ -62,6 +75,7 @@ public sealed class ReptureBowPower : PowerModel
 
         bool wasAllTarget =
             command.IsMultiTargeted && !command.IsRandomlyTargeted ||
+            command.ModelSource is PiercingShotHbrgoSaki ||
             command.ModelSource is CardModel card && NotOverYetPower.IsAllTargetGeneratedAttack(card);
         _activeAttacks.Add(command);
         if (wasAllTarget)
@@ -88,12 +102,14 @@ public sealed class ReptureBowPower : PowerModel
 
     public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        if (dealer != Owner || target == null || target.Side == Owner.Side || !props.IsPoweredAttack())
+        if (dealer != Owner ||
+            target?.Side == Owner.Side ||
+            !props.IsPoweredAttack())
         {
             return 1m;
         }
 
-        decimal multiplier = 1m;
+        decimal multiplier = GetDeckDamageMultiplier();
         AttackCommand activeAttack = _activeAttacks.LastOrDefault();
         if (activeAttack != null && _amplifiedAllTargetAttacks.Contains(activeAttack))
         {
@@ -105,7 +121,39 @@ public sealed class ReptureBowPower : PowerModel
             multiplier *= _damageMultiplier;
         }
 
+        if (activeAttack == null && cardSource != null)
+        {
+            if (IsProjectedAllTargetAttack(cardSource))
+            {
+                multiplier *= _damageMultiplier;
+            }
+
+            if (HasExactlyOneHittableOpponent())
+            {
+                multiplier *= _damageMultiplier;
+            }
+        }
+
         return multiplier;
+    }
+
+    public override decimal ModifyPowerAmountGivenMultiplicative(
+        PowerModel power,
+        Creature giver,
+        decimal amount,
+        Creature target,
+        CardModel cardSource)
+    {
+        if (power is not DestructionRatePower ||
+            giver != Owner ||
+            target == null ||
+            target.Side == Owner.Side ||
+            amount <= 0m)
+        {
+            return 1m;
+        }
+
+        return _destructionRateMultiplier + GetBowCardCount() * _deckBonusPerBowCard;
     }
 
     protected override void AfterCloned()
@@ -125,6 +173,60 @@ public sealed class ReptureBowPower : PowerModel
     {
         ICombatState combatState = Owner.CombatState;
         return combatState != null && combatState.GetOpponentsOf(Owner).Count(creature => creature.IsHittable) == 1;
+    }
+
+    private decimal GetDeckDamageMultiplier()
+    {
+        return 1m + GetBowCardCount() * _deckBonusPerBowCard;
+    }
+
+    internal static decimal GetProjectedDamageMultiplier(
+        Creature owner,
+        CardModel card)
+    {
+        decimal multiplier =
+            1m +
+            GetBowCardCount(owner) *
+            _deckBonusPerBowCard;
+        if (IsProjectedAllTargetAttack(card))
+        {
+            multiplier *= _damageMultiplier;
+        }
+
+        if (HasExactlyOneHittableOpponent(owner))
+        {
+            multiplier *= _damageMultiplier;
+        }
+
+        return multiplier;
+    }
+
+    private int GetBowCardCount()
+    {
+        return GetBowCardCount(Owner);
+    }
+
+    private static int GetBowCardCount(Creature owner)
+    {
+        return owner?.Player?.Deck?.Cards.Count(
+            ModeTransitionHelper.IsBowRestrictedCard) ?? 0;
+    }
+
+    private static bool IsProjectedAllTargetAttack(
+        CardModel card)
+    {
+        return card?.TargetType == TargetType.AllEnemies ||
+            card is PiercingShotHbrgoSaki;
+    }
+
+    private static bool HasExactlyOneHittableOpponent(
+        Creature owner)
+    {
+        ICombatState combatState = owner?.CombatState;
+        return combatState != null &&
+            combatState
+                .GetOpponentsOf(owner)
+                .Count(creature => creature.IsHittable) == 1;
     }
 
     private static void RetargetToAllOpponents(AttackCommand command, ICombatState combatState)

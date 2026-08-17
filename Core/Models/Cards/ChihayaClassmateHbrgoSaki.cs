@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,12 +20,19 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
-    protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
+    protected override IEnumerable<IHoverTip> ExtraHoverTips
     {
-        HoverTipFactory.FromPower<NormalStatePower>(),
-        HoverTipFactory.FromPower<ReptureBowPower>(),
-        HoverTipFactory.FromPower<ReptureDualSwordsPower>()
-    };
+        get
+        {
+            yield return HoverTipFactory.FromPower<NormalStatePower>();
+            yield return HoverTipFactory.FromPower<ReptureBowPower>();
+            yield return HoverTipFactory.FromPower<ReptureDualSwordsPower>();
+            if (Owner?.Character is not HbrgoSaki31O)
+            {
+                yield return HoverTipFactory.FromPower<RaptureScythePower>();
+            }
+        }
+    }
 
     public ChihayaClassmateHbrgoSaki()
         : base(1, CardType.Skill, CardRarity.Basic, TargetType.Self)
@@ -33,13 +41,22 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        CardModel selectedMode = await CardSelectCmd.FromChooseACardScreen(
-            choiceContext,
-            new CardModel[]
+        CardModel[] modeChoices = Owner.Character is HbrgoSaki31O
+            ? new CardModel[]
             {
                 CombatState.CreateCard<ReptureBowChoiceHbrgoSaki>(Owner),
                 CombatState.CreateCard<ReptureDualSwordsChoiceHbrgoSaki>(Owner)
-            },
+            }
+            : new CardModel[]
+            {
+                CombatState.CreateCard<ReptureBowChoiceHbrgoSaki>(Owner),
+                CombatState.CreateCard<ReptureDualSwordsChoiceHbrgoSaki>(Owner),
+                CombatState.CreateCard<RaptureScytheChoiceHbrgoSaki>(Owner)
+            };
+
+        CardModel selectedMode = await CardSelectCmd.FromChooseACardScreen(
+            choiceContext,
+            modeChoices,
             Owner);
 
         if (selectedMode == null)
@@ -49,21 +66,11 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
         await EnterSelectedRepture(choiceContext, selectedMode);
         await DrawModeRestrictedCard(choiceContext, selectedMode);
-        await ReplaceWithSwitchInHand(choiceContext);
     }
 
     protected override void OnUpgrade()
     {
         AddKeyword(CardKeyword.Innate);
-    }
-
-    private async Task ReplaceWithSwitchInHand(PlayerChoiceContext choiceContext)
-    {
-        CardModel switchCard = CombatState.CreateCard<SwitchHbrgoSaki>(Owner);
-        SyncUpgradeLevel(switchCard);
-
-        await CardPileCmd.AddGeneratedCardToCombat(switchCard, PileType.Hand, Owner);
-        await CardPileCmd.RemoveFromCombat(this);
     }
 
     private async Task EnterSelectedRepture(PlayerChoiceContext choiceContext, CardModel selectedMode)
@@ -84,11 +91,22 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
             {
                 await PowerCmd.Remove(Owner.Creature.GetPower<ReptureDualSwordsPower>());
             }
+
+            if (Owner.Creature.HasPower<RaptureScythePower>())
+            {
+                await PowerCmd.Remove(Owner.Creature.GetPower<RaptureScythePower>());
+            }
         }
 
         if (selectedMode is ReptureDualSwordsChoiceHbrgoSaki)
         {
             await PowerCmd.Apply<ReptureDualSwordsPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
+            return;
+        }
+
+        if (selectedMode is RaptureScytheChoiceHbrgoSaki)
+        {
+            await PowerCmd.Apply<RaptureScythePower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
             return;
         }
 
@@ -119,22 +137,13 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
         return selectedMode switch
         {
             ReptureBowChoiceHbrgoSaki =>
-                card is ArrowRainHbrgoSaki or SlideStepHbrgoSaki or StrongShotHbrgoSaki,
+                ModeTransitionHelper.IsBowRestrictedCard(card),
             ReptureDualSwordsChoiceHbrgoSaki =>
-                card is CrossSlashHbrgoSaki
-                    or SwallowReversalHbrgoSaki
-                    or BladeDanceHbrgoSaki
-                    or MimicDreamBubbleHbrgoSaki,
+                ModeTransitionHelper.IsDualSwordsRestrictedCard(card),
+            RaptureScytheChoiceHbrgoSaki =>
+                ModeTransitionHelper.IsScytheRestrictedCard(card),
             _ => false
         };
     }
 
-    private void SyncUpgradeLevel(CardModel card)
-    {
-        while (card.CurrentUpgradeLevel < CurrentUpgradeLevel && card.IsUpgradable)
-        {
-            card.UpgradeInternal();
-            card.FinalizeUpgradeInternal();
-        }
-    }
 }
