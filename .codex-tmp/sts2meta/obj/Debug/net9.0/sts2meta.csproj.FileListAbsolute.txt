@@ -19,3 +19,12 @@
 /Users/arthorn/Documents/GitHub/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/ref/sts2meta.dll
 /Users/arthorn/Documents/GitHub/HBRGOSakimod/.codex-tmp/sts2meta/bin/Debug/net9.0/GodotSharp.dll
 /Users/arthorn/Documents/GitHub/HBRGOSakimod/.codex-tmp/sts2meta/bin/Debug/net9.0/GodotSharp.xml
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.csproj.AssemblyReference.cache
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.GeneratedMSBuildEditorConfig.editorconfig
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.AssemblyInfoInputs.cache
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.AssemblyInfo.cs
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.csproj.CoreCompileInputs.cache
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.sourcelink.json
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.dll
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/refint/sts2meta.dll
+/Users/arthorn/.codex/worktrees/80a0/HBRGOSakimod/.codex-tmp/sts2meta/obj/Debug/net9.0/sts2meta.pdb
