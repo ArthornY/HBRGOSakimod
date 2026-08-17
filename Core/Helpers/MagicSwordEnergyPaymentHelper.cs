@@ -50,6 +50,21 @@ internal static class MagicSwordEnergyPaymentHelper
         return starsToSpend <= card.Owner.PlayerCombatState.Stars;
     }
 
+    public static bool CanPlayUsingSwordheart(CardModel card)
+    {
+        if (!CanPayWithSwordheart(card, out _, out _, out _))
+        {
+            return false;
+        }
+
+        if (card.CanPlay(out UnplayableReason reason, out _))
+        {
+            return true;
+        }
+
+        return (reason & ~UnplayableReason.EnergyCostTooHigh) == UnplayableReason.None;
+    }
+
     public static void RecordPendingSwordheartCost(CardModel card, int amount)
     {
         if (amount <= 0)

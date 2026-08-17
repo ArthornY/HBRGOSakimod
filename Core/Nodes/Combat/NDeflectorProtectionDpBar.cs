@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.addons.mega_text;
@@ -25,10 +26,12 @@ public partial class NDeflectorProtectionDpBar : Control
     private NinePatchRect _mask;
     private NinePatchRect _foreground;
     private MegaLabel _label;
+    private MegaLabel _redCrimsonLevelLabel;
     private Control _hpBarContainer;
     private Creature _creature;
     private DeflectorProtection _relic;
     private HighDimensionalShellPower _shell;
+    private RedCrimson _redCrimson;
     private bool _subscribed;
     private double _refreshElapsed;
 
@@ -39,6 +42,7 @@ public partial class NDeflectorProtectionDpBar : Control
         _hpBarContainer = hpBarContainer;
         _relic = creature.Player?.GetRelic<DeflectorProtection>();
         _shell = creature.GetPower<HighDimensionalShellPower>();
+        _redCrimson = creature?.Monster as RedCrimson;
         Subscribe();
         SyncLayoutToHpBar();
         Refresh();
@@ -89,6 +93,7 @@ public partial class NDeflectorProtectionDpBar : Control
         }
 
         SyncLayoutToHpBar();
+        RefreshRedCrimsonLevel();
         int maxAmount;
         int currentAmount;
         if (_relic != null)
@@ -107,6 +112,7 @@ public partial class NDeflectorProtectionDpBar : Control
         else
         {
             Visible = false;
+            _redCrimsonLevelLabel.Visible = false;
             return;
         }
 
@@ -191,6 +197,56 @@ public partial class NDeflectorProtectionDpBar : Control
         _label.AddThemeFontOverride(ThemeConstants.Label.Font, LoadFont(HealthBarFontPath));
         _label.AddThemeFontSizeOverride(ThemeConstants.Label.FontSize, 24);
         AddChild(_label);
+
+        _redCrimsonLevelLabel = new MegaLabel
+        {
+            Name = "RedCrimsonLevelLabel",
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            MouseFilter = MouseFilterEnum.Ignore,
+            AutoSizeEnabled = true,
+            MinFontSize = 10,
+            MaxFontSize = 18
+        };
+        _redCrimsonLevelLabel.SetAnchorsPreset(LayoutPreset.TopLeft);
+        _redCrimsonLevelLabel.OffsetLeft = 0f;
+        _redCrimsonLevelLabel.OffsetTop = -25f;
+        _redCrimsonLevelLabel.OffsetRight = 80f;
+        _redCrimsonLevelLabel.OffsetBottom = 0f;
+        _redCrimsonLevelLabel.AddThemeColorOverride(
+            ThemeConstants.Label.FontColor,
+            new Color("FFE9D9"));
+        _redCrimsonLevelLabel.AddThemeColorOverride(
+            ThemeConstants.Label.FontOutlineColor,
+            _outlineColor);
+        _redCrimsonLevelLabel.AddThemeConstantOverride(
+            ThemeConstants.Label.OutlineSize,
+            10);
+        _redCrimsonLevelLabel.AddThemeFontOverride(
+            ThemeConstants.Label.Font,
+            LoadFont(HealthBarFontPath));
+        _redCrimsonLevelLabel.AddThemeFontSizeOverride(
+            ThemeConstants.Label.FontSize,
+            18);
+        AddChild(_redCrimsonLevelLabel);
+    }
+
+    private void RefreshRedCrimsonLevel()
+    {
+        if (_redCrimsonLevelLabel == null)
+        {
+            return;
+        }
+
+        bool shouldShow =
+            _redCrimson != null &&
+            _creature?.IsAlive == true;
+        _redCrimsonLevelLabel.Visible = shouldShow;
+        if (shouldShow)
+        {
+            _redCrimsonLevelLabel.SetTextAutoSize(
+                $"LV.{_redCrimson.SummonLevel}");
+        }
     }
 
     private void SyncLayoutToHpBar()

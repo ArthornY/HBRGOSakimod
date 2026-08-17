@@ -4,20 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Models.Powers;
-using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Entities.RestSite;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Saves.Runs;
-using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Relics;
 
@@ -27,13 +21,8 @@ public sealed class DeflectorProtection : RelicModel
 
     public static readonly Color DpColor = new("6ED7FF");
 
-    private decimal _pendingDodgeBlock;
-    private decimal _pendingDodgeBaseBlock;
-    private ValueProp _pendingDodgeProps;
-    private bool _hasPendingDodgeBlock;
-    private bool _isCalculatingDodgeBlock;
-    private decimal _pendingDexterityConversion;
     private int _dp;
+    private int _bonusMaxDp;
     private bool _hasInitializedDp;
 
     public override RelicRarity Rarity => RelicRarity.Starter;
@@ -69,6 +58,17 @@ public sealed class DeflectorProtection : RelicModel
     }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int BonusMaxDp
+    {
+        get => _bonusMaxDp;
+        private set
+        {
+            AssertMutable();
+            _bonusMaxDp = Math.Max(0, value);
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public bool HasInitializedDp
     {
         get => _hasInitializedDp;
@@ -81,7 +81,11 @@ public sealed class DeflectorProtection : RelicModel
 
     public override Task AfterObtained()
     {
-        InitializeDpToMax();
+        if (!HasInitializedDp)
+        {
+            InitializeDpToMax();
+        }
+
         return Task.CompletedTask;
     }
 
@@ -89,98 +93,6 @@ public sealed class DeflectorProtection : RelicModel
     {
         EnsureDpInitialized();
         return Task.CompletedTask;
-    }
-
-    public override Task BeforeBlockGained(Creature creature, decimal amount, ValueProp props, CardModel cardSource)
-    {
-        if (!IsOwnerCreature(creature) || amount <= 0m)
-        {
-            return Task.CompletedTask;
-        }
-
-        _pendingDodgeBaseBlock = amount;
-        _pendingDodgeProps = props;
-        _hasPendingDodgeBlock = true;
-        return Task.CompletedTask;
-    }
-
-    public override decimal ModifyBlockMultiplicative(Creature target, decimal block, ValueProp props, CardModel cardSource, CardPlay cardPlay)
-    {
-        if (_isCalculatingDodgeBlock)
-        {
-            return 1m;
-        }
-
-        if (!IsOwnerCreature(target) || block <= 0m)
-        {
-            return 1m;
-        }
-
-        if (cardSource != null && cardPlay == null)
-        {
-            return 1m;
-        }
-
-        _pendingDodgeBlock = block;
-        return 0m;
-    }
-
-    public override async Task AfterModifyingBlockAmount(decimal modifiedAmount, CardModel cardSource, CardPlay cardPlay)
-    {
-        decimal blockToConvert = GetBlockToConvert(cardSource, cardPlay);
-        ClearPendingDodgeBlock();
-
-        if (blockToConvert <= 0m || GetOwnerOrNull()?.Creature.CombatState == null)
-        {
-            return;
-        }
-
-        int dodgeAmount = (int)Math.Ceiling(blockToConvert / 2m);
-        if (dodgeAmount <= 0)
-        {
-            return;
-        }
-
-        Flash();
-        Creature ownerCreature = Owner.Creature;
-        // The card already affected the block value; the converted Dodge should not receive card power bonuses again.
-        await PowerCmd.Apply<DodgePower>(new ThrowingPlayerChoiceContext(), ownerCreature, dodgeAmount, ownerCreature, null);
-    }
-
-    public override bool TryModifyPowerAmountReceived(
-        PowerModel canonicalPower,
-        Creature target,
-        decimal amount,
-        Creature applier,
-        out decimal modifiedAmount)
-    {
-        modifiedAmount = amount;
-        if (!IsOwnerCreature(target) || canonicalPower is not DexterityPower || amount == 0m)
-        {
-            return false;
-        }
-
-        _pendingDexterityConversion += amount;
-        modifiedAmount = 0m;
-        return true;
-    }
-
-    public override async Task AfterModifyingPowerAmountReceived(PowerModel power)
-    {
-        decimal amount = _pendingDexterityConversion;
-        _pendingDexterityConversion = 0m;
-        if (amount == 0m || GetOwnerOrNull()?.Creature.CombatState == null)
-        {
-            return;
-        }
-
-        Flash();
-        await PowerCmd.Apply<StrengthPower>(
-            new ThrowingPlayerChoiceContext(),
-            Owner.Creature,
-            amount,
-            Owner.Creature,
-            null);
     }
 
     public override Task AfterRestSiteHeal(Player player, bool isMimicked)
@@ -251,7 +163,12 @@ public sealed class DeflectorProtection : RelicModel
             return 0m;
         }
 
-        int dpToSpend = Math.Min(Dp, (int)Math.Ceiling(amount));
+        int dpToSpend = Math.Min(Dp, (int)amount);
+        if (dpToSpend <= 0)
+        {
+            return 0m;
+        }
+
         decimal absorbed = Math.Min(amount, dpToSpend);
         SetDpClamped(Dp - dpToSpend);
         Flash();
@@ -269,14 +186,16 @@ public sealed class DeflectorProtection : RelicModel
     {
         EnsureDpInitialized();
         int maxDp = MaxDp;
-        if (maxDp <= 0 || percent <= 0m)
+        if (maxDp <= 0 ||
+            percent <= 0m ||
+            Owner.Creature.HasPower<LastStandPower>())
         {
             return 0;
         }
 
         int previousDp = Dp;
         decimal recoveryMultiplier = DisabledPower.GetDpRecoveryMultiplier(Owner.Creature) * ElectronicSoldierManual.GetSimplicityDpRecoveryMultiplier(Owner);
-        int restoredDp = (int)Math.Ceiling(maxDp * percent * recoveryMultiplier);
+        int restoredDp = (int)(maxDp * percent * recoveryMultiplier);
         SetDpClamped(Dp + restoredDp);
         int actualRestoredDp = Dp - previousDp;
         if (actualRestoredDp > 0)
@@ -291,13 +210,15 @@ public sealed class DeflectorProtection : RelicModel
     {
         EnsureDpInitialized();
         int maxDp = MaxDp;
-        if (maxDp <= 0 || percent <= 0m)
+        if (maxDp <= 0 ||
+            percent <= 0m ||
+            Owner.Creature.HasPower<LastStandPower>())
         {
             return 0;
         }
 
         int previousDp = Dp;
-        int targetDp = (int)Math.Ceiling(maxDp * percent);
+        int targetDp = (int)(maxDp * percent);
         if (Dp < targetDp)
         {
             SetDpClamped(targetDp);
@@ -321,6 +242,11 @@ public sealed class DeflectorProtection : RelicModel
         }
 
         EnsureDpInitialized();
+        if (Owner.Creature.HasPower<LastStandPower>())
+        {
+            return 0;
+        }
+
         int restoredDp = GetDpRestoreForHealAmount(owner, healAmount, recoveryFactor);
         if (restoredDp <= 0 || Dp >= MaxDp)
         {
@@ -338,6 +264,56 @@ public sealed class DeflectorProtection : RelicModel
         return actualRestoredDp;
     }
 
+    public int RestoreDp(int amount)
+    {
+        EnsureDpInitialized();
+        if (amount <= 0 ||
+            Dp >= MaxDp ||
+            Owner.Creature.HasPower<LastStandPower>())
+        {
+            return 0;
+        }
+
+        int previousDp = Dp;
+        SetDpClamped(Dp + amount);
+        int actualRestoredDp = Dp - previousDp;
+        if (actualRestoredDp > 0)
+        {
+            Flash();
+        }
+
+        return actualRestoredDp;
+    }
+
+    public int GainMaxDp(int amount)
+    {
+        if (!IsMutable || amount <= 0)
+        {
+            return 0;
+        }
+
+        EnsureDpInitialized();
+        int previousMaxDp = MaxDp;
+        BonusMaxDp += amount;
+        int gainedMaxDp = MaxDp - previousMaxDp;
+        if (gainedMaxDp <= 0)
+        {
+            return 0;
+        }
+
+        if (!Owner.Creature.HasPower<LastStandPower>())
+        {
+            SetDpClamped(Dp + gainedMaxDp);
+        }
+        else
+        {
+            InvokeDisplayAmountChanged();
+        }
+
+        Flash();
+        return gainedMaxDp;
+    }
+
     public int LoseDpByCurrentPercent(decimal percent)
     {
         EnsureDpInitialized();
@@ -346,7 +322,7 @@ public sealed class DeflectorProtection : RelicModel
             return 0;
         }
 
-        int lostDp = Math.Min(Dp, (int)Math.Floor(Dp * percent));
+        int lostDp = Math.Min(Dp, (int)(Dp * percent));
         if (lostDp <= 0)
         {
             return 0;
@@ -358,6 +334,20 @@ public sealed class DeflectorProtection : RelicModel
         return lostDp;
     }
 
+    public int LoseDp(int amount)
+    {
+        EnsureDpInitialized();
+        if (Dp <= 0 || amount <= 0)
+        {
+            return 0;
+        }
+
+        int lostDp = Math.Min(Dp, amount);
+        SetDpClamped(Dp - lostDp);
+        Flash();
+        return lostDp;
+    }
+
     public bool WouldDpBeDepletedBy(decimal amount)
     {
         if (amount <= 0m)
@@ -366,7 +356,7 @@ public sealed class DeflectorProtection : RelicModel
         }
 
         EnsureDpInitialized();
-        return Dp > 0 && (int)Math.Ceiling(amount) >= Dp;
+        return Dp > 0 && (int)amount >= Dp;
     }
 
     public void SyncAfterMaxHpChanged(int oldMaxHp, int newMaxHp)
@@ -382,9 +372,14 @@ public sealed class DeflectorProtection : RelicModel
             return;
         }
 
-        int oldMaxDp = Math.Max(0, oldMaxHp * DpPerMaxHp);
-        int newMaxDp = Math.Max(0, newMaxHp * DpPerMaxHp);
-        if (newMaxDp > oldMaxDp)
+        int oldMaxDp = Math.Max(
+            0,
+            oldMaxHp * DpPerMaxHp + BonusMaxDp);
+        int newMaxDp = Math.Max(
+            0,
+            newMaxHp * DpPerMaxHp + BonusMaxDp);
+        if (newMaxDp > oldMaxDp &&
+            !Owner.Creature.HasPower<LastStandPower>())
         {
             SetDpClamped(Dp + newMaxDp - oldMaxDp);
             return;
@@ -397,41 +392,6 @@ public sealed class DeflectorProtection : RelicModel
         }
 
         InvokeDisplayAmountChanged();
-    }
-
-    protected override void AfterCloned()
-    {
-        base.AfterCloned();
-        ClearPendingDodgeBlock();
-        _pendingDexterityConversion = 0m;
-    }
-
-    private decimal GetBlockToConvert(CardModel cardSource, CardPlay cardPlay)
-    {
-        Creature ownerCreature = GetOwnerOrNull()?.Creature;
-        if (!_hasPendingDodgeBlock || ownerCreature?.CombatState == null)
-        {
-            return _pendingDodgeBlock;
-        }
-
-        _isCalculatingDodgeBlock = true;
-        try
-        {
-            return Hook.ModifyBlock(ownerCreature.CombatState, ownerCreature, _pendingDodgeBaseBlock, _pendingDodgeProps, cardSource, cardPlay, out _);
-        }
-        finally
-        {
-            _isCalculatingDodgeBlock = false;
-        }
-    }
-
-    private void ClearPendingDodgeBlock()
-    {
-        _pendingDodgeBlock = 0m;
-        _pendingDodgeBaseBlock = 0m;
-        _pendingDodgeProps = default;
-        _hasPendingDodgeBlock = false;
-        _isCalculatingDodgeBlock = false;
     }
 
     private void InitializeDpToMax()
@@ -466,7 +426,12 @@ public sealed class DeflectorProtection : RelicModel
     private int GetMaxDp()
     {
         Player owner = GetOwnerOrNull();
-        return owner?.Creature.MaxHp * DpPerMaxHp ?? 0;
+        return owner == null
+            ? 0
+            : Math.Max(
+                0,
+                owner.Creature.MaxHp * DpPerMaxHp +
+                BonusMaxDp);
     }
 
     private int GetRestSiteDpRestore(Player player)
@@ -484,7 +449,7 @@ public sealed class DeflectorProtection : RelicModel
         decimal healPercent = healAmount / player.Creature.MaxHp;
         decimal recoveryMultiplier = DisabledPower.GetDpRecoveryMultiplier(player.Creature) * ElectronicSoldierManual.GetSimplicityDpRecoveryMultiplier(player);
         decimal dpRestore = MaxDp * healPercent * recoveryFactor * recoveryMultiplier;
-        return Math.Max(0, (int)Math.Floor(dpRestore));
+        return Math.Max(0, (int)dpRestore);
     }
 
     private bool IsOwnerCreature(Creature creature)

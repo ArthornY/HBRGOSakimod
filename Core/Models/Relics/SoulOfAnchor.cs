@@ -26,9 +26,12 @@ public class SoulOfAnchor : RelicModel
     private const int _rollMin = 1;
     private const int _rollMax = 100;
     private const int _rollExclusiveMax = _rollMax + 1;
-    private const int _criticalSwordheartAmount = 7;
     private const int _luckySevenSoulEnergyCost = 1;
     private const int _fullSwordheartRound = 7;
+    private const decimal _firstTierValueBonusPerEnergy = 0.20m;
+    private const decimal _secondTierValueBonusPerEnergy = 0.20m;
+    private const decimal _thirdTierValueBonusPerEnergy = 0.25m;
+    private const decimal _criticalValueBonusPerEnergy = 0.40m;
 
     private CardModel _triggeringCard;
     private int _currentRoll;
@@ -36,13 +39,16 @@ public class SoulOfAnchor : RelicModel
     private decimal _currentValueMultiplier = 1m;
     private int _currentSwordheartAmount;
     private int _currentCardEnergyCost;
+    private int _currentCardEnergySpent;
     private AttackCommand _activeAttackCommand;
     private int _currentAttackHitIndex = -1;
     private int _pendingSwordheartAmount;
     private int _pendingFragileTriggers;
     private int _attackOrSkillRollCount;
+    private bool _reusePreparedRollForNextDamage;
     private bool _forceRollsToOneHundred;
     private bool _hasCheckedFullSwordheartRound;
+    private bool _hasEnteredMagicSwordModeThisCombat;
     private int _criticalSuccessCountThisCombat;
     private int _lastRoll;
     private List<SoulRollHistoryEntry> _rollHistory = new();
@@ -70,6 +76,8 @@ public class SoulOfAnchor : RelicModel
 
     protected virtual int ThirdTierLowerBound => 91;
 
+    protected virtual bool GrantsSwordheart => true;
+
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int CriticalSuccessCountThisCombat
     {
@@ -89,6 +97,17 @@ public class SoulOfAnchor : RelicModel
         {
             AssertMutable();
             _forceRollsToOneHundred = value;
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasEnteredMagicSwordModeThisCombat
+    {
+        get => _hasEnteredMagicSwordModeThisCombat;
+        private set
+        {
+            AssertMutable();
+            _hasEnteredMagicSwordModeThisCombat = value;
         }
     }
 
@@ -170,6 +189,16 @@ public class SoulOfAnchor : RelicModel
         }
     }
 
+    private int CurrentCardEnergySpent
+    {
+        get => _currentCardEnergySpent;
+        set
+        {
+            AssertMutable();
+            _currentCardEnergySpent = value;
+        }
+    }
+
     private AttackCommand ActiveAttackCommand
     {
         get => _activeAttackCommand;
@@ -218,6 +247,7 @@ public class SoulOfAnchor : RelicModel
         }
 
         BeginCardRollState(cardPlay.Card);
+        CurrentCardEnergySpent = Math.Max(1, cardPlay.Resources.EnergySpent);
         if (cardPlay.Card.Type is CardType.Attack or CardType.Skill)
         {
             CurrentCardEnergyCost = GetCardEnergyCost(cardPlay);
@@ -256,6 +286,7 @@ public class SoulOfAnchor : RelicModel
     {
         BeginCardRollState(cardSource);
         CurrentCardEnergyCost = _luckySevenSoulEnergyCost;
+        CurrentCardEnergySpent = _luckySevenSoulEnergyCost;
         PrepareAttackOrSkillRoll(cardSource, _luckySevenSoulEnergyCost, includeMagicSwordBonus: false);
     }
 
@@ -263,19 +294,28 @@ public class SoulOfAnchor : RelicModel
     {
         await ApplyPendingSwordheart(choiceContext);
         await PlayPendingFragileCards(choiceContext);
+        await ConsumeReservedRollModifierPowers(
+            choiceContext,
+            TriggeringCard);
         FinishCardRollState();
     }
 
-    public async Task<int> RollExtraD100(PlayerChoiceContext choiceContext, CardModel cardSource)
+    public async Task<int> RollExtraD100(
+        PlayerChoiceContext choiceContext,
+        CardModel cardSource,
+        bool allowSwordheart)
     {
-        SoulRollResult rollResult = RollD100(includeMagicSwordBonus: true);
+        SoulRollResult rollResult = RollD100(
+            includeMagicSwordBonus: true,
+            cardSource: cardSource,
+            allowMaidBonus: false,
+            advantageOnly: true);
         int roll = rollResult.Roll;
         RecordRoll(rollResult, $"「还没有结束」额外掷骰，由「{GetCardTitle(cardSource)}」触发");
         QueueFragileTrigger(roll);
-        int effectMultiplier = GetEffectMultiplier(roll);
-        int swordheartAmount = IsMagicSwordModeActive()
-            ? 0
-            : GetSwordheartAmount(roll) * effectMultiplier;
+        int swordheartAmount = CanGainSwordheartFromCard(cardSource)
+            ? GetNonCardSwordheartAmount(roll, allowSwordheart)
+            : 0;
         int amountToApply = GetSwordheartAmountToApply(swordheartAmount);
 
         Flash();
@@ -291,12 +331,27 @@ public class SoulOfAnchor : RelicModel
         }
 
         await PlayPendingFragileCards(choiceContext);
+        await ConsumeReservedRollModifierPowers(
+            choiceContext,
+            cardSource);
         return roll;
+    }
+
+    public bool IsRegularSwordheartTriggerRoll(int roll)
+    {
+        return GrantsSwordheart &&
+               !IsCriticalRoll(roll) &&
+               GetRegularSwordheartCount(roll) > 0;
     }
 
     public void SetRollsFixedToOneHundred(bool enabled)
     {
         RollsAreFixedToOneHundred = enabled;
+    }
+
+    public void RecordMagicSwordModeEntered()
+    {
+        HasEnteredMagicSwordModeThisCombat = true;
     }
 
     public void RecordAbilityRoll(int roll, int? discardedRoll, string source)
@@ -305,10 +360,60 @@ public class SoulOfAnchor : RelicModel
         RecordRoll(result, source);
     }
 
+    public void RecordAbilityRoll(
+        int roll,
+        IReadOnlyList<int> discardedRolls,
+        string source)
+    {
+        SoulRollResult result = RegisterRollResult(
+            new SoulRollResult(roll, discardedRolls));
+        RecordRoll(result, source);
+    }
+
+    public void RecordAbilityRoll(
+        SoulRollBreakdown winningRoll,
+        IReadOnlyList<SoulRollBreakdown> discardedRolls,
+        string source)
+    {
+        SoulRollResult result = RegisterRollResult(
+            new SoulRollResult(winningRoll, discardedRolls));
+        RecordRoll(result, source);
+    }
+
+    public int GetCurrentRollFor(CardModel cardSource)
+    {
+        return cardSource != null && cardSource == TriggeringCard
+            ? CurrentRoll
+            : 0;
+    }
+
+    public int EnsureCurrentRollFor(CardModel cardSource)
+    {
+        if (cardSource == null ||
+            cardSource != TriggeringCard ||
+            cardSource.Owner != Owner ||
+            cardSource.Type is not (CardType.Attack or CardType.Skill))
+        {
+            return 0;
+        }
+
+        if (AttackOrSkillRollCount == 0)
+        {
+            PrepareAttackOrSkillRoll(
+                cardSource,
+                CurrentCardEnergyCost,
+                includeMagicSwordBonus: true);
+            _reusePreparedRollForNextDamage = true;
+        }
+
+        return CurrentRoll;
+    }
+
     public override Task BeforeCombatStart()
     {
         ClearCardRollStates();
         _hasCheckedFullSwordheartRound = false;
+        HasEnteredMagicSwordModeThisCombat = false;
         CriticalSuccessCountThisCombat = 0;
         _rollHistory.Clear();
         return Task.CompletedTask;
@@ -321,10 +426,19 @@ public class SoulOfAnchor : RelicModel
         ICombatState combatState)
     {
         if (
+            !GrantsSwordheart ||
             _hasCheckedFullSwordheartRound ||
             combatState.RoundNumber != _fullSwordheartRound ||
             side != Owner.Creature.Side ||
             !participants.Contains(Owner.Creature))
+        {
+            return;
+        }
+
+        SoulOfAnchor roundSevenSoul = Owner.Relics
+            .OfType<SoulOfAnchor>()
+            .FirstOrDefault();
+        if (roundSevenSoul != null && !ReferenceEquals(roundSevenSoul, this))
         {
             return;
         }
@@ -335,8 +449,10 @@ public class SoulOfAnchor : RelicModel
             return;
         }
 
-        int amountToApply = GetSwordheartAmountToApply(
-            SwordheartPower.GetMaxAmount(Owner.Creature));
+        int swordheartAmount = HasEnteredMagicSwordModeThisCombat
+            ? 2
+            : SwordheartPower.GetMaxAmount(Owner.Creature);
+        int amountToApply = GetSwordheartAmountToApply(swordheartAmount);
         if (amountToApply <= 0)
         {
             return;
@@ -390,7 +506,9 @@ public class SoulOfAnchor : RelicModel
             return 1m;
         }
 
-        return CurrentValueMultiplier;
+        return HbrgoSakiDamageMultiplierHelper.Add(
+            CurrentValueMultiplier,
+            this);
     }
 
     public override decimal ModifyBlockAdditive(Creature target, decimal block, ValueProp props, CardModel cardSource, CardPlay cardPlay)
@@ -498,12 +616,34 @@ public class SoulOfAnchor : RelicModel
 
             if (cardPlay.Card.Owner == Owner && cardPlay.Card.Type == CardType.Power)
             {
-                int energyRefund = GetPowerEnergyRefund(CurrentRoll, cardPlay.Resources.EnergySpent)
-                    * GetEffectMultiplier(CurrentRoll);
-                if (energyRefund > 0)
+                int effectMultiplier = GetEffectMultiplier(CurrentRoll);
+                (int drawAmount, int energyAmount) =
+                    GetPowerCardEffect(CurrentRoll);
+                drawAmount *= effectMultiplier;
+                energyAmount *= effectMultiplier;
+
+                if (drawAmount > 0 || energyAmount > 0)
                 {
                     Flash();
-                    await PlayerCmd.GainEnergy(energyRefund, Owner);
+                }
+
+                if (drawAmount > 0)
+                {
+                    await CardPileCmd.Draw(
+                        choiceContext,
+                        drawAmount,
+                        Owner);
+                }
+
+                if (energyAmount > 0)
+                {
+                    await PlayerCmd.GainEnergy(energyAmount, Owner);
+                }
+
+                if (IsCriticalRoll(CurrentRoll))
+                {
+                    Owner.GetRelic<ElectronicSoldierManual>()
+                        ?.QueueSixSenseReward(effectMultiplier);
                 }
             }
 
@@ -512,6 +652,9 @@ public class SoulOfAnchor : RelicModel
         }
         finally
         {
+            await ConsumeReservedRollModifierPowers(
+                choiceContext,
+                cardPlay.Card);
             FinishCardRollState();
         }
     }
@@ -520,6 +663,7 @@ public class SoulOfAnchor : RelicModel
     {
         ClearCardRollStates();
         _hasCheckedFullSwordheartRound = false;
+        HasEnteredMagicSwordModeThisCombat = false;
         CriticalSuccessCountThisCombat = 0;
         Status = RelicStatus.Normal;
         return Task.CompletedTask;
@@ -534,49 +678,197 @@ public class SoulOfAnchor : RelicModel
         _currentValueMultiplier = 1m;
         _currentSwordheartAmount = 0;
         _currentCardEnergyCost = 0;
+        _currentCardEnergySpent = 0;
         _activeAttackCommand = null;
         _currentAttackHitIndex = -1;
         _pendingSwordheartAmount = 0;
         _pendingFragileTriggers = 0;
         _attackOrSkillRollCount = 0;
+        _reusePreparedRollForNextDamage = false;
         _hasCheckedFullSwordheartRound = false;
+        _hasEnteredMagicSwordModeThisCombat = false;
         _criticalSuccessCountThisCombat = 0;
         _rollHistory = new List<SoulRollHistoryEntry>();
         _suspendedRollStates = new Stack<SuspendedRollState>();
     }
 
-    private SoulRollResult RollD100(bool includeMagicSwordBonus)
+    private SoulRollResult RollD100(
+        bool includeMagicSwordBonus,
+        CardModel cardSource = null,
+        bool allowMaidBonus = false,
+        bool advantageOnly = false)
     {
+        StrengthenPower strengthen =
+            Owner.Creature.GetPower<StrengthenPower>();
+        bool useStrengthen = strengthen?.TryReserveRoll() == true;
+        ExtremeDodgeRollPenaltyPower rollPenalty = advantageOnly
+            ? null
+            : Owner.Creature.GetPower<ExtremeDodgeRollPenaltyPower>();
+        bool useRollPenalty =
+            rollPenalty?.TryReserveRoll() == true;
         if (RollsAreFixedToOneHundred)
         {
-            return RegisterRollResult(new SoulRollResult(_rollMax, null));
+            return RegisterRollResult(new SoulRollResult(
+                SoulRollBreakdown.FromFinalRoll(
+                    _rollMax,
+                    "控制台指令：固定出目"),
+                Array.Empty<SoulRollBreakdown>()));
         }
 
-        int roll = RollReptureAdjustedD100();
-        int? discardedRoll = null;
+        List<SoulRollBreakdown> rolls = new()
+        {
+            RollD100Die("基础骰", advantageOnly)
+        };
         GuideLittleHand guideLittleHand = Owner.GetRelic<GuideLittleHand>();
         if (guideLittleHand != null)
         {
-            int secondRoll = RollReptureAdjustedD100();
-            int higherRoll = guideLittleHand.TakeHigherRoll(roll, secondRoll);
-            discardedRoll = higherRoll == roll ? secondRoll : roll;
-            roll = higherRoll;
+            rolls.Add(RollD100Die("优势骰：导游的小手", advantageOnly));
+            guideLittleHand.TakeHigherRoll(
+                rolls[0].FinalRoll,
+                rolls[1].FinalRoll);
         }
 
-        int bonus = 0;
-        if (includeMagicSwordBonus && IsMagicSwordModeActive())
+        if (useStrengthen)
         {
-            bonus += MagicSwordModePower.RollBonus;
+            rolls.Add(RollD100Die("优势骰：强化", advantageOnly));
         }
 
-        if (Owner.Creature.HasPower<NotOverYetPower>())
+        ProtagonistPrivilegePower protagonistPrivilege =
+            Owner.Creature.GetPower<ProtagonistPrivilegePower>();
+        if (protagonistPrivilege != null)
         {
-            bonus += NotOverYetPower.RollBonus;
+            rolls.Add(RollD100Die(
+                "优势骰：主人公特典",
+                advantageOnly));
         }
+
+        bool isAttackCardRoll =
+            !advantageOnly &&
+            cardSource?.Type == CardType.Attack;
+        List<SoulRollBonusDetail> sharedBonuses = new();
+        if (useStrengthen && !advantageOnly)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                strengthen.RollBonus,
+                "强化"));
+        }
+
+        if (useRollPenalty)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                ExtremeDodgeRollPenaltyPower.RollPenalty,
+                "极限闪避"));
+        }
+
+        if (!advantageOnly &&
+            protagonistPrivilege != null)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                protagonistPrivilege.RollPenalty,
+                "主人公特典"));
+        }
+
+        if (!advantageOnly)
+        {
+            int accelerationBonus = Owner.Creature
+                .GetPower<AccelerationPower>()
+                ?.Amount ?? 0;
+            if (accelerationBonus != 0)
+            {
+                sharedBonuses.Add(new SoulRollBonusDetail(
+                    accelerationBonus,
+                    "加速"));
+            }
+        }
+
+        if (isAttackCardRoll &&
+            includeMagicSwordBonus &&
+            IsMagicSwordModeActive())
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                MagicSwordModePower.RollBonus,
+                "魔剑模式"));
+        }
+
+        if (isAttackCardRoll)
+        {
+            int sharingBonus = Owner.Creature
+                .GetPower<MagicSwordSharingPower>()
+                ?.Amount ?? 0;
+            if (sharingBonus != 0)
+            {
+                sharedBonuses.Add(new SoulRollBonusDetail(
+                    sharingBonus,
+                    "魔剑共享"));
+            }
+        }
+
+        if (isAttackCardRoll &&
+            Owner.Creature.HasPower<NotOverYetPower>())
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                NotOverYetPower.RollBonus,
+                "还没有结束"));
+        }
+
+        if (allowMaidBonus)
+        {
+            int maidBonus = Owner.Creature
+                .GetPower<MaidCultivationPower>()
+                ?.GetRollBonus(cardSource) ?? 0;
+            if (maidBonus != 0)
+            {
+                sharedBonuses.Add(new SoulRollBonusDetail(
+                    maidBonus,
+                    "女仆的素养"));
+            }
+        }
+
+        if (!advantageOnly)
+        {
+            int nextRollBonus = Owner.Creature
+                .GetPower<NextRollBonusPower>()
+                ?.GetRollBonus(cardSource) ?? 0;
+            if (nextRollBonus != 0)
+            {
+                sharedBonuses.Add(new SoulRollBonusDetail(
+                    nextRollBonus,
+                    "渐入佳境"));
+            }
+        }
+
+        List<SoulRollBreakdown> finalRolls = rolls
+            .Select(roll => ApplyRollBonuses(roll, sharedBonuses))
+            .ToList();
+        int winningIndex = GetWinningRollIndex(
+            finalRolls.Select(roll => roll.FinalRoll).ToArray());
+        SoulRollBreakdown winningRoll = finalRolls[winningIndex];
+        List<SoulRollBreakdown> discardedRolls = finalRolls
+            .Where((_, index) => index != winningIndex)
+            .ToList();
 
         return RegisterRollResult(new SoulRollResult(
-            roll + bonus,
-            discardedRoll.HasValue ? discardedRoll.Value + bonus : null));
+            winningRoll,
+            discardedRolls));
+    }
+
+    private int GetWinningRollIndex(IReadOnlyList<int> rolls)
+    {
+        int winningIndex = 0;
+        bool hasCritical = IsCriticalRoll(rolls[0]);
+        for (int index = 1; index < rolls.Count; index++)
+        {
+            bool isCritical = IsCriticalRoll(rolls[index]);
+            if (isCritical && !hasCritical ||
+                isCritical == hasCritical &&
+                rolls[index] > rolls[winningIndex])
+            {
+                winningIndex = index;
+                hasCritical = isCritical;
+            }
+        }
+
+        return winningIndex;
     }
 
     private SoulRollResult RegisterRollResult(SoulRollResult result)
@@ -585,15 +877,48 @@ public class SoulOfAnchor : RelicModel
         return result;
     }
 
-    private int RollReptureAdjustedD100()
+    private SoulRollBreakdown RollD100Die(
+        string diceSource,
+        bool advantageOnly)
     {
-        int roll = RollRawD100();
-        if (Owner.Creature.HasPower<ReptureDualSwordsPower>() && roll is 7 or 77)
+        int baseRoll = RollRawD100();
+        int finalRoll = baseRoll;
+        List<SoulRollBonusDetail> bonuses = new();
+        if (!advantageOnly &&
+            Owner.Creature.HasPower<ReptureDualSwordsPower>() &&
+            baseRoll is 7 or 77)
         {
-            return _rollMax;
+            int adjustment = _rollMax - baseRoll;
+            bonuses.Add(new SoulRollBonusDetail(
+                adjustment,
+                "Repture-双剑（7或77视为100）"));
+            finalRoll = _rollMax;
         }
 
-        return roll;
+        return new SoulRollBreakdown(
+            baseRoll,
+            finalRoll,
+            diceSource,
+            bonuses);
+    }
+
+    private static SoulRollBreakdown ApplyRollBonuses(
+        SoulRollBreakdown roll,
+        IReadOnlyList<SoulRollBonusDetail> sharedBonuses)
+    {
+        if (sharedBonuses == null || sharedBonuses.Count == 0)
+        {
+            return roll;
+        }
+
+        SoulRollBonusDetail[] bonuses = roll.Bonuses
+            .Concat(sharedBonuses)
+            .ToArray();
+        return new SoulRollBreakdown(
+            roll.BaseRoll,
+            roll.FinalRoll + sharedBonuses.Sum(bonus => bonus.Amount),
+            roll.DiceSource,
+            bonuses);
     }
 
     private int RollRawD100()
@@ -608,17 +933,22 @@ public class SoulOfAnchor : RelicModel
             return;
         }
 
-        SoulRollResult rollResult = RollD100(includeMagicSwordBonus);
+        SoulRollResult rollResult = RollD100(
+            includeMagicSwordBonus,
+            card,
+            allowMaidBonus: card.Type == CardType.Attack);
         int roll = rollResult.Roll;
         RecordRoll(rollResult, $"打出「{GetCardTitle(card)}」");
         QueueFragileTrigger(roll);
         int effectMultiplier = GetEffectMultiplier(roll);
         TriggeringCard = card;
         CurrentRoll = roll;
-        CurrentBonus = GetAttackOrSkillBonus(roll, energyCost) * effectMultiplier;
-        CurrentValueMultiplier = IsCriticalRoll(roll) ? 2m * effectMultiplier : 1m;
-        CurrentSwordheartAmount = IsMagicSwordModeActive() ? 0 : GetSwordheartAmount(roll) * effectMultiplier;
-        PendingSwordheartAmount += CurrentSwordheartAmount;
+        CurrentBonus = 0;
+        CurrentValueMultiplier = GetAttackOrSkillValueMultiplier(
+            roll,
+            energyCost,
+            effectMultiplier);
+        QueueCardSwordheart(roll, card, effectMultiplier);
         AttackOrSkillRollCount++;
         ActivateIfCriticalRoll(roll);
     }
@@ -630,20 +960,29 @@ public class SoulOfAnchor : RelicModel
             return;
         }
 
-        SoulRollResult rollResult = RollD100(includeMagicSwordBonus);
+        SoulRollResult rollResult = RollD100(
+            includeMagicSwordBonus,
+            card,
+            allowMaidBonus: false);
         int roll = rollResult.Roll;
         RecordRoll(rollResult, $"打出「{GetCardTitle(card)}」");
         QueueFragileTrigger(roll);
         int effectMultiplier = GetEffectMultiplier(roll);
         TriggeringCard = card;
         CurrentRoll = roll;
-        CurrentSwordheartAmount = IsMagicSwordModeActive() ? 0 : GetSwordheartAmount(roll) * effectMultiplier;
-        PendingSwordheartAmount += CurrentSwordheartAmount;
+        QueueCardSwordheart(roll, card, effectMultiplier);
         ActivateIfCriticalRoll(roll);
     }
 
     private async Task ApplyPendingSwordheart(PlayerChoiceContext choiceContext)
     {
+        if (!GrantsSwordheart)
+        {
+            CurrentSwordheartAmount = 0;
+            PendingSwordheartAmount = 0;
+            return;
+        }
+
         if (PendingSwordheartAmount <= 0)
         {
             return;
@@ -727,56 +1066,87 @@ public class SoulOfAnchor : RelicModel
         return int.Max(0, energyValue);
     }
 
-    private int GetAttackOrSkillBonus(int roll, int energyCost)
+    private decimal GetAttackOrSkillValueMultiplier(
+        int roll,
+        int energyCost,
+        int effectMultiplier)
     {
-        if (GetRollTier(roll) == SoulRollTier.First)
+        decimal bonusPerEnergy = GetRollTier(roll) switch
         {
-            return energyCost;
-        }
-
-        if (GetRollTier(roll) == SoulRollTier.Second)
-        {
-            return energyCost * 2;
-        }
-
-        if (GetRollTier(roll) == SoulRollTier.Third)
-        {
-            return energyCost * 3;
-        }
-
-        return 0;
+            SoulRollTier.First => _firstTierValueBonusPerEnergy,
+            SoulRollTier.Second => _secondTierValueBonusPerEnergy,
+            SoulRollTier.Third => _thirdTierValueBonusPerEnergy,
+            SoulRollTier.Critical => _criticalValueBonusPerEnergy,
+            _ => 0m
+        };
+        decimal bonusMultiplier = Math.Max(0, energyCost) *
+            bonusPerEnergy *
+            Math.Max(1, effectMultiplier);
+        return 1m + bonusMultiplier;
     }
 
-    private int GetPowerEnergyRefund(int roll, int energySpent)
+    private (int DrawAmount, int EnergyAmount) GetPowerCardEffect(int roll)
     {
-        if (GetRollTier(roll) == SoulRollTier.First)
+        return GetRollTier(roll) switch
         {
-            return 1;
-        }
+            SoulRollTier.First => (1, 0),
+            SoulRollTier.Second => (2, 1),
+            SoulRollTier.Third => (4, 1),
+            SoulRollTier.Critical => (4, 1),
+            _ => (0, 0)
+        };
+    }
 
-        if (GetRollTier(roll) == SoulRollTier.Second)
+    private void QueueCardSwordheart(int roll, CardModel card, int effectMultiplier)
+    {
+        CurrentSwordheartAmount = 0;
+        if (!CanGainSwordheartFromCard(card))
         {
-            return 2;
-        }
-
-        if (GetRollTier(roll) == SoulRollTier.Third)
-        {
-            return 3;
+            return;
         }
 
         if (IsCriticalRoll(roll))
         {
-            return energySpent + 2;
+            CurrentSwordheartAmount = SwordheartPower.GetMaxAmount(Owner.Creature);
+            PendingSwordheartAmount = Math.Max(
+                PendingSwordheartAmount,
+                CurrentSwordheartAmount);
+            return;
         }
 
-        return 0;
+        int triggerCount = GetRegularSwordheartCount(roll);
+        if (triggerCount <= 0)
+        {
+            return;
+        }
+
+        int multiplier = Math.Max(1, effectMultiplier);
+        int perCardCap = Math.Max(1, CurrentCardEnergySpent) * multiplier;
+        int remainingCapacity = Math.Max(
+            0,
+            perCardCap - PendingSwordheartAmount);
+        CurrentSwordheartAmount = Math.Min(
+            remainingCapacity,
+            triggerCount * multiplier);
+        PendingSwordheartAmount += CurrentSwordheartAmount;
     }
 
-    private int GetSwordheartAmount(int roll)
+    private int GetNonCardSwordheartAmount(int roll, bool allowRegularSwordheart)
     {
-        int amount = IsCriticalRoll(roll) ? _criticalSwordheartAmount : 0;
-        amount += CountSevens(roll);
-        return Math.Min(SwordheartPower.BaseMaxAmount, amount);
+        if (!GrantsSwordheart)
+        {
+            return 0;
+        }
+
+        if (IsCriticalRoll(roll))
+        {
+            return SwordheartPower.GetMaxAmount(Owner.Creature);
+        }
+
+        return allowRegularSwordheart &&
+               GetRegularSwordheartCount(roll) > 0
+            ? 1
+            : 0;
     }
 
     private int GetSwordheartAmountToApply(int amount)
@@ -809,10 +1179,28 @@ public class SoulOfAnchor : RelicModel
         return count;
     }
 
+    private int GetRegularSwordheartCount(int roll)
+    {
+        int sevenCount = CountSevens(roll);
+        if (sevenCount > 0)
+        {
+            return sevenCount;
+        }
+
+        return roll > 0 &&
+               roll % 7 == 0 &&
+               Owner.Creature.HasPower<SwordheartClarityPower>()
+            ? 1
+            : 0;
+    }
+
     private void RecordRoll(SoulRollResult result, string source)
     {
         AssertMutable();
-        _rollHistory.Add(new SoulRollHistoryEntry(result.Roll, result.DiscardedRoll, source));
+        _rollHistory.Add(new SoulRollHistoryEntry(
+            result.WinningRoll,
+            result.DiscardedRollDetails,
+            source));
     }
 
     private static string GetCardTitle(CardModel card)
@@ -822,14 +1210,76 @@ public class SoulOfAnchor : RelicModel
 
     private readonly struct SoulRollResult
     {
-        public int Roll { get; }
+        public SoulRollBreakdown WinningRoll { get; }
 
-        public int? DiscardedRoll { get; }
+        public IReadOnlyList<SoulRollBreakdown> DiscardedRollDetails { get; }
+
+        public int Roll => WinningRoll.FinalRoll;
+
+        public IReadOnlyList<int> DiscardedRolls =>
+            DiscardedRollDetails
+                .Select(roll => roll.FinalRoll)
+                .ToArray();
 
         public SoulRollResult(int roll, int? discardedRoll)
+            : this(
+                SoulRollBreakdown.FromFinalRoll(roll),
+                discardedRoll.HasValue
+                    ? new[]
+                    {
+                        SoulRollBreakdown.FromFinalRoll(
+                            discardedRoll.Value,
+                            "优势骰")
+                    }
+                    : Array.Empty<SoulRollBreakdown>())
         {
-            Roll = roll;
-            DiscardedRoll = discardedRoll;
+        }
+
+        public SoulRollResult(
+            int roll,
+            IReadOnlyList<int> discardedRolls)
+            : this(
+                SoulRollBreakdown.FromFinalRoll(roll),
+                discardedRolls?
+                    .Select(discardedRoll =>
+                        SoulRollBreakdown.FromFinalRoll(
+                            discardedRoll,
+                            "优势骰"))
+                    .ToArray())
+        {
+        }
+
+        public SoulRollResult(
+            SoulRollBreakdown winningRoll,
+            IReadOnlyList<SoulRollBreakdown> discardedRolls)
+        {
+            WinningRoll =
+                winningRoll ?? SoulRollBreakdown.FromFinalRoll(0);
+            DiscardedRollDetails =
+                discardedRolls ?? Array.Empty<SoulRollBreakdown>();
+        }
+    }
+
+    private async Task ConsumeReservedRollModifierPowers(
+        PlayerChoiceContext choiceContext,
+        CardModel cardSource)
+    {
+        StrengthenPower strengthen =
+            Owner.Creature.GetPower<StrengthenPower>();
+        if (strengthen != null)
+        {
+            await strengthen.ConsumeReservedRolls(
+                choiceContext,
+                cardSource);
+        }
+
+        ExtremeDodgeRollPenaltyPower rollPenalty =
+            Owner.Creature.GetPower<ExtremeDodgeRollPenaltyPower>();
+        if (rollPenalty != null)
+        {
+            await rollPenalty.ConsumeReservedRolls(
+                choiceContext,
+                cardSource);
         }
     }
 
@@ -867,8 +1317,8 @@ public class SoulOfAnchor : RelicModel
 
     private bool IsCriticalRoll(int roll)
     {
-        int criticalLowerBound = Math.Max(_rollMin, _rollMax - GetChargeRangeBonus());
-        return roll >= criticalLowerBound && roll <= _rollMax;
+        int criticalUpperBound = _rollMax + GetChargeRangeBonus();
+        return roll >= _rollMax && roll <= criticalUpperBound;
     }
 
     private bool IsThirdTierRoll(int roll)
@@ -899,6 +1349,15 @@ public class SoulOfAnchor : RelicModel
         return Owner.Creature.HasPower<MagicSwordModePower>();
     }
 
+    private bool CanGainSwordheartFromCard(CardModel card)
+    {
+        return GrantsSwordheart &&
+               !IsMagicSwordModeActive() &&
+               !(Owner.Creature.HasPower<ReptureDualSwordsPower>() &&
+                 (card?.IsDupe == true ||
+                  DualSwordsCopyHelper.IsDualSwordsCopy(card)));
+    }
+
     private void PrepareRollForDamage(CardModel cardSource)
     {
         if (!IsTriggeredCardValue(cardSource))
@@ -919,6 +1378,12 @@ public class SoulOfAnchor : RelicModel
         else
         {
             CurrentAttackHitIndex = -1;
+        }
+
+        if (_reusePreparedRollForNextDamage)
+        {
+            _reusePreparedRollForNextDamage = false;
+            return;
         }
 
         PrepareAttackOrSkillRoll(cardSource, CurrentCardEnergyCost, includeMagicSwordBonus: true);
@@ -957,6 +1422,7 @@ public class SoulOfAnchor : RelicModel
                 CurrentValueMultiplier,
                 CurrentSwordheartAmount,
                 CurrentCardEnergyCost,
+                CurrentCardEnergySpent,
                 ActiveAttackCommand,
                 CurrentAttackHitIndex,
                 PendingSwordheartAmount,
@@ -983,6 +1449,7 @@ public class SoulOfAnchor : RelicModel
         CurrentValueMultiplier = state.CurrentValueMultiplier;
         CurrentSwordheartAmount = state.CurrentSwordheartAmount;
         CurrentCardEnergyCost = state.CurrentCardEnergyCost;
+        CurrentCardEnergySpent = state.CurrentCardEnergySpent;
         ActiveAttackCommand = state.ActiveAttackCommand;
         CurrentAttackHitIndex = state.CurrentAttackHitIndex;
         PendingSwordheartAmount = state.PendingSwordheartAmount;
@@ -1005,10 +1472,12 @@ public class SoulOfAnchor : RelicModel
         CurrentValueMultiplier = 1m;
         CurrentSwordheartAmount = 0;
         CurrentCardEnergyCost = 0;
+        CurrentCardEnergySpent = 0;
         ActiveAttackCommand = null;
         CurrentAttackHitIndex = -1;
         PendingSwordheartAmount = 0;
         AttackOrSkillRollCount = 0;
+        _reusePreparedRollForNextDamage = false;
     }
 
     private readonly struct SuspendedRollState
@@ -1025,6 +1494,8 @@ public class SoulOfAnchor : RelicModel
 
         public int CurrentCardEnergyCost { get; }
 
+        public int CurrentCardEnergySpent { get; }
+
         public AttackCommand ActiveAttackCommand { get; }
 
         public int CurrentAttackHitIndex { get; }
@@ -1040,6 +1511,7 @@ public class SoulOfAnchor : RelicModel
             decimal currentValueMultiplier,
             int currentSwordheartAmount,
             int currentCardEnergyCost,
+            int currentCardEnergySpent,
             AttackCommand activeAttackCommand,
             int currentAttackHitIndex,
             int pendingSwordheartAmount,
@@ -1051,6 +1523,7 @@ public class SoulOfAnchor : RelicModel
             CurrentValueMultiplier = currentValueMultiplier;
             CurrentSwordheartAmount = currentSwordheartAmount;
             CurrentCardEnergyCost = currentCardEnergyCost;
+            CurrentCardEnergySpent = currentCardEnergySpent;
             ActiveAttackCommand = activeAttackCommand;
             CurrentAttackHitIndex = currentAttackHitIndex;
             PendingSwordheartAmount = pendingSwordheartAmount;

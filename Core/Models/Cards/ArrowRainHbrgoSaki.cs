@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,7 +20,8 @@ public sealed class ArrowRainHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DamageVar[] { new DamageVar(7m, ValueProp.Move) };
 
-    protected override bool IsPlayable => Owner?.Creature?.HasPower<ReptureBowPower>() == true;
+    protected override bool IsPlayable =>
+        ModeTransitionHelper.CanPlayBowRestrictedCard(Owner?.Creature);
 
     public ArrowRainHbrgoSaki()
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AllEnemies)
@@ -28,12 +30,16 @@ public sealed class ArrowRainHbrgoSaki : CardModel
 
     public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
     {
-        return card != this || Owner?.Creature?.HasPower<ReptureBowPower>() == true;
+        return card != this ||
+               ModeTransitionHelper.CanPlayBowRestrictedCard(Owner?.Creature);
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue).FromCard(this).TargetingAllOpponents(base.CombatState)
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            base.DynamicVars.Damage.BaseValue);
+        await DamageCmd.Attack(damage).FromCard(this).TargetingAllOpponents(base.CombatState)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
     }

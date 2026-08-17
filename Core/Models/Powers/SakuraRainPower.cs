@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -52,24 +54,50 @@ public sealed class SakuraRainPower : PowerModel
         return Task.CompletedTask;
     }
 
-    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
+    public override async Task AfterPlayerTurnStart(
+        PlayerChoiceContext choiceContext,
+        Player player)
     {
         if (player != Owner.Player)
         {
             return;
         }
 
-        SetDamageReductionActive(false);
-        if (!CombatModeHelper.HasEnemyAttackIntent(Owner))
+        if (SetDamageReductionActive(false))
+        {
+            await CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
+        }
+    }
+
+    public override async Task BeforeSideTurnEnd(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IEnumerable<Creature> participants)
+    {
+        if (side != Owner.Side || !participants.Contains(Owner))
         {
             return;
         }
 
-        if (await SwordheartSpendHelper.TrySpend(choiceContext, Owner, 1m))
+        bool shouldActivate = false;
+        if (CombatModeHelper.HasEnemyAttackIntent(Owner) &&
+            await SwordheartSpendHelper.TrySpend(choiceContext, Owner, 1m))
         {
-            SetDamageReductionActive(true);
+            shouldActivate = true;
             Flash();
         }
+
+        if (SetDamageReductionActive(shouldActivate))
+        {
+            await CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
+        }
+    }
+
+    public override Task AfterRemoved(Creature oldOwner)
+    {
+        return IsDamageReductionActive
+            ? CombatPreviewRefreshHelper.RefreshOpponentIntents(oldOwner)
+            : Task.CompletedTask;
     }
 
     public override decimal ModifyDamageMultiplicative(
@@ -89,7 +117,9 @@ public sealed class SakuraRainPower : PowerModel
             return 1m;
         }
 
-        return Math.Ceiling(amount * _incomingDamageMultiplier) / amount;
+        return HbrgoSakiDamageMultiplierHelper.Add(
+            _incomingDamageMultiplier,
+            this);
     }
 
     public override async Task AfterDamageReceived(
@@ -120,7 +150,8 @@ public sealed class SakuraRainPower : PowerModel
             return;
         }
 
-        decimal retaliationDamage = Math.Ceiling(result.TotalDamage * _retaliationDamageMultiplier);
+        decimal retaliationDamage =
+            result.TotalDamage * _retaliationDamageMultiplier;
         Flash();
         await CreatureCmd.Damage(
             choiceContext,
@@ -131,10 +162,16 @@ public sealed class SakuraRainPower : PowerModel
             null);
     }
 
-    private void SetDamageReductionActive(bool active)
+    private bool SetDamageReductionActive(bool active)
     {
+        if (IsDamageReductionActive == active)
+        {
+            return false;
+        }
+
         AssertMutable();
         IsDamageReductionActive = active;
+        return true;
     }
 
     internal void EnableRetaliation()

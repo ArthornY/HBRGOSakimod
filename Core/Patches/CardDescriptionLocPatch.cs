@@ -25,22 +25,10 @@ internal static class CardDescriptionLocPatch
     private static string GetReplacementLocKey(CardModel card)
     {
         bool isUpgraded = card.IsUpgraded || card.DeckVersion?.IsUpgraded == true;
-        return card switch
+        string specialKey = card switch
         {
             FeintHbrgoSaki when !CombatModeHelper.IsMultiplayer(card.Owner?.Creature) =>
                 "FEINT_HBRGO_SAKI.singleplayerDescription",
-            NoSelfInDreamHbrgoSaki when isUpgraded =>
-                "NO_SELF_IN_DREAM_HBRGO_SAKI.upgradedDescription",
-            ImitateHbrgoSaki when isUpgraded =>
-                "IMITATE_HBRGO_SAKI.upgradedDescription",
-            SakuraRainHbrgoSaki when isUpgraded =>
-                "SAKURA_RAIN_HBRGO_SAKI.upgradedDescription",
-            MagicSwordEnhancementHbrgoSaki when isUpgraded =>
-                "MAGIC_SWORD_ENHANCEMENT_HBRGO_SAKI.upgradedDescription",
-            FragileHbrgoSaki when isUpgraded =>
-                "FRAGILE_HBRGO_SAKI.upgradedDescription",
-            MagicSwordLuckySevenHbrgoSaki when isUpgraded =>
-                "MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI.upgradedDescription",
             ShadowDanceSongHbrgoSaki shadowDance =>
                 $"SHADOW_DANCE_SONG_HBRGO_SAKI.level{shadowDance.SongLevel}Description",
             BlueSkySongHbrgoSaki blueSky =>
@@ -49,5 +37,15 @@ internal static class CardDescriptionLocPatch
                 $"LOST_DAYS_SONG_HBRGO_SAKI.level{lostDays.SongLevel}Description",
             _ => null
         };
+
+        if (specialKey != null || !isUpgraded)
+        {
+            return specialKey;
+        }
+
+        string upgradedKey = $"{card.Id.Entry}.upgradedDescription";
+        return new LocString("cards", upgradedKey).Exists()
+            ? upgradedKey
+            : null;
     }
 }

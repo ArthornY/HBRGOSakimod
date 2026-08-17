@@ -6,6 +6,20 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class DualSwordsCopyHelper
 {
     private static readonly Dictionary<CardModel, int> XEnergySpentByCopy = new();
+    private static readonly HashSet<CardModel> DualSwordsCopies = new();
+
+    public static void RecordCopy(CardModel card)
+    {
+        if (card != null)
+        {
+            DualSwordsCopies.Add(card);
+        }
+    }
+
+    public static bool IsDualSwordsCopy(CardModel card)
+    {
+        return card != null && DualSwordsCopies.Contains(card);
+    }
 
     public static void RecordXEnergySpent(CardModel card, int energySpent)
     {
@@ -35,5 +49,6 @@ internal static class DualSwordsCopyHelper
         }
 
         XEnergySpentByCopy.Remove(card);
+        DualSwordsCopies.Remove(card);
     }
 }

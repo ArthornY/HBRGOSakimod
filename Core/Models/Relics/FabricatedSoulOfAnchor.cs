@@ -2,6 +2,8 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 
 public sealed class FabricatedSoulOfAnchor : SoulOfAnchor
 {
+    protected override bool GrantsSwordheart => false;
+
     protected override int FirstTierUpperBound => 85;
 
     protected override int SecondTierLowerBound => 86;

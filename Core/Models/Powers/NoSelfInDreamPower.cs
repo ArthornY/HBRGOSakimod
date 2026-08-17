@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -25,6 +26,22 @@ public sealed class NoSelfInDreamPower : PowerModel
 
     public override Color AmountLabelColor => new("F85C5C");
 
+    public override decimal ModifyDamageMultiplicative(
+        Creature target,
+        decimal amount,
+        ValueProp props,
+        Creature dealer,
+        CardModel cardSource)
+    {
+        decimal multiplier =
+            dealer == Owner &&
+            target?.Side != Owner.Side &&
+            amount > 0m
+                ? FinalDamageMultiplier
+                : 1m;
+        return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
+    }
+
     public override async Task AfterDamageGiven(
         PlayerChoiceContext choiceContext,
         Creature dealer,
@@ -42,7 +59,7 @@ public sealed class NoSelfInDreamPower : PowerModel
             return;
         }
 
-        int allyDamage = (int)Math.Floor(result.TotalDamage * _allyDamageMultiplier);
+        decimal allyDamage = result.TotalDamage * _allyDamageMultiplier;
         if (allyDamage <= 0)
         {
             return;

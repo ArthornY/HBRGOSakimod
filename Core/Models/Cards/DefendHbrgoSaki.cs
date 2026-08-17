@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -8,6 +7,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -20,10 +20,12 @@ public sealed class DefendHbrgoSaki : CardModel
 	protected override HashSet<CardTag> CanonicalTags => new HashSet<CardTag> { CardTag.Defend };
 
 	protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-		new IHoverTip[] { HoverTipFactory.FromPower<DodgePower>() };
+		new IHoverTip[] { HoverTipFactory.Static(StaticHoverTip.Block) };
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
-		new DynamicVar[] { new PowerVar<DodgePower>(3m) };
+		new DynamicVar[] { new BlockVar(5m, ValueProp.Move) };
+
+	public override bool GainsBlock => true;
 
 	public DefendHbrgoSaki()
 		: base(1, CardType.Skill, CardRarity.Basic, TargetType.Self)
@@ -32,11 +34,14 @@ public sealed class DefendHbrgoSaki : CardModel
 
 	protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		await PowerCmd.Apply<DodgePower>(choiceContext, base.Owner.Creature, base.DynamicVars["DodgePower"].BaseValue, base.Owner.Creature, this);
+		await CreatureCmd.GainBlock(
+			Owner.Creature,
+			DynamicVars.Block,
+			cardPlay);
 	}
 
 	protected override void OnUpgrade()
 	{
-		base.DynamicVars["DodgePower"].UpgradeValueBy(2m);
+		DynamicVars.Block.UpgradeValueBy(3m);
 	}
 }

@@ -1,52 +1,43 @@
 using System.Linq;
-using Godot;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Relics;
 using HBRGOSakiMod.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Combat;
+using STS2RitsuLib.Scaffolding.Godot.NodeAttachments;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
 
 [HarmonyPatch(typeof(NCombatUi), nameof(NCombatUi.Activate))]
 internal static class OverclockCombatUiPatch
 {
-    private const string GaugeName = "HbrgoSakiOverclockGauge";
-    private const string ExtraTurnOverlayName = "HbrgoSakiOverclockExtraTurnOverlay";
-
     private static void Postfix(NCombatUi __instance, CombatState state)
     {
-        NOverclockGauge gauge = __instance.GetNodeOrNull<NOverclockGauge>(GaugeName);
-        if (gauge == null)
-        {
-            gauge = new NOverclockGauge
-            {
-                Name = GaugeName
-            };
-            __instance.AddChildSafely(gauge);
-        }
+        ModNodeAttachmentRegistry.EnsureReadyAttachments(__instance);
 
         Player localPlayer = LocalContext.GetMe(state);
         Overclock overclock = state.Players
             .Where(player => player.Creature?.Side == localPlayer.Creature?.Side)
             .Select(player => player.GetRelic<Overclock>())
             .FirstOrDefault(relic => relic != null);
-        gauge.BindRelic(overclock);
 
-        NOverclockExtraTurnOverlay overlay =
-            __instance.GetNodeOrNull<NOverclockExtraTurnOverlay>(ExtraTurnOverlayName);
-        if (overlay == null)
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance,
+                HBRGOSakiCombatUiIntegration.GaugeAttachmentId,
+                out NOverclockGauge gauge))
         {
-            overlay = new NOverclockExtraTurnOverlay
-            {
-                Name = ExtraTurnOverlayName
-            };
-            __instance.AddChildSafely(overlay);
+            gauge.BindRelic(overclock);
         }
 
-        overlay.BindRelic(overclock, localPlayer);
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance,
+                HBRGOSakiCombatUiIntegration.ExtraTurnOverlayAttachmentId,
+                out NOverclockExtraTurnOverlay overlay))
+        {
+            overlay.BindRelic(overclock, localPlayer);
+        }
     }
 }

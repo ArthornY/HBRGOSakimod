@@ -1,0 +1,17 @@
+{
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.title": "入队仪式",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.description": "你突然感觉眼前一黑，睁开眼，你看到了熟悉的场景：那是一座学校的礼堂，像是在举行入学典礼的样子，但横幅上写的是“入队仪式”？台下是数十名像是穿着学生制服的女性，还有一只...白虎？台上的身着军装的紫发女性在发表着演讲：\n\n......诚如前述，本基地拥有完整的教学体系。稍后会由负责指导你们的教官补充细节，务必仔细聆听。\n\n你尝试看清台上人的面庞，但察觉没过。她的脸上笼罩了一团黑雾。不止如此，当你试图注意任何一人时，她们的脸庞都会被黑雾笼罩，你甚至想不起来她们的名字。",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.options.CONJECTURE.title": "难道说...",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.options.CONJECTURE.description": "将两个选项连接起来。",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.options.NOODLES.title": "你知道刀削面吗？",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.options.NOODLES.description": "循着脑海中的声音继续回想。",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.options.EHE_CHUMI.title": "诶嘿啾咪",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.INITIAL.options.EHE_CHUMI.description": "说出脑海中突然浮现的话。",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.CONJECTURE_RESULT.description": "难道说...",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.NOODLES.description": "“哈？”\n\n随着你脑海中的这道声音落地，你依稀可以听见旁边有一道声音说着：\n\n“你不知道吗？就是一只手拿着面团，另一只手拿刀。站在开水锅前把面条切成细长的薄片，下进锅里煮的那种面！”",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.NOODLES.options.TAKE_REWARD.title": "疯狂+1，获得一次卡牌奖励",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.NOODLES.options.TAKE_REWARD.description": "接受这段突如其来的记忆。",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.description": "“别说了！”\n\n你的脑海中突然出现了这样一道怒吼，她不属于你，应该也不属于跟你使用一具身体的“妹妹”。",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.options.TAKE_REWARD.title": "疯狂+1，DP上限+10",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.options.TAKE_REWARD.description": "接受这道不属于你的怒吼。"
+}

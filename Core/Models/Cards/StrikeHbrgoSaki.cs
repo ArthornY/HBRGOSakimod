@@ -21,7 +21,7 @@ public sealed class StrikeHbrgoSaki : CardModel
 
 	protected override HashSet<CardTag> CanonicalTags => new HashSet<CardTag> { CardTag.Strike };
 
-	protected override IEnumerable<DynamicVar> CanonicalVars => new DamageVar[] { new DamageVar(4m, ValueProp.Move) };
+	protected override IEnumerable<DynamicVar> CanonicalVars => new DamageVar[] { new DamageVar(6m, ValueProp.Move) };
 
 	public StrikeHbrgoSaki()
 		: base(1, CardType.Attack, CardRarity.Basic, TargetType.AnyEnemy)
@@ -51,6 +51,6 @@ public sealed class StrikeHbrgoSaki : CardModel
 
 	protected override void OnUpgrade()
 	{
-		base.DynamicVars.Damage.UpgradeValueBy(1m);
+		base.DynamicVars.Damage.UpgradeValueBy(3m);
 	}
 }

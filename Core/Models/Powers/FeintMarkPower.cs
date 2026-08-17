@@ -22,7 +22,6 @@ public sealed class FeintMarkPower : PowerModel
     private AttackCommand _activeAttackCommand;
     private bool _isIncomingDamageWindowOpen;
     private bool _shouldSpendSwordheart;
-    private bool _canGrantExtraTurnForPendingDamage;
     private bool _didNegateDamage;
 
     public override PowerType Type => PowerType.Buff;
@@ -61,7 +60,6 @@ public sealed class FeintMarkPower : PowerModel
         _activeAttackCommand = command;
         _isIncomingDamageWindowOpen = false;
         _shouldSpendSwordheart = false;
-        _canGrantExtraTurnForPendingDamage = false;
         _didNegateDamage = false;
 
         if (Owner.IsDead || attacker.IsDead)
@@ -107,16 +105,11 @@ public sealed class FeintMarkPower : PowerModel
             return Task.CompletedTask;
         }
 
-        _canGrantExtraTurnForPendingDamage = false;
-        DodgePower dodge = Owner.GetPower<DodgePower>();
-        if (dodge == null || amount >= dodge.Amount || props.HasFlag(ValueProp.Unblockable))
-        {
-            _shouldSpendSwordheart = true;
-        }
-        else
-        {
-            _canGrantExtraTurnForPendingDamage = true;
-        }
+        _shouldSpendSwordheart =
+            !IsBlockNegationEligible(
+                amount,
+                Owner.Block,
+                props);
 
         return Task.CompletedTask;
     }
@@ -142,16 +135,11 @@ public sealed class FeintMarkPower : PowerModel
             return amount;
         }
 
-        _canGrantExtraTurnForPendingDamage = false;
-        DodgePower dodge = Owner.GetPower<DodgePower>();
-        if (dodge == null || amount >= dodge.Amount || props.HasFlag(ValueProp.Unblockable))
-        {
-            _shouldSpendSwordheart = true;
-        }
-        else
-        {
-            _canGrantExtraTurnForPendingDamage = true;
-        }
+        _shouldSpendSwordheart =
+            !IsBlockNegationEligible(
+                amount,
+                Owner.Block,
+                props);
 
         return amount;
     }
@@ -183,23 +171,15 @@ public sealed class FeintMarkPower : PowerModel
             return false;
         }
 
-        DodgePower dodge = Owner.GetPower<DodgePower>();
-        if (dodge == null ||
-            !IsDodgeNegationEligible(amount, dodge.Amount, props))
+        if (!IsBlockNegationEligible(
+                amount,
+                Owner.Block,
+                props))
         {
             _shouldSpendSwordheart = true;
-            _canGrantExtraTurnForPendingDamage = false;
             return false;
         }
 
-        if (!DodgePower.TrySpend(Owner, amount))
-        {
-            _shouldSpendSwordheart = true;
-            _canGrantExtraTurnForPendingDamage = false;
-            return false;
-        }
-
-        _canGrantExtraTurnForPendingDamage = false;
         if (!_didNegateDamage)
         {
             _didNegateDamage = true;
@@ -210,36 +190,14 @@ public sealed class FeintMarkPower : PowerModel
         return true;
     }
 
-    internal static bool IsDodgeNegationEligible(
+    internal static bool IsBlockNegationEligible(
         decimal incomingDamage,
-        int dodgeAmount,
+        decimal blockAmount,
         ValueProp props)
     {
         return incomingDamage > 0m &&
-               incomingDamage < dodgeAmount &&
+               incomingDamage < blockAmount &&
                !props.HasFlag(ValueProp.Unblockable);
-    }
-
-    internal void NotifyDamageNegatedByDodge(
-        Creature target,
-        ValueProp props,
-        Creature dealer)
-    {
-        if (!_isIncomingDamageWindowOpen ||
-            _activeAttackCommand == null ||
-            _shouldSpendSwordheart ||
-            !_canGrantExtraTurnForPendingDamage ||
-            _didNegateDamage ||
-            target != Owner ||
-            dealer != _activeAttackCommand.Attacker ||
-            !props.IsPoweredAttack())
-        {
-            return;
-        }
-
-        _canGrantExtraTurnForPendingDamage = false;
-        _didNegateDamage = true;
-        Owner.Player?.GetRelic<FeintLikeWind>()?.QueueExtraTurn();
     }
 
     public override async Task AfterAttack(PlayerChoiceContext choiceContext, AttackCommand command)
@@ -267,7 +225,6 @@ public sealed class FeintMarkPower : PowerModel
             _activeAttackCommand = null;
             _isIncomingDamageWindowOpen = false;
             _shouldSpendSwordheart = false;
-            _canGrantExtraTurnForPendingDamage = false;
             _didNegateDamage = false;
         }
     }
@@ -278,7 +235,6 @@ public sealed class FeintMarkPower : PowerModel
         _activeAttackCommand = null;
         _isIncomingDamageWindowOpen = false;
         _shouldSpendSwordheart = false;
-        _canGrantExtraTurnForPendingDamage = false;
         _didNegateDamage = false;
     }
 

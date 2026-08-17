@@ -18,6 +18,14 @@
       <HintPath>libs\0Harmony.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="BaseLib">
+      <HintPath>libs\BaseLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="STS2-RitsuLib">
+      <HintPath>libs\STS2-RitsuLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <Target Name="CopyCustomOutput" AfterTargets="Build">  

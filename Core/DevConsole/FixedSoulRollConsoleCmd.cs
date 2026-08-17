@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
@@ -11,6 +12,8 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 {
     private const string _subcommand = "watashikakamininanimashu";
     public const string ActivateOverclockSubcommand = "__activate_overclock";
+    public const string SummonRedCrimsonSubcommand =
+        "__summon_red_crimson";
 
     public override string CmdName => "hbrgosakimod";
 
@@ -24,6 +27,14 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 
     public override CmdResult Process(Player player, string[] args)
     {
+        if (args.Length == 1 &&
+            args[0].Equals(
+                SummonRedCrimsonSubcommand,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return SummonRedCrimson(player);
+        }
+
         if (args.Length == 2 &&
             args[0].Equals(ActivateOverclockSubcommand, StringComparison.OrdinalIgnoreCase) &&
             int.TryParse(args[1], out int requestedLevel))
@@ -59,6 +70,37 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
             enabled
                 ? "All Soul of Anchor rolls are now fixed at 100."
                 : "All Soul of Anchor rolls are random again.");
+    }
+
+    private static CmdResult SummonRedCrimson(Player player)
+    {
+        if (player == null)
+        {
+            return new CmdResult(
+                false,
+                "This command only works during a run.");
+        }
+
+        RestorationMoment relic =
+            player.GetRelic<RestorationMoment>();
+        if (relic == null)
+        {
+            return new CmdResult(
+                false,
+                "The player does not have Restoration Moment.");
+        }
+
+        if (!relic.TryBeginSummon(out Task summonTask))
+        {
+            return new CmdResult(
+                false,
+                "Red Crimson cannot be summoned right now.");
+        }
+
+        return new CmdResult(
+            summonTask,
+            true,
+            "Red Crimson summoned.");
     }
 
     private static CmdResult ActivateOverclock(Player player, int requestedLevel)

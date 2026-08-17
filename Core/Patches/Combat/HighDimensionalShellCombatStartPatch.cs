@@ -24,26 +24,103 @@ internal static class HighDimensionalShellCombatStartPatch
         ICombatState combatState)
     {
         await originalTask;
-        if (combatState == null ||
-            !combatState.Players.Any(player => player.Character is HbrgoSaki))
+        if (!ShouldGrantShells(combatState))
         {
             return;
         }
 
-        PlayerChoiceContext choiceContext = new ThrowingPlayerChoiceContext();
         foreach (Creature enemy in combatState.Enemies.Where(enemy => enemy.IsAlive))
         {
-            if (enemy.HasPower<HighDimensionalShellPower>())
-            {
-                continue;
-            }
-
-            await PowerCmd.Apply<HighDimensionalShellPower>(
-                choiceContext,
-                enemy,
-                HighDimensionalShellPower.CalculateAmount(enemy),
-                enemy,
-                null);
+            await GrantShell(enemy, replaceExisting: false);
         }
+    }
+
+    internal static bool ShouldGrantShells(ICombatState combatState)
+    {
+        return combatState != null &&
+            combatState.Players.Any(
+                player => player.Character is HbrgoSaki);
+    }
+
+    internal static async Task GrantShell(
+        Creature enemy,
+        bool replaceExisting)
+    {
+        if (enemy == null || !enemy.IsAlive)
+        {
+            return;
+        }
+
+        HighDimensionalShellPower existingShell =
+            enemy.GetPower<HighDimensionalShellPower>();
+        if (!replaceExisting && existingShell != null)
+        {
+            return;
+        }
+
+        if (replaceExisting && existingShell != null)
+        {
+            await PowerCmd.Remove(existingShell);
+        }
+
+        BreakPower breakPower = enemy.GetPower<BreakPower>();
+        if (replaceExisting && breakPower != null)
+        {
+            await PowerCmd.Remove(breakPower);
+        }
+
+        DestructionRatePower destructionRate =
+            enemy.GetPower<DestructionRatePower>();
+        if (replaceExisting && destructionRate != null)
+        {
+            await PowerCmd.Remove(destructionRate);
+        }
+
+        if (enemy.HasPower<HighDimensionalShellPower>())
+        {
+            return;
+        }
+
+        await PowerCmd.Apply<HighDimensionalShellPower>(
+            new ThrowingPlayerChoiceContext(),
+            enemy,
+            HighDimensionalShellPower.CalculateAmount(enemy),
+            enemy,
+            null);
+    }
+}
+
+[HarmonyPatch(typeof(Hook), nameof(Hook.AfterCreatureAddedToCombat))]
+internal static class HighDimensionalShellCreatureAddedPatch
+{
+    private static void Postfix(
+        ICombatState combatState,
+        Creature creature,
+        ref Task __result)
+    {
+        __result = GrantShellAfterCreatureAdded(
+            __result,
+            combatState,
+            creature);
+    }
+
+    private static async Task GrantShellAfterCreatureAdded(
+        Task originalTask,
+        ICombatState combatState,
+        Creature creature)
+    {
+        await originalTask;
+        if (creature?.IsAlive != true ||
+            combatState == null ||
+            !combatState.Enemies.Contains(creature) ||
+            !HighDimensionalShellCombatStartPatch.ShouldGrantShells(
+                combatState))
+        {
+            return;
+        }
+
+        await HighDimensionalShellCombatStartPatch.GrantShell(
+            creature,
+            replaceExisting: false);
     }
 }

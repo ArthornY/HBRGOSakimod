@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
@@ -18,35 +19,53 @@ public sealed class IOnlyKnowWhatIKnowHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
-    protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
+    public override IEnumerable<CardKeyword> CanonicalKeywords =>
+        new[]
     {
-        HoverTipFactory.FromPower<IOnlyKnowWhatIKnowPower>()
+        CardKeyword.Exhaust
     };
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new CardsVar(1)
+        new CardsVar(3)
     };
 
     public IOnlyKnowWhatIKnowHbrgoSaki()
-        : base(3, CardType.Power, CardRarity.Rare, TargetType.Self)
+        : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self)
     {
     }
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await PowerCmd.Apply<IOnlyKnowWhatIKnowPower>(
-            choiceContext,
-            Owner.Creature,
-            1m,
-            Owner.Creature,
-            this);
+        CardPile discardPile =
+            Owner.PlayerCombatState.DiscardPile;
+        int selectCount = System.Math.Min(
+            (int)DynamicVars.Cards.BaseValue,
+            discardPile.Cards.Count);
+        if (selectCount <= 0)
+        {
+            return;
+        }
 
-        await CardPileCmd.Draw(choiceContext, DynamicVars.Cards.BaseValue, Owner);
+        CardSelectorPrefs prefs = new(
+            new LocString(
+                "cards",
+                "I_ONLY_KNOW_WHAT_I_KNOW_HBRGO_SAKI.selectionPrompt"),
+            selectCount);
+        CardModel[] selectedCards = (await CardSelectCmd.FromCombatPile(
+            choiceContext,
+            discardPile,
+            Owner,
+            prefs)).ToArray();
+        await CardPileCmd.Add(
+            selectedCards.Reverse(),
+            Owner.PlayerCombatState.DrawPile,
+            CardPilePosition.Top,
+            this);
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Cards.UpgradeValueBy(1m);
+        DynamicVars.Cards.UpgradeValueBy(2m);
     }
 }

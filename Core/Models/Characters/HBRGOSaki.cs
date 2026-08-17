@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using BaseLib.Abstracts;
+using BaseLib.Utils.Attributes;
 using Godot;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
@@ -13,8 +15,18 @@ using MegaCrit.Sts2.Core.Nodes.Vfx;
 
 namespace HBRGOSakiMod.Core.Models.Characters;
 
-public sealed class HbrgoSaki : CharacterModel
+[CustomID("HBRGO_SAKI")]
+public sealed class HbrgoSaki : CustomCharacterModel
 {
+    public override string CustomVisualPath =>
+        "res://scenes/creature_visuals/hbrgo_saki.tscn";
+
+    public override string CustomRestSiteAnimPath =>
+        "res://scenes/rest_site/characters/hbrgo_saki_rest_site.tscn";
+
+    public override string CustomMerchantAnimPath =>
+        "res://scenes/merchant/characters/hbrgo_saki_merchant.tscn";
+
     public override Color NameColor => new("5C8DFFFF");
 
     public override CharacterGender Gender => CharacterGender.Feminine;
@@ -50,7 +62,8 @@ public sealed class HbrgoSaki : CharacterModel
         ModelDb.Relic<ElectronicSoldierManual>(),
         ModelDb.Relic<SoulOfAnchor>(),
         ModelDb.Relic<DeflectorProtection>(),
-        ModelDb.Relic<Overclock>()
+        ModelDb.Relic<Overclock>(),
+        ModelDb.Relic<RestorationMoment>()
     };
 
     protected override string CharacterSelectIconPath => ImageHelper.GetImagePath("packed/character_select/sakikowin.png");

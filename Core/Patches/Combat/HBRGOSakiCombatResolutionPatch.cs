@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,8 +11,6 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves;
-using MegaCrit.Sts2.Core.Saves.Managers;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
 
@@ -89,50 +86,5 @@ internal static class HBRGOSakiCardPlayCleanupPatch
         {
             await RemoveFromPlayPile(cardInPlay);
         }
-    }
-}
-
-[HarmonyPatch(typeof(SaveManager), nameof(SaveManager.UpdateProgressAfterCombatWon))]
-internal static class HBRGOSakiCombatProgressPatch
-{
-    private static Exception Finalizer(Exception __exception, Player localPlayer)
-    {
-        if (__exception is ArgumentOutOfRangeException
-            {
-                ParamName: "character"
-            } &&
-            localPlayer?.Character is HbrgoSaki)
-        {
-            return null;
-        }
-
-        return __exception;
-    }
-}
-
-[HarmonyPatch(typeof(ProgressSaveManager), "CheckFifteenElitesDefeatedEpoch")]
-internal static class HBRGOSakiEliteProgressPatch
-{
-    private static bool Prefix(Player localPlayer)
-    {
-        return localPlayer?.Character is not HbrgoSaki;
-    }
-}
-
-[HarmonyPatch(typeof(ProgressSaveManager), "CheckFifteenBossesDefeatedEpoch")]
-internal static class HBRGOSakiBossProgressPatch
-{
-    private static bool Prefix(Player localPlayer)
-    {
-        return localPlayer?.Character is not HbrgoSaki;
-    }
-}
-
-[HarmonyPatch(typeof(ProgressSaveManager), "ObtainCharUnlockEpoch")]
-internal static class HBRGOSakiCharacterUnlockProgressPatch
-{
-    private static bool Prefix(Player localPlayer)
-    {
-        return localPlayer?.Character is not HbrgoSaki;
     }
 }

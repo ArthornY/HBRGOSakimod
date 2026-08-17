@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Godot;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.addons.mega_text;
@@ -188,7 +189,8 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         }
 
         int count = _soulOfAnchor?.RollHistory.Count ?? 0;
-        _summaryLabel.Text = $"本场战斗共 {count} 次，按新到旧排列；划线数字为被淘汰的出目";
+        _summaryLabel.Text =
+            $"本场战斗共 {count} 次，按新到旧排列；有加成时显示基础出目与最终出目，悬停可查看来源";
         if (count == 0)
         {
             Label emptyLabel = CreateLabel("尚无出目记录。", 22, new Color(0.68f, 0.72f, 0.78f));
@@ -217,22 +219,27 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
         CenterContainer rollContainer = new()
         {
-            CustomMinimumSize = new Vector2(entry.DiscardedRoll.HasValue ? 180f : 110f, 64f)
+            CustomMinimumSize = new Vector2(
+                entry.DiscardedRollDetails.Count > 0 ? 570f : 250f,
+                64f)
         };
-        RichTextLabel rollLabel = new()
+        HBoxContainer rollExpressions = new()
         {
-            BbcodeEnabled = true,
-            Text = BuildRollText(entry),
-            FitContent = true,
-            ScrollActive = false,
-            CustomMinimumSize = new Vector2(entry.DiscardedRoll.HasValue ? 170f : 100f, 42f),
-            MouseFilter = MouseFilterEnum.Ignore
+            SizeFlagsHorizontal = SizeFlags.ShrinkCenter
         };
-        rollLabel.AddThemeFontSizeOverride(ThemeConstants.RichTextLabel.NormalFontSize, 30);
-        rollLabel.AddThemeColorOverride(
-            ThemeConstants.RichTextLabel.DefaultColor,
-            GetRollColor(_soulOfAnchor?.GetRollTier(entry.Roll) ?? SoulRollTier.None));
-        rollContainer.AddChild(rollLabel);
+        rollExpressions.AddThemeConstantOverride("separation", 14);
+
+        foreach (SoulRollBreakdown discardedRoll in entry.DiscardedRollDetails)
+        {
+            rollExpressions.AddChild(CreateRollLabel(
+                discardedRoll,
+                isDiscarded: true));
+        }
+
+        rollExpressions.AddChild(CreateRollLabel(
+            entry.WinningRoll,
+            isDiscarded: false));
+        rollContainer.AddChild(rollExpressions);
         row.AddChild(rollContainer);
 
         Label sourceLabel = CreateLabel($"来源：{entry.Source}", 21, Colors.White);
@@ -244,12 +251,64 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         _historyList.AddChild(new HSeparator());
     }
 
-    private static string BuildRollText(SoulRollHistoryEntry entry)
+    private RichTextLabel CreateRollLabel(
+        SoulRollBreakdown roll,
+        bool isDiscarded)
     {
-        string discarded = entry.DiscardedRoll.HasValue
-            ? $"[color=#8a9099][s]{entry.DiscardedRoll.Value}[/s][/color]  "
-            : string.Empty;
-        return $"[center]{discarded}{entry.Roll}[/center]";
+        string expression = BuildRollExpression(roll);
+        RichTextLabel label = new()
+        {
+            BbcodeEnabled = true,
+            Text = isDiscarded
+                ? $"[center][s]{expression}[/s][/center]"
+                : $"[center]{expression}[/center]",
+            FitContent = true,
+            ScrollActive = false,
+            CustomMinimumSize = new Vector2(
+                Mathf.Max(170f, expression.Length * 17f),
+                42f),
+            MouseFilter = MouseFilterEnum.Stop,
+            TooltipText = BuildRollTooltip(roll)
+        };
+        label.AddThemeFontSizeOverride(
+            ThemeConstants.RichTextLabel.NormalFontSize,
+            26);
+        label.AddThemeColorOverride(
+            ThemeConstants.RichTextLabel.DefaultColor,
+            isDiscarded
+                ? new Color(0.54f, 0.56f, 0.60f)
+                : GetRollColor(
+                    _soulOfAnchor?.GetRollTier(roll.FinalRoll) ??
+                    SoulRollTier.None));
+        return label;
+    }
+
+    private static string BuildRollExpression(SoulRollBreakdown roll)
+    {
+        if (roll.TotalBonus == 0)
+        {
+            return roll.FinalRoll.ToString();
+        }
+
+        return roll.TotalBonus >= 0
+            ? $"{roll.BaseRoll} + {roll.TotalBonus} = {roll.FinalRoll}"
+            : $"{roll.BaseRoll} - {Math.Abs(roll.TotalBonus)} = {roll.FinalRoll}";
+    }
+
+    private static string BuildRollTooltip(SoulRollBreakdown roll)
+    {
+        string bonusSources = roll.Bonuses.Count == 0
+            ? "无"
+            : string.Join(
+                "\n",
+                roll.Bonuses.Select(bonus =>
+                    $"• {bonus.Source}：{bonus.Amount:+#;-#;0}"));
+        return
+            $"骰子来源：{roll.DiceSource}\n" +
+            $"基础出目：{roll.BaseRoll}\n" +
+            $"加成来源：\n{bonusSources}\n" +
+            $"加成合计：{roll.TotalBonus:+#;-#;0}\n" +
+            $"最终出目：{roll.FinalRoll}";
     }
 
     private void LayoutPanel()
@@ -259,7 +318,7 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
             return;
         }
 
-        float panelWidth = Mathf.Min(820f, Mathf.Max(520f, Size.X * 0.58f));
+        float panelWidth = Mathf.Min(1180f, Mathf.Max(760f, Size.X * 0.72f));
         float panelHeight = Mathf.Min(820f, Mathf.Max(460f, Size.Y * 0.78f));
         panelWidth = Mathf.Min(panelWidth, Size.X - 40f);
         panelHeight = Mathf.Min(panelHeight, Size.Y - 40f);

@@ -3,37 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Godot;
-using HarmonyLib;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Patches;
 
-[HarmonyPatch(typeof(NChooseACardSelectionScreen), nameof(NChooseACardSelectionScreen._Ready))]
 internal static class ChihayaChooseCardNumberKeyPatch
 {
-    private const string ListenerName = "HBRGOChihayaChooseCardNumberKeyListener";
-
-    private static readonly FieldInfo CardsField = AccessTools.Field(
-        typeof(NChooseACardSelectionScreen),
-        "_cards");
-
-    private static void Postfix(NChooseACardSelectionScreen __instance)
-    {
-        if (!IsChihayaChoiceScreen(__instance) ||
-            __instance.GetNodeOrNull<ChihayaChooseCardNumberKeyListener>(ListenerName) != null)
-        {
-            return;
-        }
-
-        __instance.AddChild(new ChihayaChooseCardNumberKeyListener
-        {
-            Name = ListenerName,
-            Screen = __instance
-        });
-    }
+    private static readonly FieldInfo CardsField =
+        PrivateAccess.Field<NChooseACardSelectionScreen>("_cards");
 
     internal static IReadOnlyList<CardModel> GetCards(NChooseACardSelectionScreen screen)
     {
@@ -51,20 +32,20 @@ internal static class ChihayaChooseCardNumberKeyPatch
         return Array.Empty<CardModel>();
     }
 
-    private static bool IsChihayaChoiceScreen(NChooseACardSelectionScreen screen)
+    internal static bool IsChihayaChoiceScreen(NChooseACardSelectionScreen screen)
     {
         IReadOnlyList<CardModel> cards = GetCards(screen);
-        return cards.Count == 2 &&
+        return cards.Count == 3 &&
                cards[0] is ReptureBowChoiceHbrgoSaki &&
-               cards[1] is ReptureDualSwordsChoiceHbrgoSaki;
+               cards[1] is ReptureDualSwordsChoiceHbrgoSaki &&
+               cards[2] is RaptureScytheChoiceHbrgoSaki;
     }
 }
 
 internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
 {
-    private static readonly MethodInfo SelectHolderMethod = AccessTools.Method(
-        typeof(NChooseACardSelectionScreen),
-        "SelectHolder");
+    private static readonly MethodInfo SelectHolderMethod =
+        PrivateAccess.Method<NChooseACardSelectionScreen>("SelectHolder");
 
     internal NChooseACardSelectionScreen Screen { get; set; }
 
@@ -75,7 +56,9 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
 
     public override void _Input(InputEvent inputEvent)
     {
-        if (inputEvent is not InputEventKey keyEvent || !IsScreenAvailable())
+        if (inputEvent is not InputEventKey keyEvent ||
+            !IsScreenAvailable() ||
+            !ChihayaChooseCardNumberKeyPatch.IsChihayaChoiceScreen(Screen))
         {
             return;
         }
@@ -149,6 +132,11 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
         if (IsKey(keyEvent, Key.Key2, Key.Kp2))
         {
             return 1;
+        }
+
+        if (IsKey(keyEvent, Key.Key3, Key.Kp3))
+        {
+            return 2;
         }
 
         return -1;

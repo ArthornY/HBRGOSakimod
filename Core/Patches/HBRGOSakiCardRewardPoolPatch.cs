@@ -43,6 +43,7 @@ internal static class HBRGOSakiCardRewardPoolHelper
     internal static bool IsRewardCard(CardModel card, bool includeColorless = false)
     {
         if (card is MagicSwordLuckySevenHbrgoSaki
+            or MagicSwordModeHbrgoSaki
             or FeintHbrgoSaki
             or HighSongHbrgoSaki
             or ShadowDanceSongHbrgoSaki
@@ -84,22 +85,48 @@ internal static class HBRGOSakiCardRewardPoolHelper
             return options;
         }
 
-        bool includeColorless = options.CardPools.Any(pool => pool is ColorlessCardPool);
-        if (options.CustomCardPool == null)
+        CardModel[] explicitCards = options.CustomCardPool?.ToArray();
+        if (options.CardPools.Count > 0 &&
+            options.CardPools.All(pool => pool is ColorlessCardPool))
         {
-            CardModel[] rewardCards = GetUnlockedRewardCards(player, includeColorless).ToArray();
+            return options;
+        }
+
+        if (explicitCards is { Length: > 0 } &&
+            explicitCards.All(IsColorlessCard))
+        {
+            CardModel[] filteredColorlessCards = ApplyOriginalFilter(options, explicitCards).ToArray();
+            CardRarityOddsType colorlessOdds = UsesSingleRarity(filteredColorlessCards)
+                ? CardRarityOddsType.Uniform
+                : options.RarityOdds;
+            return options.WithCustomPool(filteredColorlessCards, colorlessOdds);
+        }
+
+        bool includeColorless =
+            options.CardPools.Any(pool => pool is ColorlessCardPool) ||
+            explicitCards?.Any(IsColorlessCard) == true;
+        if (explicitCards == null)
+        {
+            CardModel[] rewardCards = ApplyOriginalFilter(
+                    options,
+                    GetUnlockedRewardCards(player, includeColorless))
+                .ToArray();
             CardRarityOddsType rewardOdds = UsesSingleRarity(rewardCards) ? CardRarityOddsType.Uniform : options.RarityOdds;
             return options.WithCustomPool(rewardCards, rewardOdds);
         }
 
-        CardModel[] customCards = options.CustomCardPool
+        CardModel[] customCards = explicitCards
             .Where(card => IsRewardCard(card, includeColorless))
             .Where(card => CanOfferCard(player, card))
+            .Where(card => MatchesOriginalFilter(options, card))
             .Distinct()
             .ToArray();
         if (customCards.Length == 0)
         {
-            customCards = GetUnlockedRewardCards(player, includeColorless).ToArray();
+            customCards = ApplyOriginalFilter(
+                    options,
+                    GetUnlockedRewardCards(player, includeColorless))
+                .ToArray();
         }
 
         CardRarityOddsType odds = UsesSingleRarity(customCards) ? CardRarityOddsType.Uniform : options.RarityOdds;
@@ -109,6 +136,30 @@ internal static class HBRGOSakiCardRewardPoolHelper
     private static bool UsesSingleRarity(IReadOnlyList<CardModel> cards)
     {
         return cards.Count > 0 && cards.All(card => card.Rarity == cards[0].Rarity);
+    }
+
+    private static IEnumerable<CardModel> ApplyOriginalFilter(
+        CardCreationOptions options,
+        IEnumerable<CardModel> cards)
+    {
+        return cards.Where(card => MatchesOriginalFilter(options, card));
+    }
+
+    private static bool MatchesOriginalFilter(CardCreationOptions options, CardModel card)
+    {
+        return options.CardPoolFilter?.Invoke(card) != false;
+    }
+
+    private static bool IsColorlessCard(CardModel card)
+    {
+        try
+        {
+            return card.Pool is ColorlessCardPool;
+        }
+        catch (InvalidProgramException)
+        {
+            return false;
+        }
     }
 }
 

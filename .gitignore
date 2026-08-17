@@ -10,3 +10,13 @@
 .godot-home/
 .nuget/
 .tools/
+
+# Local development, audit, and extracted-reference data
+.codex-tmp/
+.codex-sheet-work/
+.dotnet_cli_home/
+.dotnet-home-x64/
+.godot-home-x64/
+outputs/
+resources/HBR资源/
+build/daybefore/

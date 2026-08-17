@@ -119,7 +119,7 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
         {
             int optionIndex = _buttons.Count;
             int current = _manual.GetSenseAmount(option);
-            string text = $"{ElectronicSoldierManual.GetSenseTitle(option)}  {current} -> {Mathf.Min(current + 1, ElectronicSoldierManual.MaxSixSense)}\n{ElectronicSoldierManual.GetSenseShortDescription(option)}";
+            string text = $"{ElectronicSoldierManual.GetSenseTitle(option)}  {current} -> {Mathf.Min(current + 1, ElectronicSoldierManual.MaxSixSense)}\n{_manual.GetSenseShortDescriptionForOwner(option)}";
             Button button = new()
             {
                 Text = text,

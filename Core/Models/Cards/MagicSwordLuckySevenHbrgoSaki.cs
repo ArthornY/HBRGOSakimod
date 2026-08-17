@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -17,8 +18,6 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 {
-    private const int _swordheartRollMin = 1;
-    private const int _swordheartRollExclusiveMax = 4;
     private int _magicSwordModeHitCount = -1;
 
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/magic_sword_lucky_seven_hbrgo_saki.png");
@@ -35,6 +34,19 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
     public MagicSwordLuckySevenHbrgoSaki()
         : base(0, CardType.Attack, CardRarity.Basic, TargetType.RandomEnemy)
     {
+    }
+
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        description.Add(
+            "UpgradeEffect",
+            IsUpgradedVersion
+                ? new LocString(
+                        "cards",
+                        "MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI.upgradeEffect")
+                    .GetFormattedText()
+                : string.Empty);
     }
 
     public override void ModifyShuffleOrder(Player player, List<CardModel> cards, bool isInitialShuffle)
@@ -67,8 +79,7 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
         if (IsUpgradedVersion && !CombatManager.Instance.IsOverOrEnding)
         {
-            int swordheartAmount = Owner.RunState.Rng.Niche.NextInt(_swordheartRollMin, _swordheartRollExclusiveMax);
-            await PowerCmd.Apply<SwordheartPower>(choiceContext, Owner.Creature, swordheartAmount, Owner.Creature, this);
+            await PowerCmd.Apply<SwordheartPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
         }
     }
 

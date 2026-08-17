@@ -42,7 +42,7 @@ public partial class NOverclockGauge : Control
     private float _chargePulseTime;
     private float _levelBurstTime;
     private float _animationTime;
-    private int _observedCharge;
+    private decimal _observedCharge;
     private int _observedLevel;
     private int _observedActiveLevel;
     private bool _showLevelUpTexture;
@@ -308,14 +308,14 @@ public partial class NOverclockGauge : Control
             return;
         }
 
-        int nextCharge = _relic.Charge;
-        int nextGaugeCharge = _relic.ChargeIntoLevel;
+        decimal nextCharge = _relic.PreciseCharge;
+        decimal nextGaugeCharge = _relic.ChargeIntoLevel;
         int nextLevel = _relic.Level;
         int nextActiveLevel = _relic.ActiveLevel;
         bool crossedChargeThreshold =
             nextCharge > _observedCharge &&
-            nextCharge / Overclock.ChargePerLevel >
-            _observedCharge / Overclock.ChargePerLevel;
+            Math.Floor(nextCharge / Overclock.ChargePerLevel) >
+            Math.Floor(_observedCharge / Overclock.ChargePerLevel);
         if (nextCharge > _observedCharge)
         {
             _chargePulseTime = 0.34f;
@@ -323,7 +323,7 @@ public partial class NOverclockGauge : Control
 
         if (crossedChargeThreshold)
         {
-            _displayCharge = nextGaugeCharge;
+            _displayCharge = (float)nextGaugeCharge;
         }
 
         if (nextLevel > _observedLevel)
@@ -345,7 +345,7 @@ public partial class NOverclockGauge : Control
         _observedCharge = nextCharge;
         _observedLevel = nextLevel;
         _observedActiveLevel = nextActiveLevel;
-        _targetCharge = nextGaugeCharge;
+        _targetCharge = (float)nextGaugeCharge;
         RefreshText();
         if (crossedChargeThreshold)
         {
@@ -370,9 +370,9 @@ public partial class NOverclockGauge : Control
         }
 
         Visible = true;
-        _displayCharge = _relic.ChargeIntoLevel;
-        _targetCharge = _relic.ChargeIntoLevel;
-        _observedCharge = _relic.Charge;
+        _displayCharge = (float)_relic.ChargeIntoLevel;
+        _targetCharge = (float)_relic.ChargeIntoLevel;
+        _observedCharge = _relic.PreciseCharge;
         _observedLevel = _relic.Level;
         _observedActiveLevel = _relic.ActiveLevel;
         RefreshText();
@@ -387,7 +387,7 @@ public partial class NOverclockGauge : Control
             ? $"OD Lv.{displayedLevel}"
             : $"OD Lv.{_relic.Level}");
         _chargeLabel?.SetTextAutoSize(
-            $"{_relic.ChargeIntoLevel} / {Overclock.ChargePerLevel}");
+            $"{_relic.DisplayChargeIntoLevel} / {Overclock.ChargePerLevel}");
 
         bool emblemIsReady = displayedLevel > 0;
         if (_activeEmblem != null)

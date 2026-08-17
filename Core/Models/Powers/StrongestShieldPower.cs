@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
@@ -23,7 +24,7 @@ public sealed class StrongestShieldPower : PowerModel
     private const int _rollExclusiveMax = _rollMax + 1;
     private const decimal _baseThreshold = 33m;
     private const decimal _thresholdMultiplier = 1.5m;
-    private const decimal _damageMultiplier = 0.5m;
+    internal const decimal DamageMultiplier = 0.5m;
 
     private int _pendingSwordheartAmount;
 
@@ -43,34 +44,69 @@ public sealed class StrongestShieldPower : PowerModel
         }
     }
 
-    public static decimal ModifyIncomingAttackDamage(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource)
+    public static StrongestShieldPower TryTriggerIncomingAttackDamageReduction(
+        Creature target,
+        Creature dealer,
+        decimal amount,
+        ValueProp props,
+        CardModel cardSource)
     {
         if (amount <= 0m || !props.IsPoweredAttack())
         {
-            return amount;
+            return null;
         }
 
         StrongestShieldPower strongestShield = target.GetPower<StrongestShieldPower>();
         if (strongestShield == null || !strongestShield.RollSucceeds(target, dealer, amount, props, cardSource))
         {
-            return amount;
+            return null;
         }
 
         strongestShield.Flash();
-        return amount * _damageMultiplier;
+        return strongestShield;
     }
 
     private bool RollSucceeds(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource)
     {
-        int roll = RollD100(target, dealer, amount, props, cardSource, 0, out int? discardedRoll);
-        RecordRollHistory(roll, discardedRoll, cardSource);
+        SoulRollBreakdown winningRoll = RollD100(
+            target,
+            dealer,
+            amount,
+            props,
+            cardSource,
+            0,
+            out IReadOnlyList<SoulRollBreakdown> discardedRolls);
+        int roll = winningRoll.FinalRoll;
+        RecordRollHistory(winningRoll, discardedRolls, cardSource);
         PendingSwordheartAmount += GetSwordheartAmount(roll);
         return roll > GetThreshold();
     }
 
     public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        if (target != Owner || PendingSwordheartAmount <= 0)
+        if (target != Owner)
+        {
+            return;
+        }
+
+        StrengthenPower strengthen = Owner.GetPower<StrengthenPower>();
+        if (strengthen != null)
+        {
+            await strengthen.ConsumeReservedRolls(
+                choiceContext,
+                cardSource);
+        }
+
+        ExtremeDodgeRollPenaltyPower rollPenalty =
+            Owner.GetPower<ExtremeDodgeRollPenaltyPower>();
+        if (rollPenalty != null)
+        {
+            await rollPenalty.ConsumeReservedRolls(
+                choiceContext,
+                cardSource);
+        }
+
+        if (PendingSwordheartAmount <= 0)
         {
             return;
         }
@@ -85,30 +121,141 @@ public sealed class StrongestShieldPower : PowerModel
         await PowerCmd.Apply<SwordheartPower>(choiceContext, Owner, swordheartAmount, Owner, null);
     }
 
-    private int RollD100(
+    private SoulRollBreakdown RollD100(
         Creature target,
         Creature dealer,
         decimal amount,
         ValueProp props,
         CardModel cardSource,
         int rollIndex,
-        out int? discardedRoll)
+        out IReadOnlyList<SoulRollBreakdown> discardedRolls)
     {
-        int roll = RollDeterministicD100(target, dealer, amount, props, cardSource, rollIndex);
-        discardedRoll = null;
+        List<SoulRollBreakdown> rolls = new()
+        {
+            SoulRollBreakdown.FromFinalRoll(
+                RollDeterministicD100(
+                    target,
+                    dealer,
+                    amount,
+                    props,
+                    cardSource,
+                    rollIndex),
+                "基础骰")
+        };
         GuideLittleHand guideLittleHand = Owner.Player?.GetRelic<GuideLittleHand>();
         if (guideLittleHand != null)
         {
-            int secondRoll = RollDeterministicD100(target, dealer, amount, props, cardSource, rollIndex + 1);
-            int higherRoll = guideLittleHand.TakeHigherRoll(roll, secondRoll);
-            discardedRoll = higherRoll == roll ? secondRoll : roll;
-            roll = higherRoll;
+            rolls.Add(SoulRollBreakdown.FromFinalRoll(
+                RollDeterministicD100(
+                    target,
+                    dealer,
+                    amount,
+                    props,
+                    cardSource,
+                    ++rollIndex),
+                "优势骰：导游的小手"));
+            guideLittleHand.TakeHigherRoll(
+                rolls[0].FinalRoll,
+                rolls[1].FinalRoll);
         }
 
-        return roll;
+        StrengthenPower strengthen = Owner.GetPower<StrengthenPower>();
+        bool useStrengthen = strengthen?.TryReserveRoll() == true;
+        if (useStrengthen)
+        {
+            rolls.Add(SoulRollBreakdown.FromFinalRoll(
+                RollDeterministicD100(
+                    target,
+                    dealer,
+                    amount,
+                    props,
+                    cardSource,
+                    ++rollIndex),
+                "优势骰：强化"));
+        }
+
+        ProtagonistPrivilegePower protagonistPrivilege =
+            Owner.GetPower<ProtagonistPrivilegePower>();
+        if (protagonistPrivilege != null)
+        {
+            rolls.Add(SoulRollBreakdown.FromFinalRoll(
+                RollDeterministicD100(
+                    target,
+                    dealer,
+                    amount,
+                    props,
+                    cardSource,
+                    ++rollIndex),
+                "优势骰：主人公特典"));
+        }
+
+        ExtremeDodgeRollPenaltyPower rollPenalty =
+            Owner.GetPower<ExtremeDodgeRollPenaltyPower>();
+        bool useRollPenalty =
+            rollPenalty?.TryReserveRoll() == true;
+        List<SoulRollBonusDetail> sharedBonuses = new();
+        if (useStrengthen)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                strengthen.RollBonus,
+                "强化"));
+        }
+
+        if (useRollPenalty)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                ExtremeDodgeRollPenaltyPower.RollPenalty,
+                "极限闪避"));
+        }
+
+        if (protagonistPrivilege != null)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                protagonistPrivilege.RollPenalty,
+                "主人公特典"));
+        }
+
+        List<SoulRollBreakdown> finalRolls = rolls
+            .Select(roll => ApplyRollBonuses(roll, sharedBonuses))
+            .ToList();
+        int winningIndex = finalRolls.FindIndex(
+            roll => roll.FinalRoll == _rollMax);
+        if (winningIndex < 0)
+        {
+            int highestRoll = finalRolls.Max(roll => roll.FinalRoll);
+            winningIndex = finalRolls.FindIndex(
+                roll => roll.FinalRoll == highestRoll);
+        }
+
+        discardedRolls = finalRolls
+            .Where((_, index) => index != winningIndex)
+            .ToArray();
+        return finalRolls[winningIndex];
     }
 
-    private void RecordRollHistory(int roll, int? discardedRoll, CardModel cardSource)
+    private static SoulRollBreakdown ApplyRollBonuses(
+        SoulRollBreakdown roll,
+        IReadOnlyList<SoulRollBonusDetail> sharedBonuses)
+    {
+        if (sharedBonuses == null || sharedBonuses.Count == 0)
+        {
+            return roll;
+        }
+
+        SoulRollBonusDetail[] bonuses = roll.Bonuses
+            .Concat(sharedBonuses)
+            .ToArray();
+        return new SoulRollBreakdown(
+            roll.BaseRoll,
+            roll.FinalRoll + sharedBonuses.Sum(bonus => bonus.Amount),
+            roll.DiceSource,
+            bonuses);
+    }
+
+    private void RecordRollHistory(
+        SoulRollBreakdown winningRoll,
+        IReadOnlyList<SoulRollBreakdown> discardedRolls,
+        CardModel cardSource)
     {
         string trigger = string.IsNullOrWhiteSpace(cardSource?.Title)
             ? "一次攻击"
@@ -117,7 +264,10 @@ public sealed class StrongestShieldPower : PowerModel
 
         foreach (SoulOfAnchor soul in Owner.Player?.Relics.OfType<SoulOfAnchor>() ?? Enumerable.Empty<SoulOfAnchor>())
         {
-            soul.RecordAbilityRoll(roll, discardedRoll, source);
+            soul.RecordAbilityRoll(
+                winningRoll,
+                discardedRolls,
+                source);
         }
     }
 
@@ -191,9 +341,21 @@ public sealed class StrongestShieldPower : PowerModel
 
     private int GetSwordheartAmount(int roll)
     {
-        int amount = roll == _rollMax ? SwordheartPower.BaseMaxAmount : 0;
-        amount += CountSevens(roll);
-        return Math.Min(amount, SwordheartPower.BaseMaxAmount);
+        if (roll == _rollMax)
+        {
+            return SwordheartPower.GetMaxAmount(Owner);
+        }
+
+        if (CountSevens(roll) > 0)
+        {
+            return 1;
+        }
+
+        return roll > 0 &&
+               roll % 7 == 0 &&
+               Owner.HasPower<SwordheartClarityPower>()
+            ? 1
+            : 0;
     }
 
     private int CountSevens(int roll)

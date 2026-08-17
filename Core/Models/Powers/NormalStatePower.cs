@@ -1,21 +1,23 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class NormalStatePower : PowerModel
 {
     private const decimal _dpRecoveryPercent = 0.05m;
-    private const decimal _cardDodgeMultiplier = 0.75m;
+    private const decimal _blockMultiplier = 0.75m;
+    private const decimal _outgoingDamageMultiplier = 0.5m;
 
     public override PowerType Type => PowerType.Buff;
 
@@ -45,18 +47,30 @@ public sealed class NormalStatePower : PowerModel
         await Task.CompletedTask;
     }
 
-    public override decimal ModifyPowerAmountGivenAdditive(PowerModel power, Creature giver, decimal amount, Creature target, CardModel cardSource)
+    public override decimal ModifyBlockMultiplicative(
+        Creature target,
+        decimal block,
+        ValueProp props,
+        CardModel cardSource,
+        CardPlay cardPlay)
     {
-        if (power is not DodgePower || giver != Owner || target != Owner || amount <= 0m)
+        if (target != Owner || block <= 0m)
         {
-            return 0m;
+            return 1m;
         }
 
-        if (cardSource == null || cardSource.Owner != Owner.Player)
-        {
-            return 0m;
-        }
+        return _blockMultiplier;
+    }
 
-        return Math.Ceiling(amount * _cardDodgeMultiplier) - amount;
+    public override decimal ModifyDamageMultiplicative(
+        Creature target,
+        decimal amount,
+        ValueProp props,
+        Creature dealer,
+        CardModel cardSource)
+    {
+        return dealer == Owner && amount > 0m
+            ? _outgoingDamageMultiplier
+            : 1m;
     }
 }

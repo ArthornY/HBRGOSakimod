@@ -23,7 +23,8 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
     {
         HoverTipFactory.FromPower<NormalStatePower>(),
         HoverTipFactory.FromPower<ReptureBowPower>(),
-        HoverTipFactory.FromPower<ReptureDualSwordsPower>()
+        HoverTipFactory.FromPower<ReptureDualSwordsPower>(),
+        HoverTipFactory.FromPower<RaptureScythePower>()
     };
 
     public ChihayaClassmateHbrgoSaki()
@@ -38,7 +39,8 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
             new CardModel[]
             {
                 CombatState.CreateCard<ReptureBowChoiceHbrgoSaki>(Owner),
-                CombatState.CreateCard<ReptureDualSwordsChoiceHbrgoSaki>(Owner)
+                CombatState.CreateCard<ReptureDualSwordsChoiceHbrgoSaki>(Owner),
+                CombatState.CreateCard<RaptureScytheChoiceHbrgoSaki>(Owner)
             },
             Owner);
 
@@ -49,21 +51,11 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
         await EnterSelectedRepture(choiceContext, selectedMode);
         await DrawModeRestrictedCard(choiceContext, selectedMode);
-        await ReplaceWithSwitchInHand(choiceContext);
     }
 
     protected override void OnUpgrade()
     {
         AddKeyword(CardKeyword.Innate);
-    }
-
-    private async Task ReplaceWithSwitchInHand(PlayerChoiceContext choiceContext)
-    {
-        CardModel switchCard = CombatState.CreateCard<SwitchHbrgoSaki>(Owner);
-        SyncUpgradeLevel(switchCard);
-
-        await CardPileCmd.AddGeneratedCardToCombat(switchCard, PileType.Hand, Owner);
-        await CardPileCmd.RemoveFromCombat(this);
     }
 
     private async Task EnterSelectedRepture(PlayerChoiceContext choiceContext, CardModel selectedMode)
@@ -84,11 +76,22 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
             {
                 await PowerCmd.Remove(Owner.Creature.GetPower<ReptureDualSwordsPower>());
             }
+
+            if (Owner.Creature.HasPower<RaptureScythePower>())
+            {
+                await PowerCmd.Remove(Owner.Creature.GetPower<RaptureScythePower>());
+            }
         }
 
         if (selectedMode is ReptureDualSwordsChoiceHbrgoSaki)
         {
             await PowerCmd.Apply<ReptureDualSwordsPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
+            return;
+        }
+
+        if (selectedMode is RaptureScytheChoiceHbrgoSaki)
+        {
+            await PowerCmd.Apply<RaptureScythePower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
             return;
         }
 
@@ -119,22 +122,13 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
         return selectedMode switch
         {
             ReptureBowChoiceHbrgoSaki =>
-                card is ArrowRainHbrgoSaki or SlideStepHbrgoSaki or StrongShotHbrgoSaki,
+                ModeTransitionHelper.IsBowRestrictedCard(card),
             ReptureDualSwordsChoiceHbrgoSaki =>
-                card is CrossSlashHbrgoSaki
-                    or SwallowReversalHbrgoSaki
-                    or BladeDanceHbrgoSaki
-                    or MimicDreamBubbleHbrgoSaki,
+                ModeTransitionHelper.IsDualSwordsRestrictedCard(card),
+            RaptureScytheChoiceHbrgoSaki =>
+                ModeTransitionHelper.IsScytheRestrictedCard(card),
             _ => false
         };
     }
 
-    private void SyncUpgradeLevel(CardModel card)
-    {
-        while (card.CurrentUpgradeLevel < CurrentUpgradeLevel && card.IsUpgradable)
-        {
-            card.UpgradeInternal();
-            card.FinalizeUpgradeInternal();
-        }
-    }
 }

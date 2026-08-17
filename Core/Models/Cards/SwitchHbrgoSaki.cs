@@ -68,7 +68,11 @@ public sealed class SwitchHbrgoSaki : CardModel
 
     public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (cardPlay.IsFirstInSeries && !cardPlay.Card.IsDupe && cardPlay.Card.Owner == Owner && IsModeRestrictedCard(cardPlay.Card))
+        if (cardPlay.IsFirstInSeries &&
+            !cardPlay.Card.IsDupe &&
+            !DualSwordsCopyHelper.IsDualSwordsCopy(cardPlay.Card) &&
+            cardPlay.Card.Owner == Owner &&
+            ModeTransitionHelper.IsModeRestrictedCard(cardPlay.Card))
         {
             ReduceCostUntilPlayed();
         }
@@ -99,14 +103,4 @@ public sealed class SwitchHbrgoSaki : CardModel
         }
     }
 
-    private static bool IsModeRestrictedCard(CardModel card)
-    {
-        return card is ArrowRainHbrgoSaki
-            or CrossSlashHbrgoSaki
-            or SwallowReversalHbrgoSaki
-            or SlideStepHbrgoSaki
-            or BladeDanceHbrgoSaki
-            or StrongShotHbrgoSaki
-            or MimicDreamBubbleHbrgoSaki;
-    }
 }

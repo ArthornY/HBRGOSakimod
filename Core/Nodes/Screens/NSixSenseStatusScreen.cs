@@ -263,7 +263,9 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         scale = Mathf.Clamp(scale, 0.35f, 0.88f);
         Vector2 panelSize = SourceImageSize * scale;
         _panel.Size = panelSize;
-        _panel.Position = (viewportSize - panelSize) * 0.5f;
+        _panel.Position = new Vector2(
+            (viewportSize.X - panelSize.X) * 0.5f,
+            viewportSize.Y - panelSize.Y);
     }
 
     private void ToggleHelpPanel()
@@ -309,7 +311,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     private string BuildHelpText()
     {
         return string.Join("\n", ElectronicSoldierManual.AllSixSenseAttributes.Select(attribute =>
-            $"{ElectronicSoldierManual.GetSenseTitle(attribute)}：{ElectronicSoldierManual.GetSenseShortDescription(attribute)}"));
+            $"{ElectronicSoldierManual.GetSenseTitle(attribute)}：{_manual.GetSenseShortDescriptionForOwner(attribute)}"));
     }
 
     private static IEnumerable<(SixSenseAttribute Attribute, Vector2 Anchor)> GetLabelAnchors()

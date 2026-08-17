@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
-using HarmonyLib;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -13,6 +12,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
+using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
@@ -21,7 +21,7 @@ public sealed class AngryIzumiYukiPower : PowerModel
     private const string _forcedAttackMoveId = "ANGRY_IZUMI_YUKI_ATTACK";
     private const int _forcedAttackBaseDamage = 1;
     private static readonly FieldInfo PerformedAtLeastOnceField =
-        AccessTools.Field(typeof(MoveState), "_performedAtLeastOnce");
+        PrivateAccess.Field<MoveState>("_performedAtLeastOnce");
 
     public override PowerType Type => PowerType.Debuff;
 
