@@ -26,10 +26,12 @@ public partial class NDeflectorProtectionDpBar : Control
     private NinePatchRect _mask;
     private NinePatchRect _foreground;
     private MegaLabel _label;
+    private MegaLabel _currentRollLabel;
     private MegaLabel _redCrimsonLevelLabel;
     private Control _hpBarContainer;
     private Creature _creature;
     private DeflectorProtection _relic;
+    private SoulOfAnchor _rollHistory;
     private HighDimensionalShellPower _shell;
     private RedCrimson _redCrimson;
     private bool _subscribed;
@@ -41,6 +43,7 @@ public partial class NDeflectorProtectionDpBar : Control
         _creature = creature;
         _hpBarContainer = hpBarContainer;
         _relic = creature.Player?.GetRelic<DeflectorProtection>();
+        _rollHistory = creature.Player?.GetRelic<SoulOfAnchor>();
         _shell = creature.GetPower<HighDimensionalShellPower>();
         _redCrimson = creature?.Monster as RedCrimson;
         Subscribe();
@@ -93,6 +96,7 @@ public partial class NDeflectorProtectionDpBar : Control
         }
 
         SyncLayoutToHpBar();
+        RefreshCurrentRoll();
         RefreshRedCrimsonLevel();
         int maxAmount;
         int currentAmount;
@@ -112,6 +116,7 @@ public partial class NDeflectorProtectionDpBar : Control
         else
         {
             Visible = false;
+            _currentRollLabel.Visible = false;
             _redCrimsonLevelLabel.Visible = false;
             return;
         }
@@ -198,6 +203,42 @@ public partial class NDeflectorProtectionDpBar : Control
         _label.AddThemeFontSizeOverride(ThemeConstants.Label.FontSize, 24);
         AddChild(_label);
 
+        _currentRollLabel = new MegaLabel
+        {
+            Name = "CurrentRollLabel",
+            AnchorLeft = 0f,
+            AnchorRight = 1f,
+            AnchorTop = 0f,
+            AnchorBottom = 0f,
+            OffsetLeft = 0f,
+            OffsetTop = -30f,
+            OffsetRight = 0f,
+            OffsetBottom = -4f,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            MouseFilter = MouseFilterEnum.Ignore,
+            AutoSizeEnabled = true,
+            MinFontSize = 10,
+            MaxFontSize = 18,
+            Visible = false
+        };
+        _currentRollLabel.AddThemeColorOverride(
+            ThemeConstants.Label.FontColor,
+            new Color("9EDCF7FF"));
+        _currentRollLabel.AddThemeColorOverride(
+            ThemeConstants.Label.FontOutlineColor,
+            _outlineColor);
+        _currentRollLabel.AddThemeConstantOverride(
+            ThemeConstants.Label.OutlineSize,
+            10);
+        _currentRollLabel.AddThemeFontOverride(
+            ThemeConstants.Label.Font,
+            LoadFont(HealthBarFontPath));
+        _currentRollLabel.AddThemeFontSizeOverride(
+            ThemeConstants.Label.FontSize,
+            18);
+        AddChild(_currentRollLabel);
+
         _redCrimsonLevelLabel = new MegaLabel
         {
             Name = "RedCrimsonLevelLabel",
@@ -229,6 +270,30 @@ public partial class NDeflectorProtectionDpBar : Control
             ThemeConstants.Label.FontSize,
             18);
         AddChild(_redCrimsonLevelLabel);
+    }
+
+    private void RefreshCurrentRoll()
+    {
+        if (_currentRollLabel == null)
+        {
+            return;
+        }
+
+        bool shouldShow =
+            _relic != null &&
+            _rollHistory != null &&
+            _creature?.Player != null &&
+            _creature.IsAlive;
+        _currentRollLabel.Visible = shouldShow;
+        if (!shouldShow)
+        {
+            return;
+        }
+
+        _currentRollLabel.SetTextAutoSize(
+            _rollHistory.LastRoll > 0
+                ? $"当前出目：{_rollHistory.LastRoll}"
+                : "当前出目：—");
     }
 
     private void RefreshRedCrimsonLevel()
@@ -299,6 +364,12 @@ public partial class NDeflectorProtectionDpBar : Control
             _relic.DisplayAmountChanged += Refresh;
         }
 
+        if (_rollHistory != null)
+        {
+            _rollHistory.DisplayAmountChanged += Refresh;
+            _rollHistory.HistoryChanged += Refresh;
+        }
+
         if (_shell != null)
         {
             _shell.DisplayAmountChanged += Refresh;
@@ -313,14 +384,19 @@ public partial class NDeflectorProtectionDpBar : Control
         }
 
         DeflectorProtection nextRelic = _creature.Player?.GetRelic<DeflectorProtection>();
+        SoulOfAnchor nextRollHistory =
+            _creature.Player?.GetRelic<SoulOfAnchor>();
         HighDimensionalShellPower nextShell = _creature.GetPower<HighDimensionalShellPower>();
-        if (ReferenceEquals(_relic, nextRelic) && ReferenceEquals(_shell, nextShell))
+        if (ReferenceEquals(_relic, nextRelic) &&
+            ReferenceEquals(_rollHistory, nextRollHistory) &&
+            ReferenceEquals(_shell, nextShell))
         {
             return;
         }
 
         Unsubscribe();
         _relic = nextRelic;
+        _rollHistory = nextRollHistory;
         _shell = nextShell;
         Subscribe();
     }
@@ -343,6 +419,12 @@ public partial class NDeflectorProtectionDpBar : Control
         if (_relic != null)
         {
             _relic.DisplayAmountChanged -= Refresh;
+        }
+
+        if (_rollHistory != null)
+        {
+            _rollHistory.DisplayAmountChanged -= Refresh;
+            _rollHistory.HistoryChanged -= Refresh;
         }
 
         if (_shell != null)

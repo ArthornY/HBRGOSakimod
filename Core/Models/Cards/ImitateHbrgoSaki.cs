@@ -43,9 +43,20 @@ public sealed class ImitateHbrgoSaki : CardModel
             }
 
             CardModel copy = CreateOwnedCopy(entry.CardPlay.Card);
-            await CardCmd.AutoPlay(choiceContext, copy, GetCopyTarget(entry.CardPlay), AutoPlayType.Default);
-            await CombatFlowHelper.FinishAutoPlayedCard(copy);
-            await RemoveCopyFromCombat(copy);
+            try
+            {
+                await CardCmd.AutoPlay(
+                    choiceContext,
+                    copy,
+                    GetCopyTarget(entry.CardPlay),
+                    AutoPlayType.Default);
+                await CombatFlowHelper.FinishAutoPlayedCard(copy);
+            }
+            finally
+            {
+                DualSwordsCopyHelper.Clear(copy);
+                await RemoveCopyFromCombat(copy);
+            }
         }
 
         if (!CombatManager.Instance.IsOverOrEnding)
@@ -84,6 +95,7 @@ public sealed class ImitateHbrgoSaki : CardModel
     {
         CardModel copy = CardModel.FromSerializable(source.ToSerializable());
         Owner.Creature.CombatState.AddCard(copy, Owner);
+        DualSwordsCopyHelper.RecordCopy(copy);
         copy.AfterCreated();
         return copy;
     }

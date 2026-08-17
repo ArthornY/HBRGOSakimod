@@ -20,6 +20,7 @@ namespace HBRGOSakiMod{
             HBRGOSakiRewards.Register();
             SixSenseNetActions.Initialize();
             HBRGOSakiTargetTypes.Register();
+            HbrgoSakiVariantPreference.Register();
             HBRGOSakiContentPack.Register();
             HBRGOSakiRightClickIntegration.Register();
             HBRGOSakiRunLifecycle.Register();

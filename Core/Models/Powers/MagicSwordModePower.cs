@@ -138,7 +138,7 @@ public sealed class MagicSwordModePower : PowerModel
 
     public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
     {
-        if (card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+        if (card is ChihayaClassmateHbrgoSaki &&
             card.Owner?.Creature == Owner &&
             card.Pile?.IsCombatPile == true &&
             card.Pile.Type != PileType.Play)
@@ -161,13 +161,6 @@ public sealed class MagicSwordModePower : PowerModel
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        foreach (SoulOfAnchor soulOfAnchor in
-                 Owner.Player?.Relics.OfType<SoulOfAnchor>() ??
-                 Enumerable.Empty<SoulOfAnchor>())
-        {
-            soulOfAnchor.RecordMagicSwordModeEntered();
-        }
-
         await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
         await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());

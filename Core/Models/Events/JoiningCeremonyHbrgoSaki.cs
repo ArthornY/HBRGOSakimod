@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BaseLib.Utils.Attributes;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -162,13 +163,19 @@ public sealed class JoiningCeremonyHbrgoSaki : ModEventTemplate
 
     private Task OfferCardReward(bool rareOnly)
     {
+        bool IsEligible(CardModel card) =>
+            (Owner.Character is not HbrgoSaki31O ||
+                !HbrgoSaki31OCardFilter.IsExcluded(card)) &&
+            (!rareOnly || card.Rarity == CardRarity.Rare);
+
         CardCreationOptions options = rareOnly
             ? CardCreationOptions.ForNonCombatWithUniformOdds(
                     new[] { Owner.Character.CardPool },
-                    card => card.Rarity == CardRarity.Rare)
+                    IsEligible)
                 .WithFlags(CardCreationFlags.NoRarityModification)
             : CardCreationOptions.ForNonCombatWithDefaultOdds(
-                new[] { Owner.Character.CardPool });
+                new[] { Owner.Character.CardPool },
+                IsEligible);
 
         return RewardsCmd.OfferCustom(
             Owner,

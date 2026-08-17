@@ -5,8 +5,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Cards;
-using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -17,6 +17,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Models.Capabilities;
 using STS2RitsuLib.Patching;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
@@ -83,15 +84,16 @@ public sealed class NotOverYetPower : PowerModel
             return;
         }
 
-        SoulOfAnchor soulOfAnchor = Owner.Player?.GetRelic<SoulOfAnchor>();
-        if (soulOfAnchor == null)
+        RollGlossaryCapability rollCapability =
+            cardPlay.Card.Capability<RollGlossaryCapability>();
+        if (rollCapability == null)
         {
             return;
         }
 
         await ResolveExtraRollChain(
             choiceContext,
-            soulOfAnchor,
+            rollCapability,
             cardPlay.Card,
             primaryTarget);
     }
@@ -110,9 +112,9 @@ public sealed class NotOverYetPower : PowerModel
             return;
         }
 
-        SoulOfAnchor soulOfAnchor =
-            Owner.Player?.GetRelic<SoulOfAnchor>();
-        if (soulOfAnchor == null)
+        RollGlossaryCapability rollCapability =
+            triggeringCard.Capability<RollGlossaryCapability>();
+        if (rollCapability == null)
         {
             return;
         }
@@ -130,7 +132,7 @@ public sealed class NotOverYetPower : PowerModel
 
             await ResolveExtraRollChain(
                 choiceContext,
-                soulOfAnchor,
+                rollCapability,
                 triggeringCard,
                 target);
         }
@@ -202,11 +204,10 @@ public sealed class NotOverYetPower : PowerModel
 
     private async Task ResolveExtraRollChain(
         PlayerChoiceContext choiceContext,
-        SoulOfAnchor soulOfAnchor,
+        RollGlossaryCapability rollCapability,
         CardModel triggeringCard,
         Creature primaryTarget)
     {
-        bool swordheartTriggered = false;
         for (int attackIndex = 1; attackIndex <= _maxGeneratedAttacks; attackIndex++)
         {
             if (CombatManager.Instance.IsOverOrEnding)
@@ -214,11 +215,9 @@ public sealed class NotOverYetPower : PowerModel
                 return;
             }
 
-            int roll = await soulOfAnchor.RollExtraD100(
+            int roll = await rollCapability.RollExtraD100(
                 choiceContext,
-                triggeringCard,
-                allowSwordheart: !swordheartTriggered);
-            swordheartTriggered |= soulOfAnchor.IsRegularSwordheartTriggerRoll(roll);
+                triggeringCard);
             int threshold = _firstRollThreshold + (attackIndex - 1) * _rollThresholdStep;
             if (roll < threshold)
             {
@@ -268,6 +267,7 @@ public sealed class NotOverYetPower : PowerModel
             CardModel deckCard = candidates[selectedIndex];
             CardModel copy = Owner.CombatState.CloneCard(deckCard);
             copy.DeckVersion = deckCard;
+            DualSwordsCopyHelper.RecordCopy(copy);
             SyncUpgradeLevelFromDeck(copy, deckCard);
             return copy;
         }

@@ -28,7 +28,9 @@
     </Reference>
   </ItemGroup>
 
-  <Target Name="CopyCustomOutput" AfterTargets="Build">  
+  <Target Name="CopyCustomOutput"
+          AfterTargets="Build"
+          Condition="'$(SkipModOutputCopy)' != 'true'">
     <ItemGroup>  
       <OutputDlls Include="$(OutputPath)\$(AssemblyName).dll" />  
       <OutputDlls Include="$(OutputPath)\$(AssemblyName).pdb" />  

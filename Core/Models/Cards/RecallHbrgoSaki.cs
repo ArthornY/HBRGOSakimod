@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -58,6 +59,7 @@ public sealed class RecallHbrgoSaki : CardModel
         {
             if (choice != selected)
             {
+                DualSwordsCopyHelper.Clear(choice);
                 choice.RemoveFromState();
             }
         }
@@ -81,6 +83,7 @@ public sealed class RecallHbrgoSaki : CardModel
         CardModel copy = CardModel.FromSerializable(
             source.ToSerializable());
         Owner.Creature.CombatState.AddCard(copy, Owner);
+        DualSwordsCopyHelper.RecordCopy(copy);
         copy.AfterCreated();
         return copy;
     }

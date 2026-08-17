@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
@@ -179,8 +180,7 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
             return;
         }
 
-        _titleLabel.Text =
-            $"{_soulOfAnchor?.Title?.GetFormattedText() ?? "安科之魂"} · 出目记录";
+        _titleLabel.Text = "出目历史";
 
         foreach (Node child in _historyList.GetChildren())
         {
@@ -278,8 +278,9 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
             isDiscarded
                 ? new Color(0.54f, 0.56f, 0.60f)
                 : GetRollColor(
-                    _soulOfAnchor?.GetRollTier(roll.FinalRoll) ??
-                    SoulRollTier.None));
+                    RollKeywordRules.GetRollTier(
+                        _soulOfAnchor?.Owner,
+                        roll.FinalRoll)));
         return label;
     }
 

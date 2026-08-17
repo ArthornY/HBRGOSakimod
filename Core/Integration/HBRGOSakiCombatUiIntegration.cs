@@ -12,6 +12,8 @@ internal static class HBRGOSakiCombatUiIntegration
 {
     internal const string GaugeAttachmentId = "overclock_gauge";
     internal const string ExtraTurnOverlayAttachmentId = "overclock_extra_turn_overlay";
+    internal const string RollHistoryWidgetAttachmentId =
+        "roll_history_widget";
     internal const string DeflectorProtectionDpBarAttachmentId =
         "deflector_protection_dp_bar";
     internal const string RedCrimsonActionBarAttachmentId =
@@ -37,6 +39,11 @@ internal static class HBRGOSakiCombatUiIntegration
             ExtraTurnOverlayAttachmentId,
             _ => new NOverclockExtraTurnOverlay(),
             CreateOptions("HbrgoSakiOverclockExtraTurnOverlay", order: 1));
+
+        Registry.RegisterReadyChild<NCombatUi, NRollHistoryWidget>(
+            RollHistoryWidgetAttachmentId,
+            _ => new NRollHistoryWidget(),
+            CreateOptions("HbrgoSakiRollHistoryWidget", order: 2));
 
         Registry.RegisterReadyChild<NHealthBar, NDeflectorProtectionDpBar>(
             DeflectorProtectionDpBarAttachmentId,

@@ -29,7 +29,6 @@ public sealed class HBRGOSakiCardPool : CustomCardPoolModel
                 and not MagicSwordModeHbrgoSaki
                 and not FeintHbrgoSaki
                 and not ChihayaClassmateHbrgoSaki
-                and not SwitchHbrgoSaki
                 and not ReptureBowChoiceHbrgoSaki
                 and not ReptureDualSwordsChoiceHbrgoSaki
                 and not RaptureScytheChoiceHbrgoSaki

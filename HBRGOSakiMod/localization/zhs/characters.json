@@ -9,5 +9,16 @@
   "HBRGO_SAKI.cardsModifierTitle": "人造救世主卡牌",
   "HBRGO_SAKI.cardsModifierDescription": "人造救世主的卡牌现在会出现在奖励和商店中。",
   "HBRGO_SAKI.eventDeathPrevention": "现在还不能倒下。",
-  "HBRGO_SAKI.unlockText": "这个角色已经解锁。"
+  "HBRGO_SAKI.unlockText": "这个角色已经解锁。",
+  "HBRGO_SAKI_31O.title": "丰川祥子（31O）",
+  "HBRGO_SAKI_31O.titleObject": "丰川祥子（31O）",
+  "HBRGO_SAKI_31O.description": "31O部队长丰川祥子，以电子军人手册与偏导护盾继续战斗。",
+  "HBRGO_SAKI_31O.pronounSubject": "她",
+  "HBRGO_SAKI_31O.pronounObject": "她",
+  "HBRGO_SAKI_31O.pronounPossessive": "她的",
+  "HBRGO_SAKI_31O.possessiveAdjective": "她的",
+  "HBRGO_SAKI_31O.cardsModifierTitle": "丰川祥子（31O）卡牌",
+  "HBRGO_SAKI_31O.cardsModifierDescription": "丰川祥子（31O）的卡牌现在会出现在奖励和商店中。",
+  "HBRGO_SAKI_31O.eventDeathPrevention": "现在还不能倒下。",
+  "HBRGO_SAKI_31O.unlockText": "这个角色已经解锁。"
 }

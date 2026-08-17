@@ -20,9 +20,12 @@ internal static class OverclockCombatUiPatch
 
         Player localPlayer = LocalContext.GetMe(state);
         Overclock overclock = state.Players
-            .Where(player => player.Creature?.Side == localPlayer.Creature?.Side)
+            .Where(player =>
+                player.Creature?.Side == localPlayer?.Creature?.Side)
             .Select(player => player.GetRelic<Overclock>())
             .FirstOrDefault(relic => relic != null);
+        SoulOfAnchor rollHistory =
+            localPlayer?.GetRelic<SoulOfAnchor>();
 
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
                 __instance,
@@ -38,6 +41,14 @@ internal static class OverclockCombatUiPatch
                 out NOverclockExtraTurnOverlay overlay))
         {
             overlay.BindRelic(overclock, localPlayer);
+        }
+
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance,
+                HBRGOSakiCombatUiIntegration.RollHistoryWidgetAttachmentId,
+                out NRollHistoryWidget rollHistoryWidget))
+        {
+            rollHistoryWidget.BindHistory(rollHistory);
         }
     }
 }

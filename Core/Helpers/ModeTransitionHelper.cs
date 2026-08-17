@@ -67,8 +67,7 @@ internal static class ModeTransitionHelper
 
     public static bool IsBowRestrictedCard(CardModel card)
     {
-        return card is ArrowRainHbrgoSaki
-            or SlideStepHbrgoSaki
+        return card is SlideStepHbrgoSaki
             or StrongShotHbrgoSaki
             or MimicExorcismArrowHbrgoSaki
             or MimicIceFlowerThousandArrowsHbrgoSaki
@@ -81,8 +80,7 @@ internal static class ModeTransitionHelper
 
     public static bool IsDualSwordsRestrictedCard(CardModel card)
     {
-        return card is CrossSlashHbrgoSaki
-            or SwallowReversalHbrgoSaki
+        return card is SwallowReversalHbrgoSaki
             or BladeDanceHbrgoSaki
             or MimicDreamBubbleHbrgoSaki
             or NextTurnEnergyStrikeHbrgoSaki
@@ -412,7 +410,7 @@ internal static class ModeTransitionHelper
         }
 
         List<CardModel> modeCards = player.PlayerCombatState.AllCards
-            .Where(card => card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki)
+            .Where(card => card is ChihayaClassmateHbrgoSaki)
             .Where(card => card.Pile?.IsCombatPile == true && card.Pile.Type != PileType.Play)
             .ToList();
         if (modeCards.Count > 0)
@@ -498,8 +496,7 @@ internal static class ModeTransitionHelper
                 card != excludedCard &&
                 !card.HasBeenRemovedFromState &&
                 !IsCardIncompatibleWithCurrentMode(owner, card) &&
-                card is not ChihayaClassmateHbrgoSaki &&
-                card is not SwitchHbrgoSaki);
+                card is not ChihayaClassmateHbrgoSaki);
     }
 
     private sealed class SuppressionScope : IDisposable

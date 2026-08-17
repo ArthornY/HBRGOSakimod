@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -19,13 +20,19 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
-    protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
+    protected override IEnumerable<IHoverTip> ExtraHoverTips
     {
-        HoverTipFactory.FromPower<NormalStatePower>(),
-        HoverTipFactory.FromPower<ReptureBowPower>(),
-        HoverTipFactory.FromPower<ReptureDualSwordsPower>(),
-        HoverTipFactory.FromPower<RaptureScythePower>()
-    };
+        get
+        {
+            yield return HoverTipFactory.FromPower<NormalStatePower>();
+            yield return HoverTipFactory.FromPower<ReptureBowPower>();
+            yield return HoverTipFactory.FromPower<ReptureDualSwordsPower>();
+            if (Owner?.Character is not HbrgoSaki31O)
+            {
+                yield return HoverTipFactory.FromPower<RaptureScythePower>();
+            }
+        }
+    }
 
     public ChihayaClassmateHbrgoSaki()
         : base(1, CardType.Skill, CardRarity.Basic, TargetType.Self)
@@ -34,14 +41,22 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        CardModel selectedMode = await CardSelectCmd.FromChooseACardScreen(
-            choiceContext,
-            new CardModel[]
+        CardModel[] modeChoices = Owner.Character is HbrgoSaki31O
+            ? new CardModel[]
+            {
+                CombatState.CreateCard<ReptureBowChoiceHbrgoSaki>(Owner),
+                CombatState.CreateCard<ReptureDualSwordsChoiceHbrgoSaki>(Owner)
+            }
+            : new CardModel[]
             {
                 CombatState.CreateCard<ReptureBowChoiceHbrgoSaki>(Owner),
                 CombatState.CreateCard<ReptureDualSwordsChoiceHbrgoSaki>(Owner),
                 CombatState.CreateCard<RaptureScytheChoiceHbrgoSaki>(Owner)
-            },
+            };
+
+        CardModel selectedMode = await CardSelectCmd.FromChooseACardScreen(
+            choiceContext,
+            modeChoices,
             Owner);
 
         if (selectedMode == null)

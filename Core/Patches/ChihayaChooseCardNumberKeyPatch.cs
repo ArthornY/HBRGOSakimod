@@ -35,10 +35,14 @@ internal static class ChihayaChooseCardNumberKeyPatch
     internal static bool IsChihayaChoiceScreen(NChooseACardSelectionScreen screen)
     {
         IReadOnlyList<CardModel> cards = GetCards(screen);
-        return cards.Count == 3 &&
-               cards[0] is ReptureBowChoiceHbrgoSaki &&
-               cards[1] is ReptureDualSwordsChoiceHbrgoSaki &&
-               cards[2] is RaptureScytheChoiceHbrgoSaki;
+        if (cards.Count is not (2 or 3) ||
+            cards[0] is not ReptureBowChoiceHbrgoSaki ||
+            cards[1] is not ReptureDualSwordsChoiceHbrgoSaki)
+        {
+            return false;
+        }
+
+        return cards.Count == 2 || cards[2] is RaptureScytheChoiceHbrgoSaki;
     }
 }
 
@@ -64,18 +68,15 @@ internal sealed partial class ChihayaChooseCardNumberKeyListener : Node
         }
 
         int selectedIndex = GetSelectedIndex(keyEvent);
-        if (selectedIndex < 0)
+        if (!keyEvent.Pressed ||
+            keyEvent.Echo ||
+            selectedIndex < 0 ||
+            selectedIndex >= ChihayaChooseCardNumberKeyPatch.GetCards(Screen).Count)
         {
             return;
         }
 
         GetViewport().SetInputAsHandled();
-
-        if (!keyEvent.Pressed || keyEvent.Echo)
-        {
-            return;
-        }
-
         BlockNextRelease(keyEvent);
         TrySelectHolder(selectedIndex);
     }

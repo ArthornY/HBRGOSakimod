@@ -68,7 +68,7 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
     {
-        if (card is ChihayaClassmateHbrgoSaki or SwitchHbrgoSaki &&
+        if (card is ChihayaClassmateHbrgoSaki &&
             card.Owner?.Creature == Owner &&
             card.Pile?.IsCombatPile == true &&
             card.Pile.Type != PileType.Play)

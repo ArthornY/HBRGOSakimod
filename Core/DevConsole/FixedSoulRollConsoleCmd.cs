@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
@@ -19,7 +19,7 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 
     public override string Args => $"{_subcommand} <true|false>";
 
-    public override string Description => "开启或关闭安科之魂掷骰固定为100。";
+    public override string Description => "开启或关闭“掷骰”词条出目固定为100。";
 
     public override bool DebugOnly => false;
 
@@ -54,22 +54,20 @@ public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
             return new CmdResult(false, "This command only works during a run.");
         }
 
-        SoulOfAnchor[] souls = player.Relics.OfType<SoulOfAnchor>().ToArray();
-        if (souls.Length == 0)
+        if (!RollKeywordRules.IsRollEnabled(player))
         {
-            return new CmdResult(false, "The player does not have Soul of Anchor.");
+            return new CmdResult(false, "The player does not have the Roll keyword.");
         }
 
-        foreach (SoulOfAnchor soul in souls)
-        {
-            soul.SetRollsFixedToOneHundred(enabled);
-        }
+        RollKeywordCombatState.SetRollsFixedToOneHundred(
+            player,
+            enabled);
 
         return new CmdResult(
             true,
             enabled
-                ? "All Soul of Anchor rolls are now fixed at 100."
-                : "All Soul of Anchor rolls are random again.");
+                ? "All Roll keyword results are now fixed at 100."
+                : "All Roll keyword results are random again.");
     }
 
     private static CmdResult SummonRedCrimson(Player player)

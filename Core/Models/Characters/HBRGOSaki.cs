@@ -16,16 +16,52 @@ using MegaCrit.Sts2.Core.Nodes.Vfx;
 namespace HBRGOSakiMod.Core.Models.Characters;
 
 [CustomID("HBRGO_SAKI")]
-public sealed class HbrgoSaki : CustomCharacterModel
+public class HbrgoSaki : CustomCharacterModel
 {
     public override string CustomVisualPath =>
         "res://scenes/creature_visuals/hbrgo_saki.tscn";
+
+    public override string CustomTrailPath =>
+        "res://scenes/vfx/card_trail_hbrgo_saki.tscn";
+
+    public override string CustomIconTexturePath =>
+        "res://images/ui/top_panel/character_icon_hbrgo_saki.png";
+
+    public override string CustomIconOutlineTexturePath =>
+        "res://images/ui/top_panel/character_icon_hbrgo_saki_outline.png";
+
+    public override string CustomIconPath =>
+        "res://scenes/ui/character_icons/hbrgo_saki_icon.tscn";
+
+    public override string CustomEnergyCounterPath =>
+        "res://scenes/combat/energy_counters/hbrgo_saki_energy_counter.tscn";
 
     public override string CustomRestSiteAnimPath =>
         "res://scenes/rest_site/characters/hbrgo_saki_rest_site.tscn";
 
     public override string CustomMerchantAnimPath =>
         "res://scenes/merchant/characters/hbrgo_saki_merchant.tscn";
+
+    public override string CustomArmPointingTexturePath =>
+        "res://images/ui/hands/multiplayer_hand_hbrgo_saki_point.png";
+
+    public override string CustomArmRockTexturePath =>
+        "res://images/ui/hands/multiplayer_hand_hbrgo_saki_rock.png";
+
+    public override string CustomArmPaperTexturePath =>
+        "res://images/ui/hands/multiplayer_hand_hbrgo_saki_paper.png";
+
+    public override string CustomArmScissorsTexturePath =>
+        "res://images/ui/hands/multiplayer_hand_hbrgo_saki_scissors.png";
+
+    public override string CustomCharacterSelectBg =>
+        "res://scenes/screens/char_select/char_select_bg_hbrgo_saki.tscn";
+
+    public override string CustomCharacterSelectTransitionPath =>
+        "res://materials/transitions/hbrgo_saki_transition_mat.tres";
+
+    public override string CustomMapMarkerPath =>
+        "res://images/packed/map/icons/map_marker_hbrgo_saki.png";
 
     public override Color NameColor => new("5C8DFFFF");
 

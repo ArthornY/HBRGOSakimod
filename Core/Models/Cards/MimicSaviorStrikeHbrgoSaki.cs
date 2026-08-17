@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
-using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -11,6 +10,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Models.Capabilities;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -65,11 +65,9 @@ public sealed class MimicSaviorStrikeHbrgoSaki : CardModel
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        int roll = Owner.Relics
-            .OfType<SoulOfAnchor>()
-            .Select(soul => soul.GetCurrentRollFor(this))
-            .DefaultIfEmpty(0)
-            .Max();
+        int roll = this
+            .Capability<RollGlossaryCapability>()
+            ?.GetCurrentRollFor(this) ?? 0;
         if (roll < _stunRollThreshold ||
             !cardPlay.Target.IsAlive)
         {

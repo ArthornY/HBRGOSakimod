@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Events;
@@ -12,6 +13,7 @@ using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Models;
 using STS2RitsuLib;
 using STS2RitsuLib.Content;
+using STS2RitsuLib.Keywords;
 using STS2RitsuLib.Scaffolding.Cards.HandOutline;
 
 namespace HBRGOSakiMod.Core.Integration;
@@ -110,7 +112,6 @@ internal static class HBRGOSakiContentPack
         typeof(MagicSwordLuckySevenHbrgoSaki),
         typeof(MagicSwordModeHbrgoSaki),
         typeof(ChihayaClassmateHbrgoSaki),
-        typeof(SwitchHbrgoSaki),
         typeof(ReptureBowChoiceHbrgoSaki),
         typeof(ReptureDualSwordsChoiceHbrgoSaki),
         typeof(RaptureScytheChoiceHbrgoSaki),
@@ -156,9 +157,26 @@ internal static class HBRGOSakiContentPack
                 visibleWhenUnplayable: true));
 
         RitsuLibFramework.CreateContentPack(ModId)
+            .CardKeywordOwnedByLocNamespace(
+                "ROLL",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "CRITICAL_SUCCESS",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
             .SharedEvent<JoiningCeremonyHbrgoSaki>()
             .Custom(context =>
             {
+                context.Content.RegisterModelCapability<
+                    RollGlossaryCapability>();
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "roll_glossary",
+                    static (_, capabilities) =>
+                        capabilities.Add<RollGlossaryCapability>());
+
                 foreach (Type cardType in CardTypes)
                 {
                     context.Content.RegisterCard(

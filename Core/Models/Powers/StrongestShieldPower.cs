@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
@@ -78,6 +80,7 @@ public sealed class StrongestShieldPower : PowerModel
             out IReadOnlyList<SoulRollBreakdown> discardedRolls);
         int roll = winningRoll.FinalRoll;
         RecordRollHistory(winningRoll, discardedRolls, cardSource);
+        RegisterCriticalSuccess(roll);
         PendingSwordheartAmount += GetSwordheartAmount(roll);
         return roll > GetThreshold();
     }
@@ -341,35 +344,32 @@ public sealed class StrongestShieldPower : PowerModel
 
     private int GetSwordheartAmount(int roll)
     {
-        if (roll == _rollMax)
+        Player player = Owner.Player;
+        if (!RollKeywordRules.UsesSakiRules(player) ||
+            Owner.HasPower<MagicSwordModePower>())
+        {
+            return 0;
+        }
+
+        if (RollKeywordRules.IsCriticalRoll(player, roll))
         {
             return SwordheartPower.GetMaxAmount(Owner);
         }
 
-        if (CountSevens(roll) > 0)
-        {
-            return 1;
-        }
-
-        return roll > 0 &&
-               roll % 7 == 0 &&
-               Owner.HasPower<SwordheartClarityPower>()
-            ? 1
-            : 0;
+        return RollKeywordRules.GetRegularSwordheartAmount(player, roll);
     }
 
-    private int CountSevens(int roll)
+    private void RegisterCriticalSuccess(int roll)
     {
-        int count = 0;
-        for (int value = roll; value > 0; value /= 10)
+        Player player = Owner.Player;
+        if (!RollKeywordRules.IsCriticalRoll(player, roll))
         {
-            if (value % 10 == 7)
-            {
-                count++;
-            }
+            return;
         }
 
-        return count;
+        RollKeywordCombatState.RecordCriticalSuccess(player);
+        player.GetRelic<ElectronicSoldierManual>()?
+            .QueueSixSenseReward();
     }
 
     private int GetSwordheartAmountToApply(int amount)

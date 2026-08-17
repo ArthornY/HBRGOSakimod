@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.CardPools;
@@ -35,13 +37,18 @@ internal static class HBRGOSakiCardRewardPoolHelper
     {
         return GetRewardCardPools(includeColorless)
             .SelectMany(pool => pool.GetUnlockedCards(player.UnlockState, player.RunState.CardMultiplayerConstraint))
-            .Where(card => IsRewardCard(card, includeColorless))
+            .Where(card => IsRewardCard(player, card, includeColorless))
             .Where(card => CanOfferCard(player, card))
             .Distinct();
     }
 
-    internal static bool IsRewardCard(CardModel card, bool includeColorless = false)
+    internal static bool IsRewardCard(Player player, CardModel card, bool includeColorless = false)
     {
+        if (player?.Character is HbrgoSaki31O && HbrgoSaki31OCardFilter.IsExcluded(card))
+        {
+            return false;
+        }
+
         if (card is MagicSwordLuckySevenHbrgoSaki
             or MagicSwordModeHbrgoSaki
             or FeintHbrgoSaki
@@ -65,6 +72,11 @@ internal static class HBRGOSakiCardRewardPoolHelper
 
     internal static bool CanOfferCard(Player player, CardModel card)
     {
+        if (player?.Character is HbrgoSaki31O && HbrgoSaki31OCardFilter.IsExcluded(card))
+        {
+            return false;
+        }
+
         if (card.Type != CardType.Power)
         {
             return true;
@@ -80,7 +92,8 @@ internal static class HBRGOSakiCardRewardPoolHelper
             return options;
         }
 
-        if (options.Flags.HasFlag(CardCreationFlags.NoCardPoolModifications))
+        if (options.Flags.HasFlag(CardCreationFlags.NoCardPoolModifications) &&
+            player.Character is not HbrgoSaki31O)
         {
             return options;
         }
@@ -116,7 +129,7 @@ internal static class HBRGOSakiCardRewardPoolHelper
         }
 
         CardModel[] customCards = explicitCards
-            .Where(card => IsRewardCard(card, includeColorless))
+            .Where(card => IsRewardCard(player, card, includeColorless))
             .Where(card => CanOfferCard(player, card))
             .Where(card => MatchesOriginalFilter(options, card))
             .Distinct()
@@ -159,6 +172,23 @@ internal static class HBRGOSakiCardRewardPoolHelper
         catch (InvalidProgramException)
         {
             return false;
+        }
+    }
+}
+
+[HarmonyPatch(
+    typeof(CardFactory),
+    nameof(CardFactory.GetDefaultTransformationOptions))]
+internal static class HbrgoSaki31OCardTransformationPatch
+{
+    private static void Postfix(
+        CardModel original,
+        ref IEnumerable<CardModel> __result)
+    {
+        if (original?.Owner?.Character is HbrgoSaki31O)
+        {
+            __result = __result.Where(card =>
+                !HbrgoSaki31OCardFilter.IsExcluded(card));
         }
     }
 }
@@ -207,7 +237,7 @@ internal static class HookModifyMerchantCardPoolPatch
 
         __result = originalCards
             .Concat(HBRGOSakiCardRewardPoolHelper.GetUnlockedRewardCards(player))
-            .Where(card => HBRGOSakiCardRewardPoolHelper.IsRewardCard(card))
+            .Where(card => HBRGOSakiCardRewardPoolHelper.IsRewardCard(player, card))
             .Where(card => HBRGOSakiCardRewardPoolHelper.CanOfferCard(player, card))
             .Distinct();
     }

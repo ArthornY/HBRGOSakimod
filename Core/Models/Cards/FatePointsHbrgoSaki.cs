@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
@@ -12,6 +13,7 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
+using STS2RitsuLib.Models.Capabilities;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -66,11 +68,11 @@ public sealed class FatePointsHbrgoSaki : CardModel
             cardPlay.Target,
             nameof(cardPlay.Target));
 
-        SoulOfAnchor soulOfAnchor =
-            Owner.GetRelic<SoulOfAnchor>();
-        int roll = soulOfAnchor?.EnsureCurrentRollFor(this) ?? 0;
+        RollGlossaryCapability rollCapability =
+            this.Capability<RollGlossaryCapability>();
+        int roll = rollCapability?.EnsureCurrentRollFor(this) ?? 0;
         bool isCritical =
-            soulOfAnchor?.GetRollTier(roll) ==
+            rollCapability?.GetRollTier(roll) ==
             SoulRollTier.Critical;
         decimal damage = isCritical
             ? _criticalDamage
