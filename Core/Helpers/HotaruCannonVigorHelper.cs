@@ -211,7 +211,8 @@ internal static class HotaruCannonVigorHelper
     internal static IDisposable BeginCompleteActionBatch(Millsage relic, IEnumerable<Creature> cannons,
         bool fireHappiness = false) =>
         new BatchScope(relic, cannons.Select(cannon => (cannon,
-            cannon?.Monster is HotaruAbsolutionCannon ? HotaruCannonPhase.Start : HotaruCannonPhase.End)),
+            cannon?.Monster is HotaruAbsolutionCannon || cannon?.Monster is HotaruFinalCannon && relic.EndgameStartHitCount > 0
+                ? HotaruCannonPhase.Start : HotaruCannonPhase.End)),
             completeActions: true, fireHappiness: fireHappiness);
 
     private static int GetCompleteActionHitCount(Millsage relic, HotaruCannonKind kind, bool fireHappiness) => kind switch
@@ -219,6 +220,7 @@ internal static class HotaruCannonVigorHelper
         HotaruCannonKind.Happiness when fireHappiness => GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
         HotaruCannonKind.Absolution => GetPlannedHitCount(relic, kind, HotaruCannonPhase.Start) +
             GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
+        HotaruCannonKind.Endgame => (relic?.EndgameStartHitCount ?? 0) + (relic?.EndgameEndHitCount ?? 0),
         HotaruCannonKind.Contest or HotaruCannonKind.Longing =>
             GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
         _ => 0
@@ -296,13 +298,15 @@ internal static class HotaruCannonVigorHelper
     internal static int GetPlannedHitCount(Millsage relic, HotaruCannonKind kind, HotaruCannonPhase phase) =>
         phase switch
         {
-            HotaruCannonPhase.Start => kind == HotaruCannonKind.Absolution ? 3 : 0,
+            HotaruCannonPhase.Start => kind == HotaruCannonKind.Absolution ? 3 :
+                kind == HotaruCannonKind.Endgame ? relic?.EndgameStartHitCount ?? 0 : 0,
             HotaruCannonPhase.End => kind switch
             {
                 HotaruCannonKind.Happiness => relic?.HasCannonUpgrade(kind, 7) == true ? 2 : 1,
                 HotaruCannonKind.Contest => relic?.HasCannonUpgrade(kind, 7) == true ? 2 : 1,
                 HotaruCannonKind.Longing => 1,
                 HotaruCannonKind.Absolution => HotaruAbsolutionUpgradeHelper.GetEndHitCount(relic),
+                HotaruCannonKind.Endgame => relic?.EndgameEndHitCount ?? 0,
                 _ => 0
             },
             _ => 0

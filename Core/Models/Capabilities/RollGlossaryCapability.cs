@@ -827,6 +827,11 @@ public sealed class RollGlossaryCapability :
                 advantageOnly));
         }
 
+        if (HotaruEndgameEffectsHelper.HasAdvantage(player))
+        {
+            rolls.Add(RollD100Die("优势骰：救赎／牺牲", advantageOnly));
+        }
+
         CardType? rollType = _standaloneType ?? cardSource?.Type;
         bool isAttackCardRoll = !advantageOnly && rollType == CardType.Attack;
         List<SoulRollBonusDetail> sharedBonuses = new();

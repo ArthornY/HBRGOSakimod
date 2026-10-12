@@ -36,7 +36,7 @@ public abstract class HotaruCannonModel : MonsterModel
 
     public override bool ShouldDie(Creature creature) => !IsMutable || creature != Creature;
 
-    private Millsage Relic => IsMutable ? Creature.PetOwner?.GetRelic<Millsage>() : null;
+    protected Millsage Relic => IsMutable ? Creature.PetOwner?.GetRelic<Millsage>() : null;
     private HotaruCannonState State => Relic?.StateFor(Kind) ?? new HotaruCannonState();
     // Charge repeats whole actions; individual base values are never doubled.
     internal int PhaseMultiplier(HotaruCannonPhase phase) => 1;
@@ -47,7 +47,7 @@ public abstract class HotaruCannonModel : MonsterModel
         HotaruCannonKind.Absolution => HotaruAbsolutionUpgradeHelper.GetEndHitCount(Relic),
         _ => 1
     };
-    internal decimal CurrentDamage => Kind switch
+    internal virtual decimal CurrentDamage => Kind switch
     {
         HotaruCannonKind.Happiness => State.HappinessDamage,
         HotaruCannonKind.Contest => 2m * PhaseMultiplier(HotaruCannonPhase.End),
@@ -56,7 +56,7 @@ public abstract class HotaruCannonModel : MonsterModel
         _ => 0m
     };
 
-    internal LocString IntentDescription()
+    internal virtual LocString IntentDescription()
     {
         LocString text = new("monsters", Id.Entry + ".intentDescription");
         string template = text.GetRawText();

@@ -286,6 +286,7 @@ internal static class HotaruCannonStatsHelper
         {
             await HotaruCannonDamageUpgradeHelper.AfterCannonDamage(context, receipt);
             await HotaruCannonSupportUpgradeHelper.AfterCannonDamage(context, receipt);
+            await HotaruEndgameEffectsHelper.OnCannonDamage(context, receipt);
             await HotaruAbsolutionUpgradeHelper.OnCannonDamage(context, receipt);
         }
         if (CapturesIncoming(receipt.Target))

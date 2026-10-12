@@ -136,7 +136,9 @@ public partial class NHotaruCannonMultiplierStatus : Control
         _lastMaximum = maximum;
         _lastLevel = level;
         _amount.SetTextAutoSize(percent.ToString(CultureInfo.InvariantCulture) + "%");
-        _level.SetTextAutoSize(level.ToString(CultureInfo.InvariantCulture) + "级");
+        _level.SetTextAutoSize(_kind == HotaruCannonKind.Endgame
+            ? _relic.EndgameSign < 0 ? "救赎" : "牺牲"
+            : level.ToString(CultureInfo.InvariantCulture) + "级");
         if (_hovered) ShowHoverTip();
     }
 
@@ -179,8 +181,9 @@ public partial class NHotaruCannonMultiplierStatus : Control
             NTargetManager.Instance?.IsInSelection == true || NHoverTipSet.shouldBlockHoverTips) return;
         // Remove the entity's broader ability tip when reading this status.
         NHoverTipSet.Remove(_cannon.Hitbox);
-        LocString title = new("powers", "HOTARU_CANNON_DAMAGE_MULTIPLIER.title");
-        LocString description = new("powers", "HOTARU_CANNON_DAMAGE_MULTIPLIER.description");
+        bool endgame = _kind == HotaruCannonKind.Endgame;
+        LocString title = new("powers", endgame ? "HOTARU_FINAL_CANNON_SOUL.title" : "HOTARU_CANNON_DAMAGE_MULTIPLIER.title");
+        LocString description = new("powers", endgame ? "HOTARU_FINAL_CANNON_SOUL.description" : "HOTARU_CANNON_DAMAGE_MULTIPLIER.description");
         description.Add("Current", _lastPercent);
         description.Add("Maximum", _lastMaximum);
         description.Add("Level", _lastLevel);

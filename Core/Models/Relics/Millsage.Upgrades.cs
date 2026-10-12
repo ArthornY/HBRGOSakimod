@@ -59,10 +59,10 @@ public sealed partial class Millsage
     };
 
     public bool HasCannonUpgrade(HotaruCannonKind kind, int tier) =>
-        tier is >= 1 and <= MaximumCannonUpgradeLevel && GetCannonUpgradeLevel(kind) >= tier;
+        !WasCannonRetired(kind) && tier is >= 1 and <= MaximumCannonUpgradeLevel && GetCannonUpgradeLevel(kind) >= tier;
 
     internal bool IsCannonUnlocked(HotaruCannonKind kind) =>
-        Enum.IsDefined(kind);
+        HotaruCannonKinds.IsOriginal(kind) && !WasCannonRetired(kind);
 
     internal bool TryUpgradeCannon(HotaruCannonKind kind, int expectedLevel)
     {

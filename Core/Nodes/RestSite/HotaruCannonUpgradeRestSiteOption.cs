@@ -13,7 +13,7 @@ internal sealed class HotaruCannonUpgradeRestSiteOption : UpgradePointRestSiteOp
     public override string OptionId => Id;
     public override string CustomIconPath => "res://images/relics/millsage.webp";
     public override IEnumerable<string> AssetPaths => base.AssetPaths.Concat(
-        System.Enum.GetValues<HotaruCannonKind>().Select(HotaruCannonUpgrades.IconPath)).Distinct();
+        HotaruCannonKinds.Original.Select(HotaruCannonUpgrades.IconPath)).Distinct();
     public override bool IsEnabled => HotaruCannonUpgrades.HasAvailableUpgrade(Owner) && UpgradePoints > 0;
     public override LocString Description
     {

@@ -751,5 +751,9 @@
   "CRUSH_YOU_LIKE_A_BUG_HBRGO_SAKI.upgrade_effect_title.5": "血腥之舞",
   "CRUSH_YOU_LIKE_A_BUG_HBRGO_SAKI.upgrade_effect.5": "额外造成2次伤害。第一次打出后，返还这次实际消耗的能量。",
   "CRUSH_YOU_LIKE_A_BUG_HBRGO_SAKI.upgrade_effect_title.6": "意气扬扬",
-  "CRUSH_YOU_LIKE_A_BUG_HBRGO_SAKI.upgrade_effect.6": "下一张打出的非复制牌获得[gold]重放1[/gold]。"
+  "CRUSH_YOU_LIKE_A_BUG_HBRGO_SAKI.upgrade_effect.6": "下一张打出的非复制牌获得[gold]重放1[/gold]。",
+  "HOTARU_SACRIFICE.title": "牺牲",
+  "HOTARU_SACRIFICE.description": "获得[EEE]。仅能对你[blue]Lv.7[/blue]的原有浮游炮打出。永久失去该炮，[gold]虹光[/gold]计数[blue]+1[/blue]；永久获得等同于该炮当前[gold]灵魂之力[/gold]的伤害增幅。将此牌移出卡组。",
+  "HOTARU_REDEMPTION.title": "救赎",
+  "HOTARU_REDEMPTION.description": "仅能对你[blue]Lv.7[/blue]的原有浮游炮打出。永久失去该炮，[gold]millsage[/gold]计数[blue]+1[/blue]。将此牌移出卡组。"
 }

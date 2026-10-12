@@ -2,6 +2,7 @@ using System;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Monsters;
+using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 
@@ -77,8 +78,10 @@ public partial class NHotaruCannonLayout : Node
             cannon.Scale = player.Scale * scale;
             // Move the entity as a whole so its intents and targeting hitbox
             // follow the same gentle motion as the cannon artwork.
-            Vector2 offset = GetOffset(model.Kind, player.Visuals.Bounds.Size, scale) +
-                GetFloatingOffset(model.Kind, _floatingTime, scale);
+            HotaruCannonKind slot = model.Kind == HotaruCannonKind.Endgame
+                ? owner.GetRelic<Millsage>()?.FirstRetiredCannonKind ?? HotaruCannonKind.Happiness : model.Kind;
+            Vector2 offset = GetOffset(slot, player.Visuals.Bounds.Size, scale) +
+                GetFloatingOffset(slot, _floatingTime, scale);
             cannon.GlobalPosition = player.GetGlobalTransform() * offset;
             cannon.Visuals.Modulate = player.Visuals.Modulate;
             cannon.ZIndex = player.ZIndex + 1;

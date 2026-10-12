@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Godot;
+using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -162,7 +163,8 @@ internal sealed class OverclockSuspendedHand
                 // Permanent self-removal during OD also invalidates detached
                 // ordinary copies which native pile cleanup could not find.
                 if (card.DeckVersion is { } origin &&
-                    (origin.HasBeenRemovedFromState || origin.Pile?.Type != PileType.Deck))
+                    (origin.HasBeenRemovedFromState || origin.Pile?.Type != PileType.Deck) ||
+                    card is HotaruEndgameCard endgame && endgame.IsPermanentOriginRemoved)
                 {
                     card.RemoveFromState();
                     continue;

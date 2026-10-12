@@ -44,8 +44,8 @@ public sealed class DoublePowersHbrgoSaki : CardModel
                 power is not HighDimensionalShellPower &&
                 power is not PhaseWarpPower &&
                 power is not ShieldLockPower)
-            .Select(power => (Power: power, Amount: power is PhantomDamageInheritancePower inheritance
-                    ? inheritance.DamagePercent : (decimal)power.Amount,
+            .Select(power => (Power: power, Amount: power is IExactDamagePercentPower exact
+                    ? exact.PercentState.GetPercent(power.Amount) : (decimal)power.Amount,
                 DuplicateCounters: PowerDuplicationBookkeepingHelper.SnapshotCounters(power)))
             .ToArray();
         foreach (var (power, amount, duplicateCounters) in powers)

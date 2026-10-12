@@ -124,5 +124,22 @@
   "NARARA_SHIBA_BOSS_MONSTER.moves.LOTS_OF_MONEY.title": "好多钱",
   "NARARA_SHIBA_BOSS_MONSTER.moves.WORK.title": "上班",
   "NARARA_SHIBA_BOSS_MONSTER.moves.UPDATE.title": "更新",
-  "NARARA_SHIBA_BOSS_MONSTER.moves.OFF_WORK.title": "下班"
+  "NARARA_SHIBA_BOSS_MONSTER.moves.OFF_WORK.title": "下班",
+  "HOTARU_FINAL_CANNON.name": "浮游炮—救赎／牺牲",
+  "HOTARU_FINAL_CANNON.redemptionName": "浮游炮—救赎",
+  "HOTARU_FINAL_CANNON.sacrificeName": "浮游炮—牺牲",
+  "HOTARU_FINAL_CANNON.intentDescription": "{Shape}{LostEffects}{Charged}",
+  "HOTARU_FINAL_CANNON.positiveShape": "[gold]牺牲形态[/gold]：millsage计数高于虹光计数。已永久失去[blue]{Count}[/blue]门炮；[gold]灵魂之力[/gold]固定为[blue]{Soul}%[/blue]。基础伤害为[blue]{Formula} = {BaseDamage}[/blue]。回合开始时，对随机敌人造成[blue]{StartDamage}[/blue]点伤害[blue]{StartRepeat}[/blue]次。",
+  "HOTARU_FINAL_CANNON.negativeShape": "[gold]救赎形态[/gold]：millsage计数低于虹光计数。已永久失去[blue]{Count}[/blue]门炮；[gold]灵魂之力[/gold]为[blue]{Soul}%[/blue]（初始50%，每失去一门炮+10个百分点）。基础伤害为[blue]{Formula} = {BaseDamage}[/blue]。回合结束时，对随机敌人造成[blue]{EndDamage}[/blue]点伤害[blue]{EndRepeat}[/blue]次。{ExtraStart}",
+  "HOTARU_FINAL_CANNON.extraStart": "回合开始时，额外对随机敌人造成[blue]{StartDamage}[/blue]点伤害[blue]{StartRepeat}[/blue]次。",
+  "HOTARU_FINAL_CANNON.negative.happiness": "幸福：回合结束的基础伤害改为3^失去炮数−1。",
+  "HOTARU_FINAL_CANNON.negative.coffin": "棺木：本炮造成实际HP或DP伤害后，获得等同实际伤害5%的格挡，再按格挡规则结算。",
+  "HOTARU_FINAL_CANNON.negative.contest": "胜负：本炮造成实际DP伤害后，额外造成等同该DP伤害25%的HP伤害。",
+  "HOTARU_FINAL_CANNON.negative.longing": "思念：掷骰获得优势骰。",
+  "HOTARU_FINAL_CANNON.negative.absolution": "赦罪：回合开始时额外攻击一次；回合结束的攻击保留。",
+  "HOTARU_FINAL_CANNON.positive.happiness": "幸福：每回合开始时，获得等同当前回合数×20%的伤害增幅。",
+  "HOTARU_FINAL_CANNON.positive.coffin": "棺木：小萤及所有浮游炮获得的格挡×150%。",
+  "HOTARU_FINAL_CANNON.positive.contest": "胜负：浮游炮造成实际伤害后，获得等量的本回合伤害增幅，每层提高1%伤害。",
+  "HOTARU_FINAL_CANNON.positive.longing": "思念：掷骰获得优势骰。",
+  "HOTARU_FINAL_CANNON.positive.absolution": "赦罪：回合开始时额外攻击一次。"
 }

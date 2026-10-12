@@ -262,6 +262,14 @@ internal static class HBRGOSakiContentPack
         typeof(HotaruOvercharge)
     };
 
+    // Permanent choices unlocked by a level-seven cannon. They are loadable
+    // and localized like other cards, but never enter ordinary reward pools.
+    private static readonly Type[] HotaruDerivedCardTypes =
+    {
+        typeof(HotaruSacrifice),
+        typeof(HotaruRedemption)
+    };
+
     private static readonly Type[] RewardRelicTypes =
     {
         typeof(ElectronicSoldierManual),
@@ -300,13 +308,15 @@ internal static class HBRGOSakiContentPack
     internal static bool IsRegisteredCardType(Type cardType)
     {
         return cardType != null &&
-            (CardTypes.Contains(cardType) || HotaruCardTypes.Contains(cardType));
+            (CardTypes.Contains(cardType) || HotaruCardTypes.Contains(cardType) ||
+                HotaruDerivedCardTypes.Contains(cardType));
     }
 
     internal static void Register()
     {
         var publicEntries = CardTypes
             .Concat(HotaruCardTypes)
+            .Concat(HotaruDerivedCardTypes)
             .Concat(RewardRelicTypes)
             .Concat(PotionTypes)
             .Concat(InternalRelicTypes)
@@ -367,6 +377,7 @@ internal static class HBRGOSakiContentPack
                 context.Content.RegisterMonster(typeof(HotaruContestCannon));
                 context.Content.RegisterMonster(typeof(HotaruLongingCannon));
                 context.Content.RegisterMonster(typeof(HotaruAbsolutionCannon));
+                context.Content.RegisterMonster(typeof(HotaruFinalCannon));
 
                 context.Content.RegisterCardLibraryCompendiumSharedPoolFilter<HBRGOSakiMemoryGardenCardPool>(
                     "memory_garden", HbrMemoryGardenIconHelper.IconPath);
@@ -409,6 +420,12 @@ internal static class HBRGOSakiContentPack
                     context.Content.RegisterCard(
                         typeof(HbrgoHotaruCardPool),
                         cardType,
+                        ModelPublicEntryOptions.FromFullPublicEntry(publicEntries[cardType]));
+                }
+
+                foreach (Type cardType in HotaruDerivedCardTypes)
+                {
+                    context.Content.RegisterCard(typeof(DeprecatedCardPool), cardType,
                         ModelPublicEntryOptions.FromFullPublicEntry(publicEntries[cardType]));
                 }
 

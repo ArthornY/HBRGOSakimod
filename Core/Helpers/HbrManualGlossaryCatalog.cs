@@ -88,7 +88,7 @@ internal static class HbrManualGlossaryCatalog
         string manualIcon = ModelDb.Relic<HotaruElectronicSoldierManual>().PackedIconPath;
         foreach (string prefix in new[]
                  { "HOTARU_MANUAL_DP_RULES", "HOTARU_MANUAL_SIX_SENSE_RULES", "HOTARU_MANUAL_GARDEN_RULES",
-                     "HOTARU_MANUAL_CRITICAL_RULES" })
+                     "HOTARU_MANUAL_CRITICAL_RULES", "HOTARU_MANUAL_ENDGAME_RULES" })
             AddEntry(entries, relics, "relics", prefix, "小萤手册", manualIcon);
         AddEntry(entries, LocManager.Instance.GetTable("static_hover_tips"), "static_hover_tips", "BLOCK", "通用词条");
         return Order(entries.Values);

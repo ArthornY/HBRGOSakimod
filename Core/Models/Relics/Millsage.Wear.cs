@@ -118,6 +118,7 @@ public sealed partial class Millsage
     }
 
     public int GetMaximumCannonDamagePercent(HotaruCannonKind kind) =>
+        kind == HotaruCannonKind.Endgame ? EndgameSoulPercent :
         (int)Math.Min(int.MaxValue, (long)InitialCannonDamagePercent +
             CannonDamagePercentPerUpgrade * GetCannonUpgradeLevel(kind) + GetMaximumCannonDamagePercentBonus(kind));
 
@@ -149,6 +150,7 @@ public sealed partial class Millsage
 
     internal void GainCannonSoulPower(HotaruCannonKind kind)
     {
+        if (!HotaruCannonKinds.IsOriginal(kind) || WasCannonRetired(kind)) return;
         InitializeCannonDamagePercents();
         int current = GetCannonDamagePercent(kind);
         SetMaximumCannonDamagePercentBonus(kind,
@@ -161,6 +163,7 @@ public sealed partial class Millsage
 
     public int GetCannonDamagePercent(HotaruCannonKind kind)
     {
+        if (kind == HotaruCannonKind.Endgame) return EndgameSoulPercent;
         int stored = kind switch
         {
             HotaruCannonKind.Happiness => _happinessDamagePercent,
@@ -202,14 +205,14 @@ public sealed partial class Millsage
     private void InitializeCannonDamagePercents()
     {
         AssertMutable();
-        foreach (HotaruCannonKind kind in Enum.GetValues<HotaruCannonKind>())
+        foreach (HotaruCannonKind kind in HotaruCannonKinds.Original)
             StoreCannonDamagePercent(kind, GetCannonDamagePercent(kind));
     }
 
     private void ShiftCannonDamagePercents(int amount)
     {
         InitializeCannonDamagePercents();
-        foreach (HotaruCannonKind kind in Enum.GetValues<HotaruCannonKind>())
+        foreach (HotaruCannonKind kind in HotaruCannonKinds.Original)
             StoreCannonDamagePercent(kind, Math.Clamp(AddCannonPercent(GetCannonDamagePercent(kind), amount),
                 0, GetMaximumCannonDamagePercent(kind)));
         CannonDamagePercent += amount;

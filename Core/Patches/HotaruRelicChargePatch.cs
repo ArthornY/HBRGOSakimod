@@ -26,10 +26,17 @@ internal static class HotaruRelicChargePatch
         if (relic.Owner != null && relic.Owner != player) return true;
         player.RunState.CurrentMapPointHistoryEntry?.GetEntry(player.NetId)
             .RelicChoices.Add(new ModelChoiceHistoryEntry(relic.Id, wasPicked: true));
-        if (existing is Millsage millsage) millsage.GainCharge();
-        else ((HotaruIridescence)existing).GainCharge();
-        __result = Task.FromResult(existing);
+        bool changed = existing is Millsage millsage ? millsage.GainCharge() : ((HotaruIridescence)existing).GainCharge();
+        __result = CompleteCharge(existing, player, changed);
         return false;
+    }
+
+    private static async Task<RelicModel> CompleteCharge(RelicModel existing, Player player, bool changed)
+    {
+        if (changed && player.GetRelic<Millsage>() is { RetiredCannonCount: > 0 } relic &&
+            player.Creature.CombatState != null)
+            await relic.RefreshEndgameCannon();
+        return existing;
     }
 }
 

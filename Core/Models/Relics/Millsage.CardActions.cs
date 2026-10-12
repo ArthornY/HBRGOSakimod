@@ -58,7 +58,7 @@ public sealed partial class Millsage
     {
         if (!CanAct() || !IsEnemy(target, Owner)) return;
         HotaruCannonKind[] kinds = { HotaruCannonKind.Happiness, HotaruCannonKind.Contest,
-            HotaruCannonKind.Longing, HotaruCannonKind.Absolution };
+            HotaruCannonKind.Longing, HotaruCannonKind.Absolution, HotaruCannonKind.Endgame };
         Creature[] cannons = kinds.Select(GetCannon).Where(cannon => cannon != null).ToArray();
         using var vigorBatch = HotaruCannonVigorHelper.BeginCompleteActionBatch(this, cannons, fireHappiness: true);
         foreach (Creature cannon in cannons)
@@ -71,16 +71,18 @@ public sealed partial class Millsage
                 continue;
             }
             int actions = StateFor(kind).TakeActionCount();
-            HotaruCannonPhase first = kind == HotaruCannonKind.Absolution ? HotaruCannonPhase.Start : HotaruCannonPhase.End;
+            bool hasStart = kind == HotaruCannonKind.Absolution || kind == HotaruCannonKind.Endgame && EndgameStartHitCount > 0;
+            bool hasEnd = kind != HotaruCannonKind.Endgame || EndgameEndHitCount > 0;
+            HotaruCannonPhase first = hasStart ? HotaruCannonPhase.Start : HotaruCannonPhase.End;
             for (int action = 0; action < actions && CanAct() && IsOwnedCannon(cannon, Owner) && IsEnemy(target, Owner); action++)
             {
                 var vigorAttack = HotaruCannonVigorHelper.BeginCompleteAction(cannon, first);
                 try
                 {
-                    if (kind == HotaruCannonKind.Absolution)
+                    if (hasStart)
                         await ExecutePhase(cannon, HotaruCannonPhase.Start, context, cardSource, cardPlay,
                             actionVigor: vigorAttack, completeVigor: false, fixedTarget: target);
-                    if (CanAct() && IsEnemy(target, Owner))
+                    if (hasEnd && CanAct() && IsEnemy(target, Owner))
                         await ExecutePhase(cannon, HotaruCannonPhase.End, context, cardSource, cardPlay,
                             actionVigor: vigorAttack, fixedTarget: target);
                 }

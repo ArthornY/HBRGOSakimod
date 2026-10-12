@@ -14,7 +14,7 @@ public partial class NManualCannonUpgradesPanel : Control
 {
     private static readonly Color Accent = new("#ed72aa");
     private static readonly Color Muted = new("#a7afb7");
-    private static readonly HotaruCannonKind[] Kinds = Enum.GetValues<HotaruCannonKind>();
+    private static readonly IReadOnlyList<HotaruCannonKind> Kinds = HotaruCannonKinds.Original;
     private readonly Dictionary<HotaruCannonKind, Button> _buttons = new();
     private Millsage _relic;
     private HotaruCannonKind _selected = HotaruCannonKind.Happiness;
@@ -58,7 +58,8 @@ public partial class NManualCannonUpgradesPanel : Control
             bool unlocked = IsUnlocked(kind);
             Button button = _buttons[kind];
             button.Text = HotaruCannonUpgrades.CannonTitle(kind) +
-                $"\n{level}/{Millsage.MaximumCannonUpgradeLevel}" + (unlocked ? "" : " · 未拥有");
+                $"\n{level}/{Millsage.MaximumCannonUpgradeLevel}" + (unlocked ? "" :
+                    _relic?.WasCannonRetired(kind) == true ? " · 已永久失去" : " · 未拥有");
             button.TooltipText = $"查看{HotaruCannonUpgrades.CannonTitle(kind)}的全部升级效果";
             button.SetPressedNoSignal(!_showRules && kind == _selected);
             StyleButton(button, !_showRules && kind == _selected);
@@ -207,7 +208,7 @@ public partial class NManualCannonUpgradesPanel : Control
         _icon.Modulate = unlocked ? Colors.White : new Color(1f, 1f, 1f, 0.55f);
         _title.Text = HotaruCannonUpgrades.CannonTitle(_selected);
         _status.Text = $"当前升级 {level}/{Millsage.MaximumCannonUpgradeLevel}" +
-            (!unlocked ? " · 尚未拥有此浮游炮" :
+            (!unlocked ? _relic?.WasCannonRetired(_selected) == true ? " · 已永久失去此浮游炮" : " · 尚未拥有此浮游炮" :
                 level == Millsage.MaximumCannonUpgradeLevel ? " · 已获得全部升级" : " · 以下显示全部升级效果");
         _description.Text = BuildDescription(_relic, _selected);
     }
@@ -218,6 +219,8 @@ public partial class NManualCannonUpgradesPanel : Control
         int level = Math.Clamp(relic?.GetCannonUpgradeLevel(kind) ?? 0, 0, Millsage.MaximumCannonUpgradeLevel);
         bool unlocked = relic?.IsCannonUnlocked(kind) == true;
         StringBuilder text = new();
+        if (relic?.WasCannonRetired(kind) == true)
+            text.Append("[gold]已永久失去此炮；以下升级记录仅供查阅，效果不再生效。[/gold]\n\n");
         text.Append(Format(HotaruCannonUpgrades.DamageMultiplierText(level,
             relic?.GetCannonDamagePercent(kind) ?? Millsage.InitialCannonDamagePercent)));
         text.Append("\n\n");

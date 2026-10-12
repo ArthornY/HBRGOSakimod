@@ -6,8 +6,19 @@ using System.Text.Json.Serialization;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
-public enum HotaruCannonKind { Happiness, Coffin, Contest, Longing, Absolution }
+public enum HotaruCannonKind { Happiness, Coffin, Contest, Longing, Absolution, Endgame }
 public enum HotaruCannonPhase { Start, End }
+
+internal static class HotaruCannonKinds
+{
+    internal const int Count = 6;
+    internal static readonly IReadOnlyList<HotaruCannonKind> Original = Array.AsReadOnly(new[]
+    {
+        HotaruCannonKind.Happiness, HotaruCannonKind.Coffin, HotaruCannonKind.Contest,
+        HotaruCannonKind.Longing, HotaruCannonKind.Absolution
+    });
+    internal static bool IsOriginal(HotaruCannonKind kind) => (int)kind is >= 0 and < 5;
+}
 
 // Pure combat state: no Godot objects, RNG, or game commands are persisted.
 public sealed class HotaruCannonState
@@ -31,7 +42,7 @@ public sealed class HotaruCannonState
 
     internal static bool HasEffect(HotaruCannonKind kind, HotaruCannonPhase phase) => phase switch
     {
-        HotaruCannonPhase.Start => kind is HotaruCannonKind.Coffin or HotaruCannonKind.Longing or HotaruCannonKind.Absolution,
+        HotaruCannonPhase.Start => kind is HotaruCannonKind.Coffin or HotaruCannonKind.Longing or HotaruCannonKind.Absolution or HotaruCannonKind.Endgame,
         HotaruCannonPhase.End => kind != HotaruCannonKind.Coffin,
         _ => false
     };
@@ -91,7 +102,7 @@ public sealed class HotaruCannonCombatState
 {
     public int PhaseVersion { get; set; } = 2;
     public HotaruCannonState[] Cannons { get; set; } =
-        Enumerable.Range(0, 5).Select(_ => new HotaruCannonState()).ToArray();
+        Enumerable.Range(0, HotaruCannonKinds.Count).Select(_ => new HotaruCannonState()).ToArray();
     public int LastNaturalStartTurn { get; set; }
     public int LastNaturalEndTurn { get; set; }
     public bool EndRewardPending { get; set; }
@@ -107,7 +118,7 @@ public sealed class HotaruCannonCombatState
         catch (JsonException) { state = null; }
         state ??= new HotaruCannonCombatState();
         HotaruCannonState[] saved = state.Cannons ?? Array.Empty<HotaruCannonState>();
-        state.Cannons = Enumerable.Range(0, 5)
+        state.Cannons = Enumerable.Range(0, HotaruCannonKinds.Count)
             .Select(index => index < saved.Length ? saved[index] ?? new HotaruCannonState() : new HotaruCannonState())
             .ToArray();
         foreach (HotaruCannonState cannon in state.Cannons) cannon.Normalize();

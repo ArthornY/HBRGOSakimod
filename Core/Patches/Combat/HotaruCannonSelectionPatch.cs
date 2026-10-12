@@ -27,7 +27,8 @@ internal static class HotaruCannonSelection
         if (manager == null || !manager.IsInSelection || creature?.Monster is not HotaruCannonModel)
             return false;
         TargetType targetType = ValidTargets(manager);
-        if (targetType != HotaruTargetTypes.OwnedCannon && targetType != HotaruTargetTypes.OwnedCannonOrEnemy)
+        if (targetType != HotaruTargetTypes.OwnedCannon && targetType != HotaruTargetTypes.OwnedCannonOrEnemy &&
+            targetType != HotaruTargetTypes.MaxLevelOwnedCannon)
             return false;
         // The active Ritsu card context supplies the correct owner. Recheck
         // its predicate and native node filter without making cannons hittable.

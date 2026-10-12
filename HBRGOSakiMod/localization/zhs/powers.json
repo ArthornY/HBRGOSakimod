@@ -421,5 +421,11 @@
   "CRUSH_YOU_LIKE_A_BUG_REPLAY_POWER.title": "意气扬扬",
   "CRUSH_YOU_LIKE_A_BUG_REPLAY_POWER.description": "每层使下一张打出的非复制牌获得[gold]重放1[/gold]，随后消耗1层。复制牌不触发，也不消耗此效果；自动打出的非复制牌可以触发。",
   "HBRGOSAKIMOD-CRUSH_YOU_LIKE_A_BUG_REPLAY_POWER.title": "意气扬扬",
-  "HBRGOSAKIMOD-CRUSH_YOU_LIKE_A_BUG_REPLAY_POWER.description": "每层使下一张打出的非复制牌获得[gold]重放1[/gold]，随后消耗1层。复制牌不触发，也不消耗此效果；自动打出的非复制牌可以触发。"
+  "HBRGOSAKIMOD-CRUSH_YOU_LIKE_A_BUG_REPLAY_POWER.description": "每层使下一张打出的非复制牌获得[gold]重放1[/gold]，随后消耗1层。复制牌不触发，也不消耗此效果；自动打出的非复制牌可以触发。",
+  "HOTARU_TURN_DAMAGE_AMPLIFICATION_POWER.title": "牺牲·伤害增幅",
+  "HOTARU_TURN_DAMAGE_AMPLIFICATION_POWER.description": "本回合造成的伤害提高[blue]{Amount}%[/blue]。下次自身回合开始时失去。",
+  "HBRGOSAKIMOD-HOTARU_TURN_DAMAGE_AMPLIFICATION_POWER.title": "牺牲·伤害增幅",
+  "HBRGOSAKIMOD-HOTARU_TURN_DAMAGE_AMPLIFICATION_POWER.description": "本回合造成的伤害提高[blue]{Amount}%[/blue]。下次自身回合开始时失去。",
+  "HOTARU_FINAL_CANNON_SOUL.title": "灵魂之力",
+  "HOTARU_FINAL_CANNON_SOUL.description": "此炮的最终伤害倍率：[blue]{Current}%[/blue]。millsage计数低于虹光时为救赎，灵魂之力为50%+10%×永久失去炮数；millsage计数高于虹光时为牺牲，灵魂之力固定80%。\n两件遗物计数相同时不显现；此炮固定出现在第一门永久失去的浮游炮原本的位置。此炮不参与原有浮游炮的升级、战后衰减与休息恢复。"
 }

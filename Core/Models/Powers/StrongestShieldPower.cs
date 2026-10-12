@@ -232,6 +232,13 @@ public class StrongestShieldPower : PowerModel
                 "优势骰：主人公特典"));
         }
 
+        if (HotaruEndgameEffectsHelper.HasAdvantage(RollOwner))
+        {
+            rolls.Add(SoulRollBreakdown.FromFinalRoll(
+                RollDeterministicD100(target, dealer, amount, props, cardSource, ++rollIndex),
+                "优势骰：救赎／牺牲"));
+        }
+
         ExtremeDodgeRollPenaltyPower rollPenalty =
             Owner.GetPower<ExtremeDodgeRollPenaltyPower>();
         bool useRollPenalty =

@@ -116,7 +116,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         if (SupportsCannonUpgrades)
         {
             Millsage relic = _manual.Owner.GetRelic<Millsage>();
-            state += "|cannons:" + (relic == null ? "none" : relic.Layers + ":" +
+            state += "|cannons:" + (relic == null ? "none" : relic.Layers + ":" + relic.RetiredCannonsMask + ":" + relic.EndgameSign + ":" +
                 string.Join(":", Enum.GetValues<HotaruCannonKind>().Select(kind =>
                     $"{relic.GetCannonUpgradeLevel(kind)}/{relic.GetCannonDamagePercent(kind)}")));
         }

@@ -76,11 +76,16 @@ public sealed partial class Millsage : RelicModel
         foreach (MonsterModel canonical in models)
         {
             HotaruCannonKind kind = ((HotaruCannonModel)canonical).Kind;
+            if (WasCannonRetired(kind)) continue;
             if (GetCannon(kind) != null) continue;
             Creature cannon = combatState.CreateCreature((MonsterModel)canonical.ToMutable(), Owner.Creature.Side, null);
             await PlayerCmd.AddPet(cannon, Owner);
             cannon.PrepareForNextTurn(combatState.Enemies);
         }
+        await RefreshEndgameCannon();
+        if (PermanentSacrificeDamagePercent > 0m)
+            await PowerCmd.Apply<HotaruDamageAmplificationPower>(new BlockingPlayerChoiceContext(),
+                Owner.Creature, PermanentSacrificeDamagePercent, Owner.Creature, null);
         if (HasCannonUpgrade(HotaruCannonKind.Contest, 3))
             await PowerCmd.Apply<MegaCrit.Sts2.Core.Models.Powers.StrengthPower>(new BlockingPlayerChoiceContext(),
                 Owner.Creature, 2m, Owner.Creature, null);
@@ -106,7 +111,8 @@ public sealed partial class Millsage : RelicModel
 
     public static bool IsOwnedCannon(Creature creature, Player player) =>
         player != null && creature?.IsAlive == true && creature.PetOwner == player &&
-        creature.Monster is HotaruCannonModel && creature.CombatState == player.Creature.CombatState;
+        creature.Monster is HotaruCannonModel model && creature.CombatState == player.Creature.CombatState &&
+        player.GetRelic<Millsage>()?.WasCannonRetired(model.Kind) != true;
 
     public static bool IsEnemy(Creature creature, Player player) =>
         player?.Creature?.CombatState is { } combat && creature?.IsAlive == true &&
@@ -116,6 +122,11 @@ public sealed partial class Millsage : RelicModel
         player == Owner
             ? RunTurnStart(choiceContext, OverclockImmediateTurnCoordinator.GetTurnToken(player))
             : Task.CompletedTask;
+
+    public override Task BeforeSideTurnStart(PlayerChoiceContext context, CombatSide side,
+        IReadOnlyList<Creature> participants, ICombatState combatState) =>
+        Owner?.Creature is { } owner && owner.Side == side && participants.Contains(owner)
+            ? HotaruEndgameEffectsHelper.ClearTurnDamage(Owner) : Task.CompletedTask;
 
     public override Task BeforeSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side,
         IEnumerable<Creature> participants) =>
@@ -176,13 +187,15 @@ public sealed partial class Millsage : RelicModel
     private async Task RunTurnStart(PlayerChoiceContext context, object overclockToken)
     {
         if (!TryBeginTurnPhase(HotaruCannonPhase.Start, overclockToken)) return;
+        if (overclockToken != null) await HotaruEndgameEffectsHelper.ClearTurnDamage(Owner);
         await HotaruAbsolutionUpgradeHelper.GainTurnEnergy(this, Owner);
         using var vigorBatch = HotaruCannonVigorHelper.BeginBatch(this,
-            new[] { (Cannon: GetCannon(HotaruCannonKind.Absolution), Phase: HotaruCannonPhase.Start) });
+            new[] { HotaruCannonKind.Absolution, HotaruCannonKind.Endgame }
+                .Select(kind => (Cannon: GetCannon(kind), Phase: HotaruCannonPhase.Start)));
         foreach (HotaruCannonKind kind in Enum.GetValues<HotaruCannonKind>())
         {
             if (!CanAct()) break;
-            if (!HotaruCannonState.HasEffect(kind, HotaruCannonPhase.Start)) continue;
+            if (!HasPhaseEffect(kind, HotaruCannonPhase.Start)) continue;
             Creature cannon = GetCannon(kind);
             if (cannon != null) await ExecuteNaturalPhase(cannon, HotaruCannonPhase.Start, context);
         }
@@ -192,12 +205,12 @@ public sealed partial class Millsage : RelicModel
     {
         if (!TryBeginTurnPhase(HotaruCannonPhase.End, overclockToken)) return;
         using var vigorBatch = HotaruCannonVigorHelper.BeginBatch(this,
-            new[] { HotaruCannonKind.Contest, HotaruCannonKind.Longing, HotaruCannonKind.Absolution }
+            new[] { HotaruCannonKind.Contest, HotaruCannonKind.Longing, HotaruCannonKind.Absolution, HotaruCannonKind.Endgame }
                 .Select(kind => (Cannon: GetCannon(kind), Phase: HotaruCannonPhase.End)));
         foreach (HotaruCannonKind kind in Enum.GetValues<HotaruCannonKind>())
         {
             if (!CanAct()) break;
-            if (!HotaruCannonState.HasEffect(kind, HotaruCannonPhase.End)) continue;
+            if (!HasPhaseEffect(kind, HotaruCannonPhase.End)) continue;
             Creature cannon = GetCannon(kind);
             if (cannon != null) await ExecuteNaturalPhase(cannon, HotaruCannonPhase.End, context);
         }
@@ -209,7 +222,7 @@ public sealed partial class Millsage : RelicModel
     {
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
-        if (!HotaruCannonState.HasEffect(kind, phase)) return;
+        if (!HasPhaseEffect(kind, phase)) return;
         int actionCount = StateFor(kind).TakeActionCount();
         for (int action = 0; action < actionCount && CanAct() && IsOwnedCannon(cannon, Owner); action++)
             await ExecutePhase(cannon, phase, context, null);
@@ -224,12 +237,14 @@ public sealed partial class Millsage : RelicModel
         baseValueBonus = Math.Clamp(baseValueBonus, 0m, HotaruCannonState.MaximumStoredValue);
         var attacks = new List<(Creature Cannon, HotaruCannonPhase Phase)>();
         if (kind == HotaruCannonKind.Absolution) attacks.Add((cannon, HotaruCannonPhase.Start));
+        if (kind == HotaruCannonKind.Endgame && EndgameStartHitCount > 0) attacks.Add((cannon, HotaruCannonPhase.Start));
         if (kind is HotaruCannonKind.Contest or HotaruCannonKind.Longing or HotaruCannonKind.Absolution)
             attacks.Add((cannon, HotaruCannonPhase.End));
+        if (kind == HotaruCannonKind.Endgame && EndgameEndHitCount > 0) attacks.Add((cannon, HotaruCannonPhase.End));
         using var vigorBatch = reuseVigorBatch ? null : HotaruCannonVigorHelper.BeginBatch(this, attacks);
         int actionCount = StateFor(kind).TakeActionCount();
-        bool hasStart = HotaruCannonState.HasEffect(kind, HotaruCannonPhase.Start);
-        bool hasEnd = HotaruCannonState.HasEffect(kind, HotaruCannonPhase.End);
+        bool hasStart = HasPhaseEffect(kind, HotaruCannonPhase.Start);
+        bool hasEnd = HasPhaseEffect(kind, HotaruCannonPhase.End);
         HotaruCannonPhase attackPhase = attacks.Count > 0 ? attacks[0].Phase
             : hasStart ? HotaruCannonPhase.Start : HotaruCannonPhase.End;
         for (int action = 0; action < actionCount && CanAct() && IsOwnedCannon(cannon, Owner); action++)
@@ -336,7 +351,9 @@ public sealed partial class Millsage : RelicModel
     {
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
-        if (!HotaruCannonState.HasEffect(kind, phase)) return;
+        if (!HasPhaseEffect(kind, phase)) return;
+        if (kind == HotaruCannonKind.Endgame && phase == HotaruCannonPhase.Start)
+            await HotaruEndgameEffectsHelper.OnTurnStart(this, context);
         await HotaruCannonSupportUpgradeHelper.PreparePhase(context, cannon, phase);
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         using var phaseScope = HotaruCannonSupportUpgradeHelper.BeginPhase(cannon, phase);
@@ -344,7 +361,13 @@ public sealed partial class Millsage : RelicModel
         var vigorAttack = actionVigor ?? HotaruCannonVigorHelper.BeginAttack(cannon, phase);
         try
         {
-            if (phase == HotaruCannonPhase.Start)
+            if (kind == HotaruCannonKind.Endgame)
+            {
+                int hits = phase == HotaruCannonPhase.Start ? EndgameStartHitCount : EndgameEndHitCount;
+                for (int hit = 0; hit < hits && CanAct(); hit++)
+                    await DealPhaseDamage(cannon, fixedTarget, EndgameBaseDamage + baseValueBonus, context, cardSource, cardPlay);
+            }
+            else if (phase == HotaruCannonPhase.Start)
             {
                 switch (kind)
                 {

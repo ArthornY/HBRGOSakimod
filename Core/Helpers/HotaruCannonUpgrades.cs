@@ -25,7 +25,7 @@ internal static class HotaruCannonUpgrades
         player.GetRelic<ElectronicSoldierManual>()?.IsMutable == true && player.GetRelic<Millsage>()?.IsMutable == true;
 
     internal static bool HasAvailableUpgrade(Player player) => CanAccess(player) &&
-        Enum.GetValues<HotaruCannonKind>().Any(kind => player.GetRelic<Millsage>().IsCannonUnlocked(kind) &&
+        HotaruCannonKinds.Original.Any(kind => player.GetRelic<Millsage>().IsCannonUnlocked(kind) &&
             player.GetRelic<Millsage>().GetCannonUpgradeLevel(kind) < Millsage.MaximumCannonUpgradeLevel);
 
     internal static string IconPath(HotaruCannonKind kind) =>
@@ -74,7 +74,7 @@ internal static class HotaruCannonUpgrades
         ElectronicSoldierManual manual = player.GetRelic<ElectronicSoldierManual>();
         Millsage relic = player.GetRelic<Millsage>();
         manual.SynchronizeMemoryGardenUpgradePoints();
-        return Enum.GetValues<HotaruCannonKind>().Select(kind =>
+        return HotaruCannonKinds.Original.Select(kind =>
         {
             int level = relic.GetCannonUpgradeLevel(kind);
             int currentPercent = relic.GetCannonDamagePercent(kind);
@@ -116,7 +116,10 @@ internal static class HotaruCannonUpgrades
         HotaruCannonKind selectedKind = (HotaruCannonKind)selected.Value;
         if (!choices.Any(choice => choice.Kind == selectedKind && choice.IsAvailable) ||
             !ReferenceEquals(player.GetRelic<ElectronicSoldierManual>(), manual) || !ReferenceEquals(player.GetRelic<Millsage>(), relic)) return false;
-        return Purchase(player, relic, manual, selectedKind, levels[selectedKind]);
+        bool purchased = Purchase(player, relic, manual, selectedKind, levels[selectedKind]);
+        if (purchased && relic.GetCannonUpgradeLevel(selectedKind) == Millsage.MaximumCannonUpgradeLevel)
+            await HotaruEndgameCardChoice.TryOffer(player, selectedKind);
+        return purchased;
     }
 
     internal static bool Purchase(Player player, Millsage relic, ElectronicSoldierManual manual,
