@@ -27,6 +27,7 @@ internal static class HotaruCannonVigorHelper
         internal bool Begun;
         internal bool Completed;
         internal bool CompleteAction;
+        internal bool FireHappiness;
     }
 
     private sealed class OwnerBatch
@@ -51,7 +52,8 @@ internal static class HotaruCannonVigorHelper
         private readonly OwnerBatch _reservation;
 
         internal BatchScope(Millsage relic,
-            IEnumerable<(Creature Cannon, HotaruCannonPhase Phase)> candidates, bool completeActions = false)
+            IEnumerable<(Creature Cannon, HotaruCannonPhase Phase)> candidates, bool completeActions = false,
+            bool fireHappiness = false)
         {
             Relic = relic;
             Owner = relic?.Owner;
@@ -63,7 +65,8 @@ internal static class HotaruCannonVigorHelper
             {
                 if (cannon == null || planned.Any(item => ReferenceEquals(item.Cannon, cannon) && item.Phase == phase))
                     continue;
-                planned.Add(new Candidate { Cannon = cannon, Phase = phase, CompleteAction = completeActions });
+                planned.Add(new Candidate { Cannon = cannon, Phase = phase, CompleteAction = completeActions,
+                    FireHappiness = fireHappiness });
             }
             Candidates = planned.ToArray();
             if (Owner != null)
@@ -94,7 +97,7 @@ internal static class HotaruCannonVigorHelper
                 if (candidate.Completed || candidate.Begun && !ReferenceEquals(candidate, current) ||
                     !Millsage.IsOwnedCannon(candidate.Cannon, Owner)) continue;
                 HotaruCannonKind kind = ((HotaruCannonModel)candidate.Cannon.Monster).Kind;
-                int hits = candidate.CompleteAction ? GetCompleteActionHitCount(Relic, kind)
+                int hits = candidate.CompleteAction ? GetCompleteActionHitCount(Relic, kind, candidate.FireHappiness)
                     : GetPlannedHitCount(Relic, kind, candidate.Phase);
                 if (hits <= maximum) continue;
                 maximum = hits;
@@ -205,13 +208,15 @@ internal static class HotaruCannonVigorHelper
     internal static IDisposable BeginBatch(Millsage relic,
         IEnumerable<(Creature Cannon, HotaruCannonPhase Phase)> candidates) => new BatchScope(relic, candidates);
 
-    internal static IDisposable BeginCompleteActionBatch(Millsage relic, IEnumerable<Creature> cannons) =>
+    internal static IDisposable BeginCompleteActionBatch(Millsage relic, IEnumerable<Creature> cannons,
+        bool fireHappiness = false) =>
         new BatchScope(relic, cannons.Select(cannon => (cannon,
             cannon?.Monster is HotaruAbsolutionCannon ? HotaruCannonPhase.Start : HotaruCannonPhase.End)),
-            completeActions: true);
+            completeActions: true, fireHappiness: fireHappiness);
 
-    private static int GetCompleteActionHitCount(Millsage relic, HotaruCannonKind kind) => kind switch
+    private static int GetCompleteActionHitCount(Millsage relic, HotaruCannonKind kind, bool fireHappiness) => kind switch
     {
+        HotaruCannonKind.Happiness when fireHappiness => GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
         HotaruCannonKind.Absolution => GetPlannedHitCount(relic, kind, HotaruCannonPhase.Start) +
             GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
         HotaruCannonKind.Contest or HotaruCannonKind.Longing =>

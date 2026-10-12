@@ -22,11 +22,23 @@ public sealed class HbrgoHotaruCardPool : CustomCardPoolModel
         UnlockState unlockState, IEnumerable<CardModel> cards)
     {
         CardModel[] hotaruCards = cards.Distinct().ToArray();
-        if (hotaruCards.Any(card => card.Rarity is CardRarity.Common or CardRarity.Uncommon or CardRarity.Rare))
-            return hotaruCards;
+        bool hasCommon = false;
+        bool hasUncommon = false;
+        bool hasRare = false;
+        foreach (CardModel card in hotaruCards)
+        {
+            switch (card.Rarity)
+            {
+                case CardRarity.Common: hasCommon = true; break;
+                case CardRarity.Uncommon: hasUncommon = true; break;
+                case CardRarity.Rare: hasRare = true; break;
+            }
+            if (hasCommon && hasUncommon && hasRare)
+                return hotaruCards;
+        }
 
-        // The initial implementation has only Basic cards. Use the unlocked
-        // colorless pool until a normal Hotaru reward pool has been created.
+        // Keep unlocked colorless rewards available while any normal reward
+        // rarity is still missing from Hotaru's developing card pool.
         return hotaruCards.Concat(ModelDb.CardPool<ColorlessCardPool>()
             .GetUnlockedCards(unlockState, CardMultiplayerConstraint.None)).Distinct();
     }

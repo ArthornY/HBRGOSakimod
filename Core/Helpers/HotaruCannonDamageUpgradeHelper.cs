@@ -44,7 +44,7 @@ internal static class HotaruCannonDamageUpgradeHelper
         if (receipt?.Cannon == null || receipt.ActualDamage <= 0m) return;
         Creature cannon = receipt.Cannon;
         Millsage relic = cannon.PetOwner?.GetRelic<Millsage>();
-        if (cannon.Monster is HotaruHappinessCannon && receipt.IsPrimary)
+        if (cannon.Monster is HotaruHappinessCannon)
         {
             relic?.ApplyHappinessHitGrowth();
             if (Has(cannon, HotaruCannonKind.Happiness, 4))

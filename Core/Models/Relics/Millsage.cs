@@ -216,6 +216,7 @@ public sealed partial class Millsage : RelicModel
             Creature cannon = GetCannon(kind);
             if (cannon != null) await ExecuteNaturalPhase(cannon, HotaruCannonPhase.End, context);
         }
+        await ResolveDefensiveEchoes(context, overclockToken != null);
     }
 
     private async Task ExecuteNaturalPhase(Creature cannon, HotaruCannonPhase phase,
@@ -265,14 +266,15 @@ public sealed partial class Millsage : RelicModel
     }
 
     public async Task FireHappiness(Creature target, PlayerChoiceContext choiceContext,
-        CardModel cardSource = null, CardPlay cardPlay = null, bool growBeforeDamage = false)
+        CardModel cardSource = null, CardPlay cardPlay = null, bool growBeforeDamage = false,
+        bool reuseVigorBatch = false)
     {
         Creature cannon = GetCannon(HotaruCannonKind.Happiness);
         if (!CanAct() || cannon == null || !IsEnemy(target, Owner)) return;
         HotaruCannonState state = StateFor(HotaruCannonKind.Happiness);
         bool all = HasCannonUpgrade(HotaruCannonKind.Happiness, 7);
         int hits = all ? 2 : 1;
-        using var vigorBatch = HotaruCannonVigorHelper.BeginBatch(this,
+        using var vigorBatch = reuseVigorBatch ? null : HotaruCannonVigorHelper.BeginBatch(this,
             new[] { (Cannon: cannon, Phase: HotaruCannonPhase.End) });
         int actionCount = state.TakeActionCount();
         for (int action = 0; action < actionCount && CanAct() && IsOwnedCannon(cannon, Owner); action++)
@@ -281,7 +283,7 @@ public sealed partial class Millsage : RelicModel
             await HotaruCannonSupportUpgradeHelper.PreparePhase(choiceContext, cannon, HotaruCannonPhase.End);
             if (!CanAct() || !IsOwnedCannon(cannon, Owner)) break;
             using var phaseScope = HotaruCannonSupportUpgradeHelper.BeginPhase(cannon, HotaruCannonPhase.End);
-            if (growBeforeDamage) state.GrowHappiness();
+            if (growBeforeDamage) await GrowHappiness(choiceContext, cannon, 0m, cardSource, cardPlay);
             decimal damage = state.HappinessDamage;
             var vigorAttack = HotaruCannonVigorHelper.BeginAttack(cannon, HotaruCannonPhase.End);
             try
@@ -345,7 +347,7 @@ public sealed partial class Millsage : RelicModel
 
     private async Task ExecutePhase(Creature cannon, HotaruCannonPhase phase,
         PlayerChoiceContext context, CardModel cardSource, CardPlay cardPlay = null, decimal baseValueBonus = 0m,
-        HotaruCannonVigorHelper.AttackScope actionVigor = null, bool completeVigor = true)
+        HotaruCannonVigorHelper.AttackScope actionVigor = null, bool completeVigor = true, Creature fixedTarget = null)
     {
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
@@ -369,7 +371,7 @@ public sealed partial class Millsage : RelicModel
                         break;
                     case HotaruCannonKind.Absolution:
                         for (int hit = 0; hit < 3 && CanAct(); hit++)
-                            await DealRandomDamage(cannon, 1m + baseValueBonus, context, cardSource, cardPlay);
+                            await DealPhaseDamage(cannon, fixedTarget, 1m + baseValueBonus, context, cardSource, cardPlay);
                         break;
                 }
             }
@@ -378,12 +380,12 @@ public sealed partial class Millsage : RelicModel
                 switch (kind)
                 {
                     case HotaruCannonKind.Happiness:
-                        state.GrowHappiness(baseValueBonus);
+                        await GrowHappiness(context, cannon, baseValueBonus, cardSource, cardPlay);
                         break;
                     case HotaruCannonKind.Contest:
                         for (int hit = 0; hit < (HasCannonUpgrade(HotaruCannonKind.Contest, 7) ? 2 : 1) && CanAct(); hit++)
                         {
-                            Creature target = RandomEnemy();
+                            Creature target = fixedTarget ?? RandomEnemy();
                             if (target != null)
                                 await DealDamage(cannon, target,
                                     2m + SixSenseCombatHelper.TargetResistanceBreakCount(target) + baseValueBonus,
@@ -391,14 +393,14 @@ public sealed partial class Millsage : RelicModel
                         }
                         break;
                     case HotaruCannonKind.Longing:
-                        await DealRandomDamage(cannon, 3m + baseValueBonus, context, cardSource, cardPlay);
+                        await DealPhaseDamage(cannon, fixedTarget, 3m + baseValueBonus, context, cardSource, cardPlay);
                         break;
                     case HotaruCannonKind.Absolution:
                         using (HighHitDamageVisualHelper.BeginDirectDamageBatch(
                             HotaruAbsolutionUpgradeHelper.GetEndHitCount(this), Owner.Creature,
                             cardSource, ValueProp.Move))
                             for (int hit = 0; hit < HotaruAbsolutionUpgradeHelper.GetEndHitCount(this) && CanAct(); hit++)
-                                await DealRandomDamage(cannon, 2m + baseValueBonus, context, cardSource, cardPlay);
+                                await DealPhaseDamage(cannon, fixedTarget, 2m + baseValueBonus, context, cardSource, cardPlay);
                         break;
                 }
             }

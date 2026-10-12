@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -94,6 +95,7 @@ public sealed class HotaruCannonCombatState
     public int LastNaturalStartTurn { get; set; }
     public int LastNaturalEndTurn { get; set; }
     public bool EndRewardPending { get; set; }
+    public List<HotaruDefensiveEcho> PendingDefensiveEchoes { get; set; } = new();
 
     public HotaruCannonState For(HotaruCannonKind kind) => Cannons[(int)kind];
     public string ToJson() => JsonSerializer.Serialize(this);
@@ -109,6 +111,12 @@ public sealed class HotaruCannonCombatState
             .Select(index => index < saved.Length ? saved[index] ?? new HotaruCannonState() : new HotaruCannonState())
             .ToArray();
         foreach (HotaruCannonState cannon in state.Cannons) cannon.Normalize();
+        state.PendingDefensiveEchoes = (state.PendingDefensiveEchoes ?? new())
+            .Where(echo => echo != null)
+            .Select(echo => new HotaruDefensiveEcho {
+                BaseValueBonus = Math.Clamp(echo.BaseValueBonus, 0m, HotaruCannonState.MaximumStoredValue),
+                Overclock = echo.Overclock
+            }).ToList();
         try
         {
             using JsonDocument document = JsonDocument.Parse(data ?? string.Empty);
@@ -142,4 +150,10 @@ public sealed class HotaruCannonCombatState
         cannon.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.Number &&
             value.TryGetInt32(out int count)
             ? Math.Max(0, count) : 0;
+}
+
+public sealed class HotaruDefensiveEcho
+{
+    public decimal BaseValueBonus { get; set; }
+    public bool Overclock { get; set; }
 }

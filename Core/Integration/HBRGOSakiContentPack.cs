@@ -256,7 +256,10 @@ internal static class HBRGOSakiContentPack
         typeof(HotaruStrike),
         typeof(HotaruDefend),
         typeof(HotaruStimulate),
-        typeof(HotaruCharge)
+        typeof(HotaruCharge),
+        typeof(HotaruEcho),
+        typeof(HotaruSalvo),
+        typeof(HotaruOvercharge)
     };
 
     private static readonly Type[] RewardRelicTypes =
