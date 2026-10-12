@@ -278,7 +278,8 @@ internal static class HBRGOSakiContentPack
         typeof(MomentOfReign),
         typeof(BecomeGodHbrgoSaki),
         typeof(HotaruElectronicSoldierManual),
-        typeof(Millsage)
+        typeof(Millsage),
+        typeof(HotaruIridescence)
     };
 
     private static readonly Type[] InternalRelicTypes =
@@ -481,7 +482,8 @@ internal static class HBRGOSakiContentPack
                 {
                     context.Content.RegisterRelic(
                         relicType == typeof(HotaruElectronicSoldierManual) ||
-                        relicType == typeof(Millsage)
+                        relicType == typeof(Millsage) ||
+                        relicType == typeof(HotaruIridescence)
                             ? typeof(HbrgoHotaruRelicPool)
                             : typeof(HBRGOSakiRelicPool),
                         relicType,

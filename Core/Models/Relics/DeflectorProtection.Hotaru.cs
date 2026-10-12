@@ -25,6 +25,13 @@ public sealed partial class DeflectorProtection : IModRelicVisibility
         string key = MemoryGardenUpgradePointsHelper.GetRoomKey(Owner.RunState, room);
         if (string.IsNullOrEmpty(key) || LastHotaruCombatWearRoom == key) return;
         LastHotaruCombatWearRoom = key;
-        LoseMaxDp(amount);
+        if (Owner.GetRelic<HotaruIridescence>()?.Layers >= 3)
+        {
+            GainMaxDp(amount);
+        }
+        else
+        {
+            LoseMaxDp(amount);
+        }
     }
 }

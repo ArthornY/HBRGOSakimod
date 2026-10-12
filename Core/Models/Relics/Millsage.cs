@@ -21,9 +21,6 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 
 public sealed partial class Millsage : RelicModel
 {
-    public const int InitialLayers = 5;
-    public const int MaximumLayers = 6;
-    private int _layers = InitialLayers;
     private HotaruCannonCombatState _combat = new();
     private object _lastOverclockStartToken;
     private object _lastOverclockEndToken;
@@ -34,18 +31,6 @@ public sealed partial class Millsage : RelicModel
     public override string PackedIconPath => "res://images/relics/millsage.webp";
     protected override string PackedIconOutlinePath => PackedIconPath;
     protected override string BigIconPath => PackedIconPath;
-
-    [SavedProperty]
-    public int Layers
-    {
-        get => _layers;
-        private set
-        {
-            AssertMutable();
-            _layers = Math.Clamp(value, 0, MaximumLayers);
-            InvokeDisplayAmountChanged();
-        }
-    }
 
     [SavedProperty]
     public string CannonStateData
@@ -59,7 +44,6 @@ public sealed partial class Millsage : RelicModel
         }
     }
 
-    public void SetLayers(int amount) => Layers = amount;
     public HotaruCannonState StateFor(HotaruCannonKind kind) => _combat.For(kind);
 
     protected override void AfterCloned()
@@ -87,8 +71,9 @@ public sealed partial class Millsage : RelicModel
             ModelDb.Monster<HotaruLongingCannon>(),
             ModelDb.Monster<HotaruAbsolutionCannon>()
         };
-        // The sixth Millsage slot is reserved; no unrequested sixth cannon is created.
-        foreach (MonsterModel canonical in models.Take(Math.Min(5, Layers)))
+        // Relic charge counts acquisitions; all five cannons are available
+        // independently of that counter, including at its initial one charge.
+        foreach (MonsterModel canonical in models)
         {
             HotaruCannonKind kind = ((HotaruCannonModel)canonical).Kind;
             if (GetCannon(kind) != null) continue;

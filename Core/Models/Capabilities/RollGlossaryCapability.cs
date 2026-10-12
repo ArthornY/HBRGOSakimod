@@ -111,6 +111,7 @@ public sealed class RollGlossaryCapability :
         percent += creature.GetPower<AccelerationPower>()?.Amount ?? 0;
         percent += LostStarSongSupportPower.GetRollBonus(creature);
         percent += HotaruCannonSupportUpgradeHelper.GetRollPercentBonus(player, CardType.Attack);
+        percent += player.GetRelic<HotaruIridescence>()?.RollBonus ?? 0;
         bonus += PhantomHelper.GetSummonerRollBonus(player);
 
         if (creature.HasPower<MagicSwordModePower>())
@@ -829,6 +830,13 @@ public sealed class RollGlossaryCapability :
         CardType? rollType = _standaloneType ?? cardSource?.Type;
         bool isAttackCardRoll = !advantageOnly && rollType == CardType.Attack;
         List<SoulRollBonusDetail> sharedBonuses = new();
+
+        int iridescenceBonus = player.GetRelic<HotaruIridescence>()?.RollBonus ?? 0;
+        if (iridescenceBonus != 0)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                iridescenceBonus, "虹光", isPercentage: true));
+        }
 
         int cannonUpgradeBonus = HotaruCannonSupportUpgradeHelper.GetRollPercentBonus(player, rollType);
         if (!advantageOnly && cannonUpgradeBonus != 0)

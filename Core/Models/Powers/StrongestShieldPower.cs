@@ -237,6 +237,12 @@ public class StrongestShieldPower : PowerModel
         bool useRollPenalty =
             rollPenalty?.TryReserveRoll() == true;
         List<SoulRollBonusDetail> sharedBonuses = new();
+        int iridescenceBonus = RollOwner?.GetRelic<HotaruIridescence>()?.RollBonus ?? 0;
+        if (iridescenceBonus != 0)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                iridescenceBonus, "虹光", isPercentage: true));
+        }
         int tourGuidePenalty = TourGuidePower.GetRollPenalty(Owner);
         if (tourGuidePenalty != 0)
         {

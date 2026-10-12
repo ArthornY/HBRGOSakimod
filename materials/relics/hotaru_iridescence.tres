@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://materials/relics/hotaru_iridescence.gdshader" id="1_flow"]
+
+[resource]
+resource_local_to_scene = true
+shader = ExtResource("1_flow")
+shader_parameter/pulse = 0.0
+shader_parameter/is_used = 0.0
+shader_parameter/is_wax = 0.0

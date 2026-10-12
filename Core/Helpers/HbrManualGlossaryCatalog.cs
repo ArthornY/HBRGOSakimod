@@ -82,7 +82,8 @@ internal static class HbrManualGlossaryCatalog
         // These mechanics are authored as hand-made hover tips/relic rules rather than powers.
         LocTable relics = LocManager.Instance.GetTable("relics");
         foreach (RelicModel relic in new RelicModel[]
-                 { ModelDb.Relic<Overclock>(), ModelDb.Relic<DeflectorProtection>(), ModelDb.Relic<MomentOfReign>() })
+                 { ModelDb.Relic<Overclock>(), ModelDb.Relic<DeflectorProtection>(), ModelDb.Relic<MomentOfReign>(),
+                     ModelDb.Relic<Millsage>(), ModelDb.Relic<HotaruIridescence>() })
             AddEntry(entries, relics, "relics", relic.Id.Entry, "HBR 机制", relic.PackedIconPath);
         string manualIcon = ModelDb.Relic<HotaruElectronicSoldierManual>().PackedIconPath;
         foreach (string prefix in new[]

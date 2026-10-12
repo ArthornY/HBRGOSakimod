@@ -65,6 +65,7 @@ public sealed class HbrgoHotaru : CustomCharacterModel, IModCharacterVanillaSele
         ModelDb.Relic<HotaruElectronicSoldierManual>(),
         ModelDb.Relic<SoulOfAnchor>(),
         ModelDb.Relic<Millsage>(),
+        ModelDb.Relic<HotaruIridescence>(),
         ModelDb.Relic<DeflectorProtection>(),
         ModelDb.Relic<Overclock>()
     };

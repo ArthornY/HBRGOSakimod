@@ -1,0 +1,49 @@
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+using HarmonyLib;
+using HBRGOSakiMod.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Runs.History;
+
+namespace HBRGOSakiMod.Core.Patches;
+
+[HarmonyPatch(typeof(RelicCmd), nameof(RelicCmd.Obtain),
+    new[] { typeof(RelicModel), typeof(Player), typeof(int) })]
+internal static class HotaruRelicChargePatch
+{
+    private static bool Prefix(RelicModel relic, Player player, ref Task<RelicModel> __result)
+    {
+        if (player == null || relic is not (Millsage or HotaruIridescence)) return true;
+        RelicModel existing = relic is Millsage
+            ? player.GetRelic<Millsage>()
+            : player.GetRelic<HotaruIridescence>();
+        if (existing == null) return true;
+        relic.AssertMutable();
+        if (relic.Owner != null && relic.Owner != player) return true;
+        player.RunState.CurrentMapPointHistoryEntry?.GetEntry(player.NetId)
+            .RelicChoices.Add(new ModelChoiceHistoryEntry(relic.Id, wasPicked: true));
+        if (existing is Millsage millsage) millsage.GainCharge();
+        else ((HotaruIridescence)existing).GainCharge();
+        __result = Task.FromResult(existing);
+        return false;
+    }
+}
+
+[HarmonyPatch]
+internal static class HotaruIridescenceDescriptionPatch
+{
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        yield return AccessTools.PropertyGetter(typeof(RelicModel), nameof(RelicModel.DynamicDescription));
+        yield return AccessTools.PropertyGetter(typeof(RelicModel), nameof(RelicModel.DynamicEventDescription));
+    }
+
+    private static void Postfix(RelicModel __instance, LocString __result)
+    {
+        if (__instance is HotaruIridescence iridescence) iridescence.AddDescriptionVariables(__result);
+    }
+}

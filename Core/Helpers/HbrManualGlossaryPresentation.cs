@@ -48,6 +48,15 @@ internal static class HbrManualGlossaryPresentation
             }
             switch (name)
             {
+                case "RollBonus" when sourceId.EndsWith("HOTARU_IRIDESCENCE", StringComparison.Ordinal):
+                    AddNote("C 表示虹光自身的永久充能计数，初始 1 层，上限 6 层。");
+                    return "（30×C）";
+                case "EnergyIcons" when sourceId.EndsWith("HOTARU_IRIDESCENCE", StringComparison.Ordinal):
+                    AddNote("C 表示虹光自身的永久充能计数，初始 1 层，上限 6 层。");
+                    return "（C−2）" + EnergyIcon;
+                case "StartingStats" when sourceId.EndsWith("HOTARU_IRIDESCENCE", StringComparison.Ordinal):
+                    AddNote("C 表示虹光自身的永久充能计数，初始 1 层，上限 6 层。");
+                    return "C²";
                 case "Amount":
                 case "value":
                     AddNote("N 表示该能力的层数或累计数值。");

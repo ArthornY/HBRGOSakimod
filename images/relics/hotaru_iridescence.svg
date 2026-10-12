@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="rainbow" gradientUnits="userSpaceOnUse" x1="28" y1="217" x2="231" y2="31">
+      <stop offset="0" stop-color="#ff658b"/>
+      <stop offset="0.17" stop-color="#ffb85b"/>
+      <stop offset="0.33" stop-color="#fff27b"/>
+      <stop offset="0.49" stop-color="#78f3ad"/>
+      <stop offset="0.65" stop-color="#64e7ff"/>
+      <stop offset="0.81" stop-color="#9490ff"/>
+      <stop offset="1" stop-color="#f299ff"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#102034" stroke-width="24">
+      <path d="M29 180 C63 202 80 162 72 130 C63 93 96 47 131 63 C167 80 191 56 220 29"/>
+      <path d="M33 202 C67 225 106 184 97 145 C88 108 116 85 148 97 C181 109 208 82 228 58"/>
+      <path d="M46 223 C89 240 133 202 123 167 C113 136 137 114 166 128 C190 140 213 119 230 97"/>
+    </g>
+    <g stroke="url(#rainbow)" stroke-width="15">
+      <path d="M29 180 C63 202 80 162 72 130 C63 93 96 47 131 63 C167 80 191 56 220 29"/>
+      <path d="M33 202 C67 225 106 184 97 145 C88 108 116 85 148 97 C181 109 208 82 228 58"/>
+      <path d="M46 223 C89 240 133 202 123 167 C113 136 137 114 166 128 C190 140 213 119 230 97"/>
+    </g>
+    <g stroke="#fff6f1" stroke-width="3" opacity="0.76">
+      <path d="M73 131 C64 95 94 52 127 65"/>
+      <path d="M34 200 C58 215 85 194 94 169"/>
+      <path d="M162 125 C187 139 209 119 227 99"/>
+    </g>
+  </g>
+  <path d="M190 20 L195 31 L206 36 L195 41 L190 53 L185 41 L174 36 L185 31 Z" fill="#fff6e5" stroke="#14263b" stroke-width="3"/>
+  <path d="M44 105 L47 112 L55 116 L47 119 L44 127 L41 119 L33 116 L41 112 Z" fill="#b7fbff" stroke="#14263b" stroke-width="2.5"/>
+</svg>
