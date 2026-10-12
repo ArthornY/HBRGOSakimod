@@ -1,6 +1,6 @@
 {
   "HOTARU_CANNON_DAMAGE_MULTIPLIER.title": "灵魂之力",
-  "HOTARU_CANNON_DAMAGE_MULTIPLIER.description": "此炮的最终伤害倍率。当前：[blue]{Current}%[/blue]。上限：[blue]{Maximum}%[/blue]。当前升级：[blue]{Level}[/blue]级。\n每次升级，仅此炮的当前灵魂之力与上限各增加[blue]10[/blue]个百分点。小萤掷骰大成功时，随机激发两门不同的浮游炮；每门被选中的炮当前灵魂之力与上限各增加[blue]1[/blue]个百分点。\n每场普通、精英、Boss战斗结束后，当前灵魂之力分别降低[blue]1、2、4[/blue]个百分点，最低[blue]0%[/blue]；在火堆休息时恢复[blue]10[/blue]个百分点，最高为此炮的灵魂之力上限。",
+  "HOTARU_CANNON_DAMAGE_MULTIPLIER.description": "此炮的最终伤害倍率。每段伤害最低为[blue]1[/blue]；格挡与免伤正常生效。当前：[blue]{Current}%[/blue]。上限：[blue]{Maximum}%[/blue]。当前升级：[blue]{Level}[/blue]级。\n每次升级，仅此炮的当前灵魂之力与上限各增加[blue]10[/blue]个百分点。小萤掷骰大成功时，随机激发两门不同的浮游炮；每门被选中的炮当前灵魂之力与上限各增加[blue]1[/blue]个百分点。\n每场普通、精英、Boss战斗结束后，当前灵魂之力分别降低[blue]1、2、4[/blue]个百分点，最低[blue]0%[/blue]；在火堆休息时恢复[blue]10[/blue]个百分点，最高为此炮的灵魂之力上限。",
   "HOTARU_DAMAGE_AMPLIFICATION_POWER.title": "伤害增幅",
   "HOTARU_DAMAGE_AMPLIFICATION_POWER.description": "每层使造成的伤害额外增加1%。",
   "HBRGOSAKIMOD-HOTARU_DAMAGE_AMPLIFICATION_POWER.title": "伤害增幅",

@@ -102,7 +102,7 @@ internal static class HotaruCannonStatsHelper
             .Where(enemy => Millsage.IsEnemy(enemy, cannon.PetOwner)).ToArray() ?? Array.Empty<Creature>();
         if (targets.Length == 0 || dealer?.CombatState?.RunState == null)
         {
-            decimal fallback = decimal.Floor(Math.Max(0m, baseDamage) * GetCannonDamageMultiplier(cannon));
+            decimal fallback = Math.Max(1m, decimal.Floor(Math.Max(0m, baseDamage) * GetCannonDamageMultiplier(cannon)));
             return (fallback, fallback);
         }
         Creature previous = PreviewCannon.Value;
@@ -218,8 +218,13 @@ internal static class HotaruCannonStatsHelper
             ? cannon.PetOwner?.GetRelic<Millsage>()?.GetCannonDamageMultiplier(model.Kind) ?? 0.5m
             : 0.5m;
     internal static decimal GetFinalDamageScale(Creature target, Creature dealer, CardModel card, ValueProp props) =>
-        TryGetCurrentCannon(target, dealer, card, props, out Creature cannon)
-            ? GetCannonDamageMultiplier(cannon) : 1m;
+        GetFinalDamageScale(target, dealer, card, props, out _);
+    internal static decimal GetFinalDamageScale(Creature target, Creature dealer, CardModel card, ValueProp props,
+        out bool isCannonDamage)
+    {
+        isCannonDamage = TryGetCurrentCannon(target, dealer, card, props, out Creature cannon);
+        return isCannonDamage ? GetCannonDamageMultiplier(cannon) : 1m;
+    }
     internal static void ContributeCannonRollMultiplier(Creature target, Creature dealer, CardModel card, ValueProp props) =>
         HotaruCannonDamageUpgradeHelper.ContributeCannonRollMultiplier(target, dealer, card, props);
     internal static bool IsContestSource(Creature target, Creature applier, Millsage relic) =>

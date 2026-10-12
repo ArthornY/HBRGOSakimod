@@ -232,8 +232,14 @@ internal static class HbrCombatDamagePipeline
         // apply the target's defenses and the existing single-hit cap.
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(modifiedDamage, hbrgoMultiplier);
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(modifiedDamage, multipliers.FinalMultiplier);
-        decimal cannonFinalScale = HotaruCannonStatsHelper.GetFinalDamageScale(target, dealer, cardSource, props);
+        decimal cannonFinalScale = HotaruCannonStatsHelper.GetFinalDamageScale(target, dealer, cardSource, props,
+            out bool isCannonDamage);
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(modifiedDamage, cannonFinalScale);
+        // A cannon's own scaling can reduce a hit below one, including zero
+        // Soul Power. Explicit damage prevention and target caps still win.
+        if (isCannonDamage && hbrgoMultiplier > 0m && multipliers.OtherMultiplier > 0m &&
+            multipliers.FinalMultiplier > 0m && enemyDamageMultiplier > 0m)
+            modifiedDamage = Math.Max(1m, modifiedDamage);
         foreach (AbstractModel source in groupedResult.Sources)
         {
             if (!appliedModifiers.Contains(source))
@@ -265,6 +271,7 @@ internal static class HbrCombatDamagePipeline
         decimal capturedRawDamage = DamageAmplificationLimits.MultiplySaturated(
             DamageAmplificationLimits.MultiplySaturated(rawMultiplierBaseDamage, multipliers.RawOtherMultiplier), rawMultiplier);
         capturedRawDamage = DamageAmplificationLimits.MultiplySaturated(capturedRawDamage, cannonFinalScale);
+        if (isCannonDamage) capturedRawDamage = Math.Max(1m, capturedRawDamage);
         capturedRawDamage = DamageLimitHelper.CapSingleHit(capturedRawDamage);
         ItsMygoIncomingDamageCapture.Capture(target, capturedRawDamage);
         modifiers = appliedModifiers;
