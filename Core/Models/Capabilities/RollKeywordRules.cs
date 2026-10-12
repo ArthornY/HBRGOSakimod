@@ -158,20 +158,32 @@ internal static class RollKeywordRules
             return SoulRollTier.Critical;
         }
 
-        if (roll.FinalRoll is >= 50 and <= 75)
+        return GetNonCriticalTier(roll.FinalRoll);
+    }
+
+    private static SoulRollTier GetNonCriticalTier(int finalRoll)
+    {
+        if (finalRoll is >= 50 and <= 75)
         {
             return SoulRollTier.First;
         }
 
-        if (roll.FinalRoll is >= 76 and <= 90)
+        if (finalRoll is >= 76 and <= 90)
         {
             return SoulRollTier.Second;
         }
 
-        return roll.FinalRoll >= 91
+        return finalRoll >= 91
             ? SoulRollTier.Third
             : SoulRollTier.None;
     }
+
+    internal static SoulRollBreakdown WithoutCritical(SoulRollBreakdown roll) =>
+        new(roll.BaseRoll, roll.FinalRoll, roll.DiceSource, roll.Bonuses)
+        {
+            IsForcedCritical = false,
+            ResolvedTier = GetNonCriticalTier(roll.FinalRoll)
+        };
 
     internal static SoulRollBreakdown ResolveRollTier(Player player, SoulRollBreakdown roll)
     {

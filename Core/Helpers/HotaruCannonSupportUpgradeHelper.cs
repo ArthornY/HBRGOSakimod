@@ -25,6 +25,7 @@ internal static class HotaruCannonSupportUpgradeHelper
         internal PhaseScope Previous;
         internal Creature Cannon;
         internal HotaruCannonPhase Phase;
+        internal bool SuppressCritical;
         internal bool Active = true;
         public void Dispose()
         {
@@ -70,9 +71,27 @@ internal static class HotaruCannonSupportUpgradeHelper
         // from the owner's current powers or resulting damage multiplier.
         private SoulRollBreakdown _winningRoll;
         private SoulRollBreakdown[] _discardedRolls;
+        private (SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded)? _nonCriticalResult;
         internal SoulRollBreakdown WinningRoll => _winningRoll ??= Winning?.ToRoll();
         internal SoulRollBreakdown[] DiscardedRolls => _discardedRolls ??=
             (Discarded ?? Array.Empty<RollDto>()).Select(roll => roll.ToRoll()).ToArray();
+
+        // The reward action reads its own derived result. Keep the saved dice
+        // and next normal phase intact; compute this once per cached phase.
+        internal (SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded) NonCriticalResult
+        {
+            get
+            {
+                if (_nonCriticalResult.HasValue) return _nonCriticalResult.Value;
+                SoulRollBreakdown[] rolls = new[] { WinningRoll }.Concat(DiscardedRolls)
+                    .Select(RollKeywordRules.WithoutCritical).ToArray();
+                int winner = 0;
+                for (int index = 1; index < rolls.Length; index++)
+                    if (rolls[index].FinalRoll > rolls[winner].FinalRoll) winner = index;
+                _nonCriticalResult = (rolls[winner], rolls.Where((_, index) => index != winner).ToArray());
+                return _nonCriticalResult.Value;
+            }
+        }
     }
 
     private sealed class ParsedPhaseCache
@@ -91,9 +110,10 @@ internal static class HotaruCannonSupportUpgradeHelper
     private static readonly AsyncLocal<PhaseScope> CurrentPhase = new();
     private static readonly ConditionalWeakTable<HotaruCannonState, ParsedStateCache> ParsedRolls = new();
 
-    internal static PhaseScope BeginPhase(Creature cannon, HotaruCannonPhase phase)
+    internal static PhaseScope BeginPhase(Creature cannon, HotaruCannonPhase phase, bool suppressCritical = false)
     {
-        PhaseScope scope = new() { Previous = CurrentPhase.Value, Cannon = cannon, Phase = phase };
+        PhaseScope scope = new() { Previous = CurrentPhase.Value, Cannon = cannon, Phase = phase,
+            SuppressCritical = suppressCritical };
         CurrentPhase.Value = scope;
         return scope;
     }
@@ -159,13 +179,18 @@ internal static class HotaruCannonSupportUpgradeHelper
             // supplies the cache, including one-time old-save migration.
             return 1m;
         }
+        bool suppressCritical = scope?.Active == true && ReferenceEquals(scope.Cannon, cannon) &&
+            scope.Phase == phase && scope.SuppressCritical && !HotaruCannonStatsHelper.IsDamagePreview &&
+            !HotaruCannonBlockHelper.IsBlockPreview;
+        SoulRollBreakdown winning = suppressCritical ? cache.NonCriticalResult.Winning : cache.WinningRoll;
+        IReadOnlyList<SoulRollBreakdown> discarded = suppressCritical ? cache.NonCriticalResult.Discarded : cache.DiscardedRolls;
         if (resolve && !cache.Committed)
         {
             cache.Committed = true;
             WriteCache(state, phase, cache);
-            RollGlossaryCapability.CommitCannonRoll(owner, cache.WinningRoll, cache.DiscardedRolls);
+            RollGlossaryCapability.CommitCannonRoll(owner, winning, discarded);
         }
-        return RollKeywordRules.GetAttackOrSkillValueMultiplier(owner, cache.WinningRoll, type);
+        return RollKeywordRules.GetAttackOrSkillValueMultiplier(owner, winning, type);
     }
 
     internal static int GetRollPercentBonus(Player player, CardType? type)

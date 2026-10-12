@@ -47,7 +47,7 @@ public sealed partial class Millsage
                 using var vigorBatch = HotaruCannonVigorHelper.BeginCompleteActionBatch(this, cannons);
                 foreach (Creature cannon in cannons)
                 {
-                    await TriggerAllEffects(cannon, context, reuseVigorBatch: true);
+                    await TriggerAllEffects(cannon, context, reuseVigorBatch: true, suppressCritical: true);
                     GainCannonSoulPower(((HotaruCannonModel)cannon.Monster).Kind);
                     await RefreshIntent(cannon);
                 }

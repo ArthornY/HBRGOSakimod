@@ -230,7 +230,7 @@ public sealed partial class Millsage : RelicModel
 
     public async Task TriggerAllEffects(Creature cannon, PlayerChoiceContext choiceContext,
         CardModel cardSource = null, CardPlay cardPlay = null, decimal baseValueBonus = 0m,
-        bool reuseVigorBatch = false)
+        bool reuseVigorBatch = false, bool suppressCritical = false)
     {
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
@@ -256,10 +256,10 @@ public sealed partial class Millsage : RelicModel
                 // first full action can claim the batch's Vigor allowance.
                 if (hasStart)
                     await ExecutePhase(cannon, HotaruCannonPhase.Start, choiceContext, cardSource,
-                        cardPlay, baseValueBonus, actionVigor, completeVigor: !hasEnd);
+                        cardPlay, baseValueBonus, actionVigor, completeVigor: !hasEnd, suppressCritical: suppressCritical);
                 if (CanAct() && hasEnd)
                     await ExecutePhase(cannon, HotaruCannonPhase.End, choiceContext, cardSource,
-                        cardPlay, baseValueBonus, actionVigor, completeVigor: true);
+                        cardPlay, baseValueBonus, actionVigor, completeVigor: true, suppressCritical: suppressCritical);
             }
             finally { await actionVigor.Complete(choiceContext); }
         }
@@ -347,7 +347,8 @@ public sealed partial class Millsage : RelicModel
 
     private async Task ExecutePhase(Creature cannon, HotaruCannonPhase phase,
         PlayerChoiceContext context, CardModel cardSource, CardPlay cardPlay = null, decimal baseValueBonus = 0m,
-        HotaruCannonVigorHelper.AttackScope actionVigor = null, bool completeVigor = true, Creature fixedTarget = null)
+        HotaruCannonVigorHelper.AttackScope actionVigor = null, bool completeVigor = true, Creature fixedTarget = null,
+        bool suppressCritical = false)
     {
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
@@ -356,7 +357,7 @@ public sealed partial class Millsage : RelicModel
             await HotaruEndgameEffectsHelper.OnTurnStart(this, context);
         await HotaruCannonSupportUpgradeHelper.PreparePhase(context, cannon, phase);
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
-        using var phaseScope = HotaruCannonSupportUpgradeHelper.BeginPhase(cannon, phase);
+        using var phaseScope = HotaruCannonSupportUpgradeHelper.BeginPhase(cannon, phase, suppressCritical);
         HotaruCannonState state = StateFor(kind);
         var vigorAttack = actionVigor ?? HotaruCannonVigorHelper.BeginAttack(cannon, phase);
         try

@@ -34,6 +34,7 @@ internal static class HotaruCannonBlockHelper
     private static readonly AsyncLocal<Intent> Pending = new();
     private static readonly AsyncLocal<GainScope> Current = new();
     private static readonly AsyncLocal<int> PreviewDepth = new();
+    internal static bool IsBlockPreview => PreviewDepth.Value > 0;
 
     internal static decimal Preview(Creature owner, decimal baseAmount, CardPlay sourcePlay = null, Creature cannon = null)
     {
