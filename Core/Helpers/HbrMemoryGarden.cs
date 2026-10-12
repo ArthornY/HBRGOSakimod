@@ -304,6 +304,17 @@ internal static partial class HbrMemoryGarden
         AuthorizedCopies.AddOrUpdate(copy, player);
     }
 
+    internal static void AuthorizeTheftReturn(Player player, CardModel card)
+    {
+        // Native theft restores this exact card to the run before offering it
+        // as a reward. Rehydrated theft rewards do the same after loading.
+        // Its upgrades/enchantment remain on the original/restored instance.
+        if (card?.IsMutable != true || player == null || !ReferenceEquals(card.Owner, player) ||
+            !HbrMemoryGardenCardCatalog.IsGardenCard(card) || card.HasBeenRemovedFromState ||
+            card.Pile != null || player.RunState?.ContainsCard(card) != true) return;
+        AuthorizedCopies.AddOrUpdate(card, player);
+    }
+
     internal static bool IsAcquisitionAuthorized(Player player, CardModel card) =>
         card?.IsMutable == true && ReferenceEquals(card.Owner, player) &&
         (ReferenceEquals(AuthorizedCard.Value, card) ||

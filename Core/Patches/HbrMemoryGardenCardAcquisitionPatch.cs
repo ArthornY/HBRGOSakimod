@@ -8,9 +8,11 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Encounters;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Rewards;
 
 namespace HBRGOSakiMod.Core.Patches;
 
@@ -65,6 +67,18 @@ internal static class HbrMemoryGardenCardCopyAcquisitionPatch
 {
     private static void Postfix(CardModel mutableCard, CardModel __result) =>
         HbrMemoryGarden.AuthorizeCopy(mutableCard, __result);
+}
+
+[HarmonyPatch(typeof(SpecialCardReward), nameof(SpecialCardReward.SetCustomDescriptionEncounterSource))]
+internal static class HbrMemoryGardenStolenCardReturnPatch
+{
+    private static void Postfix(SpecialCardReward __instance, ModelId encounterId, CardModel ____card)
+    {
+        // SwipePower and Reward.FromSerializable both mark genuine theft
+        // returns with this encounter; other special rewards stay restricted.
+        if (encounterId == ModelDb.Encounter<ThievingHopperWeak>().Id)
+            HbrMemoryGarden.AuthorizeTheftReturn(__instance.Player, ____card);
+    }
 }
 
 // This API feeds permanent rewards, including explicit pools and NoCardPoolModifications.
