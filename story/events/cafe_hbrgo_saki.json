@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "CAFE_HBRGO_SAKI",
+  "title": "食堂",
+  "eventPool": "memoryFragments",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A",
+      "HbrgoHotaru"
+    ],
+    "acts": [],
+    "oncePerRun": true,
+    "afterEventIds": [
+      "JOINING_CEREMONY_HBRGO_SAKI"
+    ]
+  },
+  "presentation": {
+    "background": "res://images/story/70208cc9205d632aae30.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "res://images/characters/hbrgo_saki_normal.png",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "又一场战斗结束后，你的脑袋突然剧烈的疼痛起来。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "闭上眼，再睁开时，你发现自己竟然身处一座食堂前？",
+          "portrait": "",
+          "background": "res://images/story/b122ab8d9cf7c2d0657f.png",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "要乐奈",
+          "description": "疯狂+8，从3张卡牌中选择1张获得",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "SCENE",
+      "title": "要乐奈",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "test",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "疯狂+8，从3张卡牌中选择1张获得",
+          "description": "疯狂+8，从3张卡牌中选择1张获得",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "rana"
+      ]
+    },
+    {
+      "id": "SCENE_2",
+      "title": "ENDING",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（该前进了。）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

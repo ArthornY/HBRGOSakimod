@@ -12,11 +12,14 @@ using MegaCrit.Sts2.Core.Entities.Characters;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Vfx;
+using STS2RitsuLib.Scaffolding.Characters;
 
 namespace HBRGOSakiMod.Core.Models.Characters;
 
 [CustomID("HBRGO_SAKI")]
-public class HbrgoSaki : CustomCharacterModel
+public class HbrgoSaki :
+    CustomCharacterModel,
+    IModCharacterVanillaSelectionPolicy
 {
     public override string CustomVisualPath =>
         "res://scenes/creature_visuals/hbrgo_saki.tscn";
@@ -66,6 +69,14 @@ public class HbrgoSaki : CustomCharacterModel
     public override Color NameColor => new("5C8DFFFF");
 
     public override CharacterGender Gender => CharacterGender.Feminine;
+
+    public override bool HideFromVanillaCharacterSelect => true;
+
+    public override bool AllowInVanillaRandomCharacterSelect => false;
+
+    public override bool HideInCompendium => true;
+
+    public virtual bool HideInCardLibraryCompendium => true;
 
     protected override CharacterModel UnlocksAfterRunAs => null;
 

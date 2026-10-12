@@ -15,7 +15,7 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class MemoryCorridorHbrgoSaki : CardModel
 {
     public override string PortraitPath => ImageHelper.GetImagePath(
-        "packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png");
+        "packed/card_portraits/hbrgo_saki/memory_corridor_card_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
 

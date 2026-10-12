@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
@@ -9,6 +10,9 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class LastStandPower : PowerModel
 {
+    public override MegaCrit.Sts2.Core.Localization.LocString Description =>
+        HbrgoSakiEnergyIconHelper.Add31OPrefix(base.Description);
+
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Single;

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "CINEMA_HBRGO_SAKI",
+  "title": "电影院",
+  "eventPool": "memoryFragments",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A",
+      "HbrgoHotaru"
+    ],
+    "acts": [],
+    "oncePerRun": true,
+    "afterEventIds": [
+      "JOINING_CEREMONY_HBRGO_SAKI"
+    ]
+  },
+  "presentation": {
+    "background": "res://images/story/70208cc9205d632aae30.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "灯",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "tomori"
+      ]
+    },
+    {
+      "id": "SCENE",
+      "title": "ENDING",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

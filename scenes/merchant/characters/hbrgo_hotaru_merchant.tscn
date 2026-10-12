@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://images/characters/hbrgo_hotaru/hotaru_body.tres" id="1_hotaru"]
+
+[node name="HBRGOHotaruMerchant" type="Node2D"]
+
+[node name="Visuals" type="Sprite2D" parent="."]
+position = Vector2(0, -250)
+scale = Vector2(0.29274005, 0.29274005)
+texture = ExtResource("1_hotaru")

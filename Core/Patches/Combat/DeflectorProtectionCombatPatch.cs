@@ -1,14 +1,39 @@
 using System;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
+
+[HarmonyPatch(typeof(Creature), nameof(Creature.GainBlockInternal))]
+internal static class MomentOfReignGainBlockPatch
+{
+    private static bool Prefix(Creature __instance, decimal amount)
+    {
+        if (__instance.HasPower<PhantomPower>() ||
+            __instance.Player?.GetRelic<MomentOfReign>() == null)
+        {
+            return true;
+        }
+
+        Creature phantom = PhantomHelper.GetLivingPhantom(
+            __instance.Player);
+        if (phantom == null || ReferenceEquals(phantom, __instance))
+        {
+            return true;
+        }
+
+        phantom.GainBlockInternal(amount);
+        return false;
+    }
+}
 
 [HarmonyPatch(typeof(Creature), nameof(Creature.DamageBlockInternal))]
 internal static class CreatureDamageBlockInternalPatch
@@ -21,6 +46,37 @@ internal static class CreatureDamageBlockInternalPatch
         out bool __state)
     {
         __state = false;
+        if (HpOnlyDamageContext.BypassesDpForBlockReceiver(__instance))
+        {
+            if (!PhantomDamageContext.IsRedirectingBlock)
+                PhantomDamageContext.PopForBlockResolution();
+            __result = 0m;
+            return false;
+        }
+        if (!PhantomDamageContext.IsRedirectingBlock)
+        {
+            Creature phantom =
+                PhantomDamageContext.PopForBlockResolution();
+            if (phantom != null &&
+                phantom != __instance &&
+                phantom.PetOwner?.Creature == __instance)
+            {
+                PhantomDamageContext.IsRedirectingBlock = true;
+                try
+                {
+                    __result = phantom.DamageBlockInternal(
+                        amount,
+                        props);
+                }
+                finally
+                {
+                    PhantomDamageContext.IsRedirectingBlock = false;
+                }
+
+                return false;
+            }
+        }
+
         DamageTransferPower damageTransfer =
             __instance.GetPower<DamageTransferPower>();
         Creature transferTarget =
@@ -51,11 +107,8 @@ internal static class CreatureDamageBlockInternalPatch
             return true;
         }
 
-        if (props.HasFlag(ValueProp.Unblockable))
-        {
-            return true;
-        }
-
+        // Direct HP-loss effects are usually marked Unblockable. They still
+        // pass through DP so having DP cannot kill a low-HP character.
         __state = true;
         return true;
     }
@@ -63,6 +116,7 @@ internal static class CreatureDamageBlockInternalPatch
     private static void Postfix(
         Creature __instance,
         decimal amount,
+        ValueProp props,
         ref decimal __result,
         bool __state)
     {
@@ -77,9 +131,24 @@ internal static class CreatureDamageBlockInternalPatch
             return;
         }
 
-        HighDimensionalShellPower shell = __instance.GetPower<HighDimensionalShellPower>();
-        if (shell?.TryAbsorb(remainingDamage) == true)
+        HighDimensionalShellPower shell =
+            __instance.GetPower<HighDimensionalShellPower>();
+        bool shellCanAbsorb = shell is not
+                PhantomHighDimensionalShellPower ||
+            PhantomHighDimensionalShellPower.CanAbsorb(props);
+        if (shellCanAbsorb &&
+            shell?.TryAbsorb(remainingDamage) == true)
         {
+            HpOnlyDamageContext.RecordDpAbsorption(__instance, shell.LastAbsorbedDamage);
+            __instance.PetOwner?.GetRelic<MomentOfReign>()?
+                .RecordPhantomDamage(__instance, props);
+            if (PhantomHelper.IsOwnedMainPhantom(__instance, __instance.PetOwner))
+            {
+                __instance.PetOwner.Creature.GetPower<ProofThroughPainPower>()?
+                    .QueuePhantomDamage();
+                __instance.PetOwner.Creature.GetPower<PainResonancePower>()?
+                    .QueuePhantomDamage();
+            }
             __result += remainingDamage;
             return;
         }
@@ -90,8 +159,17 @@ internal static class CreatureDamageBlockInternalPatch
             return;
         }
 
+        // Buffer resolves in the later HP-loss hook. Let damage that would
+        // reach DP continue there so Buffer can negate it before DP is spent.
+        if (__instance.HasPower<BufferPower>())
+        {
+            return;
+        }
+
         MagicSwordModePower magicSwordMode = __instance.GetPower<MagicSwordModePower>();
-        if (magicSwordMode != null && deflectorProtection.WouldDpBeDepletedBy(remainingDamage))
+        if (magicSwordMode != null &&
+            deflectorProtection.WouldDpBeDepletedBy(remainingDamage) &&
+            deflectorProtection.TryUseMagicSwordBreakProtection())
         {
             DisabledPower.Clear(__instance);
             deflectorProtection.RestoreDpToAtLeastMaxPercent(0.5m);
@@ -175,7 +253,9 @@ internal static class CreatureCmdGainMaxHpPatch
     {
         DeflectorProtection protection =
             creature.Player?.GetRelic<DeflectorProtection>();
-        if (protection == null || amount <= 0m)
+        if (protection == null ||
+            amount <= 0m ||
+            DeflectorProtection.IsMaxHpGainConversionBypassed)
         {
             return true;
         }

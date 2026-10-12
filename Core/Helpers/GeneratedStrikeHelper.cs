@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -26,13 +27,19 @@ internal static class GeneratedStrikeHelper
             owner.Creature.CombatState.CreateCard<StrikeHbrgoSaki>(owner);
         strike.DynamicVars.Damage.BaseValue = damage;
 
-        await CardCmd.AutoPlay(
-            choiceContext,
-            strike,
-            target,
-            AutoPlayType.Default,
-            skipCardPileVisuals: true);
-        await CombatFlowHelper.FinishAutoPlayedCard(strike);
+        try
+        {
+            await CardCmd.AutoPlay(
+                choiceContext,
+                strike,
+                target,
+                AutoPlayType.Default,
+                skipCardPileVisuals: true);
+        }
+        finally
+        {
+            await RemoveGeneratedStrike(strike);
+        }
     }
 
     public static async Task PlayAll(
@@ -53,12 +60,31 @@ internal static class GeneratedStrikeHelper
         strike.DynamicVars.Damage.BaseValue = damage;
         strike.TargetsAllOpponents = true;
 
-        await CardCmd.AutoPlay(
-            choiceContext,
-            strike,
-            target,
-            AutoPlayType.Default,
-            skipCardPileVisuals: true);
-        await CombatFlowHelper.FinishAutoPlayedCard(strike);
+        try
+        {
+            await CardCmd.AutoPlay(
+                choiceContext,
+                strike,
+                target,
+                AutoPlayType.Default,
+                skipCardPileVisuals: true);
+        }
+        finally
+        {
+            await RemoveGeneratedStrike(strike);
+        }
+    }
+
+    internal static async Task RemoveGeneratedStrike(CardModel card)
+    {
+        if (card.HasBeenRemovedFromState) return;
+
+        // Native AutoPlay normally finishes in Discard, not Play. These cards
+        // only represent the immediate counter/area attack, so remove them
+        // even if another effect moved them to a different combat pile.
+        if (card.Pile?.IsCombatPile == true)
+            await CardPileCmd.RemoveFromCombat(card, skipVisuals: true);
+        else
+            card.RemoveFromState();
     }
 }

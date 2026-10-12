@@ -23,7 +23,7 @@ public sealed class CommunicationMeetingHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        Owner.GetRelic<ElectronicSoldierManual>()?.QueueSixSenseReward();
+        Owner.GetRelic<ElectronicSoldierManual>()?.QueueAllSenseIncrease();
         return Task.CompletedTask;
     }
 

@@ -1,0 +1,58 @@
+[
+  {
+    "font": "hbr_total_damage_numbers",
+    "source_font_id": 3753707355847806043,
+    "source_atlas_id": -2935631698219086757,
+    "source_atlas": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\images\\cache\\42c1bc3349780ed8e5ec63d5cbed5038\\17757a0bc6b4a6cf893ec4b968a14576\\c363cd1d5018de00_-2935631698219086757_UI Atlas.png",
+    "source_atlas_sha256": "c79eac2691fdfd4a89bbb7161b2e524eb036a52d710744a2867a04277e857d0a",
+    "source_material_id": -2284013151164536536,
+    "source_material_name": "UI Material Shadow Totaldamage",
+    "face_rgb": [
+      1,
+      1,
+      1
+    ],
+    "underlay": {
+      "r": 0.9647058844566345,
+      "g": 0.16470588743686676,
+      "b": 0.6352941393852234,
+      "a": 1.0
+    },
+    "underlay_softness": 1.0,
+    "underlay_dilate": 0.3499999940395355,
+    "characters": " ,.0123456789ALOT",
+    "outputs": {
+      "hbr_total_damage_numbers.fnt": "3976ef4a88d8cc7aa9cd539fa817a4b78e8f9121cd4ed5993bc99e1d8715ee25",
+      "hbr_total_damage_numbers.png": "c783b820d93cb5b814aaf84cfc9155da38ef39ec7c96f0051e31393c017abf1e"
+    },
+    "limitation": "Original glyphs/metrics and TMP face/underlay rasterized at source 23px; not identical to dynamic Unity SDF filtering at all scales."
+  },
+  {
+    "font": "hbr_total_damage_caption",
+    "source_font_id": 3753707355847806043,
+    "source_atlas_id": -2935631698219086757,
+    "source_atlas": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\images\\cache\\42c1bc3349780ed8e5ec63d5cbed5038\\17757a0bc6b4a6cf893ec4b968a14576\\c363cd1d5018de00_-2935631698219086757_UI Atlas.png",
+    "source_atlas_sha256": "c79eac2691fdfd4a89bbb7161b2e524eb036a52d710744a2867a04277e857d0a",
+    "source_material_id": 203740549088089973,
+    "source_material_name": "UI Material Shadow Red",
+    "face_rgb": [
+      1,
+      0.8,
+      0.9607843137254902
+    ],
+    "underlay": {
+      "r": 0.5686274766921997,
+      "g": 0.04313725605607033,
+      "b": 0.12941177189350128,
+      "a": 1.0
+    },
+    "underlay_softness": 0.5,
+    "underlay_dilate": 0.3499999940395355,
+    "characters": " ,.0123456789ALOT",
+    "outputs": {
+      "hbr_total_damage_caption.fnt": "0919b8ef2d99cef5631915af1275dea527413a8ebf8a3cec15688d1848f6b87f",
+      "hbr_total_damage_caption.png": "f2be0bec72916737c112f11164ff1a79bdcc48b2dd652070337f21c28c40605e"
+    },
+    "limitation": "Original glyphs/metrics and TMP face/underlay rasterized at source 23px; not identical to dynamic Unity SDF filtering at all scales."
+  }
+]

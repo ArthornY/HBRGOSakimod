@@ -26,7 +26,7 @@ public sealed class NoSelfInDreamPower : PowerModel
 
     public override Color AmountLabelColor => new("F85C5C");
 
-    public override decimal ModifyDamageMultiplicative(
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,
@@ -54,7 +54,7 @@ public sealed class NoSelfInDreamPower : PowerModel
             target == null ||
             target.Side == Owner.Side ||
             result.TotalDamage <= 0 ||
-            Owner.HasPower<CrimsonBladeFlowPower>())
+            CrimsonBladeFlowPower.IsActive(Owner))
         {
             return;
         }
@@ -75,7 +75,7 @@ public sealed class NoSelfInDreamPower : PowerModel
         }
 
         Flash();
-        await CreatureCmd.Damage(
+        await CreatureCommandCompatibility.Damage(
             choiceContext,
             allies,
             allyDamage,

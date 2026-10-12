@@ -19,11 +19,20 @@ public sealed class HighSongPower : PowerModel
 {
     public const int NormalMaxAmount = 3;
 
+    public static int GetInitialAmount(Creature creature) =>
+        LostStarSongSupportPower.GetInitialHighSongAmount(creature);
+
+    public static int GetMaximumAmount(Creature creature) =>
+        Math.Max(NormalMaxAmount, GetInitialAmount(creature));
+
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public bool ReturnCardAtNextTurnStart { get; private set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public PileType ReturnCardPile { get; private set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool ResetAtNextTurnStart { get; private set; }
 
     public override PowerType Type => PowerType.Buff;
 
@@ -45,21 +54,23 @@ public sealed class HighSongPower : PowerModel
             return;
         }
 
-        if (ReturnCardAtNextTurnStart)
+        if (ReturnCardAtNextTurnStart || ResetAtNextTurnStart)
         {
+            bool returnCard = ReturnCardAtNextTurnStart;
             ReturnCardAtNextTurnStart = false;
+            ResetAtNextTurnStart = false;
             PileType returnPile = ReturnCardPile is
                 PileType.Draw or PileType.Discard
                 ? ReturnCardPile
                 : PileType.Hand;
             ReturnCardPile = PileType.None;
-            SetAmount(1);
+            SetAmount(GetInitialAmount(Owner));
             Flash();
-            await EnsureCardInPile(Owner.Player, returnPile);
+            if (returnCard) await EnsureCardInPile(Owner.Player, returnPile);
             return;
         }
 
-        if (Amount < NormalMaxAmount)
+        if (Amount < GetMaximumAmount(Owner))
         {
             Flash();
             await PowerCmd.ModifyAmount(choiceContext, this, 1m, Owner, null);
@@ -74,6 +85,7 @@ public sealed class HighSongPower : PowerModel
         }
 
         AssertMutable();
+        ResetAtNextTurnStart = false;
         ReturnCardAtNextTurnStart = true;
         ReturnCardPile = pileType;
     }

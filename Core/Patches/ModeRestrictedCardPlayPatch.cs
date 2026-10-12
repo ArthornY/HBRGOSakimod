@@ -93,13 +93,6 @@ internal static class ModeRestrictedCardPlayPatch
                         modeChanged);
                 }
 
-                if (state.Swift != null)
-                {
-                    await state.Swift.FinishTransition(
-                        choiceContext,
-                        card,
-                        modeChanged);
-                }
             }
             finally
             {

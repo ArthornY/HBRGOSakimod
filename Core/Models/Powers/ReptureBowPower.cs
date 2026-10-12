@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -12,7 +14,9 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Patching;
 
@@ -34,6 +38,7 @@ public sealed class ReptureBowPower : PowerModel
     private HashSet<AttackCommand> _amplifiedAllTargetAttacks = new();
     private HashSet<AttackCommand> _singleOpponentAttacks = new();
     private List<AttackCommand> _activeAttacks = new();
+    private bool _isReplicatingSkyAspectPower;
 
     public override PowerType Type => PowerType.Buff;
 
@@ -48,17 +53,14 @@ public sealed class ReptureBowPower : PowerModel
             await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
             await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
             await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
-            MagicSwordModePower magicSwordMode =
-                Owner.GetPower<MagicSwordModePower>();
-            if (magicSwordMode != null)
-            {
-                await magicSwordMode.RemoveForModeTransition();
-            }
-
-            await PowerCmd.Remove(Owner.GetPower<CrimsonBladeFlowPower>());
         }
 
         await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
+        SwiftPower swift = Owner.GetPower<SwiftPower>();
+        if (swift != null)
+        {
+            await swift.RecordModeSwitch();
+        }
     }
 
     public override Task BeforeAttack(AttackCommand command)
@@ -77,10 +79,30 @@ public sealed class ReptureBowPower : PowerModel
             command.IsMultiTargeted && !command.IsRandomlyTargeted ||
             command.ModelSource is PiercingShotHbrgoSaki ||
             command.ModelSource is CardModel card && NotOverYetPower.IsAllTargetGeneratedAttack(card);
+        SniperModePower sniperMode =
+            Owner.GetPower<SniperModePower>();
+        if (sniperMode != null)
+        {
+            wasAllTarget = sniperMode.WasNaturallyAllTarget(
+                command,
+                wasAllTarget);
+        }
+
         _activeAttacks.Add(command);
         if (wasAllTarget)
         {
             _amplifiedAllTargetAttacks.Add(command);
+        }
+
+        if (sniperMode?.TryConcentrateBowAttack(
+                command,
+                wasAllTarget) == true)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (wasAllTarget)
+        {
             return Task.CompletedTask;
         }
 
@@ -100,7 +122,64 @@ public sealed class ReptureBowPower : PowerModel
         return Task.CompletedTask;
     }
 
-    public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
+    public override async Task BeforePowerAmountChanged(
+        PowerModel power,
+        decimal amount,
+        Creature target,
+        Creature applier,
+        CardModel cardSource)
+    {
+        if (_isReplicatingSkyAspectPower ||
+            amount == 0m ||
+            applier != Owner ||
+            target == null ||
+            target.Side == Owner.Side ||
+            !HbrgoSakiHextechCompatLoader
+                .HasChangingSkyAspectRune(Owner))
+        {
+            return;
+        }
+
+        PowerModel canonicalPower = power.Id == ModelId.none
+            ? null
+            : ModelDb.GetByIdOrNull<PowerModel>(power.Id);
+        if (canonicalPower == null)
+        {
+            return;
+        }
+
+        Creature[] extraTargets = Owner.CombatState
+            .GetOpponentsOf(Owner)
+            .Where(creature =>
+                creature != target &&
+                creature.IsHittable)
+            .ToArray();
+        if (extraTargets.Length == 0)
+        {
+            return;
+        }
+
+        _isReplicatingSkyAspectPower = true;
+        try
+        {
+            foreach (Creature extraTarget in extraTargets)
+            {
+                await PowerCmd.Apply(
+                    new ThrowingPlayerChoiceContext(),
+                    canonicalPower.ToMutable(),
+                    extraTarget,
+                    amount,
+                    applier,
+                    cardSource);
+            }
+        }
+        finally
+        {
+            _isReplicatingSkyAspectPower = false;
+        }
+    }
+
+    public decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
         if (dealer != Owner ||
             target?.Side == Owner.Side ||
@@ -153,7 +232,9 @@ public sealed class ReptureBowPower : PowerModel
             return 1m;
         }
 
-        return _destructionRateMultiplier + GetBowCardCount() * _deckBonusPerBowCard;
+        return _destructionRateMultiplier +
+               GetEffectiveBowCardCount(Owner) *
+               _deckBonusPerBowCard;
     }
 
     protected override void AfterCloned()
@@ -162,6 +243,7 @@ public sealed class ReptureBowPower : PowerModel
         _amplifiedAllTargetAttacks = new HashSet<AttackCommand>();
         _singleOpponentAttacks = new HashSet<AttackCommand>();
         _activeAttacks = new List<AttackCommand>();
+        _isReplicatingSkyAspectPower = false;
     }
 
     private bool IsOwnerAttack(AttackCommand command)
@@ -177,7 +259,7 @@ public sealed class ReptureBowPower : PowerModel
 
     private decimal GetDeckDamageMultiplier()
     {
-        return 1m + GetBowCardCount() * _deckBonusPerBowCard;
+        return 1m + GetEffectiveBowCardCount(Owner) * _deckBonusPerBowCard;
     }
 
     internal static decimal GetProjectedDamageMultiplier(
@@ -186,7 +268,7 @@ public sealed class ReptureBowPower : PowerModel
     {
         decimal multiplier =
             1m +
-            GetBowCardCount(owner) *
+            GetEffectiveBowCardCount(owner) *
             _deckBonusPerBowCard;
         if (IsProjectedAllTargetAttack(card))
         {
@@ -201,15 +283,111 @@ public sealed class ReptureBowPower : PowerModel
         return multiplier;
     }
 
-    private int GetBowCardCount()
+    internal static decimal CalculateExtraDpDamage(
+        Creature target,
+        ValueProp props,
+        Creature dealer,
+        CardModel cardSource)
     {
-        return GetBowCardCount(Owner);
+        ICombatState combatState = target?.CombatState;
+        if (combatState == null ||
+            dealer?.CombatState != combatState ||
+            target.Side == dealer.Side ||
+            dealer.GetPower<ReptureBowPower>() == null ||
+            !props.IsPoweredAttack())
+        {
+            return 0m;
+        }
+
+        IRunState runState = IRunState.GetFrom(
+            new Creature[]
+            {
+                target,
+                dealer
+            });
+        using (HighDimensionalShellPower.SuppressDamageReduction())
+        {
+            return HookCompatibility.ModifyDamage(
+                runState,
+                combatState,
+                target,
+                dealer,
+                1m,
+                props,
+                cardSource,
+                ModifyDamageHookType.All,
+                CardPreviewMode.None,
+                out _);
+        }
     }
 
-    private static int GetBowCardCount(Creature owner)
+    internal static int GetBowCardCount(Creature owner)
     {
         return owner?.Player?.Deck?.Cards.Count(
             ModeTransitionHelper.IsBowRestrictedCard) ?? 0;
+    }
+
+    internal static int GetEnemyPowerAmount<TPower>(
+        Creature owner,
+        Creature primaryTarget,
+        bool useDisplayAmount = false)
+        where TPower : PowerModel
+    {
+        if (primaryTarget == null)
+        {
+            return 0;
+        }
+
+        IEnumerable<Creature> targets =
+            HbrgoSakiHextechCompatLoader
+                .HasChangingSkyAspectRune(owner) &&
+            owner?.HasPower<ReptureBowPower>() == true
+                ? owner.CombatState
+                    .GetOpponentsOf(owner)
+                    .Where(creature => creature.IsHittable)
+                : new[] { primaryTarget };
+
+        long total = targets.Sum(creature =>
+        {
+            TPower power = creature.GetPower<TPower>();
+            return power == null
+                ? 0L
+                : useDisplayAmount
+                    ? (long)power.DisplayAmount
+                    : (long)power.Amount;
+        });
+        return (int)Math.Clamp(total, int.MinValue, int.MaxValue);
+    }
+
+    internal static bool AnyEnemyHasPower<TPower>(
+        Creature owner,
+        Creature primaryTarget)
+        where TPower : PowerModel
+    {
+        if (primaryTarget == null)
+        {
+            return false;
+        }
+
+        if (!HbrgoSakiHextechCompatLoader
+                .HasChangingSkyAspectRune(owner) ||
+            owner?.HasPower<ReptureBowPower>() != true)
+        {
+            return primaryTarget.HasPower<TPower>();
+        }
+
+        return owner.CombatState
+            .GetOpponentsOf(owner)
+            .Any(creature =>
+                creature.IsHittable &&
+                creature.HasPower<TPower>());
+    }
+
+    private static int GetEffectiveBowCardCount(Creature owner)
+    {
+        return ModeTransitionHelper.IsWeaponModeWeakened(owner)
+            ? 0
+            : GetBowCardCount(owner);
     }
 
     private static bool IsProjectedAllTargetAttack(

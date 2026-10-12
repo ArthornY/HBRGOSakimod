@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
@@ -12,21 +14,25 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class StrongestShieldPower : PowerModel
+public class StrongestShieldPower : PowerModel
 {
     private const int _rollMin = 1;
     private const int _rollMax = 100;
     private const int _rollExclusiveMax = _rollMax + 1;
-    private const decimal _baseThreshold = 33m;
-    private const decimal _thresholdMultiplier = 1.5m;
+    private const decimal _baseThresholdReduction = 33m;
+    private const decimal _thresholdReductionMultiplier = 1.5m;
     internal const decimal DamageMultiplier = 0.5m;
+
+    internal decimal IncomingDamageMultiplier => GetType() == typeof(StrongestShieldPower) &&
+        Owner?.GetPower<ItsMygoProtectionPower>() is { Amount: > 0, EnhancedShield: true }
+            ? 0.25m : DamageMultiplier;
 
     private int _pendingSwordheartAmount;
 
@@ -35,6 +41,13 @@ public sealed class StrongestShieldPower : PowerModel
     public override PowerStackType StackType => PowerStackType.Counter;
 
     public override Color AmountLabelColor => new("6ED7FF");
+
+    public override LocString Description => IsMutable && IncomingDamageMultiplier == 0.25m
+        ? new LocString("powers", "STRONGEST_SHIELD_POWER.enhancedDescription") : base.Description;
+
+    protected virtual Player RollOwner => Owner.Player;
+
+    protected virtual string RollSourceName => "最强之盾";
 
     private int PendingSwordheartAmount
     {
@@ -59,13 +72,28 @@ public sealed class StrongestShieldPower : PowerModel
         }
 
         StrongestShieldPower strongestShield = target.GetPower<StrongestShieldPower>();
-        if (strongestShield == null || !strongestShield.RollSucceeds(target, dealer, amount, props, cardSource))
+        return strongestShield?.TryReduceIncomingAttack(
+            target, dealer, amount, props, cardSource) == true
+                ? strongestShield
+                : null;
+    }
+
+    internal bool TryReduceIncomingAttack(
+        Creature target,
+        Creature dealer,
+        decimal amount,
+        ValueProp props,
+        CardModel cardSource)
+    {
+        if (target != Owner || Amount <= 0 || amount <= 0m ||
+            !props.IsPoweredAttack() ||
+            !RollSucceeds(target, dealer, amount, props, cardSource))
         {
-            return null;
+            return false;
         }
 
-        strongestShield.Flash();
-        return strongestShield;
+        Flash();
+        return true;
     }
 
     private bool RollSucceeds(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource)
@@ -80,18 +108,30 @@ public sealed class StrongestShieldPower : PowerModel
             out IReadOnlyList<SoulRollBreakdown> discardedRolls);
         int roll = winningRoll.FinalRoll;
         RecordRollHistory(winningRoll, discardedRolls, cardSource);
-        RegisterCriticalSuccess(roll);
-        PendingSwordheartAmount += GetSwordheartAmount(roll);
+        HbrgoSakiPresentationBridge.NotifyRollResolved(RollOwner, roll);
+        RegisterCriticalSuccess(winningRoll);
+        PendingSwordheartAmount += GetSwordheartAmount(winningRoll);
         return roll > GetThreshold();
     }
 
-    public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature dealer, CardModel cardSource)
+    public override Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        if (target != Owner)
-        {
-            return;
-        }
+        return target == Owner ? CompleteIncomingRoll(choiceContext, cardSource) : Task.CompletedTask;
+    }
 
+    public override Task AfterDamageGiven(PlayerChoiceContext choiceContext, Creature dealer,
+        DamageResult result, ValueProp props, Creature target, CardModel cardSource)
+    {
+        // AfterDamageReceived is skipped when a hit kills the phantom. The living
+        // summoner must still spend the reserved dice and receive their swordheart.
+        return PhantomIncomingDamageHelper.GetReductionOwner(target) == Owner
+            ? CompleteIncomingRoll(choiceContext, cardSource) : Task.CompletedTask;
+    }
+
+    private async Task CompleteIncomingRoll(PlayerChoiceContext choiceContext, CardModel cardSource)
+    {
+        if (RollOwner?.GetRelic<Millsage>() is { } millsage)
+            await millsage.ResolveCriticalCannonRewards(choiceContext);
         StrengthenPower strengthen = Owner.GetPower<StrengthenPower>();
         if (strengthen != null)
         {
@@ -145,7 +185,7 @@ public sealed class StrongestShieldPower : PowerModel
                     rollIndex),
                 "基础骰")
         };
-        GuideLittleHand guideLittleHand = Owner.Player?.GetRelic<GuideLittleHand>();
+        GuideLittleHand guideLittleHand = RollOwner?.GetRelic<GuideLittleHand>();
         if (guideLittleHand != null)
         {
             rolls.Add(SoulRollBreakdown.FromFinalRoll(
@@ -197,62 +237,69 @@ public sealed class StrongestShieldPower : PowerModel
         bool useRollPenalty =
             rollPenalty?.TryReserveRoll() == true;
         List<SoulRollBonusDetail> sharedBonuses = new();
+        int tourGuidePenalty = TourGuidePower.GetRollPenalty(Owner);
+        if (tourGuidePenalty != 0)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                tourGuidePenalty, "导游之力", isPercentage: true));
+        }
+        // Incoming attacks may carry another player's card source. Only a roll
+        // belonging to the affected card's owner inherits its attribute penalty.
+        int nullificationPenalty = NararaNullificationPenaltyHelper.GetRollPenalty(cardSource, RollOwner);
+        if (nullificationPenalty != 0)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                nullificationPenalty, "无效化", isPercentage: true));
+        }
+        int highSongBonus = LostStarSongSupportPower.GetRollBonus(Owner);
+        if (highSongBonus != 0)
+        {
+            sharedBonuses.Add(new SoulRollBonusDetail(
+                highSongBonus, "迷途之星的歌", isPercentage: true));
+        }
         if (useStrengthen)
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 strengthen.RollBonus,
-                "强化"));
+                "强化", isPercentage: true));
         }
 
         if (useRollPenalty)
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 ExtremeDodgeRollPenaltyPower.RollPenalty,
-                "极限闪避"));
+                "极限闪避", isPercentage: true));
         }
 
         if (protagonistPrivilege != null)
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 protagonistPrivilege.RollPenalty,
-                "主人公特典"));
+                "主人公特典", isPercentage: true));
         }
 
         List<SoulRollBreakdown> finalRolls = rolls
-            .Select(roll => ApplyRollBonuses(roll, sharedBonuses))
+            .Select(roll => RollModifierHelper.Apply(roll, sharedBonuses))
+            .Select(roll => RollKeywordRules.ResolveRollTier(RollOwner, roll))
             .ToList();
-        int winningIndex = finalRolls.FindIndex(
-            roll => roll.FinalRoll == _rollMax);
-        if (winningIndex < 0)
+        int winningIndex = 0;
+        bool hasCritical = RollKeywordRules.IsCriticalRoll(RollOwner, finalRolls[0]);
+        for (int index = 1; index < finalRolls.Count; index++)
         {
-            int highestRoll = finalRolls.Max(roll => roll.FinalRoll);
-            winningIndex = finalRolls.FindIndex(
-                roll => roll.FinalRoll == highestRoll);
+            bool isCritical = RollKeywordRules.IsCriticalRoll(RollOwner, finalRolls[index]);
+            if (isCritical && !hasCritical ||
+                isCritical == hasCritical &&
+                finalRolls[index].FinalRoll > finalRolls[winningIndex].FinalRoll)
+            {
+                winningIndex = index;
+                hasCritical = isCritical;
+            }
         }
 
         discardedRolls = finalRolls
             .Where((_, index) => index != winningIndex)
             .ToArray();
         return finalRolls[winningIndex];
-    }
-
-    private static SoulRollBreakdown ApplyRollBonuses(
-        SoulRollBreakdown roll,
-        IReadOnlyList<SoulRollBonusDetail> sharedBonuses)
-    {
-        if (sharedBonuses == null || sharedBonuses.Count == 0)
-        {
-            return roll;
-        }
-
-        SoulRollBonusDetail[] bonuses = roll.Bonuses
-            .Concat(sharedBonuses)
-            .ToArray();
-        return new SoulRollBreakdown(
-            roll.BaseRoll,
-            roll.FinalRoll + sharedBonuses.Sum(bonus => bonus.Amount),
-            roll.DiceSource,
-            bonuses);
     }
 
     private void RecordRollHistory(
@@ -263,9 +310,9 @@ public sealed class StrongestShieldPower : PowerModel
         string trigger = string.IsNullOrWhiteSpace(cardSource?.Title)
             ? "一次攻击"
             : $"「{cardSource.Title}」";
-        string source = $"能力「最强之盾」判定，由{trigger}触发";
+        string source = $"能力「{RollSourceName}」判定，由{trigger}触发";
 
-        foreach (SoulOfAnchor soul in Owner.Player?.Relics.OfType<SoulOfAnchor>() ?? Enumerable.Empty<SoulOfAnchor>())
+        foreach (SoulOfAnchor soul in RollOwner?.Relics.OfType<SoulOfAnchor>() ?? Enumerable.Empty<SoulOfAnchor>())
         {
             soul.RecordAbilityRoll(
                 winningRoll,
@@ -276,15 +323,17 @@ public sealed class StrongestShieldPower : PowerModel
 
     private int RollDeterministicD100(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource, int rollIndex)
     {
-        return new Rng(BuildRollSeed(target, dealer, amount, props, cardSource, rollIndex)).NextInt(_rollMin, _rollExclusiveMax);
+        return RngCompatibility.Create(
+            BuildRollSeed(target, dealer, amount, props, cardSource, rollIndex))
+            .NextInt(_rollMin, _rollExclusiveMax);
     }
 
     private uint BuildRollSeed(Creature target, Creature dealer, decimal amount, ValueProp props, CardModel cardSource, int rollIndex)
     {
         unchecked
         {
-            int hash = (int)Owner.CombatState.RunState.Rng.Seed;
-            hash = AppendHash(hash, Owner.Player?.RunState.GetPlayerSlotIndex(Owner.Player) ?? 0);
+            int hash = (int)RngCompatibility.GetRunSeed(Owner.CombatState.RunState.Rng);
+            hash = AppendHash(hash, RollOwner?.RunState.GetPlayerSlotIndex(RollOwner) ?? 0);
             hash = AppendHash(hash, RunManager.Instance.ActionExecutor.CurrentlyRunningAction?.Id ?? 0u);
             hash = AppendHash(hash, CombatManager.Instance.History.Entries.Count());
             hash = AppendHash(hash, Owner.CombatState.RoundNumber);
@@ -333,18 +382,20 @@ public sealed class StrongestShieldPower : PowerModel
 
     private decimal GetThreshold()
     {
-        decimal threshold = _baseThreshold;
-        for (int i = 1; i < Amount; i++)
+        decimal thresholdReduction = _baseThresholdReduction;
+        for (int i = 1;
+             i < Amount && thresholdReduction < _rollMax;
+             i++)
         {
-            threshold *= _thresholdMultiplier;
+            thresholdReduction *= _thresholdReductionMultiplier;
         }
 
-        return threshold;
+        return Math.Max(0m, _rollMax - thresholdReduction);
     }
 
-    private int GetSwordheartAmount(int roll)
+    private int GetSwordheartAmount(SoulRollBreakdown roll)
     {
-        Player player = Owner.Player;
+        Player player = RollOwner;
         if (!RollKeywordRules.UsesSakiRules(player) ||
             Owner.HasPower<MagicSwordModePower>())
         {
@@ -359,10 +410,10 @@ public sealed class StrongestShieldPower : PowerModel
         return RollKeywordRules.GetRegularSwordheartAmount(player, roll);
     }
 
-    private void RegisterCriticalSuccess(int roll)
+    private void RegisterCriticalSuccess(SoulRollBreakdown roll)
     {
-        Player player = Owner.Player;
-        if (!RollKeywordRules.IsCriticalRoll(player, roll))
+        Player player = RollOwner;
+        if (player == null || !RollKeywordRules.IsCriticalRoll(player, roll))
         {
             return;
         }
@@ -370,6 +421,7 @@ public sealed class StrongestShieldPower : PowerModel
         RollKeywordCombatState.RecordCriticalSuccess(player);
         player.GetRelic<ElectronicSoldierManual>()?
             .QueueSixSenseReward();
+        player.GetRelic<Millsage>()?.QueueCriticalCannonReward();
     }
 
     private int GetSwordheartAmountToApply(int amount)

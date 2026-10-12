@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
-using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -24,13 +22,7 @@ public sealed class SlideStepHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new DamageVar(9m, ValueProp.Move),
-            new PowerVar<QuickSwitchPower>(1m)
-        };
-
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[]
-        {
-            HoverTipFactory.FromPower<QuickSwitchPower>()
+            new CardsVar(1)
         };
 
     protected override bool IsPlayable =>
@@ -53,18 +45,14 @@ public sealed class SlideStepHbrgoSaki : CardModel
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             base.DynamicVars.Damage.BaseValue);
-        await DamageCmd.Attack(damage).FromCard(this).Targeting(cardPlay.Target)
+        await DamageCmd.Attack(damage).FromCardCompat(this, cardPlay).Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        await PowerCmd.Apply<QuickSwitchPower>(
+        await CardPileCmd.Draw(
             choiceContext,
-            Owner.Creature,
-            ModeTransitionHelper.GetAdjustedEffectAmount(
-                this,
-                DynamicVars["QuickSwitchPower"].BaseValue),
-            Owner.Creature,
-            this);
+            DynamicVars.Cards.BaseValue,
+            Owner);
     }
 
     protected override void OnUpgrade()

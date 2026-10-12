@@ -25,7 +25,6 @@ internal enum ReptureCardMode
 internal readonly record struct ModeTransitionPlayState(
     ReptureCardMode RequiredMode,
     QuickSwitchPower QuickSwitch,
-    SwiftPower Swift,
     bool HasEffectContext);
 
 internal readonly record struct ModeTransitionDamagePreviewState(
@@ -36,6 +35,9 @@ internal readonly record struct ModeTransitionDamagePreviewState(
 internal static class ModeTransitionHelper
 {
     private static int _suppressDualSwordsOnModeExitDepth;
+    private static readonly Dictionary<CardModel, int>
+        _modeTransitionSuppressionDepths = new(
+            ReferenceEqualityComparer.Instance);
     private static readonly Dictionary<CardModel, Stack<bool>>
         _effectHalvingContexts = new(
             ReferenceEqualityComparer.Instance);
@@ -48,6 +50,16 @@ internal static class ModeTransitionHelper
     {
         _suppressDualSwordsOnModeExitDepth++;
         return new SuppressionScope();
+    }
+
+    public static IDisposable SuppressModeTransition(CardModel card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        _modeTransitionSuppressionDepths.TryGetValue(
+            card,
+            out int depth);
+        _modeTransitionSuppressionDepths[card] = depth + 1;
+        return new ModeTransitionSuppressionScope(card);
     }
 
     public static bool CanPlayBowRestrictedCard(Creature owner)
@@ -65,22 +77,32 @@ internal static class ModeTransitionHelper
         return owner != null;
     }
 
+    public static bool IsWeaponModeWeakened(Creature owner)
+    {
+        return owner?.HasPower<MagicSwordModePower>() == true ||
+               CrimsonBladeFlowPower.IsActive(owner);
+    }
+
     public static bool IsBowRestrictedCard(CardModel card)
     {
         return card is SlideStepHbrgoSaki
             or StrongShotHbrgoSaki
+            or DragonArrowHbrgoSaki
             or MimicExorcismArrowHbrgoSaki
             or MimicIceFlowerThousandArrowsHbrgoSaki
             or MimicFullBodyShotHbrgoSaki
             or FragileDoubleStrikeHbrgoSaki
             or HangingShotHbrgoSaki
             or PiercingShotHbrgoSaki
-            or ChargedShotHbrgoSaki;
+            or ChargedShotHbrgoSaki
+            or DestinedArrowHbrgoSaki;
     }
 
     public static bool IsDualSwordsRestrictedCard(CardModel card)
     {
         return card is SwallowReversalHbrgoSaki
+            or SwitchingSlashHbrgoSaki
+            or ConsecutiveSlashHbrgoSaki
             or BladeDanceHbrgoSaki
             or MimicDreamBubbleHbrgoSaki
             or NextTurnEnergyStrikeHbrgoSaki
@@ -94,7 +116,6 @@ internal static class ModeTransitionHelper
     {
         return card is SoulHarvestHbrgoSaki
             or SoulExplosionHbrgoSaki
-            or MimicCursedScytheHbrgoSaki
             or ExtraGaugeStrikeHbrgoSaki
             or ArmorBreakSoulStrikeHbrgoSaki
             or SoulFinisherHbrgoSaki
@@ -112,17 +133,17 @@ internal static class ModeTransitionHelper
         Creature owner,
         CardModel card)
     {
-        ReptureCardMode requiredMode = GetRequiredMode(card);
+        ReptureCardMode requiredMode = GetCardMode(card);
         return requiredMode == ReptureCardMode.None ||
-            IsModeCompatible(owner, requiredMode);
+            IsRequiredModeSatisfied(owner, card, requiredMode);
     }
 
     public static ReptureCardMode GetOffModeTransition(CardModel card)
     {
-        ReptureCardMode requiredMode = GetRequiredMode(card);
+        ReptureCardMode requiredMode = GetCardMode(card);
         Creature owner = card?.Owner?.Creature;
         return requiredMode != ReptureCardMode.None &&
-               !IsModeCompatible(owner, requiredMode)
+               !IsRequiredModeSatisfied(owner, card, requiredMode)
             ? requiredMode
             : ReptureCardMode.None;
     }
@@ -160,9 +181,9 @@ internal static class ModeTransitionHelper
         }
 
         bool preventsHalving =
+            IsBowTransitionPenaltyImmune(owner, requiredMode) ||
             owner.HasPower<NormalStatePower>() ||
-            owner.GetPower<QuickSwitchPower>()?.Amount > 0 ||
-            owner.GetPower<SwiftPower>()?.CanPreventNextPenalty == true;
+            owner.GetPower<QuickSwitchPower>()?.Amount > 0;
         decimal modeDamageMultiplier = requiredMode switch
         {
             ReptureCardMode.Bow =>
@@ -200,22 +221,17 @@ internal static class ModeTransitionHelper
     {
         ReptureCardMode requiredMode =
             GetOffModeTransition(card);
+        bool suppressModeTransition =
+            IsModeTransitionSuppressed(card);
         Creature owner = card?.Owner?.Creature;
         bool preventHalving =
             requiredMode != ReptureCardMode.None &&
-            owner?.HasPower<NormalStatePower>() == true;
-        SwiftPower swift = requiredMode != ReptureCardMode.None
-            ? owner?.GetPower<SwiftPower>()
-            : null;
+            (IsBowTransitionPenaltyImmune(owner, requiredMode) ||
+             owner?.HasPower<NormalStatePower>() == true);
         QuickSwitchPower quickSwitch = null;
-        if (!preventHalving &&
-            swift?.TryReserve(card) == true)
-        {
-            preventHalving = true;
-        }
-
         if (requiredMode != ReptureCardMode.None &&
-            !preventHalving)
+            !preventHalving &&
+            !suppressModeTransition)
         {
             QuickSwitchPower candidate =
                 owner?.GetPower<QuickSwitchPower>();
@@ -231,9 +247,10 @@ internal static class ModeTransitionHelper
             requiredMode != ReptureCardMode.None &&
             !preventHalving);
         return new ModeTransitionPlayState(
-            requiredMode,
+            suppressModeTransition
+                ? ReptureCardMode.None
+                : requiredMode,
             quickSwitch,
-            swift,
             card != null);
     }
 
@@ -266,7 +283,7 @@ internal static class ModeTransitionHelper
         if (requiredMode == ReptureCardMode.None ||
             owner?.CombatState == null ||
             CombatManager.Instance.IsOverOrEnding ||
-            IsModeCompatible(owner, requiredMode))
+            IsRequiredModeSatisfied(owner, card, requiredMode))
         {
             return false;
         }
@@ -334,6 +351,33 @@ internal static class ModeTransitionHelper
                contexts.TryPeek(out halve);
     }
 
+    private static bool IsModeTransitionSuppressed(CardModel card)
+    {
+        return card != null &&
+               _modeTransitionSuppressionDepths.TryGetValue(
+                   card,
+                   out int depth) &&
+               depth > 0;
+    }
+
+    private static void EndModeTransitionSuppression(CardModel card)
+    {
+        if (!_modeTransitionSuppressionDepths.TryGetValue(
+                card,
+                out int depth))
+        {
+            return;
+        }
+
+        if (depth <= 1)
+        {
+            _modeTransitionSuppressionDepths.Remove(card);
+            return;
+        }
+
+        _modeTransitionSuppressionDepths[card] = depth - 1;
+    }
+
     public static bool IsCardIncompatibleWithCurrentMode(Creature owner, CardModel card)
     {
         if (owner == null || card?.Owner?.Creature != owner)
@@ -342,7 +386,7 @@ internal static class ModeTransitionHelper
         }
 
         if (owner.HasPower<MagicSwordModePower>() ||
-            owner.HasPower<CrimsonBladeFlowPower>())
+            CrimsonBladeFlowPower.IsActive(owner))
         {
             return false;
         }
@@ -424,8 +468,10 @@ internal static class ModeTransitionHelper
         if (_suppressDualSwordsOnModeExitDepth > 0 ||
             owner?.CombatState == null ||
             owner.Player?.PlayerCombatState == null ||
+            IsWeaponModeWeakened(owner) ||
             owner.HasPower<ReptureBowPower>() ||
-            owner.HasPower<ReptureDualSwordsPower>())
+            owner.HasPower<ReptureDualSwordsPower>() ||
+            owner.HasPower<RaptureScythePower>())
         {
             return;
         }
@@ -438,8 +484,37 @@ internal static class ModeTransitionHelper
             null);
     }
 
-    private static ReptureCardMode GetRequiredMode(CardModel card)
+    public static async Task<CardModel> DrawModeRestrictedCard(
+        PlayerChoiceContext choiceContext,
+        Player player,
+        ReptureCardMode mode,
+        AbstractModel source)
     {
+        CardPile drawPile = player?.PlayerCombatState?.DrawPile;
+        CardModel restrictedCard = drawPile?.Cards.FirstOrDefault(
+            card => GetCardMode(card) == mode);
+        if (restrictedCard == null)
+        {
+            return null;
+        }
+
+        await CardPileCmd.Add(
+            restrictedCard,
+            drawPile,
+            CardPilePosition.Top,
+            source,
+            skipVisuals: true);
+        return await CardPileCmd.Draw(choiceContext, player);
+    }
+
+    internal static ReptureCardMode GetCardMode(CardModel card)
+    {
+        if (card is SwitchingSlashHbrgoSaki &&
+            DualSwordsCopyHelper.IsDualSwordsCopy(card))
+        {
+            return ReptureCardMode.Bow;
+        }
+
         if (IsBowRestrictedCard(card))
         {
             return ReptureCardMode.Bow;
@@ -455,6 +530,15 @@ internal static class ModeTransitionHelper
             : ReptureCardMode.None;
     }
 
+    private static bool IsBowTransitionPenaltyImmune(
+        Creature owner,
+        ReptureCardMode requiredMode)
+    {
+        return owner != null &&
+               (requiredMode == ReptureCardMode.Bow ||
+                owner.HasPower<ReptureBowPower>());
+    }
+
     private static bool IsModeCompatible(
         Creature owner,
         ReptureCardMode requiredMode)
@@ -462,12 +546,6 @@ internal static class ModeTransitionHelper
         if (owner == null)
         {
             return false;
-        }
-
-        if (owner.HasPower<MagicSwordModePower>() ||
-            owner.HasPower<CrimsonBladeFlowPower>())
-        {
-            return true;
         }
 
         return requiredMode switch
@@ -480,6 +558,29 @@ internal static class ModeTransitionHelper
                 owner.HasPower<RaptureScythePower>(),
             _ => true
         };
+    }
+
+    private static bool IsRequiredModeSatisfied(
+        Creature owner,
+        CardModel card,
+        ReptureCardMode requiredMode)
+    {
+        if (card is not SwitchingSlashHbrgoSaki)
+        {
+            return IsModeCompatible(owner, requiredMode);
+        }
+
+        return owner != null &&
+               (requiredMode switch
+               {
+                   ReptureCardMode.Bow =>
+                       owner.HasPower<ReptureBowPower>(),
+                   ReptureCardMode.DualSwords =>
+                       owner.HasPower<ReptureDualSwordsPower>(),
+                   ReptureCardMode.Scythe =>
+                       owner.HasPower<RaptureScythePower>(),
+                   _ => true
+               });
     }
 
     private static bool HasCompatibleCardAvailableToDraw(Creature owner, CardModel excludedCard)
@@ -512,6 +613,28 @@ internal static class ModeTransitionHelper
 
             _disposed = true;
             _suppressDualSwordsOnModeExitDepth = Math.Max(0, _suppressDualSwordsOnModeExitDepth - 1);
+        }
+    }
+
+    private sealed class ModeTransitionSuppressionScope : IDisposable
+    {
+        private readonly CardModel _card;
+        private bool _disposed;
+
+        public ModeTransitionSuppressionScope(CardModel card)
+        {
+            _card = card;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            EndModeTransitionSuppression(_card);
         }
     }
 

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
@@ -15,8 +14,6 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class MimicSpecialMealHbrgoSaki : CardModel
 {
-    private const string OverclockVar = "Overclock";
-
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/mimic_special_meal_hbrgo_saki.png");
 
@@ -25,16 +22,25 @@ public sealed class MimicSpecialMealHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new PowerVar<ChargePower>(3m),
-            new IntVar(OverclockVar, 15m)
+            new PowerVar<ChargePower>(3m)
         };
 
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[]
+    protected override IEnumerable<IHoverTip> ExtraHoverTips
+    {
+        get
         {
-            HoverTipFactory.FromPower<ChargePower>()
+            Overclock overclock = ModelDb.Relic<Overclock>();
+            return new IHoverTip[]
+            {
+                HoverTipFactory.FromPower<ChargePower>(),
+                // Avoid BaseLib folding the hidden relic's source-only tip list.
+                new HoverTip(
+                    overclock.Title,
+                    overclock.DynamicDescription,
+                    overclock.Icon)
+            };
         }
-        .Concat(HoverTipFactory.FromRelic<Overclock>());
+    }
 
     public MimicSpecialMealHbrgoSaki()
         : base(
@@ -55,13 +61,12 @@ public sealed class MimicSpecialMealHbrgoSaki : CardModel
             DynamicVars["ChargePower"].BaseValue,
             Owner.Creature,
             this);
-        Owner.GetRelic<Overclock>()?
-            .GainCharge(DynamicVars[OverclockVar].BaseValue);
+        Overclock overclock = Owner.GetRelic<Overclock>();
+        overclock?.GainCharge(overclock.ChargePerLevel);
     }
 
     protected override void OnUpgrade()
     {
         DynamicVars["ChargePower"].UpgradeValueBy(1m);
-        DynamicVars[OverclockVar].UpgradeValueBy(10m);
     }
 }

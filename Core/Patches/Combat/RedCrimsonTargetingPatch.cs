@@ -5,7 +5,6 @@ using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
 
@@ -62,23 +61,5 @@ internal static class RedCrimsonAttackTargetPatch
         }
 
         return int.MaxValue;
-    }
-}
-
-[HarmonyPatch(
-    typeof(PersonalHivePower),
-    nameof(PersonalHivePower.AfterDamageReceived))]
-internal static class RedCrimsonPersonalHivePowerPatch
-{
-    [HarmonyPrefix]
-    private static void Prefix(ref Creature dealer)
-    {
-        // Personal Hive creates status cards for the attacker's player. Red Crimson
-        // is player-owned but has no Player of its own, so mirror Osty's handling.
-        if (dealer?.Monster is RedCrimson &&
-            dealer.PetOwner?.Creature is { } ownerCreature)
-        {
-            dealer = ownerCreature;
-        }
     }
 }

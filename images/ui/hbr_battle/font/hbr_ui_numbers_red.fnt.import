@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://b56v8ql40ivkt"
+path="res://.godot/imported/hbr_ui_numbers_red.fnt-dcc110eab154ef1ae412135e6548c7c6.fontdata"
+
+[deps]
+
+source_file="res://images/ui/hbr_battle/font/hbr_ui_numbers_red.fnt"
+dest_files=["res://.godot/imported/hbr_ui_numbers_red.fnt-dcc110eab154ef1ae412135e6548c7c6.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Powers;
@@ -33,18 +35,34 @@ public sealed class DoublePowersHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        PowerModel[] powers = Owner.Creature.CombatState
+        // Snapshot all amounts before callbacks can modify another power.
+        var powers = Owner.Creature.CombatState
             .Allies
             .Concat(Owner.Creature.CombatState.Enemies)
             .SelectMany(creature => creature.Powers)
-            .Where(power => power.Amount != 0)
+            .Where(power =>
+                power is not HighDimensionalShellPower &&
+                power is not PhaseWarpPower &&
+                power is not ShieldLockPower)
+            .Select(power => (Power: power, Amount: power is PhantomDamageInheritancePower inheritance
+                    ? inheritance.DamagePercent : (decimal)power.Amount,
+                DuplicateCounters: PowerDuplicationBookkeepingHelper.SnapshotCounters(power)))
             .ToArray();
-        foreach (PowerModel power in powers)
+        foreach (var (power, amount, duplicateCounters) in powers)
         {
+            // Refund/expiry bookkeeping must also double when a permanent and
+            // temporary stat cancel out, leaving no visible stat power.
+            duplicateCounters?.Invoke();
+            if (amount == 0)
+                continue;
+
+            // The matching total stat is doubled separately from this snapshot.
+            using TemporaryStatDuplicationScope scope =
+                TemporaryStatDuplicationScope.Begin(power, this);
             await PowerCmd.ModifyAmount(
                 choiceContext,
                 power,
-                power.Amount,
+                amount,
                 Owner.Creature,
                 this);
         }

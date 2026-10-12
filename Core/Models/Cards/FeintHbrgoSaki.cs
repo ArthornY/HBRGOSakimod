@@ -36,6 +36,13 @@ public sealed class FeintHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        if (Owner?.Creature?.HasPower<MagicSwordModePower>() != true)
+        {
+            CardPlayCompatibility.SetResultPile(
+                cardPlay,
+                PileType.None);
+        }
+
         if (!IsPlayable)
         {
             return;
@@ -55,8 +62,4 @@ public sealed class FeintHbrgoSaki : CardModel
         await CardPileCmd.Draw(choiceContext, 2m, Owner);
     }
 
-    protected override PileType GetResultPileTypeForCardPlay()
-    {
-        return Owner.Creature.HasPower<MagicSwordModePower>() ? base.GetResultPileTypeForCardPlay() : PileType.None;
-    }
 }

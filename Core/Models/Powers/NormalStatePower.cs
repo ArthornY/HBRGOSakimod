@@ -62,7 +62,7 @@ public sealed class NormalStatePower : PowerModel
         return _blockMultiplier;
     }
 
-    public override decimal ModifyDamageMultiplicative(
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,

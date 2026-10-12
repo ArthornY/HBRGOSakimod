@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
@@ -45,9 +48,27 @@ public abstract class HighSongChoiceCard : CardModel
         base.AddExtraArgsToDescription(description);
         string descriptionKey = GetTitleLocKey(SongLevel)
             .Replace("Title", "Description", StringComparison.Ordinal);
+        LocString songDescription = new("cards", descriptionKey);
+        DynamicVars.AddTo(songDescription);
+        string energyPrefix = EnergyIconHelper.GetPrefix(this);
+        songDescription.Add("energyPrefix", energyPrefix);
+        string returnKey = this is LostDaysSongHbrgoSaki ? "returnDrawDescription" : "returnDiscardDescription";
+        var returnDescription = new LocString("cards", "HIGH_SONG_HBRGO_SAKI." + returnKey);
+        songDescription.Add("HighSongReturnDescription", returnDescription);
+        // The description patch can select the level text directly instead of
+        // the SongDescription wrapper, so both paths need the return text.
+        description.Add("HighSongReturnDescription", returnDescription);
+        foreach (object variable in songDescription.Variables.Values)
+        {
+            if (variable is EnergyVar energyVar)
+            {
+                energyVar.ColorPrefix = energyPrefix;
+            }
+        }
+
         description.Add(
             "SongDescription",
-            new LocString("cards", descriptionKey));
+            songDescription);
     }
 
     protected HighSongChoiceCard(TargetType targetType)
@@ -57,8 +78,10 @@ public abstract class HighSongChoiceCard : CardModel
 
     protected abstract string GetTitleLocKey(int songLevel);
 
-    protected void ScheduleHighSongReturn(PileType pileType)
+    protected Task ScheduleHighSongReturn(PileType pileType)
     {
-        Owner.Creature.GetPower<HighSongPower>()?.ScheduleCardReturn(pileType);
+        HighSongPower highSong = Owner.Creature.GetPower<HighSongPower>();
+        highSong?.ScheduleCardReturn(pileType);
+        return Task.CompletedTask;
     }
 }

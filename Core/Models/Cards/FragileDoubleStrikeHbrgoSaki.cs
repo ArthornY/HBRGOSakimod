@@ -70,13 +70,15 @@ public sealed class FragileDoubleStrikeHbrgoSaki : CardModel
                 ModeTransitionHelper.GetAdjustedEffectAmount(
                     this,
                     DynamicVars.Damage.BaseValue))
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
         int fragileAmount =
-            cardPlay.Target.GetPower<FragilePower>()?.Amount ?? 0;
+            ReptureBowPower.GetEnemyPowerAmount<FragilePower>(
+                Owner.Creature,
+                cardPlay.Target);
         if (fragileAmount <= 0 ||
             !cardPlay.Target.IsAlive ||
             CombatManager.Instance.IsOverOrEnding)

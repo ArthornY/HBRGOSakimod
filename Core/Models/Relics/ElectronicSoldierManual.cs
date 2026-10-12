@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Characters;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Events;
 using HBRGOSakiMod.Core.Rewards;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -13,6 +14,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -28,21 +30,15 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Relics;
 
-public sealed class ElectronicSoldierManual : RelicModel
+public partial class ElectronicSoldierManual : RelicModel
 {
-    public const int MaxSixSense = 20;
+    public const int MaxSixSense = 99;
 
-    public const decimal TalentGoldMultiplierPerLayer = 0.05m;
+    public const int SixSenseBonusThreshold = 30;
 
-    public const decimal MentalStrengthDamageReductionPerLayer = 0.01m;
+    public const int StartingSixSensePointsPerPair = 5;
 
-    public const decimal NonSakiSimplicityMaxHpPerLayer = 2m;
-
-    public const decimal SimplicityDpRecoveryMultiplierPerLayer = 0.04m;
-
-    public const decimal MadnessDamageTakenMultiplierPerLayer = 0.01m;
-
-    public const decimal MadnessDamageDealtMultiplierPerLayer = 0.02m;
+    public virtual int SixSenseRewardOptionCount => 3;
 
     public static readonly IReadOnlyList<SixSenseAttribute> AllSixSenseAttributes = new[]
     {
@@ -63,49 +59,88 @@ public sealed class ElectronicSoldierManual : RelicModel
     protected override string BigIconPath => PackedIconPath;
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int LeadershipCharm { get; private set; }
+    public int LeadershipCharm { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int Talent { get; private set; }
+    public int Talent { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int Gentleness { get; private set; }
+    public int Gentleness { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int MentalStrength { get; private set; }
+    public int MentalStrength { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int Simplicity { get; private set; }
+    public int Simplicity { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int Madness { get; private set; }
+    public int Madness { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingLeadershipCharmRewards { get; private set; }
+    public bool StartingSixSenseGranted { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingTalentRewards { get; private set; }
+    public int PendingLeadershipCharmRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingGentlenessRewards { get; private set; }
+    public int PendingTalentRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingMentalStrengthRewards { get; private set; }
+    public int PendingGentlenessRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingSimplicityRewards { get; private set; }
+    public int PendingMentalStrengthRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingMadnessRewards { get; private set; }
+    public int PendingSimplicityRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int PendingSixSenseRewards { get; private set; }
+    public int PendingMadnessRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public int JoiningCeremonyRollCount { get; private set; }
+    public int PendingSixSenseRewards { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public bool JoiningCeremonyTriggered { get; private set; }
+    public int PendingAllSenseIncreases { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int SixSensePoints
+    {
+        // Saved properties can load in either order. Limit the usable balance
+        // against the final levels instead of discarding points in the setter.
+        get => Math.Clamp(_sixSensePoints, 0, GetAvailableSixSenseIncreaseCount());
+        protected set => _sixSensePoints = Math.Max(0, value);
+    }
+
+    private int _sixSensePoints;
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int SixSenseAllocationRevision { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool CombatSixSensePointsGranted { get; protected set; }
+
+    internal bool IsAllocationPending { get; set; }
+
+    protected virtual int CombatSixSensePointCount => 1;
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int JoiningCeremonyRollCount { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool JoiningCeremonyTriggered { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int MentalStrengthDpLossProgress { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int PendingMentalStrengthStatRewards { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool MadnessThresholdRewardApplied { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool MadnessThresholdDpConversionFixed { get; protected set; }
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
@@ -114,9 +149,10 @@ public sealed class ElectronicSoldierManual : RelicModel
 
     public override async Task BeforeCombatStart()
     {
+        CombatSixSensePointsGranted = false;
         ClearPendingSixSenseRewards();
         Flash();
-        if (Owner.Character is HbrgoSaki)
+        if (Owner.Character is HbrgoSaki and not HbrgoSaki30A)
         {
             await PowerCmd.Apply<NormalStatePower>(
                 new ThrowingPlayerChoiceContext(),
@@ -125,19 +161,22 @@ public sealed class ElectronicSoldierManual : RelicModel
                 Owner.Creature,
                 null);
         }
-
-        await ApplyEntrySenseBonuses(
-            GetAliveAllies(Owner.Creature.CombatState),
-            flash: false);
     }
+
+    public override decimal ModifyGoldGained(Player player, decimal amount) =>
+        player == Owner && amount > 0m
+            ? amount * (1m + Math.Max(0m, GetEffectiveSenseAmount(SixSenseAttribute.Talent)) * 0.02m)
+            : amount;
 
     public override EventModel ModifyNextEvent(EventModel currentEvent)
     {
-        if (Owner.Character is not HbrgoSaki ||
+        if (Owner.Character is not (HbrgoSaki or HbrgoHotaru) ||
             Owner.RunState.CurrentActIndex != 0 ||
             JoiningCeremonyTriggered ||
-            Owner.RunState.Players.FirstOrDefault(player =>
-                player.Character is HbrgoSaki) != Owner)
+            (Owner.RunState.Players.FirstOrDefault(player =>
+                player.Character is HbrgoSaki) ??
+             Owner.RunState.Players.FirstOrDefault(player =>
+                player.Character is HbrgoHotaru)) != Owner)
         {
             return currentEvent;
         }
@@ -149,29 +188,16 @@ public sealed class ElectronicSoldierManual : RelicModel
             return currentEvent;
         }
 
-        float chance = JoiningCeremonyRollCount == 0 ? 0.8f : 0.5f;
+        bool isFirstEvent = JoiningCeremonyRollCount == 0;
         JoiningCeremonyRollCount++;
-        if (Owner.RunState.Rng.Niche.NextFloat() >= chance)
+        // The first ordinary event is guaranteed; keep the fallback for older runs.
+        if (!isFirstEvent && Owner.RunState.Rng.Niche.NextFloat() >= 0.5f)
         {
             return currentEvent;
         }
 
         JoiningCeremonyTriggered = true;
         return joiningCeremony;
-    }
-
-    public override Task AfterCreatureAddedToCombat(Creature creature)
-    {
-        if (creature.CombatState != Owner.Creature.CombatState ||
-            creature.Side != Owner.Creature.Side ||
-            !creature.IsAlive)
-        {
-            return Task.CompletedTask;
-        }
-
-        return ApplyEntrySenseBonuses(
-            new[] { creature },
-            flash: true);
     }
 
     public override bool TryModifyRewardsLate(Player player, List<Reward> rewards, AbstractRoom room)
@@ -181,41 +207,102 @@ public sealed class ElectronicSoldierManual : RelicModel
             return false;
         }
 
-        bool modified = false;
-        if (HasAvailableSixSenseIncrease() &&
-            !rewards.OfType<SixSenseReward>().Any(reward => reward.IsDefaultReward))
+        int restoredRewards = rewards.RemoveAll(reward => reward is SixSenseReward);
+        long points = restoredRewards;
+        if (!CombatSixSensePointsGranted)
         {
-            rewards.Add(new SixSenseReward(player, this));
-            modified = true;
-        }
-
-        foreach (SixSenseAttribute attribute in AllSixSenseAttributes)
-        {
-            int pendingCount = GetPendingRewardCount(attribute);
-            int availableCount = Math.Max(0, MaxSixSense - GetSenseAmount(attribute));
-            int rewardCount = Math.Min(pendingCount, availableCount);
-            for (int i = 0; i < rewardCount; i++)
+            if (restoredRewards == 0)
             {
-                rewards.Add(new SixSenseReward(player, this, attribute));
-                modified = true;
+                GrantCombatSixSenseIncreases();
+                int roomBonus = room.RoomType switch
+                {
+                    RoomType.Elite => 1,
+                    RoomType.Boss => 3,
+                    _ => 0
+                };
+                points += roomBonus + CombatSixSensePointCount + (long)PendingSixSenseRewards;
+                points += AllSixSenseAttributes.Sum(attribute => (long)GetPendingRewardCount(attribute));
             }
+            GrantPendingAllSenseIncreases();
+            CombatSixSensePointsGranted = true;
         }
-
-        int remainingIncreaseCount = Math.Max(
-            0,
-            GetAvailableSixSenseIncreaseCount() -
-            rewards.OfType<SixSenseReward>().Count());
-        int genericRewardCount = Math.Min(
-            PendingSixSenseRewards,
-            remainingIncreaseCount);
-        for (int i = 0; i < genericRewardCount; i++)
-        {
-            rewards.Add(new SixSenseReward(player, this));
-            modified = true;
-        }
-
+        GrantSixSensePoints(points);
         ClearPendingSixSenseRewards();
-        return modified;
+        return restoredRewards > 0;
+    }
+
+    private void GrantPendingAllSenseIncreases()
+    {
+        if (PendingAllSenseIncreases <= 0) return;
+        foreach (SixSenseAttribute attribute in AllSixSenseAttributes)
+            if (CanIncreaseSense(attribute))
+                SetSenseAmount(attribute, (int)Math.Min(MaxSixSense, (long)GetSenseAmount(attribute) + PendingAllSenseIncreases));
+        Flash();
+    }
+
+    internal void QueueAllSenseIncrease()
+    {
+        AssertMutable();
+        PendingAllSenseIncreases = (int)Math.Min(int.MaxValue, (long)PendingAllSenseIncreases + 1);
+        Flash();
+    }
+
+    private void GrantCombatSixSenseIncreases()
+    {
+        AssertMutable();
+        bool increased = false;
+        foreach (CardType type in new[] { CardType.Attack, CardType.Skill, CardType.Power })
+        {
+            SixSenseAttribute[] candidates = SixSenseCardCapability.GetCandidates(type)
+                .Where(CanIncreaseSense).ToArray();
+            if (candidates.Length == 0) continue;
+            SixSenseAttribute attribute = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Length)];
+            SetSenseAmount(attribute, GetSenseAmount(attribute) + 1);
+            increased = true;
+        }
+        if (increased) Flash();
+    }
+
+    internal void GrantSixSensePoints(long amount)
+    {
+        AssertMutable();
+        if (amount <= 0) return;
+        int previous = SixSensePoints;
+        int added = (int)Math.Min(amount, GetAvailableSixSenseIncreaseCount() - previous);
+        SixSensePoints = previous + added;
+        SynchronizeMemoryGardenUpgradePoints();
+        if (added > 0) Flash();
+    }
+
+    internal bool CanAllocateSixSensePoints(IReadOnlyList<int> increases, int revision)
+    {
+        if (!IsMutable || revision != SixSenseAllocationRevision ||
+            revision == int.MaxValue || increases?.Count != AllSixSenseAttributes.Count) return false;
+        long total = 0;
+        for (int i = 0; i < increases.Count; i++)
+        {
+            int amount = increases[i];
+            if (amount < 0 || amount > Math.Max(0, MaxSixSense - GetSenseAmount(AllSixSenseAttributes[i]))) return false;
+            total += amount;
+        }
+        return total > 0 && total <= SixSensePoints;
+    }
+
+    internal bool ApplySixSenseAllocation(IReadOnlyList<int> increases, int revision)
+    {
+        if (!CanAllocateSixSensePoints(increases, revision)) return false;
+        using var balance = MemoryGardenUpgradePointsHelper.BeginBalanceUpdate(this);
+        int total = increases.Sum();
+        int remaining = SixSensePoints - total;
+        for (int i = 0; i < increases.Count; i++)
+        {
+            if (increases[i] > 0)
+                SetSenseAmount(AllSixSenseAttributes[i], GetSenseAmount(AllSixSenseAttributes[i]) + increases[i]);
+        }
+        SixSensePoints = remaining;
+        SixSenseAllocationRevision++;
+        Flash();
+        return true;
     }
 
     public bool HasAvailableSixSenseIncrease()
@@ -229,76 +316,78 @@ public sealed class ElectronicSoldierManual : RelicModel
             Math.Max(0, MaxSixSense - GetSenseAmount(attribute)));
     }
 
-    public IReadOnlyList<SixSenseAttribute> RollSixSenseRewardOptions()
+    public virtual IReadOnlyList<SixSenseAttribute> RollSixSenseRewardOptions()
     {
-        List<SixSenseAttribute> options = AllSixSenseAttributes
-            .Where(CanIncreaseSense)
-            .ToList();
-
-        Owner.PlayerRng.Rewards.Shuffle(options);
-        return options.Take(3).ToList();
+        return ReplenishSixSenseRewardOptions(
+            Array.Empty<SixSenseAttribute>());
     }
 
-    public async Task<bool> ChooseAndIncreaseSense(IReadOnlyList<SixSenseAttribute> options)
+    internal IReadOnlyList<SixSenseAttribute>
+        ReplenishSixSenseRewardOptions(
+            IEnumerable<SixSenseAttribute> existingOptions,
+            bool canExceedMaximum = false)
     {
-        if (options.Count == 0)
+        Func<SixSenseAttribute, bool> isAvailable = canExceedMaximum
+            ? _ => true
+            : CanIncreaseSense;
+        List<SixSenseAttribute> availableAttributes = AllSixSenseAttributes
+            .Where(isAvailable)
+            .ToList();
+
+        int targetCount = Math.Min(
+            SixSenseRewardOptionCount,
+            availableAttributes.Count);
+        List<SixSenseAttribute> options = existingOptions
+            .Where(isAvailable)
+            .Distinct()
+            .Take(targetCount)
+            .ToList();
+        if (options.Count >= targetCount)
+        {
+            return options;
+        }
+
+        List<SixSenseAttribute> replacements = availableAttributes
+            .Where(attribute => !options.Contains(attribute))
+            .ToList();
+        Owner.PlayerRng.Rewards.Shuffle(replacements);
+        options.AddRange(
+            replacements.Take(targetCount - options.Count));
+        return options;
+    }
+
+    public async Task<bool> ChooseAndIncreaseSense(
+        IReadOnlyList<SixSenseAttribute> options,
+        bool canExceedMaximum = false)
+    {
+        SixSenseAttribute[] availableOptions = options
+            .Where(attribute => canExceedMaximum ||
+                CanIncreaseSense(attribute))
+            .Distinct()
+            .ToArray();
+        if (availableOptions.Length == 0)
         {
             return false;
         }
 
-        SixSenseAttribute? selectedAttribute = await SixSenseChoiceHelper.Choose(Owner, this, options);
+        SixSenseAttribute? selectedAttribute = await SixSenseChoiceHelper.Choose(
+            Owner,
+            this,
+            availableOptions,
+            canExceedMaximum);
         if (!selectedAttribute.HasValue)
         {
             return false;
         }
 
-        return await TryIncreaseSense(selectedAttribute.Value);
+        return await TryIncreaseSense(
+            selectedAttribute.Value,
+            canExceedMaximum);
     }
 
-    public override decimal ModifyGoldGained(Player player, decimal amount)
+    public decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        decimal effectiveTalent = GetEffectiveSenseAmount(SixSenseAttribute.Talent);
-        if (player != Owner || effectiveTalent <= 0m)
-        {
-            return amount;
-        }
-
-        return amount * (1m + effectiveTalent * TalentGoldMultiplierPerLayer);
-    }
-
-    public override Task AfterModifyingGoldGained(Player player, decimal amount)
-    {
-        if (player == Owner && Talent > 0)
-        {
-            Flash();
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
-    {
-        decimal effectiveMadness = GetEffectiveSenseAmount(SixSenseAttribute.Madness);
-        decimal effectiveMentalStrength =
-            GetEffectiveSenseAmount(SixSenseAttribute.MentalStrength);
-
-        decimal multiplierOffset = 0m;
-        if (dealer == Owner.Creature)
-        {
-            multiplierOffset +=
-                effectiveMadness * MadnessDamageDealtMultiplierPerLayer;
-        }
-
-        if (target == Owner.Creature)
-        {
-            multiplierOffset +=
-                effectiveMadness * MadnessDamageTakenMultiplierPerLayer;
-            multiplierOffset -=
-                effectiveMentalStrength *
-                MentalStrengthDamageReductionPerLayer;
-        }
-
-        return Math.Max(0m, 1m + multiplierOffset);
+        return 1m;
     }
 
     public int GetSenseAmount(SixSenseAttribute attribute)
@@ -320,11 +409,36 @@ public sealed class ElectronicSoldierManual : RelicModel
         return GetSenseAmount(attribute) < MaxSixSense;
     }
 
-    public decimal GetEffectiveSenseAmount(SixSenseAttribute attribute)
+    internal void GrantStartingSixSense()
+    {
+        if (!IsMutable || StartingSixSenseGranted || Owner?.PlayerRng == null)
+        {
+            return;
+        }
+
+        foreach (CardType type in new[] { CardType.Attack, CardType.Skill, CardType.Power })
+        {
+            SixSenseAttribute[] pair = SixSenseCardCapability.GetCandidates(type);
+            int first = Owner.PlayerRng.Rewards.NextInt(StartingSixSensePointsPerPair + 1);
+            SetSenseAmount(pair[0], GetSenseAmount(pair[0]) + first);
+            SetSenseAmount(pair[1], GetSenseAmount(pair[1]) + StartingSixSensePointsPerPair - first);
+        }
+        StartingSixSenseGranted = true;
+    }
+
+    public bool HasSixSenseBonus(SixSenseAttribute attribute)
+    {
+        return GetSenseAmount(attribute) >= SixSenseBonusThreshold;
+    }
+
+    public decimal GetEffectiveSenseAmount(SixSenseAttribute attribute) =>
+        GetEffectiveSenseAmount(attribute, GetSenseAmount(attribute));
+
+    internal decimal GetEffectiveSenseAmount(SixSenseAttribute attribute, int level)
     {
         decimal multiplier = Owner?.Creature?.GetPower<AllRounderPower>()?.SenseMultiplier ?? 1m;
         multiplier *= Owner?.Creature?.GetPower<LoliFormPower>()?.GetSenseMultiplier(attribute) ?? 1m;
-        return GetSenseAmount(attribute) * multiplier;
+        return level * multiplier;
     }
 
     public void QueueSixSenseReward(SixSenseAttribute attribute)
@@ -340,18 +454,12 @@ public sealed class ElectronicSoldierManual : RelicModel
             return;
         }
 
-        PendingSixSenseRewards += amount;
+        PendingSixSenseRewards = (int)Math.Min(int.MaxValue, (long)PendingSixSenseRewards + amount);
         Flash();
     }
 
-    public static decimal GetSimplicityDpRecoveryMultiplier(Player player)
-    {
-        ElectronicSoldierManual manual = player?.GetRelic<ElectronicSoldierManual>();
-        return manual == null || player.Character is not HbrgoSaki
-            ? 1m
-            : 1m + manual.GetEffectiveSenseAmount(SixSenseAttribute.Simplicity) *
-                SimplicityDpRecoveryMultiplierPerLayer;
-    }
+    // Retained for existing DP callers; six senses no longer change recovery.
+    public static decimal GetSimplicityDpRecoveryMultiplier(Player player) => 1m;
 
     public static string GetSenseTitle(SixSenseAttribute attribute)
     {
@@ -369,28 +477,20 @@ public sealed class ElectronicSoldierManual : RelicModel
 
     public static string GetSenseShortDescription(SixSenseAttribute attribute)
     {
-        return attribute switch
-        {
-            SixSenseAttribute.LeadershipCharm => "每2点使我方单位入场时获得1点力量。",
-            SixSenseAttribute.Talent => "获得金钱增加5%*层数。",
-            SixSenseAttribute.Gentleness => "每2点使我方单位入场时获得1点敏捷。",
-            SixSenseAttribute.MentalStrength => "每层使受到的伤害减少1%。",
-            SixSenseAttribute.Simplicity => "每层使DP恢复增加4%。",
-            SixSenseAttribute.Madness => "每层使受到伤害+1%，造成伤害+2%。",
-            _ => string.Empty
-        };
+        string name = GetSenseTitle(attribute);
+        return GetSenseChoiceDescription(attribute) +
+            $"达到{SixSenseBonusThreshold}级后，其他属性牌也可削减{name}抗性，但不获得该属性的出目加值和出牌效果。上限{MaxSixSense}级。";
     }
 
-    public string GetSenseShortDescriptionForOwner(SixSenseAttribute attribute)
-    {
-        if (attribute == SixSenseAttribute.Simplicity &&
-            Owner.Character is not HbrgoSaki)
-        {
-            return "每层使生命上限增加2。";
-        }
+    public string GetSenseShortDescriptionForOwner(SixSenseAttribute attribute) =>
+        GetSenseShortDescription(attribute);
 
-        return GetSenseShortDescription(attribute);
-    }
+    public static string GetSenseChoiceDescription(SixSenseAttribute attribute) =>
+        $"每级使{GetSenseTitle(attribute)}属性牌的出目+1。" +
+        (attribute == SixSenseAttribute.Talent ? "每点才能使获得的金币+2%。" : string.Empty);
+
+    public string GetSenseChoiceDescriptionForOwner(SixSenseAttribute attribute) =>
+        GetSenseChoiceDescription(attribute);
 
     public static string GetSenseRewardDescriptionKey(SixSenseAttribute attribute)
     {
@@ -406,9 +506,16 @@ public sealed class ElectronicSoldierManual : RelicModel
         };
     }
 
-    public async Task<bool> TryIncreaseSense(SixSenseAttribute attribute)
+    public Task<bool> TryIncreaseSense(SixSenseAttribute attribute)
     {
-        if (!CanIncreaseSense(attribute))
+        return TryIncreaseSense(attribute, canExceedMaximum: false);
+    }
+
+    internal async Task<bool> TryIncreaseSense(
+        SixSenseAttribute attribute,
+        bool canExceedMaximum)
+    {
+        if (!canExceedMaximum && !CanIncreaseSense(attribute))
         {
             return false;
         }
@@ -419,38 +526,55 @@ public sealed class ElectronicSoldierManual : RelicModel
             return true;
         }
 
-        if (SixSenseNetActions.RequestIncrease(Owner, attribute))
+        if (SixSenseNetActions.RequestIncrease(
+                Owner,
+                attribute,
+                canExceedMaximum))
         {
             return true;
         }
 
-        return await ApplySenseIncrease(attribute);
+        return await ApplySenseIncrease(
+            attribute,
+            canExceedMaximum);
     }
 
-    internal async Task<bool> ApplySenseIncrease(
-        SixSenseAttribute attribute)
+    internal Task<bool> ApplySenseIncrease(
+        SixSenseAttribute attribute,
+        bool canExceedMaximum = false)
     {
-        if (!CanIncreaseSense(attribute))
+        if (!canExceedMaximum && !CanIncreaseSense(attribute))
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        SetSenseAmount(attribute, GetSenseAmount(attribute) + 1);
+        SetSenseAmount(attribute, GetSenseAmount(attribute) + 1, canExceedMaximum);
         Flash();
-        if (attribute == SixSenseAttribute.Simplicity &&
-            Owner.Character is not HbrgoSaki)
-        {
-            await CreatureCmd.GainMaxHp(
-                Owner.Creature,
-                NonSakiSimplicityMaxHpPerLayer);
-        }
-
-        return true;
+        return Task.FromResult(true);
     }
 
-    private void SetSenseAmount(SixSenseAttribute attribute, int amount)
+    // Compatibility entry points do not grant the removed legacy DP-loss bonuses.
+    internal void RegisterMentalStrengthDpLoss(int amount) { }
+
+    internal Task ResolveMentalStrengthDpLossRewards(
+        PlayerChoiceContext choiceContext, CardModel cardSource)
     {
-        int clampedAmount = Math.Clamp(amount, 0, MaxSixSense);
+        if (IsMutable)
+        {
+            PendingMentalStrengthStatRewards = 0;
+            MentalStrengthDpLossProgress = 0;
+        }
+        return Task.CompletedTask;
+    }
+
+    private void SetSenseAmount(
+        SixSenseAttribute attribute,
+        int amount,
+        bool canExceedMaximum = false)
+    {
+        int clampedAmount = canExceedMaximum
+            ? Math.Max(0, amount)
+            : Math.Clamp(amount, 0, MaxSixSense);
         switch (attribute)
         {
             case SixSenseAttribute.LeadershipCharm:
@@ -472,6 +596,10 @@ public sealed class ElectronicSoldierManual : RelicModel
                 Madness = clampedAmount;
                 break;
         }
+        // A direct level reward can use space previously covered by saved
+        // points. Keep only enough unallocated points to reach all six caps.
+        _sixSensePoints = SixSensePoints;
+        SynchronizeMemoryGardenUpgradePoints();
     }
 
     private int GetPendingRewardCount(SixSenseAttribute attribute)
@@ -523,68 +651,7 @@ public sealed class ElectronicSoldierManual : RelicModel
         PendingSimplicityRewards = 0;
         PendingMadnessRewards = 0;
         PendingSixSenseRewards = 0;
+        PendingAllSenseIncreases = 0;
     }
 
-    private async Task ApplyEntrySenseBonuses(
-        IEnumerable<Creature> targets,
-        bool flash)
-    {
-        int strengthAmount = (int)(
-            GetEffectiveSenseAmount(SixSenseAttribute.LeadershipCharm) / 2m);
-        int dexterityAmount = (int)(
-            GetEffectiveSenseAmount(SixSenseAttribute.Gentleness) / 2m);
-        if (strengthAmount <= 0 &&
-            dexterityAmount <= 0)
-        {
-            return;
-        }
-
-        List<Creature> validTargets = targets
-            .Where(creature =>
-                creature.CombatState == Owner.Creature.CombatState &&
-                creature.Side == Owner.Creature.Side &&
-                creature.IsAlive)
-            .ToList();
-        if (validTargets.Count == 0)
-        {
-            return;
-        }
-
-        if (flash)
-        {
-            Flash(validTargets);
-        }
-
-        PlayerChoiceContext choiceContext =
-            new ThrowingPlayerChoiceContext();
-        if (strengthAmount > 0)
-        {
-            await PowerCmd.Apply<MegaCrit.Sts2.Core.Models.Powers.StrengthPower>(
-                choiceContext,
-                validTargets,
-                strengthAmount,
-                Owner.Creature,
-                null);
-        }
-
-        if (dexterityAmount > 0)
-        {
-            await PowerCmd.Apply<MegaCrit.Sts2.Core.Models.Powers.DexterityPower>(
-                choiceContext,
-                validTargets,
-                dexterityAmount,
-                Owner.Creature,
-                null);
-        }
-    }
-
-    private IEnumerable<Creature> GetAliveAllies(ICombatState combatState)
-    {
-        if (combatState == null)
-        {
-            return Array.Empty<Creature>();
-        }
-
-        return combatState.Creatures.Where(creature => creature.Side == Owner.Creature.Side && creature.IsAlive);
-    }
 }

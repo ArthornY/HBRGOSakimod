@@ -7,6 +7,7 @@ using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -14,6 +15,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -24,11 +26,10 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class NotOverYetPower : PowerModel
 {
-    public const int RollBonus = 20;
+    public const int RollBonus = 5;
 
-    private const int _firstRollThreshold = 50;
-    private const int _rollThresholdStep = 10;
-    private const int _maxGeneratedAttacks = 5;
+    private const decimal FirstRollThreshold = 50m;
+    private const decimal RollThresholdMultiplier = 1.5m;
     private const int _allTargetAttackStartIndex = 4;
     private const decimal _finisherMaxHpPercent = 0.3m;
 
@@ -44,17 +45,77 @@ public sealed class NotOverYetPower : PowerModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public bool TriggeredThisTurn { get; private set; }
 
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int TriggersUsedThisTurn { get; private set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasFourthAttack { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasFifthAttack { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool EnhancedRollBonus { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasAdvantageRolls { get; private set; }
+
+    public int MaxGeneratedAttacks => HasFifthAttack ? 5 : HasFourthAttack ? 4 : 3;
+    public int AttackRollBonus => RollBonus + (EnhancedRollBonus ? 10 : 0);
+
+    internal void EnableUpgrades(bool fourthAttack, bool fifthAttack, bool enhancedRollBonus, bool advantageRolls)
+    {
+        AssertMutable();
+        HasFourthAttack |= fourthAttack || fifthAttack;
+        HasFifthAttack |= fifthAttack;
+        EnhancedRollBonus |= enhancedRollBonus;
+        HasAdvantageRolls |= advantageRolls;
+        Owner?.InvokePowerModified(this, 0, true);
+    }
+
     public override PowerType Type => PowerType.Buff;
 
-    public override PowerStackType StackType => PowerStackType.Single;
+    public override PowerStackType StackType => PowerStackType.Counter;
 
     public override Color AmountLabelColor => new("D8A184");
+
+    public override LocString Description => IsMutable
+        ? CreateDescription(false, AttackRollBonus, MaxGeneratedAttacks, HasAdvantageRolls,
+            Owner?.Player?.Character is HbrgoSaki31O)
+        : base.Description;
+
+    internal LocString CompactDescription => CreateDescription(true, AttackRollBonus,
+        MaxGeneratedAttacks, HasAdvantageRolls, false);
+
+    internal static LocString GetCardCompactDescription(SoyoAidHbrgoSaki card)
+    {
+        NotOverYetPower active = card.IsMutable ? card.Owner?.Creature?.GetPower<NotOverYetPower>() : null;
+        int maxRolls = card.HasUpgradeEffect(1) ? 5 : card.HasUpgradeEffect(0) ? 4 : 3;
+        int bonus = card.HasUpgradeEffect(5) ? 15 : RollBonus;
+        return CreateDescription(true, Math.Max(bonus, active?.AttackRollBonus ?? RollBonus),
+            Math.Max(maxRolls, active?.MaxGeneratedAttacks ?? 3),
+            card.HasUpgradeEffect(6) || active?.HasAdvantageRolls == true, false);
+    }
+
+    private static LocString CreateDescription(bool compact, int bonus, int maxRolls,
+        bool advantage, bool swordheart)
+    {
+        LocString text = new("powers", "NOT_OVER_YET_POWER." +
+            (compact ? "activeCompactDescription" : "activeDescription"));
+        text.Add("RollBonus", bonus);
+        text.Add("MaxRolls", maxRolls);
+        text.Add("ChainUpgradeDescription", maxRolls >= 5 ? RuleText("fifthAttackDescription") :
+            maxRolls >= 4 ? RuleText("fourthAttackDescription") : string.Empty);
+        text.Add("AdvantageDescription", advantage ? RuleText("advantageDescription") : string.Empty);
+        text.Add("SwordheartDescription", swordheart ? RuleText("swordheartDescription") : string.Empty);
+        return text;
+    }
+
+    private static string RuleText(string suffix) =>
+        "\n" + new LocString("powers", "NOT_OVER_YET_POWER." + suffix).GetFormattedText();
 
     public override Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
     {
         if (side == Owner.Side && participants.Contains(Owner))
         {
-            SetTriggeredThisTurn(false);
+            SetTriggersUsedThisTurn(0);
         }
 
         return Task.CompletedTask;
@@ -62,7 +123,7 @@ public sealed class NotOverYetPower : PowerModel
 
     public override async Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (TriggeredThisTurn ||
+        if (GetTriggersUsedThisTurn() >= GetTriggerLimit() ||
             Owner.CombatState?.CurrentSide != Owner.Side ||
             cardPlay.Card.Owner?.Creature != Owner ||
             cardPlay.Card.Type != CardType.Attack ||
@@ -72,7 +133,7 @@ public sealed class NotOverYetPower : PowerModel
             return;
         }
 
-        SetTriggeredThisTurn(true);
+        SetTriggersUsedThisTurn(GetTriggersUsedThisTurn() + 1);
         if (CombatManager.Instance.IsOverOrEnding)
         {
             return;
@@ -208,7 +269,10 @@ public sealed class NotOverYetPower : PowerModel
         CardModel triggeringCard,
         Creature primaryTarget)
     {
-        for (int attackIndex = 1; attackIndex <= _maxGeneratedAttacks; attackIndex++)
+        // Keep fractional precision between successes: floor only for comparison,
+        // giving 50 / 75 / 112 / 168 / 253 rather than compounding rounded values.
+        decimal successThreshold = FirstRollThreshold;
+        for (int attackIndex = 1; attackIndex <= MaxGeneratedAttacks; attackIndex++)
         {
             if (CombatManager.Instance.IsOverOrEnding)
             {
@@ -217,16 +281,18 @@ public sealed class NotOverYetPower : PowerModel
 
             int roll = await rollCapability.RollExtraD100(
                 choiceContext,
-                triggeringCard);
-            int threshold = _firstRollThreshold + (attackIndex - 1) * _rollThresholdStep;
-            if (roll < threshold)
+                triggeringCard,
+                HasAdvantageRolls);
+            decimal threshold = decimal.Floor(successThreshold);
+            if ((!rollCapability.LastExtraRollWasCritical && roll < threshold) ||
+                CombatManager.Instance.IsOverOrEnding || GetHittableOpponent() == null)
             {
                 return;
             }
 
             CardRarity rarity = RollGeneratedCardRarity();
             CardModel generatedCard = CreateGeneratedAttack(rarity);
-            Creature target = GetCardTarget(generatedCard, primaryTarget);
+            Creature target = GetCardTarget(generatedCard);
             if (generatedCard.TargetType == TargetType.AnyEnemy && target == null)
             {
                 await RemoveGeneratedCardFromCombat(generatedCard);
@@ -238,14 +304,15 @@ public sealed class NotOverYetPower : PowerModel
                 choiceContext,
                 generatedCard,
                 target,
-                attackIndex >= _allTargetAttackStartIndex);
+                attackIndex >= _allTargetAttackStartIndex && (HasFourthAttack || HasFifthAttack));
 
-            if (attackIndex == _maxGeneratedAttacks &&
+            if (HasFifthAttack && attackIndex == 5 &&
                 !CombatManager.Instance.IsOverOrEnding &&
-                primaryTarget.IsHittable)
+                primaryTarget?.IsHittable == true)
             {
                 await DealFinisherDamage(choiceContext, primaryTarget, triggeringCard);
             }
+            successThreshold *= RollThresholdMultiplier;
         }
     }
 
@@ -355,9 +422,9 @@ public sealed class NotOverYetPower : PowerModel
         Creature primaryTarget,
         CardModel cardSource)
     {
-        decimal damage = Math.Max(1m, primaryTarget.MaxHp * _finisherMaxHpPercent);
+        decimal damage = Math.Max(1m, LargeCreatureHealthHelper.GetMaxHp(primaryTarget) * _finisherMaxHpPercent);
         Flash();
-        await CreatureCmd.Damage(
+        await CreatureCommandCompatibility.Damage(
             choiceContext,
             primaryTarget,
             damage,
@@ -376,14 +443,22 @@ public sealed class NotOverYetPower : PowerModel
         return GetHittableOpponent();
     }
 
-    private Creature GetCardTarget(CardModel card, Creature primaryTarget)
+    private Creature GetCardTarget(CardModel card)
     {
         return card.TargetType switch
         {
-            TargetType.AnyEnemy => primaryTarget.IsHittable ? primaryTarget : GetHittableOpponent(),
+            TargetType.AnyEnemy => GetRandomHittableOpponent(),
             TargetType.Self or TargetType.AnyAlly => Owner,
             _ => null
         };
+    }
+
+    private Creature GetRandomHittableOpponent()
+    {
+        Creature[] targets = Owner.CombatState.GetOpponentsOf(Owner)
+            .Where(creature => creature.IsHittable).ToArray();
+        return targets.Length == 0 ? null :
+            targets[Owner.CombatState.RunState.Rng.Niche.NextInt(0, targets.Length)];
     }
 
     private Creature GetHittableOpponent()
@@ -393,10 +468,23 @@ public sealed class NotOverYetPower : PowerModel
             .FirstOrDefault(creature => creature.IsHittable);
     }
 
-    private void SetTriggeredThisTurn(bool value)
+    private int GetTriggerLimit()
+    {
+        return Math.Max(0, Amount);
+    }
+
+    private int GetTriggersUsedThisTurn()
+    {
+        return Math.Max(
+            TriggersUsedThisTurn,
+            TriggeredThisTurn ? 1 : 0);
+    }
+
+    private void SetTriggersUsedThisTurn(int value)
     {
         AssertMutable();
-        TriggeredThisTurn = value;
+        TriggersUsedThisTurn = Math.Max(0, value);
+        TriggeredThisTurn = TriggersUsedThisTurn > 0;
     }
 
     private static void SyncUpgradeLevelFromDeck(CardModel card, CardModel deckCard)

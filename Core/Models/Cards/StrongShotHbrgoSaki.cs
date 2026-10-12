@@ -49,7 +49,10 @@ public sealed class StrongShotHbrgoSaki : CardModel
         int highestFragile = base.CombatState
             .GetOpponentsOf(Owner.Creature)
             .Where(target => target.IsHittable)
-            .Select(target => target.GetPower<FragilePower>()?.Amount ?? 0)
+            .Select(target =>
+                ReptureBowPower.GetEnemyPowerAmount<FragilePower>(
+                    Owner.Creature,
+                    target))
             .DefaultIfEmpty(0)
             .Max();
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
@@ -60,7 +63,7 @@ public sealed class StrongShotHbrgoSaki : CardModel
         for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
             await DamageCmd.Attack(damage)
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .TargetingAllOpponents(base.CombatState)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);

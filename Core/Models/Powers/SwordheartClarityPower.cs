@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -25,7 +27,10 @@ public sealed class SwordheartClarityPower : PowerModel
 
     public static int GetSwordheartMaxBonus(Creature creature)
     {
-        return creature?.GetPower<SwordheartClarityPower>() == null ? 0 : SwordheartMaxBonus;
+        return creature?.Player?.Character is HbrgoSaki31O &&
+               creature.GetPower<SwordheartClarityPower>() != null
+            ? SwordheartMaxBonus
+            : 0;
     }
 
     public static decimal GetSwordheartConsumptionAmount(Creature creature, decimal amount)
@@ -35,14 +40,27 @@ public sealed class SwordheartClarityPower : PowerModel
             return 0m;
         }
 
-        return creature?.GetPower<SwordheartClarityPower>() == null
+        return creature?.Player?.Character is not HbrgoSaki31O ||
+               creature.GetPower<SwordheartClarityPower>() == null
             ? amount
             : amount * SwordheartConsumptionMultiplier;
     }
 
+    public override Task AfterApplied(
+        Creature applier,
+        CardModel cardSource)
+    {
+        return Owner.Player?.Character is HbrgoSaki31O
+            ? Task.CompletedTask
+            : PowerCmd.Remove(this);
+    }
+
     public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext, CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
     {
-        if (Amount <= 0 || side != Owner.Side || !participants.Contains(Owner))
+        if (Owner.Player?.Character is not HbrgoSaki31O ||
+            Amount <= 0 ||
+            side != Owner.Side ||
+            !participants.Contains(Owner))
         {
             return;
         }

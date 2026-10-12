@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -23,26 +25,43 @@ internal static class StrongestShieldDamagePatch
     [ThreadStatic]
     private static int _actualDamageDepth;
 
+    [ThreadStatic]
+    private static int _intentPreviewDepth;
+
     internal static bool IsResolvingActualDamage =>
-        _actualDamageDepth > 0;
+        _actualDamageDepth > 0 && _intentPreviewDepth == 0;
+
+    internal static void BeginIntentPreview() => _intentPreviewDepth++;
+
+    internal static void EndIntentPreview() => _intentPreviewDepth--;
 
     private static MethodBase TargetMethod()
     {
-        MethodInfo damageMethod =
-            PrivateAccess.DeclaredMethod(
-                typeof(CreatureCmd),
-                nameof(CreatureCmd.Damage),
-                typeof(PlayerChoiceContext),
-                typeof(IEnumerable<Creature>),
-                typeof(decimal),
-                typeof(ValueProp),
-                typeof(Creature),
-                typeof(CardModel));
+        MethodInfo damageMethod = AccessTools
+            .GetDeclaredMethods(typeof(CreatureCmd))
+            .Where(method => method.Name == nameof(CreatureCmd.Damage))
+            .Where(method =>
+            {
+                ParameterInfo[] parameters = method.GetParameters();
+                return parameters.Length is 6 or 7 &&
+                    parameters[0].ParameterType ==
+                        typeof(PlayerChoiceContext) &&
+                    parameters[1].ParameterType ==
+                        typeof(IEnumerable<Creature>) &&
+                    parameters[2].ParameterType == typeof(decimal) &&
+                    parameters[3].ParameterType == typeof(ValueProp) &&
+                    parameters[4].ParameterType == typeof(Creature) &&
+                    parameters[5].ParameterType == typeof(CardModel);
+            })
+            .OrderBy(method => method.GetParameters().Length)
+            .FirstOrDefault() ?? throw new MissingMethodException(
+                typeof(CreatureCmd).FullName,
+                nameof(CreatureCmd.Damage));
 
         AsyncStateMachineAttribute attribute = damageMethod.GetCustomAttribute<AsyncStateMachineAttribute>();
         if (attribute == null)
         {
-            throw new InvalidOperationException("CreatureCmd.Damage no longer uses an async state machine.");
+            return damageMethod;
         }
 
         return PrivateAccess.Method(attribute.StateMachineType, "MoveNext");
@@ -50,22 +69,49 @@ internal static class StrongestShieldDamagePatch
 
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        MethodInfo originalModifyDamage =
-            PrivateAccess.Method(typeof(Hook), nameof(Hook.ModifyDamage));
-        MethodInfo replacementModifyDamage =
+        MethodInfo stableReplacement =
             PrivateAccess.Method(
                 typeof(StrongestShieldDamagePatch),
-                nameof(ModifyDamageWithStrongestShield));
+                nameof(ModifyDamageWithStrongestShield),
+                typeof(IRunState),
+                typeof(ICombatState),
+                typeof(Creature),
+                typeof(Creature),
+                typeof(decimal),
+                typeof(ValueProp),
+                typeof(CardModel),
+                typeof(ModifyDamageHookType),
+                typeof(CardPreviewMode),
+                typeof(IEnumerable<AbstractModel>).MakeByRefType());
+        MethodInfo betaReplacement =
+            PrivateAccess.Method(
+                typeof(StrongestShieldDamagePatch),
+                nameof(ModifyDamageWithStrongestShield),
+                typeof(IRunState),
+                typeof(ICombatState),
+                typeof(Creature),
+                typeof(Creature),
+                typeof(decimal),
+                typeof(ValueProp),
+                typeof(CardModel),
+                typeof(CardPlay),
+                typeof(ModifyDamageHookType),
+                typeof(CardPreviewMode),
+                typeof(IEnumerable<AbstractModel>).MakeByRefType());
 
         int replacementCount = 0;
         foreach (CodeInstruction instruction in instructions)
         {
-            if (instruction.Calls(originalModifyDamage))
+            if (instruction.operand is MethodInfo calledMethod &&
+                calledMethod.DeclaringType == typeof(Hook) &&
+                calledMethod.Name == nameof(Hook.ModifyDamage))
             {
                 replacementCount++;
                 yield return new CodeInstruction(instruction)
                 {
-                    operand = replacementModifyDamage
+                    operand = calledMethod.GetParameters().Length == 11
+                        ? betaReplacement
+                        : stableReplacement
                 };
                 continue;
             }
@@ -94,7 +140,7 @@ internal static class StrongestShieldDamagePatch
         _actualDamageDepth++;
         try
         {
-            return Hook.ModifyDamage(
+            decimal modified = HookCompatibility.ModifyDamage(
                 runState,
                 combatState,
                 target,
@@ -105,10 +151,56 @@ internal static class StrongestShieldDamagePatch
                 modifyDamageHookType,
                 previewMode,
                 out modifiers);
+            return LimitCardDamage(target, cardSource, modified);
         }
         finally
         {
             _actualDamageDepth--;
         }
+    }
+
+    private static decimal ModifyDamageWithStrongestShield(
+        IRunState runState,
+        ICombatState combatState,
+        Creature target,
+        Creature dealer,
+        decimal damage,
+        ValueProp props,
+        CardModel cardSource,
+        CardPlay cardPlay,
+        ModifyDamageHookType modifyDamageHookType,
+        CardPreviewMode previewMode,
+        out IEnumerable<AbstractModel> modifiers)
+    {
+        _actualDamageDepth++;
+        try
+        {
+            decimal modified = HookCompatibility.ModifyDamage(
+                runState,
+                combatState,
+                target,
+                dealer,
+                damage,
+                props,
+                cardSource,
+                modifyDamageHookType,
+                previewMode,
+                out modifiers,
+                cardPlay);
+            return LimitCardDamage(target, cardSource, modified);
+        }
+        finally
+        {
+            _actualDamageDepth--;
+        }
+    }
+
+    private static decimal LimitCardDamage(Creature target, CardModel cardSource, decimal damage)
+    {
+        // Only the actual command wrapper spends the budget. Nested card/intent
+        // previews inside a modifier can never consume it.
+        decimal allowed = CardPlayContextHelper.LimitIssuedDamage(cardSource, damage);
+        if (allowed < damage) ItsMygoIncomingDamageCapture.LimitPendingCapture(target, allowed);
+        return allowed;
     }
 }

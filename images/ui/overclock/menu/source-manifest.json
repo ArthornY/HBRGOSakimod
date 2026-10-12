@@ -1,0 +1,1113 @@
+{
+  "source_prefabs": [
+    "Assets/UI/AssetBundle/UIBattleOverdriveLevelSelect.prefab",
+    "Assets/UI/AssetBundle/UIBattleOverdriveLevelDetailDialog.prefab"
+  ],
+  "reference_layout": "E:/stsmod/output/hbr-od-menu-20260930/layout-manifest.json",
+  "image_method": "Original Unity sprite pixels decoded to standalone RGBA PNG. Transparent trim returned by Sprite.image is retained. No game build/export performed.",
+  "sprites": [
+    {
+      "file": "WindowBaseType1.png",
+      "source": {
+        "bundle_key": "cache/01c82a99cf628ec4663df1704adae3cf/97b5c01903f850e95909c77f8365a4f4",
+        "asset_path": "Assets/UI/Texture/Window/WindowBaseType1.png",
+        "type": "Sprite",
+        "path_id": -1652213466349116672,
+        "serialized_file": "CAB-9f8dfc0787541442ca240eabc09d1789"
+      },
+      "sprite_name": "WindowBaseType1",
+      "original_dimensions": [
+        44,
+        44
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 44.0,
+        "height": 44.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 17.0,
+        "y": 17.0,
+        "z": 17.0,
+        "w": 17.0
+      },
+      "sha256": "1cd5d8344a1a109c2b713b6c3996c951aab48e7ebe86b56633f1e43138845907",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "MarkerOverdrive2.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/MarkerOverdrive2.png",
+        "type": "Sprite",
+        "path_id": -5229663167126295164,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "MarkerOverdrive2",
+      "original_dimensions": [
+        24,
+        24
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 24.0,
+        "height": 24.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "c4aa92bafbbc4f6128250ea3abf0f1f968a56087515cc21d9a54fd70dc3a2174",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "ButtonOverdrive2Active.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive2Active.png",
+        "type": "Sprite",
+        "path_id": -7031231990142753270,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "ButtonOverdrive2Active",
+      "original_dimensions": [
+        192,
+        192
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "21c9999defa1fdc2b1ed95fb010cebfedd34a9be8f6e5666de97c0d74fc3e893",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "ButtonOverdrive3Active.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive3Active.png",
+        "type": "Sprite",
+        "path_id": 4198473268517450379,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "ButtonOverdrive3Active",
+      "original_dimensions": [
+        192,
+        192
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "c40f5093ca69fcfd2e9776f31d00f07f46eeea350ac48cc4493ef7aa39fdf660",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "NumberOverdrive3.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/NumberOverdrive3.png",
+        "type": "Sprite",
+        "path_id": 4258114714806625549,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "NumberOverdrive3",
+      "original_dimensions": [
+        56,
+        60
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 56.0,
+        "height": 60.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "bfcf772473a6887f647869d46f3b5fbd79c729591b7a072c1ba999ee05eea24f",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "cancelParts.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/cancelParts.png",
+        "type": "Sprite",
+        "path_id": 5869996863194842512,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "cancelParts",
+      "original_dimensions": [
+        264,
+        48
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 264.0,
+        "height": 48.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 199.0,
+        "y": 0.0,
+        "z": 60.0,
+        "w": 0.0
+      },
+      "sha256": "da2a1fdece136252cea6e3d58f58f2cdf175882ed1802fe5353e03aeb6e13c10",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "box2.png",
+      "source": {
+        "bundle_key": "cache/e929e860e639b14d91654c46556f9cee/841f58b27c439a37af201ef4074c377c",
+        "asset_path": "Assets/UI/Texture/CommonAtlas/box2.png",
+        "type": "Sprite",
+        "path_id": -2895251910709560555,
+        "serialized_file": "CAB-fe4445dca06c80e51e3e108d8e180a00"
+      },
+      "sprite_name": "box2",
+      "original_dimensions": [
+        44,
+        44
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 44.0,
+        "height": 44.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 22.0,
+        "y": 22.0,
+        "z": 22.0,
+        "w": 22.0
+      },
+      "sha256": "57b15597d847ac82293d0ba35a5234c9c021d715b8a4d2013cb10a83656d67b5",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "PartsOverdriveCircleLv2.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/PartsOverdriveCircleLv2.png",
+        "type": "Sprite",
+        "path_id": 8278006109893752978,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "PartsOverdriveCircleLv2",
+      "original_dimensions": [
+        292,
+        140
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 292.0,
+        "height": 140.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "64274c4b1b34d663f7b7723d3f68a401ffa1356d31cadced600b69b40769575c",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "BtnInformationSmallDefault.png",
+      "source": {
+        "bundle_key": "cache/e929e860e639b14d91654c46556f9cee/841f58b27c439a37af201ef4074c377c",
+        "asset_path": "Assets/UI/Texture/CommonAtlas/BtnInformationSmallDefault.png",
+        "type": "Sprite",
+        "path_id": -8323295581689527399,
+        "serialized_file": "CAB-fe4445dca06c80e51e3e108d8e180a00"
+      },
+      "sprite_name": "BtnInformationSmallDefault",
+      "original_dimensions": [
+        63,
+        63
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 80.0,
+        "height": 80.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "d6fe4a41553e45d986a8fd71393f60eb0518ecb47cbcf6526f828b6c2734895c",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "BtnDefL2Active.png",
+      "source": {
+        "bundle_key": "cache/aea1bdf5757db1d63528ce1e28523f0f/a2c6db01e70b4093c5f3099509f252e0",
+        "asset_path": "Assets/UI/Texture/ButtonAtlas/BtnDefL2Active.png",
+        "type": "Sprite",
+        "path_id": 7742829791150475668,
+        "serialized_file": "CAB-96a187697036adb69e6c64f5a34aee5a"
+      },
+      "sprite_name": "BtnDefL2Active",
+      "original_dimensions": [
+        160,
+        146
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 160.0,
+        "height": 146.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 72.0,
+        "y": 66.0,
+        "z": 72.0,
+        "w": 66.0
+      },
+      "sha256": "a9a78ac1d40ebcdf90c1e7e21ecd5a87b7ff044cc644bcd98e471c3ac5e96669",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "ButtonOverdrive3Default.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive3Default.png",
+        "type": "Sprite",
+        "path_id": 1641512505121204119,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "ButtonOverdrive3Default",
+      "original_dimensions": [
+        192,
+        192
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "09bd9d04db5c812593fd2d269bf02a3055682fc3ebaac0c5cf0dee276cf25622",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "PartsoverdriveBgRight.png",
+      "source": {
+        "bundle_key": "cache/1f49a21060efac990df8686048355187/82aa44425e594f7170e5360446176c30",
+        "asset_path": "Assets/UI/Texture/Battle/overDriveEffect/PartsoverdriveBgRight.png",
+        "type": "Sprite",
+        "path_id": -6811044197261259236,
+        "serialized_file": "CAB-31e9463da200ebdf91d67b61a8e5bd18"
+      },
+      "sprite_name": "PartsoverdriveBgRight",
+      "original_dimensions": [
+        668,
+        89
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 676.0,
+        "height": 92.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "0f8c1d26dc9935f5f2e5b451f7e8ec991c1ab089344439f972d8c8367a3b60e3",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "PartsOverdriveCircleLv1.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/PartsOverdriveCircleLv1.png",
+        "type": "Sprite",
+        "path_id": 9217340287446194076,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "PartsOverdriveCircleLv1",
+      "original_dimensions": [
+        292,
+        140
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 292.0,
+        "height": 140.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "d73490a9b41c999a1c8b200b76bc70f1b92979ee066a09d15c6b92bd8b8a81e3",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "btnCloseNormal.png",
+      "source": {
+        "bundle_key": "cache/e929e860e639b14d91654c46556f9cee/841f58b27c439a37af201ef4074c377c",
+        "asset_path": "Assets/UI/Texture/CommonAtlas/btnCloseNormal.png",
+        "type": "Sprite",
+        "path_id": -5067271716652006622,
+        "serialized_file": "CAB-fe4445dca06c80e51e3e108d8e180a00"
+      },
+      "sprite_name": "btnCloseNormal",
+      "original_dimensions": [
+        105,
+        105
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 128.0,
+        "height": 128.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "7d5b74c47700075da60d407909b6f4230d58e6a7fbaaf230141a0164c5ae428c",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "btnCloseDisable.png",
+      "source": {
+        "bundle_key": "cache/e929e860e639b14d91654c46556f9cee/841f58b27c439a37af201ef4074c377c",
+        "asset_path": "Assets/UI/Texture/CommonAtlas/btnCloseDisable.png",
+        "type": "Sprite",
+        "path_id": -3026358999963027167,
+        "serialized_file": "CAB-fe4445dca06c80e51e3e108d8e180a00"
+      },
+      "sprite_name": "btnCloseDisable",
+      "original_dimensions": [
+        85,
+        85
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 128.0,
+        "height": 128.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "3c0f7571eaefdc6671aff94db297b91d98d9e46e65964d9bed71bb1c108d85b2",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "WindowLines.png",
+      "source": {
+        "bundle_key": "cache/01c82a99cf628ec4663df1704adae3cf/97b5c01903f850e95909c77f8365a4f4",
+        "asset_path": "Assets/UI/Texture/Window/WindowLines.png",
+        "type": "Sprite",
+        "path_id": -7029069929547491935,
+        "serialized_file": "CAB-9f8dfc0787541442ca240eabc09d1789"
+      },
+      "sprite_name": "WindowLines",
+      "original_dimensions": [
+        502,
+        614
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 512.0,
+        "height": 616.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 512.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "e5dbc7d0fab56869e4776809c5b79f83e0b23e983468f9daf43e38a3f5f1015f",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "BtnDefDecoSide.png",
+      "source": {
+        "bundle_key": "cache/aea1bdf5757db1d63528ce1e28523f0f/a2c6db01e70b4093c5f3099509f252e0",
+        "asset_path": "Assets/UI/Texture/ButtonAtlas/BtnDefDecoSide.png",
+        "type": "Sprite",
+        "path_id": 8989456180336459555,
+        "serialized_file": "CAB-96a187697036adb69e6c64f5a34aee5a"
+      },
+      "sprite_name": "BtnDefDecoSide",
+      "original_dimensions": [
+        130,
+        65
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 130.0,
+        "height": 65.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 56.0,
+        "y": 0.0,
+        "z": 56.0,
+        "w": 0.0
+      },
+      "sha256": "7f83e625d38e0e1f44efe36777f2713c38031e059e2255c2821ecdff7bf805ec",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "BtnDefL2Normal.png",
+      "source": {
+        "bundle_key": "cache/aea1bdf5757db1d63528ce1e28523f0f/a2c6db01e70b4093c5f3099509f252e0",
+        "asset_path": "Assets/UI/Texture/ButtonAtlas/BtnDefL2Normal.png",
+        "type": "Sprite",
+        "path_id": 5105745285872962728,
+        "serialized_file": "CAB-96a187697036adb69e6c64f5a34aee5a"
+      },
+      "sprite_name": "BtnDefL2Normal",
+      "original_dimensions": [
+        120,
+        114
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 120.0,
+        "height": 114.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 60.0,
+        "y": 0.0,
+        "z": 60.0,
+        "w": 0.0
+      },
+      "sha256": "24fad2e6f3b68046119c94e958352c50bec90ed0f671f89ed19fc30ba7a8ac3b",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "WindowLineType2.png",
+      "source": {
+        "bundle_key": "cache/01c82a99cf628ec4663df1704adae3cf/97b5c01903f850e95909c77f8365a4f4",
+        "asset_path": "Assets/UI/Texture/Window/WindowLineType2.png",
+        "type": "Sprite",
+        "path_id": -3795824951738517194,
+        "serialized_file": "CAB-9f8dfc0787541442ca240eabc09d1789"
+      },
+      "sprite_name": "WindowLineType2",
+      "original_dimensions": [
+        128,
+        128
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 128.0,
+        "height": 128.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 53.0,
+        "y": 53.0,
+        "z": 53.0,
+        "w": 53.0
+      },
+      "sha256": "75bd371df85dc02b9ae4163f4fd0f06e9d094297194b83abba13219a0e3b1e14",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "GradationLine.png",
+      "source": {
+        "bundle_key": "cache/1f49a21060efac990df8686048355187/82aa44425e594f7170e5360446176c30",
+        "asset_path": "Assets/UI/Texture/Battle/overDriveEffect/GradationLine.png",
+        "type": "Sprite",
+        "path_id": 5727078681552774838,
+        "serialized_file": "CAB-31e9463da200ebdf91d67b61a8e5bd18"
+      },
+      "sprite_name": "GradationLine",
+      "original_dimensions": [
+        300,
+        52
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 300.0,
+        "height": 52.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "a039ba4c86959a861e4ac8ac1e39eb14d1e3f16e0972d05927e4e05935a38528",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "WindowType2.png",
+      "source": {
+        "bundle_key": "cache/01c82a99cf628ec4663df1704adae3cf/97b5c01903f850e95909c77f8365a4f4",
+        "asset_path": "Assets/UI/Texture/Window/WindowType2.png",
+        "type": "Sprite",
+        "path_id": 4684222110318419254,
+        "serialized_file": "CAB-9f8dfc0787541442ca240eabc09d1789"
+      },
+      "sprite_name": "WindowType2",
+      "original_dimensions": [
+        128,
+        128
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 128.0,
+        "height": 128.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "04765a98107d988f17857399e72b6740063d2733eeeeead1fc69957b32b39c67",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "PartsOverdriveCircleDisable.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/PartsOverdriveCircleDisable.png",
+        "type": "Sprite",
+        "path_id": -5803732227713043524,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "PartsOverdriveCircleDisable",
+      "original_dimensions": [
+        292,
+        140
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 292.0,
+        "height": 140.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "f262523056b9a6b03c9d503601deacfe43734e40ce59bb7252783cdecc3f60b2",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "ButtonOverdrive1Default.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive1Default.png",
+        "type": "Sprite",
+        "path_id": 1105214857338583485,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "ButtonOverdrive1Default",
+      "original_dimensions": [
+        192,
+        192
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "47af672475d31742ddce95fc2566712111c4eec54341cb5c38940c3c7707c5d9",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "NumberOverdrive2.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/NumberOverdrive2.png",
+        "type": "Sprite",
+        "path_id": -8678913844741582013,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "NumberOverdrive2",
+      "original_dimensions": [
+        56,
+        60
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 56.0,
+        "height": 60.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "5d1e37f01cb794f5dbaf40ccf76e464d4240dd0f35f776bc8ffb666f405c9075",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "IconOverDriveToken.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/IconOverDriveToken.png",
+        "type": "Sprite",
+        "path_id": 626587692528445894,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "IconOverDriveToken",
+      "original_dimensions": [
+        48,
+        48
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 48.0,
+        "height": 48.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "cf1921c8b6cf90b3193f033d7922010bcbf93b861de6a4adb9d92892260770a7",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "WindowLine.png",
+      "source": {
+        "bundle_key": "cache/01c82a99cf628ec4663df1704adae3cf/97b5c01903f850e95909c77f8365a4f4",
+        "asset_path": "Assets/UI/Texture/Window/WindowLine.png",
+        "type": "Sprite",
+        "path_id": 6485061442304968647,
+        "serialized_file": "CAB-9f8dfc0787541442ca240eabc09d1789"
+      },
+      "sprite_name": "WindowLine",
+      "original_dimensions": [
+        60,
+        56
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 60.0,
+        "height": 56.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 30.0,
+        "y": 0.0,
+        "z": 30.0,
+        "w": 0.0
+      },
+      "sha256": "50ad71244a12b796fa1a5e5023751e98d2e749878bfeb9eddbfd0d6fe785b18c",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "NumberOverdrive1.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/NumberOverdrive1.png",
+        "type": "Sprite",
+        "path_id": 5255888790799089097,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "NumberOverdrive1",
+      "original_dimensions": [
+        56,
+        60
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 56.0,
+        "height": 60.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "c0e61c74d4ccdaa51b17308047000c785acece7ffaad66706adad83aa3882db8",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "PartsOverdriveCircleLv3.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/PartsOverdriveCircleLv3.png",
+        "type": "Sprite",
+        "path_id": -4839590945580576690,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "PartsOverdriveCircleLv3",
+      "original_dimensions": [
+        292,
+        140
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 292.0,
+        "height": 140.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "75c725484e2c8c9160506c2549cfabf29160d9b28cffcbc813b3d4f63036a021",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "btnCloseActive.png",
+      "source": {
+        "bundle_key": "cache/e929e860e639b14d91654c46556f9cee/841f58b27c439a37af201ef4074c377c",
+        "asset_path": "Assets/UI/Texture/CommonAtlas/btnCloseActive.png",
+        "type": "Sprite",
+        "path_id": 5953673707067803479,
+        "serialized_file": "CAB-fe4445dca06c80e51e3e108d8e180a00"
+      },
+      "sprite_name": "btnCloseActive",
+      "original_dimensions": [
+        111,
+        111
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 128.0,
+        "height": 128.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "4093789b617b2378d66c3c3f2f171d769a9fe0188a7ba79d6cfc36e8e7d78f0a",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "ButtonOverdrive1Active.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive1Active.png",
+        "type": "Sprite",
+        "path_id": 3287904744217126492,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "ButtonOverdrive1Active",
+      "original_dimensions": [
+        192,
+        192
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "216322e9ec149b746be0f0870e07771d3c6fca45daeb1e7ad5d969e160d2c50a",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "MarkerOverdrive1.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/MarkerOverdrive1.png",
+        "type": "Sprite",
+        "path_id": 5377675723034120927,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "MarkerOverdrive1",
+      "original_dimensions": [
+        24,
+        24
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 24.0,
+        "height": 24.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "55694160c80e199919638a26efb8c75f1dbe5e7cd81fc1acb3920bfe9c0c1dfa",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "MarkerOverdrive3.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/MarkerOverdrive3.png",
+        "type": "Sprite",
+        "path_id": -1534363606573124251,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "MarkerOverdrive3",
+      "original_dimensions": [
+        24,
+        24
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 24.0,
+        "height": 24.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "1b38b4a6443cf4ce255d851853f39d67c87556af6bdccb853f9aa0cf7e3e1c7d",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "ButtonOverdrive2Default.png",
+      "source": {
+        "bundle_key": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+        "asset_path": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive2Default.png",
+        "type": "Sprite",
+        "path_id": -2240989295655229333,
+        "serialized_file": "CAB-5181971e7e3e31feac61a8fa925b41fd"
+      },
+      "sprite_name": "ButtonOverdrive2Default",
+      "original_dimensions": [
+        192,
+        192
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "0fbf00756aedaac188f96ac5c4324775db58cefeee54d8ee40c0a7ca52fa2ccf",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "PartsoverdriveBgLeft.png",
+      "source": {
+        "bundle_key": "cache/1f49a21060efac990df8686048355187/82aa44425e594f7170e5360446176c30",
+        "asset_path": "Assets/UI/Texture/Battle/overDriveEffect/PartsoverdriveBgLeft.png",
+        "type": "Sprite",
+        "path_id": 7704595479317086061,
+        "serialized_file": "CAB-31e9463da200ebdf91d67b61a8e5bd18"
+      },
+      "sprite_name": "PartsoverdriveBgLeft",
+      "original_dimensions": [
+        669,
+        91
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 676.0,
+        "height": 92.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "4a623f854727811ad8d4805647fb79d9e9fae9df1db9db2820935ef4491fcd19",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "EnergySequenceColor_0.png",
+      "source": {
+        "bundle_key": "cache/1f49a21060efac990df8686048355187/82aa44425e594f7170e5360446176c30",
+        "asset_path": "Assets/UI/Texture/Battle/overDriveEffect/EnergySequenceColor.png",
+        "type": "Sprite",
+        "path_id": -4127424997442550153,
+        "serialized_file": "CAB-31e9463da200ebdf91d67b61a8e5bd18"
+      },
+      "sprite_name": "EnergySequenceColor_0",
+      "original_dimensions": [
+        728,
+        40
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 560.0,
+        "width": 728.0,
+        "height": 40.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "3156a37c0699362d74a9eebf1cf88881d8af8233161f9d5f67e17436b869c358",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "BtnDefL2Focused.png",
+      "source": {
+        "bundle_key": "cache/aea1bdf5757db1d63528ce1e28523f0f/a2c6db01e70b4093c5f3099509f252e0",
+        "asset_path": "Assets/UI/Texture/ButtonAtlas/BtnDefL2Focused.png",
+        "type": "Sprite",
+        "path_id": -339288154892082441,
+        "serialized_file": "CAB-96a187697036adb69e6c64f5a34aee5a"
+      },
+      "sprite_name": "BtnDefL2Focused",
+      "original_dimensions": [
+        160,
+        146
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 160.0,
+        "height": 146.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 72.0,
+        "y": 66.0,
+        "z": 72.0,
+        "w": 66.0
+      },
+      "sha256": "dd9bf087c7f3d6bf002fe619663fdc4d26a90b97e0e9d3caf6dd82bf58932939",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "WindowEmblem.png",
+      "source": {
+        "bundle_key": "cache/01c82a99cf628ec4663df1704adae3cf/97b5c01903f850e95909c77f8365a4f4",
+        "asset_path": "Assets/UI/Texture/Window/WindowEmblem.png",
+        "type": "Sprite",
+        "path_id": -3275131779256055554,
+        "serialized_file": "CAB-9f8dfc0787541442ca240eabc09d1789"
+      },
+      "sprite_name": "WindowEmblem",
+      "original_dimensions": [
+        211,
+        272
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 224.0,
+        "height": 280.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "bb221b20dab9aab1ca78b73613997f6e18393201894fcee86bd70759da4c03f1",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    },
+    {
+      "file": "BtnDefDecoCenter.png",
+      "source": {
+        "bundle_key": "cache/aea1bdf5757db1d63528ce1e28523f0f/a2c6db01e70b4093c5f3099509f252e0",
+        "asset_path": "Assets/UI/Texture/ButtonAtlas/BtnDefDecoCenter.png",
+        "type": "Sprite",
+        "path_id": -8399619179366148606,
+        "serialized_file": "CAB-96a187697036adb69e6c64f5a34aee5a"
+      },
+      "sprite_name": "BtnDefDecoCenter",
+      "original_dimensions": [
+        119,
+        96
+      ],
+      "sprite_rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 119.0,
+        "height": 96.0
+      },
+      "sprite_border_left_bottom_right_top": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "e94ec8fe6ee21752697249e50f9e9925a9656f6e6b93e4cb23041bde94921bf9",
+      "method": "UnityPy Sprite.image decoding, no image synthesis or painting"
+    }
+  ],
+  "not_present": []
+}

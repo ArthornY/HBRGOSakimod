@@ -44,7 +44,7 @@ public sealed class EatPassersbyPower : PowerModel
         }
 
         Flash();
-        await CreatureCmd.Damage(
+        await CreatureCommandCompatibility.Damage(
             new ThrowingPlayerChoiceContext(),
             targets,
             Amount,

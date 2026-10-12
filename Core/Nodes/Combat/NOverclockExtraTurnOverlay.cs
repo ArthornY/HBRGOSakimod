@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Entities.Players;
-using STS2RitsuLib.Audio;
 
 namespace HBRGOSakiMod.Core.Nodes.Combat;
 
@@ -19,7 +19,6 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     private const int StreakCount = 42;
     private const string CutInImagePath =
         "res://images/packed/character_select/sakikowin.png";
-    private const string VoiceChannel = "HBRGOSakiMod.OverclockCutInVoice";
     private static readonly CutInLine[] CutInLines =
     [
         new("wish_you_happiness", "祝你幸福"),
@@ -128,7 +127,6 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     private TextureRect _cutInPortrait;
     private Polygon2D _speechBubbleShape;
     private Label _speechBubbleLabel;
-    private IAudioHandle _voiceHandle;
     private ColorRect _inputBlocker;
     private ShaderMaterial _screenMaterial;
     private ShaderMaterial _cutInMaterial;
@@ -151,7 +149,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= LayoutEffect;
-        StopCutInVoice();
+        HbrgoSakiPresentationBridge.StopOverclockVoice();
         BindRelic(null);
     }
 
@@ -732,7 +730,7 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void HideEffect()
     {
-        StopCutInVoice();
+        HbrgoSakiPresentationBridge.StopOverclockVoice();
         _entryElapsed = 0f;
         _exitRemaining = 0f;
         _effectVisible = false;
@@ -749,75 +747,18 @@ public partial class NOverclockExtraTurnOverlay : CanvasLayer
 
     private void PrepareCutIn()
     {
-        StopCutInVoice();
+        HbrgoSakiPresentationBridge.StopOverclockVoice();
         int index = _cutInRandom.RandiRange(0, CutInLines.Length - 1);
         CutInLine line = CutInLines[index];
         _speechBubbleLabel.Text = line.Text;
         _cutInDuration = DefaultCutInDurationSeconds;
 
-        if (!TryLoadCutInVoice(line.Id, out string path, out AudioStream voice))
+        float? voiceLength =
+            HbrgoSakiPresentationBridge.PlayOverclockVoice(line.Id);
+        if (voiceLength.HasValue)
         {
-            return;
+            _cutInDuration = voiceLength.Value;
         }
-
-        AudioPlayResult result = GameFmod.Playback.PlayOneShot(
-            AudioSource.ResourceFile(path),
-            new AudioPlaybackOptions
-            {
-                Scope = AudioLifecycleScope.Combat,
-                AllowFadeOutOnStop = false,
-                Routing = new AudioRoutingOptions
-                {
-                    Channel = VoiceChannel,
-                    ChannelMode = AudioChannelMode.ReplaceExisting,
-                    AllowFadeOutOnReplace = false
-                }
-            });
-        if (result.Succeeded)
-        {
-            _voiceHandle = result.Handle;
-        }
-
-        double voiceLength = voice.GetLength();
-        if (voiceLength > 0d)
-        {
-            _cutInDuration = Math.Max(0.25f, (float)voiceLength);
-        }
-    }
-
-    private static bool TryLoadCutInVoice(
-        string id,
-        out string resourcePath,
-        out AudioStream voice)
-    {
-        string basePath = $"res://audio/hbrgo_saki/overclock/{id}";
-        foreach (string extension in new[] { ".ogg", ".mp3", ".wav" })
-        {
-            string path = basePath + extension;
-            if (ResourceLoader.Exists(path))
-            {
-                resourcePath = path;
-                voice = ResourceLoader.Load<AudioStream>(path);
-                return voice != null;
-            }
-        }
-
-        resourcePath = null;
-        voice = null;
-        return false;
-    }
-
-    private void StopCutInVoice()
-    {
-        IAudioHandle handle = _voiceHandle;
-        _voiceHandle = null;
-        if (handle == null)
-        {
-            return;
-        }
-
-        handle.TryStop(allowFadeOut: false);
-        handle.Dispose();
     }
 
     private static float EaseOutCubic(float value)

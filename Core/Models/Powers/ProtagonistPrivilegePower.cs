@@ -15,7 +15,7 @@ public sealed class ProtagonistPrivilegePower : PowerModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public bool HasReducedPenalty { get; private set; }
 
-    public int RollPenalty => HasReducedPenalty ? -10 : -15;
+    public int RollPenalty => HasReducedPenalty ? -7 : -10;
 
     public override LocString Description => HasReducedPenalty
         ? new LocString(

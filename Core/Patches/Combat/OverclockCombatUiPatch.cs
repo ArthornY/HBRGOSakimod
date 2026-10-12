@@ -50,5 +50,14 @@ internal static class OverclockCombatUiPatch
         {
             rollHistoryWidget.BindHistory(rollHistory);
         }
+
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance,
+                HBRGOSakiCombatUiIntegration.CardDamageHistoryWidgetAttachmentId,
+                out NCardDamageHistoryWidget damageHistoryWidget))
+        {
+            damageHistoryWidget.BindPlayer(rollHistory != null ? localPlayer : null);
+            if (rollHistoryWidget != null) damageHistoryWidget.PlaceBelow(rollHistoryWidget);
+        }
     }
 }

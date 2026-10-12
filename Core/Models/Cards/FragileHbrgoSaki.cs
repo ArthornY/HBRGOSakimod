@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -42,12 +43,16 @@ public sealed class FragileHbrgoSaki : CardModel
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
+        using IDisposable animationScope = cardPlay.IsAutoPlay
+            ? FragileAutoPlayAnimationHelper.Suppress(this)
+            : null;
         await PowerCmd.Apply<FragilePower>(
             choiceContext,
             cardPlay.Target,
             DynamicVars["FragilePower"].BaseValue,
             Owner.Creature,
-            this);
+            this,
+            silent: cardPlay.IsAutoPlay);
     }
 
     protected override void OnUpgrade()

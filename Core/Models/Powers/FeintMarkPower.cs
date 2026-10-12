@@ -76,11 +76,11 @@ public sealed class FeintMarkPower : PowerModel
         try
         {
             await CardCmd.AutoPlay(choiceContext, strike, attacker, AutoPlayType.Default, skipCardPileVisuals: true);
-            await CombatFlowHelper.FinishAutoPlayedCard(strike);
         }
         finally
         {
             RemoveDualSwordsEligibleStrike(strike);
+            await GeneratedStrikeHelper.RemoveGeneratedStrike(strike);
         }
 
         _isIncomingDamageWindowOpen = !Owner.IsDead && !attacker.IsDead;

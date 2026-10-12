@@ -1,0 +1,6 @@
+{
+  "HBRGO_PHANTOM_ATTACK.description": "{Attacks}",
+  "HBRGO_PHANTOM_REVIVAL.title": "复活",
+  "HBRGO_PHANTOM_REVIVAL.label": "{Turns}",
+  "HBRGO_PHANTOM_REVIVAL.description": "幻影将在{Turns}个自身回合后复活。"
+}

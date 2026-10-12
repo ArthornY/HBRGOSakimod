@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -41,7 +41,7 @@ public sealed class HangingShotHbrgoSaki : CardModel
             1,
             CardType.Attack,
             CardRarity.Common,
-            TargetType.AnyEnemy)
+            TargetType.AllEnemies)
     {
     }
 
@@ -58,17 +58,19 @@ public sealed class HangingShotHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        ArgumentNullException.ThrowIfNull(
-            cardPlay.Target,
-            nameof(cardPlay.Target));
-        await PowerCmd.Apply<HangingShotPower>(
-            choiceContext,
-            cardPlay.Target,
-            ModeTransitionHelper.GetAdjustedEffectAmount(
-                this,
-                DynamicVars["HangingShotPower"].BaseValue),
-            Owner.Creature,
-            this);
+        decimal amount = ModeTransitionHelper.GetAdjustedEffectAmount(
+            this,
+            DynamicVars["HangingShotPower"].BaseValue);
+        foreach (var target in CombatState.GetOpponentsOf(Owner.Creature)
+                     .Where(target => target.IsHittable).ToArray())
+        {
+            await PowerCmd.Apply<HangingShotPower>(
+                choiceContext,
+                target,
+                amount,
+                Owner.Creature,
+                this);
+        }
     }
 
     protected override void OnUpgrade()

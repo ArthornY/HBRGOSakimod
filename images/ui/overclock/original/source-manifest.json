@@ -1,0 +1,503 @@
+{
+  "sourcePrefab": "Assets/UI/AssetBundle/UIBattleOverdrive.prefab",
+  "prefabBundle": "cache/87d4c7a0edfc29a60a90ea66e9e4184f/879c7963dcece2ebb1e3e3c3aea113ff",
+  "prefabCab": "CAB-25e067ac18983c671fa71226489fd3fb",
+  "prefabCabSha256": "90bad26a5158272308f8d4694e703ce38eb6be5b6f1e893cf004842d91753ed2",
+  "atlasBundle": "cache/ee90dcc721d143e2a829c97ecc46af67/a71b00fbc6bcc5ce96f78d8b253af4a6",
+  "atlasCab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+  "export": "UnityPy 1.25.3 Sprite.image; original RGBA, no recoloring or resampling",
+  "sprites": [
+    {
+      "file": "GaugeOverdriveBase.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/GaugeOverdriveBase.png",
+      "pathId": -4564349579689263532,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 48.0,
+        "height": 36.0
+      },
+      "border": {
+        "x": 20.0,
+        "y": 0.0,
+        "z": 20.0,
+        "w": 0.0
+      },
+      "sha256": "02e891c4df1b60c662d9957774e545aa1589e232012ea5548b5136b1620fa7d7"
+    },
+    {
+      "file": "GaugeOverdriveFrame.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/GaugeOverdriveFrame.png",
+      "pathId": -2172290935335500027,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 48.0,
+        "height": 36.0
+      },
+      "border": {
+        "x": 20.0,
+        "y": 0.0,
+        "z": 20.0,
+        "w": 0.0
+      },
+      "sha256": "7ee29775b87c014474eb7c0c74b86ed71c8761401ee1ee3f5efbfdc3701bb449"
+    },
+    {
+      "file": "FrameOverdriveGaugeL.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/FrameOverdriveGaugeL.png",
+      "pathId": 999254510794908926,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 60.0,
+        "height": 60.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "9463318922bb4cbb9596337e19926d59251768e852fc8c432e2188e4649e309a"
+    },
+    {
+      "file": "FrameOverdriveGaugeR.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/FrameOverdriveGaugeR.png",
+      "pathId": 7445163917879239758,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 212.0,
+        "height": 168.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "044dee4da249de9b17f1810918be8814957745a67ec1cce236923cd3e1503ebf"
+    },
+    {
+      "file": "GaugeOverdrive1.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/GaugeOverdrive1.png",
+      "pathId": 3324307294352575443,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 28.0,
+        "height": 28.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "71cd68cdf9e25d5a15dabcca518f24f084022ce3c875b3f43ff6e0d67fc68013"
+    },
+    {
+      "file": "ButtonOverdrive1Default.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive1Default.png",
+      "pathId": 1105214857338583485,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "47af672475d31742ddce95fc2566712111c4eec54341cb5c38940c3c7707c5d9"
+    },
+    {
+      "file": "ButtonOverdrive1Active.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive1Active.png",
+      "pathId": 3287904744217126492,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "216322e9ec149b746be0f0870e07771d3c6fca45daeb1e7ad5d969e160d2c50a"
+    },
+    {
+      "file": "EffectOverdrive1.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/EffectOverdrive1.png",
+      "pathId": -6023463936060683715,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 200.0,
+        "height": 200.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "688c5af8cc02b21fed4043b7b7c36d77b7befbd7b5e2ffe36ca4f82ad4b64f98"
+    },
+    {
+      "file": "NumberOverdrive1.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/NumberOverdrive1.png",
+      "pathId": 5255888790799089097,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 56.0,
+        "height": 60.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "c0e61c74d4ccdaa51b17308047000c785acece7ffaad66706adad83aa3882db8"
+    },
+    {
+      "file": "MarkerOverdrive1.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/MarkerOverdrive1.png",
+      "pathId": 5377675723034120927,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 24.0,
+        "height": 24.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "55694160c80e199919638a26efb8c75f1dbe5e7cd81fc1acb3920bfe9c0c1dfa"
+    },
+    {
+      "file": "GaugeOverdrive2.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/GaugeOverdrive2.png",
+      "pathId": -6267437106192038486,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 28.0,
+        "height": 28.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "2dcbbc63b4ad6473aade87656a535171f96308955cc3c8c333b10f2dd5ae9af3"
+    },
+    {
+      "file": "ButtonOverdrive2Default.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive2Default.png",
+      "pathId": -2240989295655229333,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "0fbf00756aedaac188f96ac5c4324775db58cefeee54d8ee40c0a7ca52fa2ccf"
+    },
+    {
+      "file": "ButtonOverdrive2Active.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive2Active.png",
+      "pathId": -7031231990142753270,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "21c9999defa1fdc2b1ed95fb010cebfedd34a9be8f6e5666de97c0d74fc3e893"
+    },
+    {
+      "file": "EffectOverdrive2.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/EffectOverdrive2.png",
+      "pathId": 5937897167984395823,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 200.0,
+        "height": 200.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "4b2998c518424a102b5487daa281887a01b3cc6cdd906074f81c7b750028aa05"
+    },
+    {
+      "file": "NumberOverdrive2.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/NumberOverdrive2.png",
+      "pathId": -8678913844741582013,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 56.0,
+        "height": 60.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "5d1e37f01cb794f5dbaf40ccf76e464d4240dd0f35f776bc8ffb666f405c9075"
+    },
+    {
+      "file": "MarkerOverdrive2.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/MarkerOverdrive2.png",
+      "pathId": -5229663167126295164,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 24.0,
+        "height": 24.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "c4aa92bafbbc4f6128250ea3abf0f1f968a56087515cc21d9a54fd70dc3a2174"
+    },
+    {
+      "file": "GaugeOverdrive3.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/GaugeOverdrive3.png",
+      "pathId": 1445172164874526247,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 28.0,
+        "height": 28.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "7b80cdff5f15f3b45a4c8939cabc772e696259a85e8c98e3cc9e4da173eb0743"
+    },
+    {
+      "file": "ButtonOverdrive3Default.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive3Default.png",
+      "pathId": 1641512505121204119,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "09bd9d04db5c812593fd2d269bf02a3055682fc3ebaac0c5cf0dee276cf25622"
+    },
+    {
+      "file": "ButtonOverdrive3Active.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonOverdrive3Active.png",
+      "pathId": 4198473268517450379,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 192.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "c40f5093ca69fcfd2e9776f31d00f07f46eeea350ac48cc4493ef7aa39fdf660"
+    },
+    {
+      "file": "EffectOverdrive3.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/EffectOverdrive3.png",
+      "pathId": 7296411450372267524,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 200.0,
+        "height": 200.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "d4c0583292268bc44dfc4413717e108c83f5574eb18573e2ab7e5e50e4a5e9c5"
+    },
+    {
+      "file": "NumberOverdrive3.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/NumberOverdrive3.png",
+      "pathId": 4258114714806625549,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 56.0,
+        "height": 60.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "bfcf772473a6887f647869d46f3b5fbd79c729591b7a072c1ba999ee05eea24f"
+    },
+    {
+      "file": "MarkerOverdrive3.png",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/MarkerOverdrive3.png",
+      "pathId": -1534363606573124251,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 24.0,
+        "height": 24.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "sha256": "1b38b4a6443cf4ce255d851853f39d67c87556af6bdccb853f9aa0cf7e3e1c7d"
+    }
+  ],
+  "animationSource": {
+    "levelUpPathId": 4685080244938495960,
+    "levelUpDurationSeconds": 0.5,
+    "gageImageFlashPathId": -1956330856454402041,
+    "flashDurationSeconds": 0.75,
+    "flashAttribute": "UIEffect.m_ColorFactor",
+    "originalColorMode": 2,
+    "originalLoop": true,
+    "curveInterpolation": "Original zero-tangent cubic segments, normalized smoothstep; compared against extracted streamed coefficients."
+  },
+  "portedScope": "Classic three-level gauge layout and sprites, layered right-to-left fill, original level glyphs, fill flash, level-up ring/marker/glyph animation, and all seven button-local standby/push/activation particle systems. The separate existing extra-turn overlay is unchanged.",
+  "renderingBoundary": "Godot ports the original local particle settings, curves, emission, gradients and additive textures. Unity particle random sequence, camera-dependent stretched-billboard limits and GPU mesh/filtering are not engine-identical. No full-screen battle OverDrive effect is added. Godot in-game render and shader validation have not run.",
+  "atlasCabSha256": "527e8c061ff12f95e9d46835e7d931db8ba7c7ebb79a908da3cd888f4e15bf5f",
+  "particleSource": {
+    "materialAndTextureBundle": "cache/2a5a12a33bf3d67c393c71f2ad3e4e0f/209bd9f034b85588c82731242ddab4d2",
+    "cab": "CAB-ba585ffbcd5c6b2aac3cdefdace7b7a1",
+    "sourceShader": "UI/Additive",
+    "sourceUiParticleScale": 100,
+    "systems": [
+      {
+        "name": "ActivateEffectB",
+        "pathId": -7958294935367544783,
+        "duration": 1.0,
+        "loop": false
+      },
+      {
+        "name": "pushEffectB",
+        "pathId": -3535115370630311887,
+        "duration": 0.20000000298023224,
+        "loop": false
+      },
+      {
+        "name": "StandbyEffectB",
+        "pathId": 726145629908930609,
+        "duration": 1.0,
+        "loop": true
+      },
+      {
+        "name": "ActivateEffectA",
+        "pathId": 3331575928283435057,
+        "duration": 0.25,
+        "loop": false
+      },
+      {
+        "name": "StandbyEffectA",
+        "pathId": 5112658938098454577,
+        "duration": 1.0,
+        "loop": true
+      },
+      {
+        "name": "pushEffectA",
+        "pathId": 5379145808583692337,
+        "duration": 1.0,
+        "loop": false
+      },
+      {
+        "name": "ActivateEffectA",
+        "pathId": 8184154558090547249,
+        "duration": 1.0,
+        "loop": false
+      }
+    ],
+    "textures": [
+      {
+        "file": "particleAuraCircle.png",
+        "assetPath": "Assets/UI/Shader/Particle/particleAuraCircle.png",
+        "pathId": 8073642630130146888,
+        "sha256": "72b1d0bbacbbdb01c8ec8767206c1486799978cbd18d22cf7b4f2e8e7bbde06b",
+        "dimensions": [
+          256,
+          256
+        ]
+      },
+      {
+        "file": "infoeffectParticle.png",
+        "assetPath": "Assets/UI/Shader/Particle/infoeffectParticle.png",
+        "pathId": -1135002233319588871,
+        "sha256": "79870f4a2da8b7494f1993d80ee63881ca407fd31692e222913353fab42ec7bd",
+        "dimensions": [
+          256,
+          256
+        ]
+      },
+      {
+        "file": "flasheffect.png",
+        "assetPath": "Assets/UI/Shader/Particle/flasheffect.png",
+        "pathId": 8496505316431666833,
+        "sha256": "eacc7f0fb42b1f3f18e64b058688f80808a31d5291b9a152bff918237cb04c08",
+        "dimensions": [
+          256,
+          256
+        ]
+      }
+    ],
+    "productionSimulation": "128 fixed particle slots; original shape/rates/lifetimes/gradient/size/radial curves; analytic velocity integration; UI-only deterministic random samples; three textures loaded once in Ready."
+  }
+}

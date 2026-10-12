@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
@@ -21,13 +22,14 @@ public sealed class QuickSwitchHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new PowerVar<QuickSwitchPower>(1m)
+            new CardsVar(1)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
-            HoverTipFactory.FromPower<QuickSwitchPower>()
+            HoverTipFactory.FromPower<ReptureDualSwordsPower>(),
+            HoverTipFactory.FromPower<ReptureBowPower>()
         };
 
     public QuickSwitchHbrgoSaki()
@@ -35,20 +37,56 @@ public sealed class QuickSwitchHbrgoSaki : CardModel
     {
     }
 
+    protected override void AddExtraArgsToDescription(
+        LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        description.Add("TargetMode", GetTargetModeCardText());
+    }
+
     protected override async Task OnPlay(
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        await PowerCmd.Apply<QuickSwitchPower>(
+        if (Owner.Creature.HasPower<ReptureDualSwordsPower>())
+        {
+            await PowerCmd.Apply<ReptureBowPower>(
+                choiceContext,
+                Owner.Creature,
+                1m,
+                Owner.Creature,
+                this);
+        }
+        else
+        {
+            await PowerCmd.Apply<ReptureDualSwordsPower>(
+                choiceContext,
+                Owner.Creature,
+                1m,
+                Owner.Creature,
+                this);
+        }
+
+        await CardPileCmd.Draw(
             choiceContext,
-            Owner.Creature,
-            DynamicVars["QuickSwitchPower"].BaseValue,
-            Owner.Creature,
-            this);
+            DynamicVars.Cards.BaseValue,
+            Owner);
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars["QuickSwitchPower"].UpgradeValueBy(1m);
+        DynamicVars.Cards.UpgradeValueBy(1m);
+    }
+
+    private string GetTargetModeCardText()
+    {
+        if (!IsMutable || Owner?.Creature == null)
+        {
+            return "[gold]Repture-双剑[/gold]/[gold]Repture-弓[/gold]";
+        }
+
+        return Owner.Creature.HasPower<ReptureDualSwordsPower>()
+            ? "[gold]Repture-弓[/gold]"
+            : "[gold]Repture-双剑[/gold]";
     }
 }

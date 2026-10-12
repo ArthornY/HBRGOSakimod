@@ -1,0 +1,38 @@
+{
+  "sourcePrefab": "Assets/UI/AssetBundle/UIBattleOverdrive2.prefab",
+  "sourceTypeTree": "E:/stsmod/output/hbr-od-original-research/v2.json",
+  "sourceBundle": "cache/33270e25a6d150ce08dff8afaaa47d83/867a275b6f89cdc4ff6d7423673e7673",
+  "sourceCab": "CAB-617d9b1d7c8116c9fa54836035c02c8d",
+  "imageMethod": "Byte-identical copies of original UnityPy decoded Sprite.image RGBA; no resampling or synthesis",
+  "iconRect": [
+    26,
+    26
+  ],
+  "iconScale": 0.9,
+  "iconSpacing": 27,
+  "adaptation": "Original filled/empty usage token semantics retained; row extended from nine points to twelve shared floor allowance points. Classic three-level charge gauge and selection artwork retained.",
+  "sprites": [
+    {
+      "file": "IconOverDriveToken.png",
+      "sha256": "CF1921C8B6CF90B3193F033D7922010BCBF93B861DE6A4ADB9D92892260770A7",
+      "sourceSprite": "IconOverDriveToken",
+      "sourceAtlas": "E:/stsmod/output/hbr-od-original-research/atlas.json",
+      "sourceSpritePathId": "626587692528445894",
+      "originalPixels": [
+        48,
+        48
+      ]
+    },
+    {
+      "file": "IconOverDriveTokenEmpty.png",
+      "sha256": "87AEAD02AAD5057AE027F56CF4DCAC2D28592E61D38D587B8D112056CE40F4BA",
+      "sourceSprite": "IconOverDriveTokenEmpty",
+      "sourceAtlas": "E:/stsmod/output/hbr-od-original-research/atlas.json",
+      "sourceSpritePathId": "-1301784349993192730",
+      "originalPixels": [
+        24,
+        24
+      ]
+    }
+  ]
+}

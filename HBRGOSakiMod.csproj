@@ -4,26 +4,39 @@
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>$(NoWarn);CS0114</NoWarn>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <AssemblyName>HBRGOSakiMod</AssemblyName>
     <RootNamespace>HBRGOSakiMod</RootNamespace>
+    <ModManifestPath Condition="'$(ModManifestPath)' == ''">$(MSBuildProjectDirectory)\HBRGOSakiMod.json</ModManifestPath>
+    <HextechCompatAssemblyPath>$(MSBuildProjectDirectory)\HextechCompat\bin\$(Configuration)\net9.0\HBRGOSakiMod.HextechCompat.dll</HextechCompatAssemblyPath>
+    <Sts2AssemblyPath Condition="'$(Sts2AssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\sts2.dll</Sts2AssemblyPath>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\0Harmony.dll</HarmonyAssemblyPath>
+    <BaseLibAssemblyPath Condition="'$(BaseLibAssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\BaseLib.dll</BaseLibAssemblyPath>
+    <RitsuLibAssemblyPath Condition="'$(RitsuLibAssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\STS2-RitsuLib.dll</RitsuLibAssemblyPath>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="HextechCompat\**\*.cs" />
+    <Compile Remove="artwork-work\**\*.cs" />
+    <EmbeddedResource Include="$(HextechCompatAssemblyPath)">
+      <LogicalName>HBRGOSakiMod.HextechCompat.dll</LogicalName>
+    </EmbeddedResource>
+
     <Reference Include="sts2">
-      <HintPath>libs\sts2.dll</HintPath>
+      <HintPath>$(Sts2AssemblyPath)</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>libs\0Harmony.dll</HintPath>
+      <HintPath>$(HarmonyAssemblyPath)</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="BaseLib">
-      <HintPath>libs\BaseLib.dll</HintPath>
+      <HintPath>$(BaseLibAssemblyPath)</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="STS2-RitsuLib">
-      <HintPath>libs\STS2-RitsuLib.dll</HintPath>
+      <HintPath>$(RitsuLibAssemblyPath)</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
@@ -34,9 +47,19 @@
     <ItemGroup>  
       <OutputDlls Include="$(OutputPath)\$(AssemblyName).dll" />  
       <OutputDlls Include="$(OutputPath)\$(AssemblyName).pdb" />  
+      <OutputDlls Include="$(ModManifestPath)" />
     </ItemGroup>  
       
     <MakeDir Directories="$(MSBuildProjectDirectory)\build" />  
     <Copy SourceFiles="@(OutputDlls)" DestinationFolder="$(MSBuildProjectDirectory)\build" />  
   </Target>  
+
+  <Target Name="BuildHextechCompat"
+          BeforeTargets="PrepareResources"
+          Condition="'$(SkipHextechCompatBuild)' != 'true'">
+    <MSBuild Projects="$(MSBuildProjectDirectory)\HextechCompat\HBRGOSakiMod.HextechCompat.csproj"
+             Targets="Restore;Build"
+             Properties="Configuration=$(Configuration);Sts2AssemblyPath=$(Sts2AssemblyPath)"
+             RemoveProperties="RuntimeIdentifier;SelfContained;PublishSingleFile;PublishTrimmed;PublishAot" />
+  </Target>
 </Project>

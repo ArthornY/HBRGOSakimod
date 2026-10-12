@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -58,9 +59,9 @@ public sealed class MidsummerHellCursePower : PowerModel
         SetSequence(cardPlay.Card.Type, 0);
         decimal damage = Math.Max(
             1m,
-            Owner.MaxHp * _maxHpDamagePercent * Amount);
+            LargeCreatureHealthHelper.GetMaxHp(Owner) * _maxHpDamagePercent * Amount);
         Flash();
-        await CreatureCmd.Damage(
+        await CreatureCommandCompatibility.Damage(
             choiceContext,
             Owner,
             damage,

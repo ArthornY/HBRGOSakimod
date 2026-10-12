@@ -17,8 +17,6 @@ public sealed class ChargeBurstHbrgoSaki : CardModel
 {
     private const string _damagePerChargeVar =
         "DamagePerCharge";
-    private const string _retainedChargeVar =
-        "RetainedCharge";
 
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/charge_burst_hbrgo_saki.png");
@@ -28,8 +26,8 @@ public sealed class ChargeBurstHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new IntVar(_damagePerChargeVar, 3m),
-            new IntVar(_retainedChargeVar, 0m)
+            new IntVar(_damagePerChargeVar, 4m),
+            new PowerVar<ChargePower>(1m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -55,37 +53,40 @@ public sealed class ChargeBurstHbrgoSaki : CardModel
             cardPlay.Target,
             nameof(cardPlay.Target));
 
-        ChargePower charge =
-            Owner.Creature.GetPower<ChargePower>();
+        if (!IsUpgraded)
+        {
+            await GainCharge(choiceContext);
+        }
+
+        ChargePower charge = Owner.Creature.GetPower<ChargePower>();
         decimal chargeAmount = charge?.Amount ?? 0m;
         decimal damage =
             chargeAmount *
             DynamicVars[_damagePerChargeVar].BaseValue;
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        if (charge == null || chargeAmount <= 0m)
+        if (IsUpgraded)
         {
-            return;
+            await GainCharge(choiceContext);
         }
+    }
 
-        decimal retainedCharge = Math.Min(
-            chargeAmount,
-            DynamicVars[_retainedChargeVar].BaseValue);
-        await PowerCmd.ModifyAmount(
+    private Task GainCharge(PlayerChoiceContext choiceContext)
+    {
+        return PowerCmd.Apply<ChargePower>(
             choiceContext,
-            charge,
-            retainedCharge - chargeAmount,
+            Owner.Creature,
+            DynamicVars["ChargePower"].BaseValue,
             Owner.Creature,
             this);
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars[_retainedChargeVar]
-            .UpgradeValueBy(5m);
+        DynamicVars[_damagePerChargeVar].UpgradeValueBy(1m);
     }
 }

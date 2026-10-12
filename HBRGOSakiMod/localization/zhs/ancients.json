@@ -1,4 +1,26 @@
 {
   "HBRGO_SAKI_ARCHITECT_GREETING.char": "哟！",
-  "HBRGO_SAKI_ARCHITECT_GREETING.ancient": "超热带的啦！"
+  "HBRGO_SAKI_ARCHITECT_GREETING.ancient": "超热带的啦！",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.title": "千早爱音&丰川祥子",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.epithet": "相伴之人",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.pages.INITIAL.description": "两道熟悉的身影在光芒中向你伸出手。她们带来的物品与记忆，只能由你选择其中一部分。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.pages.INITIAL.options.CHOOSE_CARD.title": "从牌库中自选获得一张牌",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.pages.INITIAL.options.CHOOSE_CARD.description": "选择一张属于当前角色的普通、罕见或稀有牌，将其加入牌组。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.pages.CHOOSE_CARD.selectionScreenPrompt": "选择一张牌加入牌组。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.pages.DONE.description": "你收下了她们交付的事物，继续向塔顶前进。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.talk.firstVisitEver.0-0.ancient": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.talk.ANY.0-0r.ancient": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.talk.HBRGO_SAKI_31O.0-0r.ancient": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "CHIHAYA_ANON_TOGAWA_SAKIKO.talk.HBRGO_SAKI_31O.0-0r.char": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.title": "千早爱音&丰川祥子",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.epithet": "相伴之人",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.pages.INITIAL.description": "两道熟悉的身影在光芒中向你伸出手。她们带来的物品与记忆，只能由你选择其中一部分。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.pages.INITIAL.options.CHOOSE_CARD.title": "从牌库中自选获得一张牌",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.pages.INITIAL.options.CHOOSE_CARD.description": "选择一张属于当前角色的普通、罕见或稀有牌，将其加入牌组。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.pages.CHOOSE_CARD.selectionScreenPrompt": "选择一张牌加入牌组。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.pages.DONE.description": "你收下了她们交付的事物，继续向塔顶前进。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.talk.firstVisitEver.0-0.ancient": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.talk.ANY.0-0r.ancient": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.talk.HBRGO_SAKI_31O.0-0r.ancient": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。",
+  "HBRGO_SAKI_MOD_EVENT_CHIHAYA_ANON_TOGAWA_SAKIKO.talk.HBRGO_SAKI_31O.0-0r.char": "去吧，向着塔顶，找回我们，找回你，找回她。然后回来，我们会一直在【你无法听清】等你。"
 }

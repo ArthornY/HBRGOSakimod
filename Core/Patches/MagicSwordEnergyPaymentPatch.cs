@@ -2,9 +2,12 @@ using System;
 using System.Threading.Tasks;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 
@@ -46,7 +49,24 @@ internal static class CardModelSpendResourcesPatch
 
     private static async Task<ValueTuple<int, int>> SpendResourcesWithSwordheart(CardModel card, int deficit, int energyToSpend, int starsToSpend)
     {
-        MagicSwordEnergyPaymentHelper.RecordPendingSwordheartCost(card, deficit);
+        if (card.Owner.Creature.HasPower<MagicSwordModePower>())
+        {
+            // The existing mode settles this once in BeforeCardPlayed, including
+            // clarity's consumption multiplier and the mode's exit behaviour.
+            MagicSwordEnergyPaymentHelper.RecordPendingSwordheartCost(card, deficit);
+        }
+        else
+        {
+            // Universality pays immediately: it must not depend on a mode hook
+            // being present later, and outside the mode the exchange is 1:1.
+            MagicSwordEnergyPaymentHelper.RecordPendingSwordheartCost(card, 0);
+            await PowerCmd.ModifyAmount(
+                new ThrowingPlayerChoiceContext(),
+                card.Owner.Creature.GetPower<SwordheartPower>(),
+                -deficit,
+                card.Owner.Creature,
+                card);
+        }
 
         if (energyToSpend > 0)
         {

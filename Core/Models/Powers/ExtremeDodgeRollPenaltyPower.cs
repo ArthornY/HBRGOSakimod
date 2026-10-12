@@ -34,6 +34,18 @@ public sealed class ExtremeDodgeRollPenaltyPower : PowerModel
         return true;
     }
 
+    internal int ReservedRollCount => _reservedRolls;
+
+    internal async Task ConsumeReservedRolls(PlayerChoiceContext choiceContext,
+        CardModel cardSource, int requestedCount)
+    {
+        int amount = Math.Min(Math.Max(0, requestedCount), Math.Min(Amount, _reservedRolls));
+        AssertMutable();
+        _reservedRolls -= amount;
+        if (amount > 0)
+            await PowerCmd.ModifyAmount(choiceContext, this, -amount, Owner, cardSource);
+    }
+
     internal async Task ConsumeReservedRolls(
         PlayerChoiceContext choiceContext,
         CardModel cardSource)

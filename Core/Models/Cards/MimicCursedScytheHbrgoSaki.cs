@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
-using HBRGOSakiMod.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Combat;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -23,14 +22,12 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
-    protected override bool IsPlayable =>
-        ModeTransitionHelper.CanPlayScytheRestrictedCard(
-            Owner?.Creature);
-
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DamageVar[]
+        new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move)
+            new DamageVar(6m, ValueProp.Move),
+            new PowerVar<WeakPower>(1m),
+            new PowerVar<VulnerablePower>(1m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -39,9 +36,6 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
             HoverTipFactory.FromPower<WeakPower>(),
             HoverTipFactory.FromPower<VulnerablePower>()
         };
-
-    private bool HasCounterUpgrade =>
-        IsUpgraded || DeckVersion?.IsUpgraded == true;
 
     public MimicCursedScytheHbrgoSaki()
         : base(
@@ -52,15 +46,6 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
     {
     }
 
-    public override bool ShouldPlay(
-        CardModel card,
-        AutoPlayType autoPlayType)
-    {
-        return card != this ||
-            ModeTransitionHelper.CanPlayScytheRestrictedCard(
-                Owner?.Creature);
-    }
-
     protected override async Task OnPlay(
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
@@ -69,52 +54,31 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
             cardPlay.Target,
             nameof(cardPlay.Target));
         await DamageCmd.Attack(
-                ModeTransitionHelper.GetAdjustedEffectAmount(
-                    this,
-                    DynamicVars.Damage.BaseValue))
-            .FromCard(this)
+                DynamicVars.Damage.BaseValue)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        if (cardPlay.Target.IsAlive &&
-            !CombatManager.Instance.IsOverOrEnding)
+        if (cardPlay.Target.IsAlive)
         {
-            decimal amount =
-                ModeTransitionHelper.GetAdjustedEffectAmount(
-                    this,
-                    1m);
             await PowerCmd.Apply<WeakPower>(
                 choiceContext,
                 cardPlay.Target,
-                amount,
+                DynamicVars["WeakPower"].BaseValue,
                 Owner.Creature,
                 this);
             await PowerCmd.Apply<VulnerablePower>(
                 choiceContext,
                 cardPlay.Target,
-                amount,
+                DynamicVars["VulnerablePower"].BaseValue,
                 Owner.Creature,
                 this);
-        }
-
-        if (HasCounterUpgrade)
-        {
-            int gain = Math.Max(
-                0,
-                (int)decimal.Round(
-                    ModeTransitionHelper.GetAdjustedEffectAmount(
-                        this,
-                        2m),
-                    0,
-                    MidpointRounding.AwayFromZero));
-            Owner.GetRelic<RestorationMoment>()
-                ?.GainCounter(gain);
         }
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2m);
+        DynamicVars.Damage.UpgradeValueBy(3m);
     }
 }

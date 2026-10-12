@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>HBRGOSakiMod.HextechCompat</AssemblyName>
+    <RootNamespace>HBRGOSakiMod.HextechCompat</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <Sts2AssemblyPath Condition="'$(Sts2AssemblyPath)' == ''">$(MSBuildProjectDirectory)\..\libs\sts2.dll</Sts2AssemblyPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Reference\**\*.cs" />
+
+    <Reference Include="sts2">
+      <HintPath>$(Sts2AssemblyPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <ProjectReference Include="Reference\HextechRunes.Reference.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

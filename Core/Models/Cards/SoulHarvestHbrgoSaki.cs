@@ -62,7 +62,7 @@ public sealed class SoulHarvestHbrgoSaki : CardModel
                 ModeTransitionHelper.GetAdjustedEffectAmount(
                     this,
                     DynamicVars.Damage.BaseValue))
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

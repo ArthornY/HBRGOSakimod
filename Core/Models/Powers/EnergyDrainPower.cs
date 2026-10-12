@@ -37,11 +37,11 @@ public sealed class EnergyDrainPower : PowerModel
             target.Side != Owner.Side &&
             amount > 0m &&
             target.GetPower<HighDimensionalShellPower>() is
-                { Amount: > 0 } shell)
+                { CurrentDp: > 0m } shell)
         {
             _pendingShellDamage[target] = new PendingShellDamage(
                 shell,
-                shell.Amount);
+                shell.CurrentDp);
         }
 
         return Task.CompletedTask;
@@ -64,15 +64,18 @@ public sealed class EnergyDrainPower : PowerModel
             return Task.CompletedTask;
         }
 
-        int absorbed = System.Math.Max(
-            0,
-            pending.AmountBefore - pending.Shell.Amount);
-        int restoreAmount = (int)(absorbed * 0.25m);
-        if (restoreAmount > 0)
+        decimal absorbed = System.Math.Max(0m,
+            pending.AmountBefore - pending.Shell.CurrentDp);
+        decimal restoreAmount = decimal.Floor(absorbed * 0.25m);
+        if (restoreAmount > 0m)
         {
-            Owner.Player?
-                .GetRelic<DeflectorProtection>()?
-                .RestoreDp(restoreAmount);
+            if (Owner.Player?.GetRelic<DeflectorProtection>() is { } protection)
+            {
+                // Player DP remains native-sized; bound the accepted recovery
+                // before narrowing so a huge monster pool cannot overflow it.
+                int capacity = System.Math.Max(0, protection.MaxDp - protection.Dp);
+                protection.RestoreDp((int)System.Math.Min(restoreAmount, capacity));
+            }
             Flash();
         }
 
@@ -99,5 +102,5 @@ public sealed class EnergyDrainPower : PowerModel
 
     private readonly record struct PendingShellDamage(
         HighDimensionalShellPower Shell,
-        int AmountBefore);
+        decimal AmountBefore);
 }

@@ -25,6 +25,17 @@ internal static class DualSwordsCopyHelper
         return card != null && DualSwordsCopies.TryGetValue(card, out _);
     }
 
+    // RecordCopy is also used by Imitate, Recall and NotOverYet. Keep a separate
+    // marker for copies produced by the dual-swords weapon power.
+    public static void RecordPowerCopy(CardModel card)
+    {
+        if (card != null)
+            DualSwordsCopies.GetValue(card, static _ => new CopyMarker()).FromPower = true;
+    }
+
+    public static bool IsPowerCopy(CardModel card) =>
+        card != null && DualSwordsCopies.TryGetValue(card, out CopyMarker marker) && marker.FromPower;
+
     public static void RecordXEnergySpent(CardModel card, int energySpent)
     {
         if (card == null || energySpent <= 0)
@@ -45,6 +56,10 @@ internal static class DualSwordsCopyHelper
         return energySpent;
     }
 
+    internal static int PeekXEnergySpent(CardModel card, int fallback) =>
+        card != null && XEnergySpentByCopy.TryGetValue(card, out int energySpent)
+            ? energySpent : fallback;
+
     public static void Clear(CardModel card)
     {
         if (card == null)
@@ -58,5 +73,6 @@ internal static class DualSwordsCopyHelper
 
     private sealed class CopyMarker
     {
+        public bool FromPower;
     }
 }

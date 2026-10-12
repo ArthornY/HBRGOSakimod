@@ -18,18 +18,20 @@ public sealed class RapidChargeHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
+    public override IEnumerable<CardKeyword> CanonicalKeywords =>
+        new[] { CardKeyword.Exhaust };
+
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new PowerVar<ChargePower>(3m),
-            new PowerVar<QuickSwitchPower>(2m)
+            new PowerVar<ChargePower>(5m),
+            new CardsVar(1)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
-            HoverTipFactory.FromPower<ChargePower>(),
-            HoverTipFactory.FromPower<QuickSwitchPower>()
+            HoverTipFactory.FromPower<ChargePower>()
         };
 
     public RapidChargeHbrgoSaki()
@@ -51,17 +53,14 @@ public sealed class RapidChargeHbrgoSaki : CardModel
             DynamicVars["ChargePower"].BaseValue,
             Owner.Creature,
             this);
-        await PowerCmd.Apply<QuickSwitchPower>(
+        await CardPileCmd.Draw(
             choiceContext,
-            Owner.Creature,
-            DynamicVars["QuickSwitchPower"].BaseValue,
-            Owner.Creature,
-            this);
+            DynamicVars.Cards.BaseValue,
+            Owner);
     }
 
     protected override void OnUpgrade()
     {
         DynamicVars["ChargePower"].UpgradeValueBy(2m);
-        DynamicVars["QuickSwitchPower"].UpgradeValueBy(1m);
     }
 }

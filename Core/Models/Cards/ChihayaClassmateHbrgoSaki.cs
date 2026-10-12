@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +10,9 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
@@ -27,7 +30,7 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
             yield return HoverTipFactory.FromPower<NormalStatePower>();
             yield return HoverTipFactory.FromPower<ReptureBowPower>();
             yield return HoverTipFactory.FromPower<ReptureDualSwordsPower>();
-            if (Owner?.Character is not HbrgoSaki31O)
+            if (!IsMutable || Owner?.Character is not HbrgoSaki31O)
             {
                 yield return HoverTipFactory.FromPower<RaptureScythePower>();
             }
@@ -146,4 +149,114 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
         };
     }
 
+}
+
+public sealed class AnokoHbrgoSaki : CardModel
+{
+    public override string PortraitPath => ImageHelper.GetImagePath(
+        "packed/card_portraits/hbrgo_saki/anoko_hbrgo_saki.jpg");
+
+    public override string BetaPortraitPath => PortraitPath;
+
+    public override bool CanBeGeneratedInCombat => false;
+
+    protected override IEnumerable<DynamicVar> CanonicalVars =>
+        new DynamicVar[]
+        {
+            new PowerVar<BufferPower>(2m),
+            new PowerVar<StrongestShieldPower>(1m),
+            new PowerVar<SwordheartClarityPower>(1m),
+            new PowerVar<ProtagonistPrivilegePower>(1m)
+        };
+
+    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+        new IHoverTip[]
+        {
+            HoverTipFactory.FromPower<BufferPower>(),
+            HoverTipFactory.FromPower<StrongestShieldPower>(),
+            HoverTipFactory.FromPower<SwordheartClarityPower>(),
+            HoverTipFactory.FromPower<SwordheartPower>(),
+            HoverTipFactory.FromPower<ProtagonistPrivilegePower>(),
+            HoverTipFactory.FromCard<MeditationHbrgoSaki>()
+        };
+
+    public AnokoHbrgoSaki()
+        : base(0, CardType.Power, CardRarity.Basic, TargetType.Self)
+    {
+    }
+
+    protected override async Task OnPlay(
+        PlayerChoiceContext choiceContext,
+        CardPlay cardPlay)
+    {
+        await PowerCmd.Apply<BufferPower>(
+            choiceContext,
+            Owner.Creature,
+            DynamicVars["BufferPower"].BaseValue,
+            Owner.Creature,
+            this);
+        await PowerCmd.Apply<StrongestShieldPower>(
+            choiceContext,
+            Owner.Creature,
+            DynamicVars["StrongestShieldPower"].BaseValue,
+            Owner.Creature,
+            this);
+        await PowerCmd.Apply<SwordheartClarityPower>(
+            choiceContext,
+            Owner.Creature,
+            DynamicVars["SwordheartClarityPower"].BaseValue,
+            Owner.Creature,
+            this);
+
+        int swordheartToGain = Math.Max(
+            0,
+            SwordheartPower.GetMaxAmount(Owner.Creature) -
+            (Owner.Creature.GetPower<SwordheartPower>()?.Amount ?? 0));
+        if (swordheartToGain > 0)
+        {
+            MagicSwordModePower magicSwordMode =
+                Owner.Creature.GetPower<MagicSwordModePower>();
+            if (magicSwordMode != null)
+            {
+                await magicSwordMode
+                    .GrantSwordheartIgnoringMagicSwordRestriction(
+                        choiceContext,
+                        swordheartToGain,
+                        this);
+            }
+            else
+            {
+                await PowerCmd.Apply<SwordheartPower>(
+                    choiceContext,
+                    Owner.Creature,
+                    swordheartToGain,
+                    Owner.Creature,
+                    this);
+            }
+        }
+
+        await PowerCmd.Apply<ProtagonistPrivilegePower>(
+            choiceContext,
+            Owner.Creature,
+            DynamicVars["ProtagonistPrivilegePower"].BaseValue,
+            Owner.Creature,
+            this);
+
+        MeditationHbrgoSaki meditation =
+            CombatState.CreateCard<MeditationHbrgoSaki>(Owner);
+        if (IsUpgraded || DeckVersion?.IsUpgraded == true)
+        {
+            CardCmd.Upgrade(meditation, CardPreviewStyle.None);
+        }
+
+        await CardPileCmd.AddGeneratedCardToCombat(
+            meditation,
+            PileType.Draw,
+            Owner);
+    }
+
+    protected override void OnUpgrade()
+    {
+        AddKeyword(CardKeyword.Innate);
+    }
 }

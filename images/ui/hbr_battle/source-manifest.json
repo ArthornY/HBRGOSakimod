@@ -1,0 +1,156 @@
+[
+  {
+    "sprite": "GaugeHPBattleLarge",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": -6001977810695648680,
+    "texture_sha256": "354c22cdb834cb832c75bad32c3b656614c8b7341549d4c61c66a64beeff400d",
+    "original_size": [
+      32,
+      32
+    ],
+    "border": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 32.0,
+      "height": 32.0
+    }
+  },
+  {
+    "sprite": "GaugeHPDPBaseBattle",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": 1284648053513442978,
+    "texture_sha256": "16c65b0f7f716e01c21227436f9db48cb1f3234f53000daf9d0bc9e681aab723",
+    "original_size": [
+      28,
+      16
+    ],
+    "border": {
+      "x": 9.0,
+      "y": 0.0,
+      "z": 12.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 28.0,
+      "height": 16.0
+    }
+  },
+  {
+    "sprite": "GaugeDPBattleLarge",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": 4367897498751670712,
+    "texture_sha256": "7a24e11456e16738ad7e0883c688f1dd7a7d63ace02d01028da57437b3da593c",
+    "original_size": [
+      32,
+      32
+    ],
+    "border": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 32.0,
+      "height": 32.0
+    }
+  },
+  {
+    "sprite": "GaugeDamageBattle",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": 6196755602299358066,
+    "texture_sha256": "6b7ad0961afa6b7bead67d2b38e44db0901cbec6fa514717eee669e0ee79214d",
+    "original_size": [
+      32,
+      32
+    ],
+    "border": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 32.0,
+      "height": 32.0
+    }
+  },
+  {
+    "sprite": "GaugeHPDPFlameBattle",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": 6503821840488592128,
+    "texture_sha256": "c6fd797a2d9d71022b30cd0c23a8df4c8c91e226621416b61d6ebdcb7f6cb208",
+    "original_size": [
+      28,
+      16
+    ],
+    "border": {
+      "x": 9.0,
+      "y": 0.0,
+      "z": 8.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 28.0,
+      "height": 16.0
+    }
+  },
+  {
+    "sprite": "GaugeBaseEnemy",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": -4198490472865623588,
+    "texture_sha256": "2f530b4e68d30898bc5f7cba63a04886b54cf1810015a713cacd5cc8b66bc9f4",
+    "original_size": [
+      236,
+      28
+    ],
+    "border": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 236.0,
+      "height": 28.0
+    }
+  },
+  {
+    "sprite": "GaugeBaseFront",
+    "bundle_sha256": "22fc159e4bd49b8cb8dc202dab61406992df7613f7c95c1afcc55b0087aa0deb",
+    "sprite_id": 8644503686291023681,
+    "texture_sha256": "f969263423e184f8ad184741dd21ba54a60d751ddd79ed5ff645663e3170f432",
+    "original_size": [
+      236,
+      48
+    ],
+    "border": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 0.0
+    },
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 236.0,
+      "height": 48.0
+    }
+  }
+]

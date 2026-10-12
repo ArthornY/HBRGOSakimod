@@ -19,12 +19,23 @@ public sealed class OverclockUpgradeHbrgoSaki : CardModel
     public override IEnumerable<CardKeyword> CanonicalKeywords =>
         new[]
         {
-            CardKeyword.Ethereal,
-            CardKeyword.Exhaust
+            CardKeyword.Ethereal
         };
 
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        HoverTipFactory.FromRelic<Overclock>();
+    protected override IEnumerable<IHoverTip> ExtraHoverTips
+    {
+        get
+        {
+            Overclock overclock = ModelDb.Relic<Overclock>();
+            return new IHoverTip[]
+            {
+                new HoverTip(
+                    overclock.Title,
+                    overclock.DynamicDescription,
+                    overclock.Icon)
+            };
+        }
+    }
 
     public OverclockUpgradeHbrgoSaki()
         : base(
@@ -39,8 +50,9 @@ public sealed class OverclockUpgradeHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        Owner.GetRelic<Overclock>()?
-            .GainCharge(Overclock.ChargePerLevel);
+        Overclock overclock = Owner.GetRelic<Overclock>();
+        overclock?.GainCharge(overclock.ChargePerLevel);
+        overclock?.RestoreFloorLevels(1);
         return Task.CompletedTask;
     }
 

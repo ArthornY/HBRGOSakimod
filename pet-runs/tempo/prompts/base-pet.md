@@ -1,7 +1,0 @@
-Create one clean full-body reference sprite for Codex pet Tempo.
-
-Pet identity: Tempo is an original compact little-penguin companion: rounded midnight ink-blue body, soft porcelain belly, short violet-tipped head tuft, warm amber eyes, tiny charcoal beak, rounded flippers, sturdy plum feet. Quietly intense, clever, and playful; inspired broadly by Melbourne little penguins, multilingual game modding, music, code, and late-night creative work. Keep a single connected silhouette, no props, no logos, no text, no recognizable character costume..
-Style: Pet-safe sprite: compact full-body mascot, readable in a 192x208 cell, clear silhouette, simple face, stable palette/materials, and crisp edges for chroma-key extraction. Style `3d-toy`: Stylized 3D toy mascot with smooth rounded forms, simple materials, clear silhouette, and no photoreal complexity. User style notes: Polished soft cel-shaded vinyl-toy look with subtle plush warmth, crisp game-sprite silhouette, restrained gothic midnight palette, expressive eyes, no cast shadow..
-
-
-Place a single centered pose on a perfectly flat pure magenta #FF00FF chroma-key background. Keep the full pet visible, compact, readable at 192x208, and easy to animate. Preserve approved reference identity cues. No scenery, text, borders, checkerboard transparency, shadows, glows, detached effects, or extra props. Keep #FF00FF and close colors out of the pet, props, highlights, and effects.

@@ -15,8 +15,9 @@ internal static class MagicSwordLuckySevenPopulateCombatStatePatch
             return;
         }
 
-        foreach (MagicSwordLuckySevenHbrgoSaki card in __instance.PlayerCombatState.DrawPile.Cards
-            .OfType<MagicSwordLuckySevenHbrgoSaki>()
+        foreach (var card in __instance.PlayerCombatState.DrawPile.Cards
+            .Where(card => card is MagicSwordLuckySevenHbrgoSaki
+                or MagicSwordLuckySevenOpeningHbrgoSaki)
             .ToList())
         {
             card.RemoveFromState();

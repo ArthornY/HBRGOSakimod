@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
@@ -24,9 +22,7 @@ public sealed class BlueSkyPower : PowerModel
 
     public override PowerType Type => PowerType.Buff;
 
-    public override PowerStackType StackType => PowerStackType.Counter;
-
-    public override Color AmountLabelColor => new("70D9FF");
+    public override PowerStackType StackType => PowerStackType.None;
 
     public override Task AfterApplied(Creature applier, CardModel cardSource)
     {
@@ -48,28 +44,6 @@ public sealed class BlueSkyPower : PowerModel
     public override Task AfterRemoved(Creature oldOwner)
     {
         return CombatPreviewRefreshHelper.RefreshOpponentIntents(oldOwner);
-    }
-
-    public override decimal ModifyDamageMultiplicative(
-        Creature target,
-        decimal amount,
-        ValueProp props,
-        Creature dealer,
-        CardModel cardSource)
-    {
-        if (target != Owner ||
-            dealer == null ||
-            dealer.Side == Owner.Side ||
-            amount <= 0m ||
-            !props.IsPoweredAttack())
-        {
-            return 1m;
-        }
-
-        decimal reduction = Math.Clamp(Amount, 0, 100) / 100m;
-        return HbrgoSakiDamageMultiplierHelper.Add(
-            1m - reduction,
-            this);
     }
 
     public override async Task AfterDamageReceived(
@@ -96,7 +70,8 @@ public sealed class BlueSkyPower : PowerModel
         decimal damage =
             ModelDb.Card<StrikeHbrgoSaki>().DynamicVars.Damage.BaseValue +
             CounterDamageBonus;
-        await GeneratedStrikeHelper.Play(choiceContext, Owner.Player, dealer, damage);
+        // Phantoms have no deck of their own; their summoner plays the counter card.
+        await GeneratedStrikeHelper.Play(choiceContext, Owner.Player ?? Owner.PetOwner, dealer, damage);
     }
 
     public void AddCounterDamageBonus(int amount)

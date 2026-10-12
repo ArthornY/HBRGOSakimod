@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://drcrc7kogerou"
+path="res://.godot/imported/hbr_ui_menu_gray.fnt-17208e753d9d5e6f31e4a883b3bc9b36.fontdata"
+
+[deps]
+
+source_file="res://images/ui/overclock/menu/font/hbr_ui_menu_gray.fnt"
+dest_files=["res://.godot/imported/hbr_ui_menu_gray.fnt-17208e753d9d5e6f31e4a883b3bc9b36.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

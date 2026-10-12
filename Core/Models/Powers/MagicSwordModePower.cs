@@ -29,15 +29,22 @@ public sealed class MagicSwordModePower : PowerModel
 
     private bool _pendingDpBreak;
     private bool _isExiting;
+    private bool _isGrantingClaritySwordheart;
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ConsumedSwordheartAmount { get; private set; }
+
+    public override MegaCrit.Sts2.Core.Localization.LocString Description =>
+        HbrgoSakiEnergyIconHelper.Add31OPrefix(base.Description);
 
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Single;
 
     public override Color AmountLabelColor => new("F8D36A");
+
+    internal bool IsGrantingClaritySwordheart =>
+        _isGrantingClaritySwordheart;
 
     public void MarkDpBrokenByDamage()
     {
@@ -122,6 +129,10 @@ public sealed class MagicSwordModePower : PowerModel
     {
         await RemoveFeintCards(oldOwner);
         await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
+        await PlayMagicSwordLuckySevenOpening(
+            new ThrowingPlayerChoiceContext(),
+            oldOwner,
+            ConsumedSwordheartAmount);
     }
 
     public override async Task AfterEnergyReset(Player player)
@@ -157,14 +168,12 @@ public sealed class MagicSwordModePower : PowerModel
         base.AfterCloned();
         _pendingDpBreak = false;
         _isExiting = false;
+        _isGrantingClaritySwordheart = false;
     }
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
         await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
-        await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
-        await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
-        await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
         await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
         int discardedCardCount =
             await ModeTransitionHelper.DiscardIncompatibleCardsFromHandAndRedraw(Owner);
@@ -204,6 +213,45 @@ public sealed class MagicSwordModePower : PowerModel
         }
 
         await ConsumeSwordheart(choiceContext, amount, cardSource);
+    }
+
+    internal async Task GrantSwordheartFromClarity(
+        PlayerChoiceContext choiceContext,
+        CardModel cardSource)
+    {
+        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
+        if (swordheart == null || swordheart.Amount <= 0) return;
+
+        await GrantSwordheartIgnoringMagicSwordRestriction(
+            choiceContext,
+            (decimal)swordheart.Amount,
+            cardSource);
+    }
+
+    internal async Task GrantSwordheartIgnoringMagicSwordRestriction(
+        PlayerChoiceContext choiceContext,
+        decimal amount,
+        CardModel cardSource)
+    {
+        if (amount <= 0m)
+        {
+            return;
+        }
+
+        _isGrantingClaritySwordheart = true;
+        try
+        {
+            await PowerCmd.Apply<SwordheartPower>(
+                choiceContext,
+                Owner,
+                amount,
+                Owner,
+                cardSource);
+        }
+        finally
+        {
+            _isGrantingClaritySwordheart = false;
+        }
     }
 
     private async Task SetSwordheartToZero(PlayerChoiceContext choiceContext)
@@ -264,10 +312,44 @@ public sealed class MagicSwordModePower : PowerModel
         return PowerCmd.Remove(this);
     }
 
+    private static async Task PlayMagicSwordLuckySevenOpening(
+        PlayerChoiceContext choiceContext,
+        Creature owner,
+        int consumedSwordheartAmount)
+    {
+        Player player = owner.Player;
+        if (player == null ||
+            owner.CombatState == null ||
+            CombatManager.Instance.IsOverOrEnding)
+        {
+            return;
+        }
+
+        MagicSwordLuckySevenOpeningHbrgoSaki deckCard = player.Deck.Cards
+            .OfType<MagicSwordLuckySevenOpeningHbrgoSaki>()
+            .FirstOrDefault();
+        if (deckCard == null)
+        {
+            return;
+        }
+
+        MagicSwordLuckySevenOpeningHbrgoSaki opening =
+            (MagicSwordLuckySevenOpeningHbrgoSaki)
+            owner.CombatState.CloneCard(deckCard);
+        opening.DeckVersion = deckCard;
+        SyncUpgradeLevelFromDeck(opening, deckCard);
+        opening.SetConsumedSwordheartAmount(
+            consumedSwordheartAmount);
+        await CardCmd.AutoPlay(choiceContext, opening, null);
+        await CombatFlowHelper.FinishAutoPlayedCard(opening);
+    }
+
     private static async Task PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner, int hitCount)
     {
         Player player = owner.Player;
-        if (player == null || owner.CombatState == null)
+        if (player == null ||
+            owner.CombatState == null ||
+            CombatManager.Instance.IsOverOrEnding)
         {
             return;
         }

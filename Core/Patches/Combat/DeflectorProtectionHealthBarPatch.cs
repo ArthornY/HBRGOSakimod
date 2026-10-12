@@ -17,11 +17,18 @@ internal static class NHealthBarSetCreaturePatch
         ModNodeAttachmentRegistry.EnsureReadyAttachments(__instance);
 
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance, HBRGOSakiCombatUiIntegration.SixSenseResistanceRowAttachmentId,
+                out NSixSenseResistanceRow resistanceRow))
+        {
+            resistanceRow.SetCreature(creature, __instance.HpBarContainer);
+        }
+
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
                 __instance,
                 HBRGOSakiCombatUiIntegration.DeflectorProtectionDpBarAttachmentId,
                 out NDeflectorProtectionDpBar dpBar))
         {
-            dpBar.SetCreature(creature, __instance.HpBarContainer);
+            dpBar.SetCreature(creature, __instance.HpBarContainer, __instance);
         }
 
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
@@ -39,6 +46,12 @@ internal static class NHealthBarRefreshValuesPatch
 {
     private static void Postfix(NHealthBar __instance)
     {
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance, HBRGOSakiCombatUiIntegration.SixSenseResistanceRowAttachmentId,
+                out NSixSenseResistanceRow resistanceRow))
+        {
+            resistanceRow.Refresh();
+        }
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
                 __instance,
                 HBRGOSakiCombatUiIntegration.DeflectorProtectionDpBarAttachmentId,
@@ -128,6 +141,38 @@ internal static class NHealthBarRedCrimsonFixedWidthPatch
         ref Vector2 size,
         Creature ____creature)
     {
+        float statusScale = ____creature?.IsPet == true
+            ? NStaticHbrgoMonsterVisuals.SummonedBossStatusScale
+            : 1f;
+
+        if (____creature?.Monster is FlatHand)
+        {
+            size.X = NStaticHbrgoMonsterVisuals
+                .FlatHandHealthBarWidth * statusScale;
+            return;
+        }
+
+        if (____creature?.Monster is RedCrimsonBossMonster)
+        {
+            size.X = NRedCrimsonBossVisuals.FixedHealthBarWidth *
+                statusScale;
+            return;
+        }
+
+        if (____creature?.Monster is DeathSlug)
+        {
+            size.X = NDeathSlugVisuals.FixedHealthBarWidth *
+                statusScale;
+            return;
+        }
+
+        if (____creature?.Monster is SkullFeather)
+        {
+            size.X = NSkullFeatherVisuals.FixedHealthBarWidth *
+                statusScale;
+            return;
+        }
+
         if (____creature?.Monster is not RedCrimson)
         {
             return;

@@ -23,15 +23,14 @@ public sealed class RemoveDpHbrgoSaki : CardModel
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
-            HoverTipFactory.FromPower<HighDimensionalShellPower>(),
-            HoverTipFactory.FromPower<BreakPower>()
+            HoverTipFactory.FromPower<HighDimensionalShellPower>()
         };
 
     public RemoveDpHbrgoSaki()
         : base(
-            2,
-            CardType.Attack,
-            CardRarity.Rare,
+            1,
+            CardType.Skill,
+            CardRarity.Uncommon,
             TargetType.AnyEnemy)
     {
     }
@@ -47,13 +46,12 @@ public sealed class RemoveDpHbrgoSaki : CardModel
             cardPlay.Target.GetPower<HighDimensionalShellPower>();
         if (shell != null)
         {
-            await shell.BreakImmediately(
-                choiceContext,
-                IsUpgraded ? 1 : 0);
+            await shell.BreakImmediately(choiceContext, 0);
         }
     }
 
     protected override void OnUpgrade()
     {
+        EnergyCost.UpgradeBy(-1);
     }
 }

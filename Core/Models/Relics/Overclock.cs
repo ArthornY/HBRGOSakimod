@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
@@ -21,14 +21,24 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 
 public sealed class Overclock : RelicModel, IModRelicVisibility
 {
-    public const int ChargePerLevel = 100;
+    public const int BaseChargePerLevel = 100;
     public const int MaxLevel = 3;
-    public const int MaxCharge = ChargePerLevel * MaxLevel;
+    public const int FloorLevelLimit = 12;
+
+    public int ChargePerLevel =>
+        BaseChargePerLevel * Math.Max(
+            1,
+            Owner?.RunState.Players.Count ?? 1);
+
+    public int MaxCharge => ChargePerLevel * MaxLevel;
 
     private int _charge;
     private int _chargeFractionHundredths;
     private int _activeLevel;
+    private int _freeRewardLevels;
     private bool _hasQueuedExtraTurn;
+    private int _floorLevelsSpent;
+    private Dictionary<CardPlay, decimal> _pendingCardCharge = new();
 
     public override RelicRarity Rarity => RelicRarity.Starter;
 
@@ -123,6 +133,7 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
 
             _activeLevel = nextLevel;
             InvokeDisplayAmountChanged();
+            CombatPreviewRefreshHelper.RefreshCombatState(Owner?.Creature, nameof(Overclock));
         }
     }
 
@@ -135,6 +146,69 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
             AssertMutable();
             _hasQueuedExtraTurn = value;
         }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    // Keep the existing save/API names; this allowance now belongs to an act.
+    public string FloorUsageKey { get; private set; } = string.Empty;
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int FloorLevelsSpent
+    {
+        get => _floorLevelsSpent;
+        private set
+        {
+            AssertMutable();
+            _floorLevelsSpent = Math.Clamp(value, 0, FloorLevelLimit);
+        }
+    }
+
+    public int UsedFloorLevels
+    {
+        get
+        {
+            string key = CurrentFloorUsageKey;
+            int spent = GetUsageForAct(key);
+            if (Owner?.RunState is not { } run)
+            {
+                return spent;
+            }
+
+            // OD starts a turn for the whole party. Every owner's gauge must
+            // therefore use the same allowance, including a newly added relic.
+            foreach (Player player in run.Players)
+            {
+                Overclock relic = player.GetRelic<Overclock>();
+                if (relic != null)
+                {
+                    spent = Math.Max(spent, relic.GetUsageForAct(key));
+                }
+            }
+            return spent;
+        }
+    }
+
+    public int RemainingFloorLevels => FloorLevelLimit - UsedFloorLevels;
+
+    private string CurrentFloorUsageKey => Owner?.RunState is { } run
+        // Floor changes, combat boundaries and subrooms share one act budget.
+        ? FormattableString.Invariant($"{run.CurrentActIndex}:act")
+        : string.Empty;
+
+    private int GetUsageForAct(string key)
+    {
+        if (FloorUsageKey == key) return FloorLevelsSpent;
+        // Older saves recorded an act plus a floor/entrance suffix. Preserve
+        // their known spending in this act before normalizing the key, without
+        // accepting another act's budget or allocating parsed key strings.
+        int separator = key.IndexOf(':');
+        if (separator < 0 || string.IsNullOrEmpty(FloorUsageKey) ||
+            FloorUsageKey.Length <= separator || FloorUsageKey[separator] != ':' ||
+            string.CompareOrdinal(FloorUsageKey, 0, key, 0, separator) != 0)
+            return 0;
+        ReadOnlySpan<char> suffix = FloorUsageKey.AsSpan(separator + 1);
+        return suffix.SequenceEqual("entrance") || suffix.StartsWith("floor:", StringComparison.Ordinal)
+            ? FloorLevelsSpent : 0;
     }
 
     public int Level => Math.Min(
@@ -150,15 +224,28 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
 
     public bool CanActivate =>
         CanActivateState &&
-        !CombatManager.Instance.PlayerActionsDisabled;
+        CanActivateInput;
+
+    // Ending locally locks ordinary input while waiting for teammates. OD
+    // can still suspend that idle turn and restore its ready vote afterwards.
+    private bool CanActivateInput =>
+        !CombatManager.Instance.PlayerActionsDisabled ||
+        (Owner != null && CombatManager.Instance.IsPlayerReadyToEndTurn(Owner));
 
     private bool CanActivateState =>
         ActiveLevel == 0 &&
         Level > 0 &&
-        CombatManager.Instance.IsInProgress &&
-        CombatManager.Instance.PlayersTakingExtraTurn.Count == 0 &&
-        Owner.Creature.CombatState?.CurrentSide == CombatSide.Player &&
-        Owner.Creature.IsAlive;
+        RemainingFloorLevels > 0 &&
+        OverclockImmediateTurnCoordinator.CanBegin(Owner);
+
+    public bool CanActivateLevel(int level) =>
+        CanActivateLevelState(level) &&
+        CanActivateInput;
+
+    private bool CanActivateLevelState(int level) =>
+        level >= 1 && level <= MaxLevel &&
+        level <= Level && level <= RemainingFloorLevels &&
+        CanActivateState;
 
     private decimal ChargeCapacity =>
         MaxCharge + ActiveLevel * ChargePerLevel;
@@ -173,15 +260,29 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         PreciseCharge += amount;
     }
 
+    internal void GainLevelProgress(decimal percentage)
+    {
+        GainCharge(ChargePerLevel * percentage / 100m);
+    }
+
     public bool TryActivate(int requestedLevel)
     {
-        if (!CanActivateState || requestedLevel != Level)
+        // Synchronized actions run while player input is paused. Validate the
+        // game state and quota here without using the UI-only input lock.
+        if (!CanActivateLevelState(requestedLevel))
         {
             return false;
         }
 
+        _freeRewardLevels = 0;
         ActiveLevel = requestedLevel;
         HasQueuedExtraTurn = false;
+        if (!OverclockImmediateTurnCoordinator.TryBegin(this))
+        {
+            ActiveLevel = 0;
+            return false;
+        }
+        SpendFloorLevels(requestedLevel);
         Status = RelicStatus.Active;
         Flash();
         return true;
@@ -189,24 +290,40 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
 
     public bool IsSpecialExtraTurnFor(Player player)
     {
-        return player?.Creature != null &&
-            ActiveLevel > 0 &&
-            HasQueuedExtraTurn &&
-            player.Creature.IsAlive &&
-            player.Creature.Side == Owner.Creature.Side &&
-            CombatManager.Instance.PlayersTakingExtraTurn.Contains(player);
+        return ActiveLevel > 0 && OverclockImmediateTurnCoordinator.IsActiveFor(player);
     }
 
-    public override bool ShouldTakeExtraTurn(Player player)
+    // Resistance completion rewards use the same OD turn without consuming
+    // charge or the party's shared act allowance.
+    internal bool TryActivateRewardLevel(int level)
     {
-        return player?.Creature != null &&
-            ActiveLevel > 0 &&
-            HasQueuedExtraTurn &&
-            player.Creature.IsAlive &&
-            player.Creature.Side == Owner.Creature.Side;
+        if (ActiveLevel != 0 || level < 1 || level > MaxLevel ||
+            !OverclockImmediateTurnCoordinator.CanBegin(Owner)) return false;
+        _freeRewardLevels = level;
+        ActiveLevel = level;
+        HasQueuedExtraTurn = false;
+        if (!OverclockImmediateTurnCoordinator.TryBegin(this))
+        {
+            ActiveLevel = 0;
+            _freeRewardLevels = 0;
+            return false;
+        }
+        Status = RelicStatus.Active;
+        Flash();
+        return true;
     }
 
-    public override decimal ModifyDamageMultiplicative(
+    internal void PromoteRewardLevel(int level)
+    {
+        int next = Math.Clamp(level, ActiveLevel, MaxLevel);
+        int additional = next - ActiveLevel;
+        if (ActiveLevel <= 0 || additional <= 0) return;
+        ActiveLevel = next;
+        _freeRewardLevels += additional;
+        Flash();
+    }
+
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,
@@ -222,93 +339,139 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
             return 1m;
         }
 
-        decimal multiplier = ActiveLevel switch
-        {
-            1 => 1.2m,
-            2 => 1.5m,
-            _ => 2m
-        };
+        decimal multiplier = GetDamageMultiplier(ActiveLevel);
         return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }
 
-    public override async Task AfterEnergyResetLate(Player player)
+    public override Task BeforeCombatStart()
     {
-        if (!IsSpecialExtraTurnFor(player))
+        // Also clears active/queued fields from saves made by the old OD rules.
+        OverclockImmediateTurnCoordinator.EnsureLifecycle();
+        SynchronizeFloorUsage();
+        ResetCombatCharge();
+        return Task.CompletedTask;
+    }
+
+    public override Task AfterRoomEntered(AbstractRoom room)
+    {
+        SynchronizeFloorUsage();
+        return Task.CompletedTask;
+    }
+
+    private void SynchronizeFloorUsage() =>
+        SetFloorUsage(CurrentFloorUsageKey, UsedFloorLevels);
+
+    internal void RestoreFloorLevels(int levels)
+    {
+        if (levels <= 0)
         {
             return;
         }
 
-        await PlayerCmd.SetEnergy(GetExtraTurnEnergy(), player);
+        SetSharedFloorUsage(Math.Max(0, UsedFloorLevels - levels));
     }
 
-    public override decimal ModifyHandDrawLate(Player player, decimal count)
-    {
-        return IsSpecialExtraTurnFor(player)
-            ? GetExtraTurnDraw()
-            : count;
-    }
+    private void SpendFloorLevels(int level) =>
+        SetSharedFloorUsage(UsedFloorLevels + level);
 
-    public override bool ShouldFlush(Player player)
+    private void SetSharedFloorUsage(int spent)
     {
-        bool isEnteringOverclockTurn =
-            ActiveLevel > 0 &&
-            CombatManager.Instance.PlayersTakingExtraTurn.Count == 0 &&
-            player?.Creature != null &&
-            player.Creature.IsAlive &&
-            player.Creature.Side == Owner.Creature.Side;
-        return !isEnteringOverclockTurn;
-    }
-
-    public override Task BeforeSideTurnEnd(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IEnumerable<Creature> participants)
-    {
-        if (ActiveLevel <= 0 ||
-            side != Owner.Creature.Side ||
-            !participants.Any(creature => creature?.Side == Owner.Creature.Side))
+        string key = CurrentFloorUsageKey;
+        SetFloorUsage(key, spent);
+        if (Owner?.RunState is not { } run)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        if (CombatManager.Instance.PlayersTakingExtraTurn.Count == 0 &&
-            !HasQueuedExtraTurn)
+        foreach (Player player in run.Players)
         {
-            HasQueuedExtraTurn = true;
-            Flash();
+            player.GetRelic<Overclock>()?.SetFloorUsage(key, spent);
         }
-
-        return Task.CompletedTask;
     }
 
-    public override Task AfterSideTurnEndLate(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IEnumerable<Creature> participants)
+    private void SetFloorUsage(string key, int spent)
     {
-        if (ActiveLevel > 0 &&
-            HasQueuedExtraTurn &&
-            side == Owner.Creature.Side &&
-            CombatManager.Instance.PlayersTakingExtraTurn.Count > 0 &&
-            participants.Any(creature => creature?.Side == Owner.Creature.Side))
+        if (FloorUsageKey == key && FloorLevelsSpent == spent)
         {
-            FinishSpecialExtraTurn();
+            return;
         }
 
-        return Task.CompletedTask;
+        AssertMutable();
+        FloorUsageKey = key;
+        FloorLevelsSpent = spent;
+        InvokeDisplayAmountChanged();
     }
 
     public override Task AfterCombatEnd(CombatRoom _)
     {
-        if (PreciseCharge > MaxCharge)
-        {
-            PreciseCharge = MaxCharge;
-        }
+        OverclockImmediateTurnCoordinator.Clear();
+        ResetCombatCharge();
+        return Task.CompletedTask;
+    }
 
+    internal void ResetCombatCharge()
+    {
+        _pendingCardCharge.Clear();
+        PreciseCharge = 0m;
+        CancelImmediateTurn();
+    }
+
+    internal void CancelImmediateTurn()
+    {
+        _freeRewardLevels = 0;
         ActiveLevel = 0;
         HasQueuedExtraTurn = false;
         Status = RelicStatus.Normal;
+    }
+
+    public override Task BeforeCardPlayed(CardPlay cardPlay)
+    {
+        CardModel card = cardPlay?.Card;
+        Creature dealer = card?.Owner?.Creature;
+        Creature ownerCreature = Owner?.Creature;
+        if (dealer?.CombatState == null ||
+            ownerCreature == null ||
+            dealer.Side != ownerCreature.Side ||
+            !ReferenceEquals(dealer.CombatState, ownerCreature.CombatState))
+        {
+            return Task.CompletedTask;
+        }
+
+        decimal baseCharge = card.Type switch
+        {
+            CardType.Attack => 2m,
+            CardType.Skill => 5m,
+            CardType.Power => 10m,
+            _ => 0m
+        };
+        if (baseCharge > 0m)
+        {
+            // Powers settle before relics. Snapshot this play's multiplier
+            // before MaidCultivation consumes its layer or nested plays do.
+            _pendingCardCharge[cardPlay] = baseCharge *
+                MaidCultivationPower.GetOverclockMultiplier(dealer, card);
+        }
+
         return Task.CompletedTask;
+    }
+
+    public override Task AfterCardPlayed(
+        PlayerChoiceContext choiceContext,
+        CardPlay cardPlay)
+    {
+        if (cardPlay != null &&
+            _pendingCardCharge.Remove(cardPlay, out decimal gainedCharge))
+        {
+            GainCharge(gainedCharge);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    protected override void AfterCloned()
+    {
+        base.AfterCloned();
+        _pendingCardCharge = new Dictionary<CardPlay, decimal>();
     }
 
     public override Task AfterDamageGiven(
@@ -334,7 +497,7 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
                 dealer,
                 cardSource);
         decimal gainedCharge = decimal.Round(
-            result.TotalDamage / 10m * gainMultiplier,
+            result.TotalDamage * 0.5m * gainMultiplier,
             2,
             MidpointRounding.AwayFromZero);
         if (gainedCharge > 0)
@@ -345,27 +508,23 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         return Task.CompletedTask;
     }
 
-    private decimal GetExtraTurnEnergy()
+    // The selection screen reads the same values used by the combat hooks.
+    internal static decimal GetDamageMultiplier(int level) => level switch
     {
-        return ActiveLevel switch
-        {
-            1 => 2m,
-            2 => 3m,
-            _ => 5m
-        };
-    }
+        1 => 1.2m, 2 => 1.5m, 3 => 2m, _ => 1m
+    };
 
-    private decimal GetExtraTurnDraw()
+    internal static decimal GetExtraTurnEnergy(int level) => level switch
     {
-        return ActiveLevel switch
-        {
-            1 => 3m,
-            2 => 5m,
-            _ => 8m
-        };
-    }
+        1 => 2m, 2 => 3m, 3 => 5m, _ => 0m
+    };
 
-    private void FinishSpecialExtraTurn()
+    internal static decimal GetExtraTurnDraw(int level) => level switch
+    {
+        1 => 3m, 2 => 5m, 3 => 8m, _ => 0m
+    };
+
+    internal void FinishImmediateTurn()
     {
         int consumedLevel = ActiveLevel;
         if (consumedLevel <= 0)
@@ -373,7 +532,8 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
             return;
         }
 
-        PreciseCharge -= consumedLevel * ChargePerLevel;
+        PreciseCharge -= Math.Max(0, consumedLevel - _freeRewardLevels) * ChargePerLevel;
+        _freeRewardLevels = 0;
         ActiveLevel = 0;
         HasQueuedExtraTurn = false;
         Status = RelicStatus.Normal;

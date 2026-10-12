@@ -32,7 +32,8 @@ public sealed class LastStandHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new DamageVar(14m, ValueProp.Move),
-            new PowerVar<VulnerablePower>(2m)
+            new PowerVar<VulnerablePower>(2m),
+            new EnergyVar(1)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -56,7 +57,7 @@ public sealed class LastStandHbrgoSaki : CardModel
         CardPlay cardPlay)
     {
         await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

@@ -1,5 +1,7 @@
 using System.Reflection;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -24,6 +26,8 @@ internal sealed partial class NHbrgoSakiGameOverObserver : Node
         PrivateAccess.Field<NGameOverScreen>("_encounterQuote");
     private static readonly FieldInfo CreatureContainerField =
         PrivateAccess.Field<NGameOverScreen>("_creatureContainer");
+    private static readonly FieldInfo SummaryContainerField =
+        PrivateAccess.Field<NGameOverScreen>("_summaryContainer");
 
     private double _portraitWaitElapsed;
 
@@ -32,6 +36,9 @@ internal sealed partial class NHbrgoSakiGameOverObserver : Node
     public override void _Ready()
     {
         SetProcess(false);
+        if (Screen == null || LocalPlayerField.GetValue(Screen) is not Player player ||
+            !RollKeywordRules.UsesCommonRules(player)) return;
+        ShowRunPeak(player);
         if (!IsSakiLoss())
         {
             return;
@@ -42,6 +49,31 @@ internal sealed partial class NHbrgoSakiGameOverObserver : Node
         {
             SetProcess(true);
         }
+    }
+
+    private void ShowRunPeak(Player player)
+    {
+        if (SummaryContainerField.GetValue(Screen) is not NRunSummary summary ||
+            summary.GetNodeOrNull<VBoxContainer>("Container") is not { } container ||
+            container.GetNodeOrNull<Label>("HbrgoRunPeakTotalDamage") != null) return;
+
+        string text = "最高总伤：" + RunPeakCardDamageHelper.Format(
+            RunPeakCardDamageHelper.Get(player));
+        Label label = new()
+        {
+            Name = "HbrgoRunPeakTotalDamage",
+            Text = text,
+            TooltipText = text,
+            CustomMinimumSize = new Vector2(0f, 48f),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming,
+            MouseFilter = Control.MouseFilterEnum.Pass
+        };
+        label.AddThemeFontSizeOverride("font_size", 24);
+        container.AddChild(label);
+        container.MoveChild(label, 0);
     }
 
     public override void _Process(double delta)

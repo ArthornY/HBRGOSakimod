@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
@@ -31,15 +32,20 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     public static int GetSoulOfAnchorEffectMultiplier(Creature creature)
     {
-        return creature?.HasPower<CrimsonBladeFlowPower>() == true ? SoulOfAnchorEffectMultiplier : 1;
+        return IsActive(creature) ? SoulOfAnchorEffectMultiplier : 1;
+    }
+
+    public static bool IsActive(Creature creature)
+    {
+        return creature?.HasPower<CrimsonBladeFlowPower>() == true ||
+               (creature?.HasPower<ReptureDualSwordsPower>() == true &&
+                HbrgoSakiHextechCompatLoader
+                    .HasDoubleSwordsDoubleRune(creature));
     }
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
         await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
-        await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
-        await PowerCmd.Remove(Owner.GetPower<ReptureDualSwordsPower>());
-        await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
         await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
         if (await ModeTransitionHelper.DiscardIncompatibleCardsFromHandAndRedraw(Owner) > 0)
         {
@@ -98,10 +104,24 @@ public sealed class CrimsonBladeFlowPower : PowerModel
             Flash();
         }
 
+        if (owner.Player?.GetRelic<DeflectorProtection>() is
+            DeflectorProtection protection)
+        {
+            await protection.ResolveMentalStrengthDpLossRewards(
+                choiceContext);
+        }
+
+        if (HbrgoSakiHextechCompatLoader
+            .HasDoubleSwordsDoubleRune(owner) ||
+            ExtraTurnDurationHelper.ShouldSuppressDurationTick(this))
+        {
+            return;
+        }
+
         await PowerCmd.ModifyAmount(choiceContext, this, -1m, owner, null);
     }
 
-    public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
+    public decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
         if (amount <= 0m)
         {

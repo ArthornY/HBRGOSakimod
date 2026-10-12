@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Monsters;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -11,7 +12,7 @@ using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class BreakPower : PowerModel
+public class BreakPower : PowerModel
 {
     public override PowerType Type => PowerType.Debuff;
 
@@ -42,16 +43,36 @@ public sealed class BreakPower : PowerModel
             await PowerCmd.Remove(destructionRate);
         }
 
-        if (!oldOwner.IsAlive || oldOwner.HasPower<HighDimensionalShellPower>())
+        if (!oldOwner.IsAlive || oldOwner.HasPower<HighDimensionalShellPower>() ||
+            oldOwner.Monster is NararaShibaBossMonster)
         {
             return;
         }
 
-        await PowerCmd.Apply<HighDimensionalShellPower>(
-            new ThrowingPlayerChoiceContext(),
-            oldOwner,
-            HighDimensionalShellPower.CalculateAmount(oldOwner),
-            oldOwner,
-            null);
+        if (oldOwner.Monster is TezukaSaki)
+        {
+            await PowerCmd.Apply<PartialDerivativeShieldPower>(
+                new ThrowingPlayerChoiceContext(),
+                oldOwner,
+                PartialDerivativeShieldPower.CalculateInitialAmount(oldOwner),
+                oldOwner,
+                null);
+        }
+        else
+        {
+            decimal shellAmount =
+                HighDimensionalShellPower.CalculateAmount(oldOwner);
+            if (shellAmount <= 0)
+            {
+                return;
+            }
+
+            await PowerCmd.Apply<HighDimensionalShellPower>(
+                new ThrowingPlayerChoiceContext(),
+                oldOwner,
+                shellAmount,
+                oldOwner,
+                null);
+        }
     }
 }

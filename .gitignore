@@ -1,22 +1,42 @@
-# Godot 4+ specific ignores
+# Godot caches. Keep runtime assets and their .import settings in Git.
 .godot/
 /android/
-.DS_Store
 *.cs.uid
-/resources/*.import
+
+# .NET / IDE outputs and user settings
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+/UpgradeLog.htm
+.DS_Store
+Thumbs.db
+
+# Local SDKs, package caches, and development tools
 .dotnet/
 .dotnet-x64/
 .dotnet-home/
+.dotnet-home-x64/
+.dotnet_cli_home/
 .godot-home/
+.godot-home-x64/
 .nuget/
 .tools/
-
-# Local development, audit, and extracted-reference data
 .codex-tmp/
 .codex-sheet-work/
-.dotnet_cli_home/
-.dotnet-home-x64/
-.godot-home-x64/
-outputs/
-resources/HBR资源/
-build/daybefore/
+
+# Build artifacts and locally supplied dependency assemblies
+/build/
+/libs/
+
+# Local references, artwork drafts, audit output, and historical files
+/Backup/
+/resources/
+/audio/
+/artwork-work/
+/pet-runs/
+/tmp/
+/output/
+/outputs/

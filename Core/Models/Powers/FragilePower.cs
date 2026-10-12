@@ -32,7 +32,7 @@ public sealed class FragilePower : PowerModel
         if (side != Owner.Side ||
             !participants.Contains(Owner) ||
             Amount <= 0 ||
-            ExtraTurnDurationHelper.ShouldSuppressDurationTick(Owner))
+            ExtraTurnDurationHelper.ShouldSuppressDurationTick(this))
         {
             return;
         }
@@ -41,7 +41,7 @@ public sealed class FragilePower : PowerModel
         await PowerCmd.TickDownDuration(this);
     }
 
-    public override decimal ModifyDamageMultiplicative(
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,

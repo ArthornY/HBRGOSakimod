@@ -56,7 +56,7 @@ public sealed class MimicExorcismArrowHbrgoSaki : CardModel
             this,
             DynamicVars.Damage.BaseValue);
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

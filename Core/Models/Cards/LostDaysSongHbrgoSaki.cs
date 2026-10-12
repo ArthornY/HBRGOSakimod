@@ -53,7 +53,7 @@ public sealed class LostDaysSongHbrgoSaki : HighSongChoiceCard
         }
 
         int chargeAmount = highSong?.Amount ?? HighSongAmount;
-        foreach (Creature ally in TeamCombatHelper.GetLivingPlayerCreatures(Owner.Creature))
+        foreach (Creature ally in TeamCombatHelper.GetLivingAllies(Owner.Creature))
         {
             await PowerCmd.Apply<ChargePower>(
                 choiceContext,
@@ -83,6 +83,6 @@ public sealed class LostDaysSongHbrgoSaki : HighSongChoiceCard
             }
         }
 
-        ScheduleHighSongReturn(PileType.Draw);
+        await ScheduleHighSongReturn(PileType.Draw);
     }
 }

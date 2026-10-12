@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -23,8 +24,6 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/magic_sword_lucky_seven_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
-
-    public override IEnumerable<CardKeyword> CanonicalKeywords => new CardKeyword[] { CardKeyword.Exhaust };
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
@@ -67,11 +66,12 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        CardPlayCompatibility.SetResultPile(cardPlay, PileType.None);
         int hitCount = GetHitCount();
         for (int i = 0; i < hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
             await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .TargetingRandomOpponents(base.CombatState)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
@@ -85,11 +85,6 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     private bool IsUpgradedVersion => IsUpgraded || DeckVersion?.IsUpgraded == true;
 
-    protected override PileType GetResultPileTypeForCardPlay()
-    {
-        return PileType.None;
-    }
-
     private int GetHitCount()
     {
         return Math.Max(0, _magicSwordModeHitCount);
@@ -97,6 +92,5 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        RemoveKeyword(CardKeyword.Exhaust);
     }
 }

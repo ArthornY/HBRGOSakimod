@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Models.Characters;
+using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -24,13 +25,18 @@ internal static class HighDimensionalShellCombatStartPatch
         ICombatState combatState)
     {
         await originalTask;
-        if (!ShouldGrantShells(combatState))
+        if (combatState == null)
         {
             return;
         }
 
         foreach (Creature enemy in combatState.Enemies.Where(enemy => enemy.IsAlive))
         {
+            if (!ShouldGrantShell(combatState, enemy))
+            {
+                continue;
+            }
+
             await GrantShell(enemy, replaceExisting: false);
         }
     }
@@ -39,7 +45,15 @@ internal static class HighDimensionalShellCombatStartPatch
     {
         return combatState != null &&
             combatState.Players.Any(
-                player => player.Character is HbrgoSaki);
+                player => player.Character is HbrgoSaki or HbrgoHotaru);
+    }
+
+    internal static bool ShouldGrantShell(
+        ICombatState combatState,
+        Creature enemy)
+    {
+        return enemy?.Monster is IHbrgoMonster ||
+            ShouldGrantShells(combatState);
     }
 
     internal static async Task GrantShell(
@@ -48,6 +62,16 @@ internal static class HighDimensionalShellCombatStartPatch
     {
         if (enemy == null || !enemy.IsAlive)
         {
+            return;
+        }
+
+        // Initial room callbacks precede the opening phantom selection. Delay
+        // this snapshot until combat-start hooks finish, while preserving the
+        // boss's layers on repeats and its explicit resleep recovery rules.
+        if (enemy.Monster is NararaShibaBossMonster boss)
+        {
+            if (CombatManager.Instance.IsInProgress)
+                await boss.InitializeStartingDp(new ThrowingPlayerChoiceContext());
             return;
         }
 
@@ -81,12 +105,31 @@ internal static class HighDimensionalShellCombatStartPatch
             return;
         }
 
-        await PowerCmd.Apply<HighDimensionalShellPower>(
-            new ThrowingPlayerChoiceContext(),
-            enemy,
-            HighDimensionalShellPower.CalculateAmount(enemy),
-            enemy,
-            null);
+        if (enemy.Monster is TezukaSaki)
+        {
+            await PowerCmd.Apply<PartialDerivativeShieldPower>(
+                new ThrowingPlayerChoiceContext(),
+                enemy,
+                PartialDerivativeShieldPower.CalculateInitialAmount(enemy),
+                enemy,
+                null);
+        }
+        else
+        {
+            decimal shellAmount =
+                HighDimensionalShellPower.CalculateAmount(enemy);
+            if (shellAmount <= 0)
+            {
+                return;
+            }
+
+            await PowerCmd.Apply<HighDimensionalShellPower>(
+                new ThrowingPlayerChoiceContext(),
+                enemy,
+                shellAmount,
+                enemy,
+                null);
+        }
     }
 }
 
@@ -112,9 +155,14 @@ internal static class HighDimensionalShellCreatureAddedPatch
         await originalTask;
         if (creature?.IsAlive != true ||
             combatState == null ||
-            !combatState.Enemies.Contains(creature) ||
-            !HighDimensionalShellCombatStartPatch.ShouldGrantShells(
-                combatState))
+            !combatState.Enemies.Contains(creature))
+        {
+            return;
+        }
+
+        if (!HighDimensionalShellCombatStartPatch.ShouldGrantShell(
+                combatState,
+                creature))
         {
             return;
         }

@@ -6,6 +6,13 @@ namespace HBRGOSakiMod.Core.Helpers;
 
 internal static class TeamCombatHelper
 {
+    public static Creature[] GetLivingAllies(Creature source)
+    {
+        return source?.CombatState?.GetTeammatesOf(source)
+            .Where(creature => creature.IsAlive)
+            .ToArray() ?? Array.Empty<Creature>();
+    }
+
     public static Creature[] GetLivingPlayerCreatures(Creature source)
     {
         if (source?.CombatState == null)

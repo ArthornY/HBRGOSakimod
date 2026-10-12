@@ -1,0 +1,948 @@
+{
+  "source_asset": "Assets/UI/Font/TextMeshPro/UI/UI.asset",
+  "source_cab": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\unity\\cache\\42c1bc3349780ed8e5ec63d5cbed5038\\17757a0bc6b4a6cf893ec4b968a14576\\raw\\CAB-e9d7886c96d8548eecef0422c29607db",
+  "source_cab_sha256": "7d22b5561a6d756240bab8cbb629553b8645a384da9a2fb02813b20703bd8066",
+  "source_font_path_id": 3753707355847806043,
+  "source_atlas_path_id": -2935631698219086757,
+  "source_material_path_id": 203740549088089973,
+  "source_material_name": "UI Material Shadow Red",
+  "face_color_baked": [
+    0.9647058823529412,
+    0.8980392156862745,
+    0.8980392156862745
+  ],
+  "runtime_label_modulate": "White (source face and red underlay both baked)",
+  "source_face_info": {
+    "m_FaceIndex": 0,
+    "m_FamilyName": "HYZhengYuan",
+    "m_StyleName": "75S",
+    "m_PointSize": 23,
+    "m_Scale": 1.0,
+    "m_UnitsPerEM": 1000,
+    "m_LineHeight": 32.0,
+    "m_AscentLine": 19.200000762939453,
+    "m_CapLine": 17.0,
+    "m_MeanLine": 13.0,
+    "m_Baseline": 0.0,
+    "m_DescentLine": -2.240000009536743,
+    "m_SuperscriptOffset": 24.167999267578125,
+    "m_SuperscriptSize": 0.5,
+    "m_SubscriptOffset": -10.104000091552734,
+    "m_SubscriptSize": 0.5,
+    "m_UnderlineOffset": -3.0,
+    "m_UnderlineThickness": 1.2000000476837158,
+    "m_StrikethroughOffset": 5.199999809265137,
+    "m_StrikethroughThickness": 1.149999976158142,
+    "m_TabWidth": 11.0
+  },
+  "characters": "0123456789/.-+%HPD ",
+  "glyph_count": 19,
+  "rasterization": {
+    "format": "BMFont text + RGBA face and baked underlay PNG",
+    "source_point_size": 23,
+    "coverage_formula": "clamp((source_alpha/255 - 0.5) * 5.0 + 0.5, 0, 1)",
+    "gradient_scale": 5.0,
+    "contour": 0.5,
+    "extra_source_padding": 5,
+    "metrics": "Original advances and glyph bearings rounded to BMFont integer pixels. Source paragraph leading distributed equally above/below glyph ascent/descent for a centered HUD label.",
+    "bmfont_baseline": 24,
+    "source_line_gap": 10.559999227523804,
+    "source_underlay_baked": {
+      "color": {
+        "r": 0.5686274766921997,
+        "g": 0.04313725605607033,
+        "b": 0.12941177189350128,
+        "a": 1.0
+      },
+      "dilate": 0.3499999940395355,
+      "softness": 0.5,
+      "scale_ratio_c": 0.6499999761581421,
+      "offset_x": 0.0,
+      "offset_y": 0.0,
+      "layer_scale": 1.9047619480124416,
+      "layer_bias": 0.23571431405690302,
+      "coverage_formula": "clamp(source_alpha/255 * layer_scale - layer_bias, 0, 1) * underlay_color.a; composite behind face"
+    },
+    "godot_requirements": "FixedSizeScaleMode.Enabled for requested font sizes; ModulateColorGlyphs=true for native colored HP warnings; outline 0 and transparent dynamic shadow.",
+    "limitation": "Original glyph shapes and metrics; face and original underlay rasterized at point size 23. Unity dynamic SDF filtering is not bit-identical at every scale."
+  },
+  "outputs": {
+    "hbr_ui_numbers_red.fnt": "a3a75b505cab6c09add4bf6fe1bfd6f1fbb4f6023904bebcb53a8027d777e386",
+    "hbr_ui_numbers_red.png": "fe18951eecf2798f12e920fd22a160daf67ba283c639329143a74949647278c7"
+  },
+  "reproduction_script": "E:\\stsmod\\output\\hbr-battle-ui-20260930\\export_ui_bitmap_font.py",
+  "reproduction_arguments": [
+    "--red"
+  ],
+  "glyphs": [
+    {
+      "character": " ",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 32,
+        "m_GlyphIndex": 1,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 1,
+        "m_Metrics": {
+          "m_Width": 0.0,
+          "m_Height": 0.0,
+          "m_HorizontalBearingX": 0.0,
+          "m_HorizontalBearingY": 0.0,
+          "m_HorizontalAdvance": 10.21875
+        },
+        "m_GlyphRect": {
+          "m_X": 0,
+          "m_Y": 0,
+          "m_Width": 0,
+          "m_Height": 0
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": null,
+      "bmfont": {
+        "id": 32,
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "xoffset": 0,
+        "yoffset": 0,
+        "xadvance": 10,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "%",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 37,
+        "m_GlyphIndex": 1177,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 1177,
+        "m_Metrics": {
+          "m_Width": 20.328125,
+          "m_Height": 17.9375,
+          "m_HorizontalBearingX": 0.625,
+          "m_HorizontalBearingY": 16.671875,
+          "m_HorizontalAdvance": 21.453125
+        },
+        "m_GlyphRect": {
+          "m_X": 3866,
+          "m_Y": 659,
+          "m_Width": 21,
+          "m_Height": 19
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3861,
+        1365,
+        3892,
+        1394
+      ],
+      "bmfont": {
+        "id": 37,
+        "x": 1,
+        "y": 1,
+        "width": 31,
+        "height": 29,
+        "xoffset": -4,
+        "yoffset": 2,
+        "xadvance": 21,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "+",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 43,
+        "m_GlyphIndex": 1151,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 1151,
+        "m_Metrics": {
+          "m_Width": 11.9375,
+          "m_Height": 11.9375,
+          "m_HorizontalBearingX": 0.625,
+          "m_HorizontalBearingY": 13.203125,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3704,
+          "m_Y": 1250,
+          "m_Width": 13,
+          "m_Height": 13
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3699,
+        780,
+        3722,
+        803
+      ],
+      "bmfont": {
+        "id": 43,
+        "x": 33,
+        "y": 1,
+        "width": 23,
+        "height": 23,
+        "xoffset": -4,
+        "yoffset": 6,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "-",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 45,
+        "m_GlyphIndex": 1076,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 1076,
+        "m_Metrics": {
+          "m_Width": 9.265625,
+          "m_Height": 2.3125,
+          "m_HorizontalBearingX": 0.765625,
+          "m_HorizontalBearingY": 9.0,
+          "m_HorizontalAdvance": 10.78125
+        },
+        "m_GlyphRect": {
+          "m_X": 3762,
+          "m_Y": 1399,
+          "m_Width": 11,
+          "m_Height": 3
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3757,
+        641,
+        3778,
+        654
+      ],
+      "bmfont": {
+        "id": 45,
+        "x": 57,
+        "y": 1,
+        "width": 21,
+        "height": 13,
+        "xoffset": -4,
+        "yoffset": 10,
+        "xadvance": 11,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": ".",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 46,
+        "m_GlyphIndex": 929,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 929,
+        "m_Metrics": {
+          "m_Width": 3.4375,
+          "m_Height": 3.296875,
+          "m_HorizontalBearingX": 1.765625,
+          "m_HorizontalBearingY": 2.46875,
+          "m_HorizontalAdvance": 6.96875
+        },
+        "m_GlyphRect": {
+          "m_X": 4082,
+          "m_Y": 980,
+          "m_Width": 5,
+          "m_Height": 4
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        4077,
+        1059,
+        4092,
+        1073
+      ],
+      "bmfont": {
+        "id": 46,
+        "x": 79,
+        "y": 1,
+        "width": 15,
+        "height": 14,
+        "xoffset": -3,
+        "yoffset": 17,
+        "xadvance": 7,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "/",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 47,
+        "m_GlyphIndex": 963,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 963,
+        "m_Metrics": {
+          "m_Width": 8.09375,
+          "m_Height": 17.703125,
+          "m_HorizontalBearingX": 0.9375,
+          "m_HorizontalBearingY": 16.375,
+          "m_HorizontalAdvance": 10.0
+        },
+        "m_GlyphRect": {
+          "m_X": 3528,
+          "m_Y": 309,
+          "m_Width": 10,
+          "m_Height": 19
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3523,
+        1715,
+        3543,
+        1744
+      ],
+      "bmfont": {
+        "id": 47,
+        "x": 95,
+        "y": 1,
+        "width": 20,
+        "height": 29,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 10,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "0",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 48,
+        "m_GlyphIndex": 811,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 811,
+        "m_Metrics": {
+          "m_Width": 12.03125,
+          "m_Height": 16.96875,
+          "m_HorizontalBearingX": 0.578125,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3613,
+          "m_Y": 1163,
+          "m_Width": 13,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3608,
+        862,
+        3631,
+        890
+      ],
+      "bmfont": {
+        "id": 48,
+        "x": 116,
+        "y": 1,
+        "width": 23,
+        "height": 28,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "1",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 49,
+        "m_GlyphIndex": 812,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 812,
+        "m_Metrics": {
+          "m_Width": 6.90625,
+          "m_Height": 16.828125,
+          "m_HorizontalBearingX": 2.0,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3491,
+          "m_Y": 823,
+          "m_Width": 7,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3486,
+        1202,
+        3503,
+        1230
+      ],
+      "bmfont": {
+        "id": 49,
+        "x": 140,
+        "y": 1,
+        "width": 17,
+        "height": 28,
+        "xoffset": -3,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "2",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 50,
+        "m_GlyphIndex": 813,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 813,
+        "m_Metrics": {
+          "m_Width": 10.96875,
+          "m_Height": 16.828125,
+          "m_HorizontalBearingX": 0.96875,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3603,
+          "m_Y": 1302,
+          "m_Width": 12,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3598,
+        723,
+        3620,
+        751
+      ],
+      "bmfont": {
+        "id": 50,
+        "x": 158,
+        "y": 1,
+        "width": 22,
+        "height": 28,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "3",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 51,
+        "m_GlyphIndex": 814,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 814,
+        "m_Metrics": {
+          "m_Width": 11.09375,
+          "m_Height": 16.96875,
+          "m_HorizontalBearingX": 0.84375,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3579,
+          "m_Y": 1313,
+          "m_Width": 12,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3574,
+        712,
+        3596,
+        740
+      ],
+      "bmfont": {
+        "id": 51,
+        "x": 181,
+        "y": 1,
+        "width": 22,
+        "height": 28,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "4",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 52,
+        "m_GlyphIndex": 815,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 815,
+        "m_Metrics": {
+          "m_Width": 12.6875,
+          "m_Height": 16.828125,
+          "m_HorizontalBearingX": 0.234375,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3586,
+          "m_Y": 1174,
+          "m_Width": 13,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3581,
+        851,
+        3604,
+        879
+      ],
+      "bmfont": {
+        "id": 52,
+        "x": 204,
+        "y": 1,
+        "width": 23,
+        "height": 28,
+        "xoffset": -5,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "5",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 53,
+        "m_GlyphIndex": 816,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 816,
+        "m_Metrics": {
+          "m_Width": 10.71875,
+          "m_Height": 16.8125,
+          "m_HorizontalBearingX": 1.3125,
+          "m_HorizontalBearingY": 15.984375,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3697,
+          "m_Y": 1320,
+          "m_Width": 12,
+          "m_Height": 17
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3692,
+        706,
+        3714,
+        733
+      ],
+      "bmfont": {
+        "id": 53,
+        "x": 228,
+        "y": 1,
+        "width": 22,
+        "height": 27,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "6",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 54,
+        "m_GlyphIndex": 817,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 817,
+        "m_Metrics": {
+          "m_Width": 11.671875,
+          "m_Height": 16.96875,
+          "m_HorizontalBearingX": 0.9375,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3560,
+          "m_Y": 1178,
+          "m_Width": 13,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3555,
+        847,
+        3578,
+        875
+      ],
+      "bmfont": {
+        "id": 54,
+        "x": 1,
+        "y": 31,
+        "width": 23,
+        "height": 28,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "7",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 55,
+        "m_GlyphIndex": 818,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 818,
+        "m_Metrics": {
+          "m_Width": 11.03125,
+          "m_Height": 16.8125,
+          "m_HorizontalBearingX": 1.0625,
+          "m_HorizontalBearingY": 15.984375,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3824,
+          "m_Y": 1287,
+          "m_Width": 12,
+          "m_Height": 17
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3819,
+        739,
+        3841,
+        766
+      ],
+      "bmfont": {
+        "id": 55,
+        "x": 25,
+        "y": 31,
+        "width": 22,
+        "height": 27,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "8",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 56,
+        "m_GlyphIndex": 819,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 819,
+        "m_Metrics": {
+          "m_Width": 11.78125,
+          "m_Height": 16.96875,
+          "m_HorizontalBearingX": 0.6875,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3534,
+          "m_Y": 1194,
+          "m_Width": 13,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3529,
+        831,
+        3552,
+        859
+      ],
+      "bmfont": {
+        "id": 56,
+        "x": 48,
+        "y": 31,
+        "width": 23,
+        "height": 28,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "9",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 57,
+        "m_GlyphIndex": 820,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 820,
+        "m_Metrics": {
+          "m_Width": 11.640625,
+          "m_Height": 16.96875,
+          "m_HorizontalBearingX": 0.640625,
+          "m_HorizontalBearingY": 16.140625,
+          "m_HorizontalAdvance": 13.171875
+        },
+        "m_GlyphRect": {
+          "m_X": 3509,
+          "m_Y": 1200,
+          "m_Width": 13,
+          "m_Height": 18
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3504,
+        825,
+        3527,
+        853
+      ],
+      "bmfont": {
+        "id": 57,
+        "x": 72,
+        "y": 31,
+        "width": 23,
+        "height": 28,
+        "xoffset": -4,
+        "yoffset": 3,
+        "xadvance": 13,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "D",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 68,
+        "m_GlyphIndex": 13,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 13,
+        "m_Metrics": {
+          "m_Width": 14.140625,
+          "m_Height": 16.671875,
+          "m_HorizontalBearingX": 1.640625,
+          "m_HorizontalBearingY": 15.984375,
+          "m_HorizontalAdvance": 16.75
+        },
+        "m_GlyphRect": {
+          "m_X": 3996,
+          "m_Y": 1209,
+          "m_Width": 15,
+          "m_Height": 17
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3991,
+        817,
+        4016,
+        844
+      ],
+      "bmfont": {
+        "id": 68,
+        "x": 96,
+        "y": 31,
+        "width": 25,
+        "height": 27,
+        "xoffset": -3,
+        "yoffset": 3,
+        "xadvance": 17,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "H",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 72,
+        "m_GlyphIndex": 22,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 22,
+        "m_Metrics": {
+          "m_Width": 13.609375,
+          "m_Height": 16.671875,
+          "m_HorizontalBearingX": 1.640625,
+          "m_HorizontalBearingY": 15.984375,
+          "m_HorizontalAdvance": 16.875
+        },
+        "m_GlyphRect": {
+          "m_X": 3969,
+          "m_Y": 1225,
+          "m_Width": 15,
+          "m_Height": 17
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3964,
+        801,
+        3989,
+        828
+      ],
+      "bmfont": {
+        "id": 72,
+        "x": 122,
+        "y": 31,
+        "width": 25,
+        "height": 27,
+        "xoffset": -3,
+        "yoffset": 3,
+        "xadvance": 17,
+        "page": 0,
+        "chnl": 15
+      }
+    },
+    {
+      "character": "P",
+      "source_character": {
+        "m_ElementType": 1,
+        "m_Unicode": 80,
+        "m_GlyphIndex": 42,
+        "m_Scale": 1.0
+      },
+      "source_glyph": {
+        "m_Index": 42,
+        "m_Metrics": {
+          "m_Width": 12.109375,
+          "m_Height": 16.671875,
+          "m_HorizontalBearingX": 1.640625,
+          "m_HorizontalBearingY": 15.984375,
+          "m_HorizontalAdvance": 14.578125
+        },
+        "m_GlyphRect": {
+          "m_X": 3824,
+          "m_Y": 1230,
+          "m_Width": 13,
+          "m_Height": 17
+        },
+        "m_Scale": 1.0,
+        "m_AtlasIndex": 0,
+        "m_ClassDefinitionType": 0
+      },
+      "source_crop_top_left": [
+        3819,
+        796,
+        3842,
+        823
+      ],
+      "bmfont": {
+        "id": 80,
+        "x": 148,
+        "y": 31,
+        "width": 23,
+        "height": 27,
+        "xoffset": -3,
+        "yoffset": 3,
+        "xadvance": 15,
+        "page": 0,
+        "chnl": 15
+      }
+    }
+  ]
+}

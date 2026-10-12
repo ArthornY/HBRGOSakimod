@@ -100,7 +100,7 @@ public sealed class SakuraRainPower : PowerModel
             : Task.CompletedTask;
     }
 
-    public override decimal ModifyDamageMultiplicative(
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,
@@ -153,7 +153,7 @@ public sealed class SakuraRainPower : PowerModel
         decimal retaliationDamage =
             result.TotalDamage * _retaliationDamageMultiplier;
         Flash();
-        await CreatureCmd.Damage(
+        await CreatureCommandCompatibility.Damage(
             choiceContext,
             targets,
             retaliationDamage,

@@ -2,7 +2,10 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -26,7 +29,24 @@ public sealed class SwordheartPower : PowerModel
 
     public static int GetMaxAmount(Creature creature)
     {
-        return BaseMaxAmount + SwordheartClarityPower.GetSwordheartMaxBonus(creature);
+        if (creature?.Player?.Character is not HbrgoSaki31O)
+        {
+            return 0;
+        }
+
+        return BaseMaxAmount +
+            SwordheartClarityPower.GetSwordheartMaxBonus(creature) +
+            HbrgoSakiHextechCompatLoader
+                .GetSwordheartMaximumBonus(creature);
+    }
+
+    public override Task AfterApplied(
+        Creature applier,
+        CardModel cardSource)
+    {
+        return Owner.Player?.Character is HbrgoSaki31O
+            ? Task.CompletedTask
+            : PowerCmd.Remove(this);
     }
 
     public override bool TryModifyPowerAmountReceived(PowerModel canonicalPower, Creature target, decimal amount, Creature applier, out decimal modifiedAmount)
@@ -38,7 +58,16 @@ public sealed class SwordheartPower : PowerModel
             return false;
         }
 
-        if (target.HasPower<MagicSwordModePower>())
+        if (Owner.Player?.Character is not HbrgoSaki31O)
+        {
+            modifiedAmount = 0m;
+            return true;
+        }
+
+        MagicSwordModePower magicSwordMode =
+            target.GetPower<MagicSwordModePower>();
+        if (magicSwordMode != null &&
+            !magicSwordMode.IsGrantingClaritySwordheart)
         {
             modifiedAmount = 0m;
             return true;
@@ -57,7 +86,11 @@ public sealed class SwordheartPower : PowerModel
 
     public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature applier, CardModel cardSource)
     {
-        if (power is not SwordheartPower || power.Owner != Owner || power.Amount < GetMaxAmount(Owner) || Owner.HasPower<MagicSwordModePower>())
+        if (Owner.Player?.Character is not HbrgoSaki31O ||
+            power is not SwordheartPower ||
+            power.Owner != Owner ||
+            power.Amount < GetMaxAmount(Owner) ||
+            Owner.HasPower<MagicSwordModePower>())
         {
             return;
         }
@@ -75,9 +108,12 @@ public sealed class SwordheartPower : PowerModel
 
         CardModel magicSwordModeCard =
             Owner.CombatState.CreateCard<MagicSwordModeHbrgoSaki>(Owner.Player);
-        await CardPileCmd.AddGeneratedCardToCombat(
-            magicSwordModeCard,
-            PileType.Hand,
-            Owner.Player);
+        using (MagicSwordHandCapacityHelper.AllowOneExtraSlot())
+        {
+            await CardPileCmd.AddGeneratedCardToCombat(
+                magicSwordModeCard,
+                PileType.Hand,
+                Owner.Player);
+        }
     }
 }

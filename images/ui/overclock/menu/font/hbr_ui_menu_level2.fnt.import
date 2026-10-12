@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://da8jcaupq3bxg"
+path="res://.godot/imported/hbr_ui_menu_level2.fnt-045c33452d53c46621ee07cdf606db49.fontdata"
+
+[deps]
+
+source_file="res://images/ui/overclock/menu/font/hbr_ui_menu_level2.fnt"
+dest_files=["res://.godot/imported/hbr_ui_menu_level2.fnt-045c33452d53c46621ee07cdf606db49.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

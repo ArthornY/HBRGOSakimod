@@ -1,8 +1,8 @@
-# Project build constraints
+# Main mod guidance
 
-- Keep both BaseLib and STS2-RitsuLib as runtime dependencies for future development and builds.
-- The default editor/export runtime is Godot 4.5.1 Mono.
-- Do not invoke Godot, export a PCK, or create a distributable package until the user explicitly asks to package ("打包"). Source-only validation with `dotnet build` is allowed.
-- On every requested package build, increment the mod version in `build/HBRGOSakiMod.json` by `0.0.0.1` before packaging.
-- Every package build must deliver the current JSON, DLL, PCK, PDB, and ZIP artifacts to the canonical project folder `/Users/arthorn/Documents/GitHub/HBRGOSakimod/build/`: `HBRGOSakiMod.json`, `HBRGOSakiMod.dll`, `HBRGOSakiMod.pck`, `HBRGOSakiMod.pdb`, and `hbrgomod_v<version>.zip` (for example, `hbrgomod_v1.0.3.2.zip`). Before delivering a new package, delete every older `hbrgomod*.zip` so that only the ZIP for the current version remains. A Codex worktree may use its local `build/` only as temporary packaging staging; after the five artifacts are synced and verified, delete the entire worktree `build/` directory so no Codex-local build copy is retained.
-- In future localization text, represent gained or lost energy with the same number of vanilla-style energy icons (for example, BaseLib SimpleLoc `[E]` and `[EE]`) instead of writing the amount as plain text.
+- Keep BaseLib and STS2-RitsuLib as runtime dependencies. The default editor/export runtime is Godot 4.5.1 Mono.
+- Do not invoke Godot, export a PCK, or create a distributable until the user explicitly requests packaging ("打包"). Source-only `dotnet build` is allowed; use `-p:SkipModOutputCopy=true` when validation should leave delivered DLL/PDB files untouched.
+- For packaging, read [.agents/skills/hbrgo-packaging/SKILL.md](.agents/skills/hbrgo-packaging/SKILL.md). Follow the user's current version instruction, including "版本号不变", and leave an unchanged SoundPack alone.
+- Read and validate only the areas affected by the task. Continue through implementation and appropriate checks without stopping merely at a first draft; distinguish source/build validation from an actual in-game test.
+- In localization, show gained/lost energy with the matching number of vanilla-style energy icons, such as BaseLib SimpleLoc `[E]` and `[EE]`, instead of plain numeric energy text.
+- Default new card portraits to `images/packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png` unless the user provides another image.

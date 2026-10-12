@@ -70,7 +70,9 @@ public sealed class PiercingShotHbrgoSaki : CardModel
         foreach (Creature target in targets)
         {
             int fragile =
-                target.GetPower<FragilePower>()?.Amount ?? 0;
+                ReptureBowPower.GetEnemyPowerAmount<FragilePower>(
+                    Owner.Creature,
+                    target);
             decimal damage =
                 DynamicVars.Damage.BaseValue +
                 fragile * DamagePerFragile;
@@ -78,7 +80,7 @@ public sealed class PiercingShotHbrgoSaki : CardModel
                     ModeTransitionHelper.GetAdjustedEffectAmount(
                         this,
                         damage))
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .Targeting(target)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);

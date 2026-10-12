@@ -25,7 +25,7 @@ public sealed class AccelerationHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<AccelerationPower>(15m)
+        new PowerVar<AccelerationPower>(20m)
     };
 
     public AccelerationHbrgoSaki()
@@ -47,6 +47,6 @@ public sealed class AccelerationHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars["AccelerationPower"].UpgradeValueBy(7m);
+        DynamicVars["AccelerationPower"].UpgradeValueBy(5m);
     }
 }

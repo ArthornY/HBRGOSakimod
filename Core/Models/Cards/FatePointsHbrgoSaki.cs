@@ -19,7 +19,8 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class FatePointsHbrgoSaki : CardModel
 {
-    private const decimal _criticalDamage = 77m;
+    private const string _highRollDamageVar = "HighRollDamage";
+    private const string _criticalDamageVar = "CriticalDamage";
     private const decimal _criticalGold = 77m;
 
     public override string PortraitPath => ImageHelper.GetImagePath(
@@ -30,7 +31,7 @@ public sealed class FatePointsHbrgoSaki : CardModel
     public override IEnumerable<CardKeyword> CanonicalKeywords =>
         new[]
         {
-            CardKeyword.Ethereal,
+            CardKeyword.Retain,
             CardKeyword.Exhaust
         };
 
@@ -38,6 +39,10 @@ public sealed class FatePointsHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new DamageVar(1m, ValueProp.Move),
+            new DamageVar(_highRollDamageVar, 14m, ValueProp.Move),
+            new DamageVar(_criticalDamageVar, 77m, ValueProp.Move),
+            new BlockVar(7m, ValueProp.Move),
+            new PowerVar<ChargePower>(1m),
             new PowerVar<FragilePower>(5m),
             new PowerVar<VulnerablePower>(5m),
             new PowerVar<WeakPower>(5m)
@@ -46,6 +51,8 @@ public sealed class FatePointsHbrgoSaki : CardModel
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
+            HoverTipFactory.Static(StaticHoverTip.Block),
+            HoverTipFactory.FromPower<ChargePower>(),
             HoverTipFactory.FromPower<FragilePower>(),
             HoverTipFactory.FromPower<VulnerablePower>(),
             HoverTipFactory.FromPower<WeakPower>()
@@ -53,7 +60,7 @@ public sealed class FatePointsHbrgoSaki : CardModel
 
     public FatePointsHbrgoSaki()
         : base(
-            3,
+            1,
             CardType.Attack,
             CardRarity.Rare,
             TargetType.AnyEnemy)
@@ -72,17 +79,35 @@ public sealed class FatePointsHbrgoSaki : CardModel
             this.Capability<RollGlossaryCapability>();
         int roll = rollCapability?.EnsureCurrentRollFor(this) ?? 0;
         bool isCritical =
-            rollCapability?.GetRollTier(roll) ==
+            RollKeywordRules.GetRollTier(
+                Owner,
+                rollCapability?.GetCurrentRollDetailsFor(this)) ==
             SoulRollTier.Critical;
         decimal damage = isCritical
-            ? _criticalDamage
-            : DynamicVars.Damage.BaseValue;
+            ? DynamicVars[_criticalDamageVar].BaseValue
+            : roll > 50
+                ? DynamicVars[_highRollDamageVar].BaseValue
+                : DynamicVars.Damage.BaseValue;
 
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
+
+        if (!isCritical && roll > 75)
+        {
+            await CreatureCmd.GainBlock(
+                Owner.Creature,
+                DynamicVars.Block,
+                cardPlay);
+            await PowerCmd.Apply<ChargePower>(
+                choiceContext,
+                Owner.Creature,
+                DynamicVars["ChargePower"].BaseValue,
+                Owner.Creature,
+                this);
+        }
 
         if (!isCritical)
         {
@@ -111,8 +136,8 @@ public sealed class FatePointsHbrgoSaki : CardModel
                 this);
         }
 
-        Owner.GetRelic<Overclock>()?
-            .GainCharge(Overclock.ChargePerLevel);
+        Overclock overclock = Owner.GetRelic<Overclock>();
+        overclock?.GainCharge(overclock.ChargePerLevel);
         if (IsUpgraded)
         {
             await PlayerCmd.GainGold(
@@ -121,8 +146,5 @@ public sealed class FatePointsHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade()
-    {
-        RemoveKeyword(CardKeyword.Ethereal);
-    }
+    public override bool GainsBlock => true;
 }

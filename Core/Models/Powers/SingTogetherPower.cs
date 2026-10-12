@@ -39,7 +39,7 @@ public sealed class SingTogetherPower : PowerModel
 
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        if (!Owner.HasPower<PreparationPower>())
+        if (!Owner.HasPower<PreparationPower>() && !Owner.HasPower<HighSongPower>())
         {
             await PowerCmd.Apply<PreparationPower>(
                 new ThrowingPlayerChoiceContext(),
@@ -104,7 +104,7 @@ public sealed class SingTogetherPower : PowerModel
         await PowerCmd.Apply<HighSongPower>(
             choiceContext,
             Owner,
-            1m,
+            HighSongPower.GetInitialAmount(Owner),
             Owner,
             null);
         await HighSongPower.EnsureCardInHand(Owner.Player);

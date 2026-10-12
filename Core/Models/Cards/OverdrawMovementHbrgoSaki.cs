@@ -13,7 +13,6 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class OverdrawMovementHbrgoSaki : CardModel
 {
     private const string _dpLossVar = "DpLoss";
-    private const string _energyGainVar = "EnergyGain";
 
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/overdraw_movement_hbrgo_saki.png");
@@ -24,7 +23,7 @@ public sealed class OverdrawMovementHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new IntVar(_dpLossVar, 15m),
-            new IntVar(_energyGainVar, 2m)
+            new EnergyVar(2)
         };
 
     public OverdrawMovementHbrgoSaki()
@@ -40,10 +39,19 @@ public sealed class OverdrawMovementHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        Owner.GetRelic<DeflectorProtection>()?
-            .LoseDp((int)DynamicVars[_dpLossVar].BaseValue);
+        DeflectorProtection protection =
+            Owner.GetRelic<DeflectorProtection>();
+        protection?.LoseDp(
+            (int)DynamicVars[_dpLossVar].BaseValue);
+        if (protection != null)
+        {
+            await protection.ResolveMentalStrengthDpLossRewards(
+                choiceContext,
+                this);
+        }
+
         await PlayerCmd.GainEnergy(
-            DynamicVars[_energyGainVar].BaseValue,
+            DynamicVars.Energy.BaseValue,
             Owner);
     }
 

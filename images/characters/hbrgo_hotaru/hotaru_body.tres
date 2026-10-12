@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://images/characters/hbrgo_hotaru/hotaru.png" id="1_hotaru"]
+
+[resource]
+atlas = ExtResource("1_hotaru")
+region = Rect2(686, 298, 1188, 1708)
+filter_clip = true

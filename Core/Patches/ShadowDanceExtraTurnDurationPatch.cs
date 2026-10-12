@@ -11,7 +11,7 @@ internal static class ShadowDanceExtraTurnDurationPatch
 {
     private static bool Prefix(PowerModel power, ref Task __result)
     {
-        if (power == null || !ExtraTurnDurationHelper.ShouldSuppressDurationTick(power.Owner))
+        if (!ExtraTurnDurationHelper.ShouldSuppressDurationTick(power))
         {
             return true;
         }

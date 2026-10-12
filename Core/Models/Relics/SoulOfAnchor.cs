@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
@@ -17,6 +19,7 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 public class SoulOfAnchor : RelicModel, IModRelicVisibility
 {
     private int _lastRoll;
+    private decimal _runPeakTotalDamage;
     private List<SoulRollHistoryEntry> _rollHistory = new();
 
     public event Action HistoryChanged;
@@ -37,6 +40,28 @@ public class SoulOfAnchor : RelicModel, IModRelicVisibility
     protected override string BigIconPath => PackedIconPath;
 
     public IReadOnlyList<SoulRollHistoryEntry> RollHistory => _rollHistory;
+
+    internal decimal RunPeakTotalDamage => _runPeakTotalDamage;
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public string RunPeakTotalDamageData
+    {
+        get => _runPeakTotalDamage > 0m
+            ? _runPeakTotalDamage.ToString("0.############################", CultureInfo.InvariantCulture)
+            : string.Empty;
+        private set
+        {
+            AssertMutable();
+            _runPeakTotalDamage = decimal.TryParse(value, NumberStyles.Number,
+                CultureInfo.InvariantCulture, out decimal amount) ? Math.Max(0m, amount) : 0m;
+        }
+    }
+
+    internal void RecordRunPeakTotalDamage(decimal totalDamage)
+    {
+        AssertMutable();
+        _runPeakTotalDamage = Math.Max(_runPeakTotalDamage, totalDamage);
+    }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int LastRoll
@@ -70,10 +95,13 @@ public class SoulOfAnchor : RelicModel, IModRelicVisibility
     {
         AssertMutable();
         SoulRollBreakdown resolvedWinningRoll =
-            winningRoll ?? SoulRollBreakdown.FromFinalRoll(0);
+            RollKeywordRules.ResolveRollTier(
+                Owner,
+                winningRoll ?? SoulRollBreakdown.FromFinalRoll(0));
         _rollHistory.Add(new SoulRollHistoryEntry(
             resolvedWinningRoll,
-            discardedRolls ?? Array.Empty<SoulRollBreakdown>(),
+            discardedRolls?.Select(roll => RollKeywordRules.ResolveRollTier(Owner, roll))
+                ?? Enumerable.Empty<SoulRollBreakdown>(),
             source));
         LastRoll = resolvedWinningRoll.FinalRoll;
         NotifyHistoryChanged();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -10,10 +11,10 @@ internal static class HbrgoSakiDamageMultiplierHelper
     [ThreadStatic]
     private static Stack<AdditiveDamageContext> _contexts;
 
-    internal static void Begin()
+    internal static void Begin(Creature dealer = null)
     {
         _contexts ??= new Stack<AdditiveDamageContext>();
-        _contexts.Push(new AdditiveDamageContext());
+        _contexts.Push(new AdditiveDamageContext(dealer));
     }
 
     internal static decimal Add(decimal multiplier, AbstractModel source)
@@ -25,9 +26,27 @@ internal static class HbrgoSakiDamageMultiplierHelper
 
         if (multiplier != 1m)
         {
-            _contexts.Peek().Add(multiplier, source);
+            _contexts.Peek().Add(multiplier, source,
+                TemporaryDamageBonusHelper.IsTemporarySource(source, _contexts.Peek().Dealer));
         }
 
+        return 1m;
+    }
+
+    internal static decimal AddPermanent(decimal multiplier, AbstractModel source) =>
+        AddExplicit(multiplier, source, false, true);
+
+    internal static decimal AddTemporary(decimal multiplier, AbstractModel source) =>
+        AddExplicit(multiplier, source, true, false);
+
+    internal static decimal AddNonTemporary(decimal multiplier, AbstractModel source) =>
+        AddExplicit(multiplier, source, false, false);
+
+    private static decimal AddExplicit(decimal multiplier, AbstractModel source,
+        bool temporary, bool permanent)
+    {
+        if (_contexts == null || _contexts.Count == 0) return multiplier;
+        if (multiplier != 1m) _contexts.Peek().Add(multiplier, source, temporary, permanent);
         return 1m;
     }
 
@@ -41,7 +60,12 @@ internal static class HbrgoSakiDamageMultiplierHelper
         AdditiveDamageContext context = _contexts.Pop();
         return new AdditiveDamageResult(
             context.MultiplierOffset,
-            context.Sources.Distinct().ToArray());
+            context.Sources.Distinct().ToArray(),
+            context.PositiveMultiplierOffset,
+            context.PermanentMultiplierOffset,
+            context.TemporaryPositiveMultiplierOffset,
+            context.NegativeMultiplierOffset,
+            context.OtherPositiveMultiplierOffset);
     }
 
     internal static void Abort()
@@ -54,13 +78,35 @@ internal static class HbrgoSakiDamageMultiplierHelper
 
     private sealed class AdditiveDamageContext
     {
+        internal Creature Dealer { get; }
+        internal AdditiveDamageContext(Creature dealer) => Dealer = dealer;
+
         internal decimal MultiplierOffset { get; private set; }
+
+        internal decimal PositiveMultiplierOffset { get; private set; }
+
+        internal decimal PermanentMultiplierOffset { get; private set; }
+        internal decimal TemporaryPositiveMultiplierOffset { get; private set; }
+        internal decimal NegativeMultiplierOffset { get; private set; }
+        internal decimal OtherPositiveMultiplierOffset { get; private set; }
 
         internal List<AbstractModel> Sources { get; } = new();
 
-        internal void Add(decimal multiplier, AbstractModel source)
+        internal void Add(decimal multiplier, AbstractModel source, bool temporary, bool permanent = false)
         {
-            MultiplierOffset += multiplier - 1m;
+            decimal offset = multiplier - 1m;
+            MultiplierOffset = DamageAmplificationLimits.AddSaturated(MultiplierOffset, offset);
+            PositiveMultiplierOffset = DamageAmplificationLimits.AddSaturated(
+                PositiveMultiplierOffset, Math.Max(0m, offset));
+            if (permanent)
+                PermanentMultiplierOffset = DamageAmplificationLimits.AddSaturated(PermanentMultiplierOffset, offset);
+            else if (offset < 0m)
+                NegativeMultiplierOffset = DamageAmplificationLimits.AddSaturated(NegativeMultiplierOffset, offset);
+            else if (temporary)
+                TemporaryPositiveMultiplierOffset = DamageAmplificationLimits.AddSaturated(
+                    TemporaryPositiveMultiplierOffset, offset);
+            else
+                OtherPositiveMultiplierOffset = DamageAmplificationLimits.AddSaturated(OtherPositiveMultiplierOffset, offset);
             if (source != null)
             {
                 Sources.Add(source);
@@ -76,13 +122,33 @@ internal readonly struct AdditiveDamageResult
 
     internal decimal MultiplierOffset { get; }
 
+    internal decimal PositiveMultiplierOffset { get; }
+
+    internal decimal PermanentMultiplierOffset { get; }
+
+    internal decimal TemporaryPositiveMultiplierOffset { get; }
+
+    internal decimal NegativeMultiplierOffset { get; }
+
+    internal decimal OtherPositiveMultiplierOffset { get; }
+
     internal IReadOnlyList<AbstractModel> Sources { get; }
 
     internal AdditiveDamageResult(
         decimal multiplierOffset,
-        IReadOnlyList<AbstractModel> sources)
+        IReadOnlyList<AbstractModel> sources,
+        decimal positiveMultiplierOffset = 0m,
+        decimal permanentMultiplierOffset = 0m,
+        decimal temporaryPositiveMultiplierOffset = 0m,
+        decimal negativeMultiplierOffset = 0m,
+        decimal otherPositiveMultiplierOffset = 0m)
     {
         MultiplierOffset = multiplierOffset;
+        PositiveMultiplierOffset = positiveMultiplierOffset;
+        PermanentMultiplierOffset = permanentMultiplierOffset;
+        TemporaryPositiveMultiplierOffset = temporaryPositiveMultiplierOffset;
+        NegativeMultiplierOffset = negativeMultiplierOffset;
+        OtherPositiveMultiplierOffset = otherPositiveMultiplierOffset;
         Sources = sources ?? Array.Empty<AbstractModel>();
     }
 }

@@ -45,9 +45,11 @@ public sealed class NoSelfInDreamHbrgoSaki : CardModel
             startingBlock / _blockPerTemporaryStrength;
         if (startingBlock > 0)
         {
-            await CreatureCmd.LoseBlock(
+            await CreatureCommandCompatibility.LoseBlock(
+                choiceContext,
                 Owner.Creature,
-                startingBlock);
+                startingBlock,
+                Owner.Creature);
         }
 
         if (temporaryStrength > 0)
@@ -60,7 +62,16 @@ public sealed class NoSelfInDreamHbrgoSaki : CardModel
                 this);
         }
 
-        Owner.GetRelic<DeflectorProtection>()?.LoseDpByCurrentPercent(_currentDpLossPercent);
+        DeflectorProtection protection =
+            Owner.GetRelic<DeflectorProtection>();
+        protection?.LoseDpByCurrentPercent(
+            _currentDpLossPercent);
+        if (protection != null)
+        {
+            await protection.ResolveMentalStrengthDpLossRewards(
+                choiceContext,
+                this);
+        }
 
         await PowerCmd.Apply<NoSelfInDreamPower>(
             choiceContext,

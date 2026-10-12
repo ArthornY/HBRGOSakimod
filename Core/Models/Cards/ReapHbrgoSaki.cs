@@ -50,7 +50,7 @@ public sealed class ReapHbrgoSaki : CardModel
         bool targetWasAlive = cardPlay.Target.IsAlive;
 
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

@@ -1,25 +1,42 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
-using HBRGOSakiMod.Core.Audio;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Characters;
-using MegaCrit.Sts2.Core.Entities.Multiplayer;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.addons.mega_text;
 
 namespace HBRGOSakiMod.Core.Patches;
 
-internal static class HbrgoSakiVariantSelector
+internal static class HbrgoSakiCharacterSelectVariantSelector
 {
-    private const string SelectorNodeName = "HBRGOSakiVariantSelector";
-
     private static readonly ConditionalWeakTable<
         NCharacterSelectScreen,
         SelectorState> States = new();
+
+    internal static IReadOnlyList<CharacterModel> NormalizeCharacterCatalog(IEnumerable<CharacterModel> characters)
+    {
+        List<CharacterModel> result = new();
+        bool hasHotaru = false;
+        foreach (CharacterModel character in characters ?? Enumerable.Empty<CharacterModel>())
+        {
+            if (character is not HbrgoHotaru)
+            {
+                result.Add(character);
+                continue;
+            }
+            if (hasHotaru) continue;
+            // BaseLib discovery and the Ritsu catalog may both contribute the
+            // same type. Keep its canonical model and every existing save alias.
+            result.Add(ModelDb.Character<HbrgoHotaru>());
+            hasHotaru = true;
+        }
+        return result;
+    }
 
     internal static void Attach(NCharacterSelectScreen screen)
     {
@@ -28,230 +45,294 @@ internal static class HbrgoSakiVariantSelector
             return;
         }
 
-        HBoxContainer root = new()
+        Button switchButton = new()
         {
-            Name = SelectorNodeName,
-            Visible = false,
-            Alignment = BoxContainer.AlignmentMode.Center,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            Name = "HBRGOSakiVariantSwitchButton",
+            AnchorLeft = 0f,
+            AnchorTop = 1f,
+            AnchorRight = 1f,
+            AnchorBottom = 1f,
+            OffsetLeft = 18f,
+            OffsetTop = -62f,
+            OffsetRight = -18f,
+            OffsetBottom = -12f,
+            ClipText = true,
+            FocusMode = Control.FocusModeEnum.All,
+            MouseDefaultCursorShape = Control.CursorShape.PointingHand
         };
-        root.AddThemeConstantOverride("separation", 12);
-
-        Button thirtyOneOButton = CreateButton(
-            GetCharacterTitle(ModelDb.Character<HbrgoSaki31O>()));
-        Button artificialSaviorButton = CreateButton(
-            GetCharacterTitle(ModelDb.Character<HbrgoSaki>()));
-        root.AddChild(thirtyOneOButton);
-        root.AddChild(artificialSaviorButton);
-
-        SelectorState state = new(
-            root,
-            thirtyOneOButton,
-            artificialSaviorButton,
-            HbrgoSakiVariantPreference.GetPreferredVariant());
+        switchButton.AddThemeFontSizeOverride("font_size", 18);
+        screen.GetNode<Control>("InfoPanel").AddChild(switchButton);
+        SelectorState state = new(switchButton);
         States.Add(screen, state);
-
-        thirtyOneOButton.Pressed += () =>
-            SelectVariant(screen, HbrgoSakiVariant.ThirtyOneO);
-        artificialSaviorButton.Pressed += () =>
-            SelectVariant(screen, HbrgoSakiVariant.ArtificialSavior);
-
-        Control infoLayout =
-            screen.GetNode<Control>("InfoPanel/VBoxContainer");
-        infoLayout.AddChild(root);
-        infoLayout.MoveChild(
-            root,
-            infoLayout.GetNode("DescriptionLabel").GetIndex());
-        RefreshButtons(state);
+        switchButton.Pressed += () => Toggle(screen);
+        Refresh(state);
     }
 
-    internal static void ResolveInitialSelection(
-        NCharacterSelectScreen screen,
-        NCharacterSelectButton charSelectButton,
-        ref CharacterModel characterModel)
-    {
-        if (charSelectButton.IsRandom ||
-            charSelectButton.IsLocked ||
-            charSelectButton.Character?.GetType() != typeof(HbrgoSaki) ||
-            characterModel?.GetType() != typeof(HbrgoSaki))
-        {
-            return;
-        }
-
-        HbrgoSakiVariant variant = States.TryGetValue(screen, out SelectorState state)
-            ? state.SelectedVariant
-            : HbrgoSakiVariantPreference.GetPreferredVariant();
-        characterModel = HbrgoSakiVariantPreference.GetCharacter(variant);
-    }
-
-    internal static void Refresh(
-        NCharacterSelectScreen screen,
-        NCharacterSelectButton charSelectButton,
-        CharacterModel characterModel)
-    {
-        if (!States.TryGetValue(screen, out SelectorState state))
-        {
-            return;
-        }
-
-        bool isSelectableSaki =
-            !charSelectButton.IsRandom &&
-            !charSelectButton.IsLocked &&
-            characterModel is HbrgoSaki;
-        state.Root.Visible = isSelectableSaki;
-        if (!isSelectableSaki)
-        {
-            state.SakiButton = null;
-            return;
-        }
-
-        state.SakiButton = charSelectButton;
-        state.SelectedVariant =
-            HbrgoSakiVariantPreference.FromCharacter(characterModel);
-        RefreshButtons(state);
-        RefreshInteraction(screen);
-    }
-
-    internal static void RefreshRemoteSelection(
-        NCharacterSelectScreen screen,
-        LobbyPlayer player)
-    {
-        if (screen.Lobby == null ||
-            player.id == screen.Lobby.LocalPlayer.id ||
-            player.character is not HbrgoSaki31O)
-        {
-            return;
-        }
-
-        NCharacterSelectButton visibleSakiButton = screen
-            .GetNode<Control>("CharSelectButtons/ButtonContainer")
-            .GetChildren()
-            .OfType<NCharacterSelectButton>()
-            .FirstOrDefault(button =>
-                button.Character?.GetType() == typeof(HbrgoSaki));
-        visibleSakiButton?.OnRemotePlayerSelected(player.id);
-    }
-
-    internal static void ClearRemoteSelection(
-        NCharacterSelectScreen screen,
-        LobbyPlayer player)
-    {
-        if (player.character is not HbrgoSaki31O)
-        {
-            return;
-        }
-
-        NCharacterSelectButton visibleSakiButton = screen
-            .GetNode<Control>("CharSelectButtons/ButtonContainer")
-            .GetChildren()
-            .OfType<NCharacterSelectButton>()
-            .FirstOrDefault(button =>
-                button.Character?.GetType() == typeof(HbrgoSaki));
-        visibleSakiButton?.OnRemotePlayerDeselected(player.id);
-    }
-
-    internal static void RefreshInteraction(
+    internal static void RestorePreferredVariant(
         NCharacterSelectScreen screen)
     {
+        HbrgoSakiVariant variant =
+            HbrgoSakiVariantPreference.GetPreferredVariant();
+        if (variant == HbrgoSakiVariant.ThirtyA &&
+            !HbrgoSakiVariantPreference.IsThirtyAUnlocked())
+        {
+            variant = HbrgoSakiVariant.ThirtyOneO;
+        }
+
+        SelectVariant(screen, variant);
+    }
+
+    internal static void OnCharacterSelected(
+        NCharacterSelectScreen screen,
+        CharacterModel character)
+    {
+        if (character is HbrgoHotaru &&
+            AccessTools.Field(typeof(NCharacterSelectScreen), "_hp")?.GetValue(screen) is MegaLabel hp)
+            hp.SetTextAutoSize($"{HbrgoHotaru.InitialCurrentHp}/{character.StartingHp}");
+
         if (!States.TryGetValue(screen, out SelectorState state))
         {
             return;
         }
 
-        bool canSwitch =
-            state.Root.Visible &&
-            screen.Lobby != null &&
-            !screen.Lobby.LocalPlayer.isReady;
-        state.ThirtyOneOButton.Disabled = !canSwitch;
-        state.ArtificialSaviorButton.Disabled = !canSwitch;
+        if (character is HbrgoSaki30A or HbrgoSaki31O)
+        {
+            state.SelectedVariant =
+                HbrgoSakiVariantPreference.FromCharacter(character);
+            HbrgoSakiVariantPreference.SetPreferredVariant(
+                state.SelectedVariant);
+            state.Button.Visible = true;
+        }
+        else
+        {
+            state.Button.Visible = false;
+        }
+
+        Refresh(state);
+    }
+
+    private static void Toggle(NCharacterSelectScreen screen)
+    {
+        if (!States.TryGetValue(screen, out SelectorState state))
+        {
+            return;
+        }
+
+        HbrgoSakiVariant next = state.SelectedVariant ==
+            HbrgoSakiVariant.ThirtyA
+                ? HbrgoSakiVariant.ThirtyOneO
+                : HbrgoSakiVariant.ThirtyA;
+        if (next == HbrgoSakiVariant.ThirtyA &&
+            !HbrgoSakiVariantPreference.IsThirtyAUnlocked())
+        {
+            Refresh(state);
+            return;
+        }
+
+        HbrgoSakiVariantPreference.SetPreferredVariant(next);
+        SelectVariant(screen, next);
+    }
+
+    internal static void RefreshRemoteSharedSelection(
+        NCharacterSelectScreen screen,
+        object player)
+    {
+        if (!TryReadPlayer(player, out ulong playerId, out CharacterModel character) ||
+            playerId == GetLocalPlayerId(screen) ||
+            FindSharedButton(screen) is not { } sharedButton)
+        {
+            return;
+        }
+
+        bool isSakiVariant = character is
+            HbrgoSaki30A or HbrgoSaki31O;
+        if (isSakiVariant &&
+            !sharedButton.RemoteSelectedPlayers.Contains(playerId))
+        {
+            sharedButton.OnRemotePlayerSelected(playerId);
+        }
+        else if (!isSakiVariant &&
+                 sharedButton.RemoteSelectedPlayers.Contains(playerId))
+        {
+            sharedButton.OnRemotePlayerDeselected(playerId);
+        }
+    }
+
+    internal static void RemoveRemoteSharedSelection(
+        NCharacterSelectScreen screen,
+        object player)
+    {
+        if (!TryReadPlayer(player, out ulong playerId, out _))
+        {
+            return;
+        }
+
+        if (FindSharedButton(screen) is { } sharedButton &&
+            sharedButton.RemoteSelectedPlayers.Contains(playerId))
+        {
+            sharedButton.OnRemotePlayerDeselected(playerId);
+        }
+    }
+
+    private static ulong GetLocalPlayerId(
+        NCharacterSelectScreen screen)
+    {
+        object localPlayer = AccessTools.Property(
+                screen.Lobby.GetType(),
+                "LocalPlayer")?
+            .GetValue(screen.Lobby);
+        return TryReadPlayer(localPlayer, out ulong playerId, out _)
+            ? playerId
+            : ulong.MaxValue;
+    }
+
+    private static bool TryReadPlayer(
+        object player,
+        out ulong playerId,
+        out CharacterModel character)
+    {
+        playerId = 0;
+        character = null;
+        if (player == null)
+        {
+            return false;
+        }
+
+        Type playerType = player.GetType();
+        object idValue = AccessTools.Field(playerType, "id")?
+            .GetValue(player);
+        character = AccessTools.Field(playerType, "character")?
+            .GetValue(player) as CharacterModel;
+        if (idValue == null)
+        {
+            return false;
+        }
+
+        playerId = Convert.ToUInt64(idValue);
+        return true;
     }
 
     private static void SelectVariant(
         NCharacterSelectScreen screen,
         HbrgoSakiVariant variant)
     {
-        if (!States.TryGetValue(screen, out SelectorState state) ||
-            state.SakiButton == null ||
-            state.SelectedVariant == variant)
-        {
-            RefreshButtons(state);
-            return;
-        }
-
-        state.SelectedVariant = variant;
-        screen.SelectCharacter(
-            state.SakiButton,
-            HbrgoSakiVariantPreference.GetCharacter(variant));
-    }
-
-    private static Button CreateButton(string title)
-    {
-        Button button = new()
-        {
-            Text = title,
-            ToggleMode = true,
-            ClipText = true,
-            CustomMinimumSize = new Vector2(190f, 44f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            FocusMode = Control.FocusModeEnum.All,
-            MouseDefaultCursorShape = Control.CursorShape.PointingHand
-        };
-        button.AddThemeFontSizeOverride("font_size", 18);
-        return button;
-    }
-
-    private static string GetCharacterTitle(CharacterModel character)
-    {
-        return new LocString(
-            "characters",
-            character.CharacterSelectTitle).GetFormattedText();
-    }
-
-    private static void RefreshButtons(SelectorState state)
-    {
-        if (state == null)
+        NCharacterSelectButton sharedButton = FindSharedButton(screen);
+        if (sharedButton == null)
         {
             return;
         }
 
-        state.ThirtyOneOButton.ButtonPressed =
-            state.SelectedVariant == HbrgoSakiVariant.ThirtyOneO;
-        state.ArtificialSaviorButton.ButtonPressed =
-            state.SelectedVariant == HbrgoSakiVariant.ArtificialSavior;
+        bool selectedSharedButton = !sharedButton.IsSelected;
+        if (selectedSharedButton)
+        {
+            sharedButton.Select();
+        }
+
+        CharacterModel character =
+            HbrgoSakiVariantPreference.GetCharacter(variant);
+        if (variant == HbrgoSakiVariant.ThirtyA ||
+            !selectedSharedButton)
+        {
+            screen.SelectCharacter(sharedButton, character);
+        }
+    }
+
+    private static NCharacterSelectButton FindSharedButton(
+        NCharacterSelectScreen screen)
+    {
+        CharacterModel sharedCharacter =
+            HbrgoSakiVariantPreference.GetCharacter(
+                HbrgoSakiVariant.ThirtyOneO);
+        return screen
+            .GetNode<Control>("CharSelectButtons/ButtonContainer")
+            .GetChildren()
+            .OfType<NCharacterSelectButton>()
+            .FirstOrDefault(button => button.Character == sharedCharacter);
+    }
+
+    private static void Refresh(SelectorState state)
+    {
+        bool unlocked = HbrgoSakiVariantPreference.IsThirtyAUnlocked();
+        if (state.SelectedVariant == HbrgoSakiVariant.ThirtyA)
+        {
+            state.Button.Text = "切换至 丰川祥子（31O）";
+            state.Button.Disabled = false;
+            state.Button.TooltipText = state.Button.Text;
+            return;
+        }
+
+        state.Button.Text = unlocked
+            ? "切换至 丰川祥子（30A）"
+            : "丰川祥子（30A）：31O解锁骨龙后解锁";
+        state.Button.Disabled = !unlocked;
+        state.Button.TooltipText = state.Button.Text;
     }
 
     private sealed class SelectorState
     {
-        internal SelectorState(
-            HBoxContainer root,
-            Button thirtyOneOButton,
-            Button artificialSaviorButton,
-            HbrgoSakiVariant selectedVariant)
+        internal SelectorState(Button button)
         {
-            Root = root;
-            ThirtyOneOButton = thirtyOneOButton;
-            ArtificialSaviorButton = artificialSaviorButton;
-            SelectedVariant = selectedVariant;
+            Button = button;
+            SelectedVariant = HbrgoSakiVariant.ThirtyOneO;
         }
 
-        internal HBoxContainer Root { get; }
-
-        internal Button ThirtyOneOButton { get; }
-
-        internal Button ArtificialSaviorButton { get; }
-
-        internal NCharacterSelectButton SakiButton { get; set; }
+        internal Button Button { get; }
 
         internal HbrgoSakiVariant SelectedVariant { get; set; }
     }
 }
 
+[HarmonyPatch(typeof(ModelDb), nameof(ModelDb.AllCharacters), MethodType.Getter)]
+[HarmonyAfter("BaseLib", "com.ritsukage.sts2-RitsuLib.content")]
+[HarmonyPriority(Priority.Last - 10)]
+internal static class CharacterCatalogHotaruNormalizationPatch
+{
+    // BaseLib adds its characters in a pass-through postfix. Use the same
+    // return stage so normalization runs after that final catalog append.
+    private static IEnumerable<CharacterModel> Postfix(IEnumerable<CharacterModel> __result) =>
+        HbrgoSakiCharacterSelectVariantSelector.NormalizeCharacterCatalog(__result);
+}
+
 [HarmonyPatch(typeof(NCharacterSelectScreen), nameof(NCharacterSelectScreen._Ready))]
-internal static class CharacterSelectScreenReadyPatch
+[HarmonyAfter(
+    "BaseLib",
+    "com.ritsukage.sts2-RitsuLib.framework-character-assets")]
+[HarmonyPriority(Priority.Last)]
+internal static class CharacterSelectScreenReadyVariantPatch
 {
     private static void Postfix(NCharacterSelectScreen __instance)
     {
-        HbrgoSakiVariantSelector.Attach(__instance);
+        HbrgoSakiCharacterSelectVariantSelector.Attach(__instance);
+    }
+}
+
+[HarmonyPatch(
+    typeof(NCharacterSelectScreen),
+    nameof(NCharacterSelectScreen.OnSubmenuOpened))]
+[HarmonyPriority(Priority.Last)]
+internal static class CharacterSelectScreenOpenVariantPatch
+{
+    private static void Postfix(NCharacterSelectScreen __instance)
+    {
+        HbrgoSakiCharacterSelectVariantSelector.RestorePreferredVariant(
+            __instance);
+    }
+}
+
+[HarmonyPatch(
+    typeof(NCharacterSelectScreen),
+    nameof(NCharacterSelectScreen.SelectCharacter))]
+[HarmonyAfter("BaseLib", "com.ritsukage.sts2-RitsuLib.framework-character-assets")]
+[HarmonyPriority(Priority.Last)]
+internal static class CharacterSelectScreenSelectedVariantPatch
+{
+    private static void Postfix(
+        NCharacterSelectScreen __instance,
+        CharacterModel characterModel)
+    {
+        HbrgoSakiCharacterSelectVariantSelector.OnCharacterSelected(
+            __instance,
+            characterModel);
     }
 }
 
@@ -264,88 +345,44 @@ internal static class CharacterSelectButtonOnPressPatch
     }
 }
 
-[HarmonyPatch(typeof(NCharacterSelectScreen), nameof(NCharacterSelectScreen.SelectCharacter))]
-internal static class CharacterSelectScreenSelectCharacterPatch
-{
-    private static void Prefix(
-        NCharacterSelectScreen __instance,
-        NCharacterSelectButton charSelectButton,
-        ref CharacterModel characterModel)
-    {
-        HbrgoSakiVariantSelector.ResolveInitialSelection(
-            __instance,
-            charSelectButton,
-            ref characterModel);
-    }
-
-    private static void Postfix(
-        NCharacterSelectScreen __instance,
-        NCharacterSelectButton charSelectButton,
-        CharacterModel characterModel)
-    {
-        HbrgoSakiVariantSelector.Refresh(
-            __instance,
-            charSelectButton,
-            characterModel);
-
-        if (charSelectButton.IsRandom || charSelectButton.IsLocked)
-        {
-            HbrgoSakiCharacterSelectVoice.Stop();
-            return;
-        }
-
-        if (characterModel is HbrgoSaki)
-        {
-            HbrgoSakiCharacterSelectVoice.Play();
-        }
-        else
-        {
-            HbrgoSakiCharacterSelectVoice.Stop();
-        }
-    }
-}
-
-[HarmonyPatch(typeof(NCharacterSelectScreen), "RefreshButtonSelectionForPlayer")]
-internal static class CharacterSelectRemoteVariantPatch
+[HarmonyPatch(
+    typeof(NCharacterSelectScreen),
+    nameof(NCharacterSelectScreen.PlayerConnected))]
+internal static class CharacterSelectRemoteConnectedVariantPatch
 {
     private static void Postfix(
         NCharacterSelectScreen __instance,
-        LobbyPlayer player)
+        object player)
     {
-        HbrgoSakiVariantSelector.RefreshRemoteSelection(
-            __instance,
-            player);
+        HbrgoSakiCharacterSelectVariantSelector
+            .RefreshRemoteSharedSelection(__instance, player);
     }
 }
 
 [HarmonyPatch(
     typeof(NCharacterSelectScreen),
     nameof(NCharacterSelectScreen.PlayerChanged))]
-internal static class CharacterSelectVariantReadyStatePatch
+internal static class CharacterSelectRemoteChangedVariantPatch
 {
     private static void Postfix(
         NCharacterSelectScreen __instance,
-        LobbyPlayer player)
+        object player)
     {
-        if (__instance.Lobby != null &&
-            player.id == __instance.Lobby.LocalPlayer.id)
-        {
-            HbrgoSakiVariantSelector.RefreshInteraction(__instance);
-        }
+        HbrgoSakiCharacterSelectVariantSelector
+            .RefreshRemoteSharedSelection(__instance, player);
     }
 }
 
 [HarmonyPatch(
     typeof(NCharacterSelectScreen),
     nameof(NCharacterSelectScreen.RemotePlayerDisconnected))]
-internal static class CharacterSelectRemoteVariantDisconnectPatch
+internal static class CharacterSelectRemoteDisconnectedVariantPatch
 {
     private static void Postfix(
         NCharacterSelectScreen __instance,
-        LobbyPlayer player)
+        object player)
     {
-        HbrgoSakiVariantSelector.ClearRemoteSelection(
-            __instance,
-            player);
+        HbrgoSakiCharacterSelectVariantSelector
+            .RemoveRemoteSharedSelection(__instance, player);
     }
 }

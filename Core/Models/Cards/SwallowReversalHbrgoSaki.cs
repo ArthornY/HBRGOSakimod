@@ -40,7 +40,7 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             base.DynamicVars.Damage.BaseValue);
-        await DamageCmd.Attack(damage).FromCard(this).Targeting(cardPlay.Target)
+        await DamageCmd.Attack(damage).FromCardCompat(this, cardPlay).Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 

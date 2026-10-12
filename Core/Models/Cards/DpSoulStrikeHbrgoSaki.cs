@@ -65,13 +65,20 @@ public sealed class DpSoulStrikeHbrgoSaki : CardModel
             Owner.GetRelic<DeflectorProtection>();
         int lostDp = protection?.LoseDp(
             (int)DynamicVars[_dpLossVar].BaseValue) ?? 0;
+        if (protection != null)
+        {
+            await protection.ResolveMentalStrengthDpLossRewards(
+                choiceContext,
+                this);
+        }
+
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             lostDp *
             DynamicVars[_damagePercentVar].BaseValue /
             100m);
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

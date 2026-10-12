@@ -1,27 +1,21 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Texture2D" path="res://images/characters/hbrgo_saki_combat.png" id="2_saki"]
-[ext_resource type="PackedScene" path="res://scenes/ui/selection_reticle.tscn" id="3_reticle"]
+[ext_resource type="Script" path="res://Core/Nodes/RestSite/NHBRGOSakiRestSiteCharacter.cs" id="1_script"]
+[ext_resource type="Texture2D" path="res://images/characters/hbrgo_saki_normal.png" id="2_saki"]
 
 [node name="HBRGOSakiRestSite" type="Node2D"]
 position = Vector2(-2, 42)
 scale = Vector2(0.76, 0.76)
+script = ExtResource("1_script")
 
 [node name="Visuals" type="Sprite2D" parent="."]
-position = Vector2(0, -260)
-scale = Vector2(0.45, 0.45)
+position = Vector2(0, -259.92)
+scale = Vector2(0.09778879, 0.09778879)
 texture = ExtResource("2_saki")
 
 [node name="ControlRoot" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-
-[node name="SelectionReticle" parent="ControlRoot" instance=ExtResource("3_reticle")]
-unique_name_in_owner = true
-offset_left = -170.0
-offset_top = -530.0
-offset_right = 170.0
-offset_bottom = 20.0
 
 [node name="Hitbox" type="Control" parent="ControlRoot"]
 unique_name_in_owner = true

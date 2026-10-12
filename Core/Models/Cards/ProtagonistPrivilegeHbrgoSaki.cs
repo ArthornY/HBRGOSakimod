@@ -30,7 +30,7 @@ public sealed class ProtagonistPrivilegeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new IntVar("RollPenalty", 15m)
+            new IntVar("RollPenalty", 10m)
         };
 
     public ProtagonistPrivilegeHbrgoSaki()
@@ -57,6 +57,6 @@ public sealed class ProtagonistPrivilegeHbrgoSaki : CardModel
     protected override void OnUpgrade()
     {
         EnergyCost.UpgradeBy(-1);
-        DynamicVars["RollPenalty"].UpgradeValueBy(-5m);
+        DynamicVars["RollPenalty"].UpgradeValueBy(-3m);
     }
 }

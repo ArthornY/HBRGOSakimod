@@ -42,6 +42,15 @@ public sealed class SwordheartClarityHbrgoSaki : CardModel
             DynamicVars["SwordheartClarityPower"].BaseValue,
             Owner.Creature,
             this);
+
+        MagicSwordModePower magicSwordMode =
+            Owner.Creature.GetPower<MagicSwordModePower>();
+        if (magicSwordMode != null)
+        {
+            await magicSwordMode.GrantSwordheartFromClarity(
+                choiceContext,
+                this);
+        }
     }
 
     protected override void OnUpgrade()

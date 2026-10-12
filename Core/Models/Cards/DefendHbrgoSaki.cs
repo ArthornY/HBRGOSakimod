@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Integration;
+using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -13,9 +15,25 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class DefendHbrgoSaki : CardModel
 {
-	public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/defend_hbrgo_saki.png");
+	private const string DefaultPortrait = "packed/card_portraits/hbrgo_saki/defend_hbrgo_saki.png";
+	private const string ShieldPortrait = "packed/card_portraits/hbrgo_saki/defend_30a_31o_hbrgo_saki.png";
+
+	private bool UsesShieldPortrait => IsMutable && Owner != null
+		? Owner.Character is HbrgoSaki30A or HbrgoSaki31O
+		: HbrgoSakiCardPortraitContext.LibraryVariant.HasValue;
+
+	public override string PortraitPath => ImageHelper.GetImagePath(
+		UsesShieldPortrait
+			? ShieldPortrait
+			: DefaultPortrait);
 
 	public override string BetaPortraitPath => PortraitPath;
+
+	public override IEnumerable<string> AllPortraitPaths => new[]
+	{
+		ImageHelper.GetImagePath(DefaultPortrait),
+		ImageHelper.GetImagePath(ShieldPortrait)
+	};
 
 	protected override HashSet<CardTag> CanonicalTags => new HashSet<CardTag> { CardTag.Defend };
 

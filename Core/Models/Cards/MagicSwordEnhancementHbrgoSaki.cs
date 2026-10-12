@@ -42,12 +42,14 @@ public sealed class MagicSwordEnhancementHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await PowerCmd.Apply<MagicSwordEnhancementPower>(
+        MagicSwordEnhancementPower power = await PowerCmd.Apply<MagicSwordEnhancementPower>(
             choiceContext,
             Owner.Creature,
             1m,
             Owner.Creature,
             this);
+        // Reapplying a single-stack power does not call AfterApplied again.
+        power?.RegisterCardSource(this);
     }
 
     protected override void OnUpgrade()

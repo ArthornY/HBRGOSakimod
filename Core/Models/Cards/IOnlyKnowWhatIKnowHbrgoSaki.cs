@@ -47,19 +47,34 @@ public sealed class IOnlyKnowWhatIKnowHbrgoSaki : CardModel
             return;
         }
 
-        CardSelectorPrefs prefs = new(
-            new LocString(
+        // The native multi-select screen returns a set, not click order.
+        // Select one at a time, leaving the originals in discard until confirmed.
+        List<CardModel> selectedCards = new(selectCount);
+        for (int selectionIndex = 0; selectionIndex < selectCount; selectionIndex++)
+        {
+            LocString prompt = new(
                 "cards",
-                "I_ONLY_KNOW_WHAT_I_KNOW_HBRGO_SAKI.selectionPrompt"),
-            selectCount);
-        CardModel[] selectedCards = (await CardSelectCmd.FromCombatPile(
-            choiceContext,
-            discardPile,
-            Owner,
-            prefs)).ToArray();
+                "I_ONLY_KNOW_WHAT_I_KNOW_HBRGO_SAKI.selectionPrompt");
+            prompt.Add("Index", selectionIndex + 1);
+            prompt.Add("Total", selectCount);
+            CardSelectorPrefs prefs = new(prompt, 1);
+            CardModel selected = (await CardSelectCmd.FromCombatPile(
+                choiceContext,
+                discardPile,
+                Owner,
+                prefs,
+                card => !selectedCards.Contains(card))).FirstOrDefault();
+            if (selected == null)
+            {
+                break;
+            }
+
+            selectedCards.Add(selected);
+        }
+
         await CardPileCmd.Add(
-            selectedCards.Reverse(),
-            Owner.PlayerCombatState.DrawPile,
+            selectedCards.AsEnumerable().Reverse(),
+            PileType.Draw,
             CardPilePosition.Top,
             this);
     }

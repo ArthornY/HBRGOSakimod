@@ -20,16 +20,20 @@ public sealed class LostMelodyPower : PowerModel
 
     public override Color AmountLabelColor => new("FFD45C");
 
-    public override bool TryModifyEnergyCostInCombat(
+    internal bool TryReplaceFinalEnergyCost(
         CardModel card,
-        decimal originalCost,
+        decimal finalCost,
         out decimal modifiedCost)
     {
         bool replacesEnergy =
+            IsMutable &&
             Amount > 0 &&
+            Owner != null &&
             card?.Owner?.Creature == Owner &&
             !card.EnergyCost.CostsX &&
-            originalCost > 1m;
+            // CardEnergyCost truncates the final hook result before payment.
+            // A discounted cost such as 1.5 is therefore a one-energy card.
+            decimal.Truncate(finalCost) > 1m;
 
         if (replacesEnergy)
         {
@@ -43,7 +47,7 @@ public sealed class LostMelodyPower : PowerModel
             _cardsPaidWithLostMelody.Remove(card);
         }
 
-        modifiedCost = originalCost;
+        modifiedCost = finalCost;
         return false;
     }
 
@@ -57,6 +61,7 @@ public sealed class LostMelodyPower : PowerModel
         bool replacedEnergy = _cardsPaidWithLostMelody.Remove(cardPlay.Card);
         if (Amount <= 0 ||
             cardPlay.Card.Owner?.Creature != Owner ||
+            cardPlay.Card.EnergyCost.CostsX ||
             cardPlay.IsAutoPlay ||
             !cardPlay.IsFirstInSeries ||
             !replacedEnergy)

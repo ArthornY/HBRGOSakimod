@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.addons.mega_text;
@@ -19,8 +21,16 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
     private Label _titleLabel;
     private Label _summaryLabel;
     private VBoxContainer _historyList;
+    private ScrollContainer _scroll;
+    private Label _pageLabel;
+    private Button _newestButton;
+    private Button _previousButton;
+    private Button _nextButton;
+    private Button _oldestButton;
     private Button _closeButton;
     private Tween _fadeTween;
+    private int _historyCount;
+    private int _pageIndex;
 
     public NetScreenType ScreenType => NetScreenType.Room;
 
@@ -30,6 +40,12 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
     public static void Show(SoulOfAnchor soulOfAnchor)
     {
+        if (soulOfAnchor == null ||
+            AmnesiaRollVisibilityHelper.IsRollHidden(soulOfAnchor.Owner))
+        {
+            return;
+        }
+
         NOverlayStack overlayStack = NOverlayStack.Instance;
         if (overlayStack == null)
         {
@@ -62,6 +78,11 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         Refresh(_soulOfAnchor);
     }
 
+    public override void _ExitTree()
+    {
+        BindHistory(null);
+    }
+
     public override void _Notification(int what)
     {
         if (what == NotificationResized)
@@ -81,6 +102,7 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
     public void AfterOverlayClosed()
     {
         _fadeTween?.Kill();
+        BindHistory(null);
         if (ReferenceEquals(_activeScreen, this))
         {
             _activeScreen = null;
@@ -143,22 +165,39 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
         layout.AddChild(new HSeparator());
 
-        ScrollContainer scroll = new()
+        _scroll = new ScrollContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
         };
-        layout.AddChild(scroll);
+        layout.AddChild(_scroll);
 
         _historyList = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         _historyList.AddThemeConstantOverride("separation", 8);
-        scroll.AddChild(_historyList);
+        _scroll.AddChild(_historyList);
 
         layout.AddChild(new HSeparator());
+
+        HBoxContainer navigation = new()
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        navigation.AddThemeConstantOverride("separation", 8);
+        layout.AddChild(navigation);
+        _newestButton = CreatePageButton(navigation, "最新页", () => RenderPage(0));
+        _previousButton = CreatePageButton(navigation, "上一页", () => RenderPage(_pageIndex - 1));
+        _pageLabel = CreateLabel(string.Empty, 19, new Color(0.72f, 0.82f, 0.90f));
+        _pageLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        _pageLabel.VerticalAlignment = VerticalAlignment.Center;
+        _pageLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        navigation.AddChild(_pageLabel);
+        _nextButton = CreatePageButton(navigation, "下一页", () => RenderPage(_pageIndex + 1));
+        _oldestButton = CreatePageButton(navigation, "最早页", () => RenderPage(int.MaxValue));
+        CreatePageButton(navigation, "刷新", () => Refresh(_soulOfAnchor));
 
         _closeButton = new Button
         {
@@ -174,7 +213,39 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
     private void Refresh(SoulOfAnchor soulOfAnchor)
     {
+        BindHistory(soulOfAnchor);
+        _historyCount = _soulOfAnchor?.RollHistory.Count ?? 0;
+        RenderPage(0);
+    }
+
+    private void BindHistory(SoulOfAnchor soulOfAnchor)
+    {
+        if (_soulOfAnchor != null)
+        {
+            _soulOfAnchor.HistoryChanged -= OnHistoryChanged;
+        }
+
         _soulOfAnchor = soulOfAnchor;
+        if (_soulOfAnchor != null)
+        {
+            _soulOfAnchor.HistoryChanged += OnHistoryChanged;
+        }
+    }
+
+    private void OnHistoryChanged()
+    {
+        // Appending rolls keeps the current snapshot. A clear must invalidate it
+        // immediately, before a new battle can refill the same list.
+        int currentCount = _soulOfAnchor?.RollHistory.Count ?? 0;
+        if (currentCount < _historyCount)
+        {
+            _historyCount = currentCount;
+            RenderPage(0);
+        }
+    }
+
+    private void RenderPage(int requestedPage)
+    {
         if (_historyList == null || _summaryLabel == null || _titleLabel == null)
         {
             return;
@@ -182,16 +253,35 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
         _titleLabel.Text = "出目历史";
 
+        // Appending rolls must not shift pages already being read. A refresh
+        // captures the new count; clearing a battle's history resets this view.
+        int currentCount = _soulOfAnchor?.RollHistory.Count ?? 0;
+        if (currentCount < _historyCount)
+        {
+            _historyCount = currentCount;
+            requestedPage = 0;
+        }
+        SoulRollHistoryPage page = SoulRollHistoryPage.Create(_historyCount, requestedPage);
+        _pageIndex = page.PageIndex;
+        bool isNewest = page.PageIndex == 0;
+        bool isOldest = page.PageIndex == page.PageCount - 1;
+        if (isNewest && (_newestButton.HasFocus() || _previousButton.HasFocus()) ||
+            isOldest && (_nextButton.HasFocus() || _oldestButton.HasFocus()))
+            _closeButton.GrabFocus();
+        _newestButton.Disabled = _previousButton.Disabled = isNewest;
+        _nextButton.Disabled = _oldestButton.Disabled = isOldest;
+        _pageLabel.Text = $"第 {page.PageIndex + 1} / {page.PageCount} 页";
+
         foreach (Node child in _historyList.GetChildren())
         {
             _historyList.RemoveChild(child);
             child.QueueFree();
         }
 
-        int count = _soulOfAnchor?.RollHistory.Count ?? 0;
+        _scroll.ScrollVertical = 0;
         _summaryLabel.Text =
-            $"本场战斗共 {count} 次，按新到旧排列；有加成时显示基础出目与最终出目，悬停可查看来源";
-        if (count == 0)
+            $"本场战斗共 {_historyCount} 次，按新到旧排列，每页 {SoulRollHistoryPage.EntriesPerPage} 条";
+        if (page.EntryCount == 0)
         {
             Label emptyLabel = CreateLabel("尚无出目记录。", 22, new Color(0.68f, 0.72f, 0.78f));
             emptyLabel.HorizontalAlignment = HorizontalAlignment.Center;
@@ -201,11 +291,25 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
             return;
         }
 
-        for (int index = count - 1; index >= 0; index--)
+        for (int offset = 0; offset < page.EntryCount; offset++)
         {
-            SoulRollHistoryEntry entry = _soulOfAnchor.RollHistory[index];
+            SoulRollHistoryEntry entry = _soulOfAnchor.RollHistory[page.NewestIndex - offset];
             AddHistoryEntry(entry);
         }
+    }
+
+    private static Button CreatePageButton(Control parent, string text, Action action)
+    {
+        Button button = new()
+        {
+            Text = text,
+            CustomMinimumSize = new Vector2(78f, 42f),
+            FocusMode = FocusModeEnum.All
+        };
+        button.AddThemeFontSizeOverride("font_size", 19);
+        button.Pressed += action;
+        parent.AddChild(button);
+        return button;
     }
 
     private void AddHistoryEntry(SoulRollHistoryEntry entry)
@@ -233,11 +337,13 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
         {
             rollExpressions.AddChild(CreateRollLabel(
                 discardedRoll,
+                entry.Source,
                 isDiscarded: true));
         }
 
         rollExpressions.AddChild(CreateRollLabel(
             entry.WinningRoll,
+            entry.Source,
             isDiscarded: false));
         rollContainer.AddChild(rollExpressions);
         row.AddChild(rollContainer);
@@ -253,22 +359,21 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
 
     private RichTextLabel CreateRollLabel(
         SoulRollBreakdown roll,
+        string source,
         bool isDiscarded)
     {
-        string expression = BuildRollExpression(roll);
+        IReadOnlyList<RollExpressionPart> parts = BuildRollParts(roll, source);
+        string expression = string.Concat(parts.Select(part => part.Text));
         RichTextLabel label = new()
         {
             BbcodeEnabled = true,
-            Text = isDiscarded
-                ? $"[center][s]{expression}[/s][/center]"
-                : $"[center]{expression}[/center]",
+            HintUnderlined = false,
             FitContent = true,
             ScrollActive = false,
             CustomMinimumSize = new Vector2(
                 Mathf.Max(170f, expression.Length * 17f),
                 42f),
-            MouseFilter = MouseFilterEnum.Stop,
-            TooltipText = BuildRollTooltip(roll)
+            MouseFilter = MouseFilterEnum.Pass
         };
         label.AddThemeFontSizeOverride(
             ThemeConstants.RichTextLabel.NormalFontSize,
@@ -280,36 +385,51 @@ public partial class NSoulRollHistoryScreen : Control, IOverlayScreen
                 : GetRollColor(
                     RollKeywordRules.GetRollTier(
                         _soulOfAnchor?.Owner,
-                        roll.FinalRoll)));
+                        roll)));
+        label.PushParagraph(HorizontalAlignment.Center);
+        if (isDiscarded) label.PushStrikethrough();
+        foreach (RollExpressionPart part in parts)
+        {
+            if (part.Tooltip != null) label.PushHint(part.Tooltip);
+            label.AddText(part.Text);
+            if (part.Tooltip != null) label.Pop();
+        }
+        if (isDiscarded) label.Pop();
+        label.Pop();
         return label;
     }
 
-    private static string BuildRollExpression(SoulRollBreakdown roll)
+    private readonly record struct RollExpressionPart(string Text, string Tooltip = null);
+
+    private static IReadOnlyList<RollExpressionPart> BuildRollParts(SoulRollBreakdown roll, string source)
     {
-        if (roll.TotalBonus == 0)
+        long bonus = (long)roll.FinalRoll - roll.BaseRoll;
+        if (bonus == 0)
         {
-            return roll.FinalRoll.ToString();
+            return new[] { new RollExpressionPart(roll.FinalRoll.ToString()) };
         }
 
-        return roll.TotalBonus >= 0
-            ? $"{roll.BaseRoll} + {roll.TotalBonus} = {roll.FinalRoll}"
-            : $"{roll.BaseRoll} - {Math.Abs(roll.TotalBonus)} = {roll.FinalRoll}";
+        string diceSource = $"骰子来源：{roll.DiceSource}";
+        if (!string.IsNullOrWhiteSpace(source)) diceSource += $"\n触发来源：{source}";
+        return new[]
+        {
+            new RollExpressionPart(roll.BaseRoll.ToString(), diceSource),
+            new RollExpressionPart(bonus > 0 ? " + " : " - "),
+            new RollExpressionPart(Math.Abs(bonus).ToString(), BuildBonusTooltip(roll, bonus)),
+            new RollExpressionPart(" = "),
+            new RollExpressionPart(roll.FinalRoll.ToString())
+        };
     }
 
-    private static string BuildRollTooltip(SoulRollBreakdown roll)
+    private static string BuildBonusTooltip(SoulRollBreakdown roll, long actualBonus)
     {
-        string bonusSources = roll.Bonuses.Count == 0
-            ? "无"
-            : string.Join(
-                "\n",
-                roll.Bonuses.Select(bonus =>
-                    $"• {bonus.Source}：{bonus.Amount:+#;-#;0}"));
-        return
-            $"骰子来源：{roll.DiceSource}\n" +
-            $"基础出目：{roll.BaseRoll}\n" +
-            $"加成来源：\n{bonusSources}\n" +
-            $"加成合计：{roll.TotalBonus:+#;-#;0}\n" +
-            $"最终出目：{roll.FinalRoll}";
+        if (roll.Bonuses.Count == 0) return "加成来源未记录。";
+        string text = "加成来源：\n" + string.Join("\n", roll.Bonuses.Select(bonus =>
+            $"{bonus.Source}：{bonus.Amount:+#;-#;0}"));
+        long recordedBonus = roll.Bonuses.Sum(bonus => (long)bonus.Amount);
+        if (recordedBonus != actualBonus)
+            text += $"\n已记录合计：{recordedBonus:+#;-#;0}\n实际加成：{actualBonus:+#;-#;0}";
+        return text;
     }
 
     private void LayoutPanel()

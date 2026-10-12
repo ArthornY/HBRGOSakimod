@@ -27,14 +27,13 @@ public sealed class ChargedShotHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new PowerVar<ChargePower>(2m),
-            new PowerVar<HangingShotPower>(12m)
+            new EnergyVar(1),
+            new PowerVar<HangingShotPower>(7m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
-            HoverTipFactory.FromPower<ChargePower>(),
             HoverTipFactory.FromPower<HangingShotPower>()
         };
 
@@ -42,7 +41,7 @@ public sealed class ChargedShotHbrgoSaki : CardModel
         : base(
             0,
             CardType.Attack,
-            CardRarity.Uncommon,
+            CardRarity.Common,
             TargetType.AnyEnemy)
     {
     }
@@ -63,14 +62,9 @@ public sealed class ChargedShotHbrgoSaki : CardModel
         ArgumentNullException.ThrowIfNull(
             cardPlay.Target,
             nameof(cardPlay.Target));
-        await PowerCmd.Apply<ChargePower>(
-            choiceContext,
-            Owner.Creature,
-            ModeTransitionHelper.GetAdjustedEffectAmount(
-                this,
-                DynamicVars["ChargePower"].BaseValue),
-            Owner.Creature,
-            this);
+        await PlayerCmd.GainEnergy(
+            DynamicVars.Energy.IntValue,
+            Owner);
         await PowerCmd.Apply<HangingShotPower>(
             choiceContext,
             cardPlay.Target,
@@ -83,7 +77,6 @@ public sealed class ChargedShotHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars["ChargePower"].UpgradeValueBy(1m);
-        DynamicVars["HangingShotPower"].UpgradeValueBy(4m);
+        DynamicVars["HangingShotPower"].UpgradeValueBy(3m);
     }
 }

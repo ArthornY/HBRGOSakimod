@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -21,6 +24,9 @@ public sealed class ReptureDualSwordsPower : PowerModel
     private const decimal _blockMultiplier = 1.5m;
 
     private bool _isPlayingCopy;
+
+    public override MegaCrit.Sts2.Core.Localization.LocString Description =>
+        HbrgoSakiEnergyIconHelper.Add31OPrefix(base.Description);
 
     public override PowerType Type => PowerType.Buff;
 
@@ -43,22 +49,21 @@ public sealed class ReptureDualSwordsPower : PowerModel
             await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
             await PowerCmd.Remove(Owner.GetPower<ReptureBowPower>());
             await PowerCmd.Remove(Owner.GetPower<RaptureScythePower>());
-            MagicSwordModePower magicSwordMode =
-                Owner.GetPower<MagicSwordModePower>();
-            if (magicSwordMode != null)
-            {
-                await magicSwordMode.RemoveForModeTransition();
-            }
-
-            await PowerCmd.Remove(Owner.GetPower<CrimsonBladeFlowPower>());
         }
 
         await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
+        SwiftPower swift = Owner.GetPower<SwiftPower>();
+        if (swift != null)
+        {
+            await swift.RecordModeSwitch();
+        }
+
     }
 
     public override async Task AfterEnergyReset(Player player)
     {
-        if (player != Owner.Player)
+        if (player != Owner.Player ||
+            ModeTransitionHelper.IsWeaponModeWeakened(Owner))
         {
             return;
         }
@@ -80,31 +85,60 @@ public sealed class ReptureDualSwordsPower : PowerModel
             return;
         }
 
-        Creature target = GetCopyTarget(cardPlay);
-        if (RequiresOriginalTarget(card) && target == null)
-        {
-            return;
-        }
-
-        CardModel copy = card.CreateDupe();
-        copy.BaseReplayCount = 0;
-        DualSwordsCopyHelper.RecordCopy(copy);
-
-        if (card.EnergyCost.CostsX)
-        {
-            DualSwordsCopyHelper.RecordXEnergySpent(copy, cardPlay.Resources.EnergySpent);
-        }
-
         _isPlayingCopy = true;
         try
         {
-            Flash();
-            await CardCmd.AutoPlay(choiceContext, copy, target, AutoPlayType.Default, skipXCapture: card.EnergyCost.CostsX);
-            await CombatFlowHelper.FinishAutoPlayedCard(copy);
+            const int copyCount = 1;
+            for (int copyIndex = 0;
+                 copyIndex < copyCount &&
+                 !CombatManager.Instance.IsOverOrEnding;
+                 copyIndex++)
+            {
+                Creature target = GetCopyTarget(cardPlay);
+                if (RequiresOriginalTarget(card) && target == null)
+                {
+                    break;
+                }
+
+                CardModel copy = card.CreateDupeCompat(card.Owner);
+                copy.BaseReplayCount = 0;
+                try
+                {
+                    DualSwordsCopyHelper.RecordPowerCopy(copy);
+                    if (card.EnergyCost.CostsX)
+                    {
+                        DualSwordsCopyHelper.RecordXEnergySpent(
+                            copy,
+                            cardPlay.Resources.EnergySpent);
+                    }
+
+                    Flash();
+                    if (card is SwitchingSlashHbrgoSaki)
+                    {
+                        await PowerCmd.Apply<ReptureBowPower>(
+                            choiceContext,
+                            Owner,
+                            1m,
+                            Owner,
+                            card);
+                    }
+
+                    await CardCmd.AutoPlay(
+                        choiceContext,
+                        copy,
+                        target,
+                        AutoPlayType.Default,
+                        skipXCapture: card.EnergyCost.CostsX);
+                    await CombatFlowHelper.FinishAutoPlayedCard(copy);
+                }
+                finally
+                {
+                    DualSwordsCopyHelper.Clear(copy);
+                }
+            }
         }
         finally
         {
-            DualSwordsCopyHelper.Clear(copy);
             _isPlayingCopy = false;
         }
     }
@@ -121,11 +155,28 @@ public sealed class ReptureDualSwordsPower : PowerModel
             return 1m;
         }
 
+        if (HasVirtualCrimsonBladeFlow())
+        {
+            return 2m;
+        }
+
+        if (ModeTransitionHelper.IsWeaponModeWeakened(Owner))
+        {
+            return 1m;
+        }
+
         return _blockMultiplier;
     }
 
-    public override decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
+    public decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
+        if (amount > 0m &&
+            HasVirtualCrimsonBladeFlow() &&
+            (dealer == Owner || target == Owner))
+        {
+            HbrgoSakiDamageMultiplierHelper.Add(2m, this);
+        }
+
         if (amount <= 0m ||
             dealer != Owner ||
             target?.Side == Owner.Side ||
@@ -135,6 +186,51 @@ public sealed class ReptureDualSwordsPower : PowerModel
         }
 
         return GetProjectedDamageMultiplier(Owner);
+    }
+
+    public override async Task BeforeSideTurnStart(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IReadOnlyList<Creature> participants,
+        ICombatState combatState)
+    {
+        if (!HasVirtualCrimsonBladeFlow() ||
+            side != Owner.Side ||
+            !participants.Contains(Owner))
+        {
+            return;
+        }
+
+        Flash();
+        await CardPileCmd.Draw(choiceContext, 1m, Owner.Player);
+    }
+
+    public override async Task AfterSideTurnEnd(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IEnumerable<Creature> participants)
+    {
+        if (!HasVirtualCrimsonBladeFlow() ||
+            side != Owner.Side ||
+            !participants.Contains(Owner) ||
+            ExtraTurnDurationHelper.ShouldSuppressDurationTick(Owner))
+        {
+            return;
+        }
+
+        DeflectorProtection protection =
+            Owner.Player?.GetRelic<DeflectorProtection>();
+        int lostDp = protection?.LoseDpByCurrentPercent(0.1m) ?? 0;
+        if (lostDp > 0)
+        {
+            Flash();
+        }
+
+        if (protection != null)
+        {
+            await protection.ResolveMentalStrengthDpLossRewards(
+                choiceContext);
+        }
     }
 
     protected override void AfterCloned()
@@ -150,6 +246,13 @@ public sealed class ReptureDualSwordsPower : PowerModel
                !card.IsDupe &&
                card.Owner?.Creature == Owner &&
                card.Type == CardType.Attack;
+    }
+
+    private bool HasVirtualCrimsonBladeFlow()
+    {
+        return !Owner.HasPower<CrimsonBladeFlowPower>() &&
+               HbrgoSakiHextechCompatLoader
+                   .HasDoubleSwordsDoubleRune(Owner);
     }
 
     private static bool RequiresOriginalTarget(CardModel card)

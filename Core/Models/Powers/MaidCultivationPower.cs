@@ -82,7 +82,7 @@ public sealed class MaidCultivationPower : PowerModel
             card);
     }
 
-    public override decimal ModifyDamageMultiplicative(
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,
@@ -105,6 +105,18 @@ public sealed class MaidCultivationPower : PowerModel
     internal decimal GetOverclockMultiplier(CardModel cardSource)
     {
         if (!IsEnhancing(cardSource))
+        {
+            return 1m;
+        }
+
+        return HasEnhancedOverclock
+            ? _upgradedOverclockMultiplier
+            : _baseOverclockMultiplier;
+    }
+
+    internal decimal GetAvailableOverclockMultiplier()
+    {
+        if (Amount - _enhancedCards.Count <= 0)
         {
             return 1m;
         }

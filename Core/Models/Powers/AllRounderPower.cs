@@ -41,45 +41,14 @@ public sealed class AllRounderPower : PowerModel
 
     public override Color AmountLabelColor => new("F8D36A");
 
-    public override async Task AfterApplied(Creature applier, CardModel cardSource)
+    public override Task AfterApplied(Creature applier, CardModel cardSource)
     {
         if (cardSource is AllRounderHbrgoSaki { HasEnhancedMultiplier: true })
         {
             SetEnhanced();
         }
 
-        ElectronicSoldierManual manual = Owner.Player?.GetRelic<ElectronicSoldierManual>();
-        if (manual == null || Owner.CombatState == null)
-        {
-            return;
-        }
-
-        int baseStrength = manual.LeadershipCharm / 2;
-        int boostedStrength = (int)(
-            manual.LeadershipCharm * SenseMultiplier / 2m);
-        int totalBonus = Math.Max(0, boostedStrength - baseStrength);
-        int amountToGrant = Math.Max(0, totalBonus - LeadershipBonusGranted);
-        SetLeadershipBonusGranted(totalBonus);
-        if (amountToGrant <= 0)
-        {
-            return;
-        }
-
-        Creature[] allies = Owner.CombatState.Creatures
-            .Where(creature => creature.Side == Owner.Side && creature.IsAlive)
-            .ToArray();
-        if (allies.Length == 0)
-        {
-            return;
-        }
-
-        Flash();
-        await PowerCmd.Apply<StrengthPower>(
-            new ThrowingPlayerChoiceContext(),
-            allies,
-            amountToGrant,
-            Owner,
-            cardSource);
+        return Task.CompletedTask;
     }
 
     private void SetEnhanced()
@@ -88,9 +57,4 @@ public sealed class AllRounderPower : PowerModel
         IsEnhanced = true;
     }
 
-    private void SetLeadershipBonusGranted(int amount)
-    {
-        AssertMutable();
-        LeadershipBonusGranted = Math.Max(0, amount);
-    }
 }

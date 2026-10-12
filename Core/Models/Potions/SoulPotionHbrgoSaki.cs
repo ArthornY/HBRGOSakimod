@@ -19,7 +19,7 @@ public sealed class SoulPotionHbrgoSaki : ModPotionTemplate
     private static readonly PotionAssetProfile Assets = new(
         ImageHelper.GetImagePath("relics/restoration_moment.png"));
 
-    public override PotionRarity Rarity => PotionRarity.Uncommon;
+    public override PotionRarity Rarity => PotionRarity.None;
 
     public override PotionUsage Usage => PotionUsage.CombatOnly;
 

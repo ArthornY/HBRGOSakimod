@@ -43,14 +43,14 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
     {
         System.ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
 
-        int primaryDamageTotal = 0;
+        decimal primaryDamageTotal = 0m;
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             base.DynamicVars.Damage.BaseValue);
         for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
             var attack = await DamageCmd.Attack(damage)
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
@@ -58,7 +58,7 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
             primaryDamageTotal += attack.Results
                 .SelectMany(results => results)
                 .Where(result => result.Receiver == cardPlay.Target)
-                .Sum(result => result.TotalDamage);
+                .Sum(result => (decimal)result.BlockedDamage + result.UnblockedDamage);
         }
 
         if (primaryDamageTotal <= 0 ||
@@ -74,7 +74,7 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
             primaryDamageTotal))
         {
             await DamageCmd.Attack(primaryDamageTotal)
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .Unpowered()
                 .WithHitFx("vfx/vfx_attack_slash")

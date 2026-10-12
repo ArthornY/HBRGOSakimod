@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BaseLib.Utils.Attributes;
 using HBRGOSakiMod.Core.Helpers;
-using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -60,8 +59,7 @@ public sealed class JoiningCeremonyHbrgoSaki : ModEventTemplate
                 new(
                     this,
                     CompleteNoodles,
-                    ModOptionKey("NOODLES", "TAKE_REWARD"),
-                    isProceed: true)
+                    ModOptionKey("NOODLES", "TAKE_REWARD"))
             });
         return Task.CompletedTask;
     }
@@ -82,8 +80,7 @@ public sealed class JoiningCeremonyHbrgoSaki : ModEventTemplate
                 new(
                     this,
                     CompleteEheChumi,
-                    ModOptionKey("EHE_CHUMI", "TAKE_REWARD"),
-                    isProceed: true)
+                    ModOptionKey("EHE_CHUMI", "TAKE_REWARD"))
             });
         return Task.CompletedTask;
     }
@@ -164,8 +161,9 @@ public sealed class JoiningCeremonyHbrgoSaki : ModEventTemplate
     private Task OfferCardReward(bool rareOnly)
     {
         bool IsEligible(CardModel card) =>
-            (Owner.Character is not HbrgoSaki31O ||
-                !HbrgoSaki31OCardFilter.IsExcluded(card)) &&
+            HbrgoSaki31OCardFilter.IsAvailableTo(
+                Owner.Character,
+                card) &&
             (!rareOnly || card.Rarity == CardRarity.Rare);
 
         CardCreationOptions options = rareOnly

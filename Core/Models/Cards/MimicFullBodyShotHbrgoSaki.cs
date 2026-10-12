@@ -41,7 +41,7 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
     };
 
     public MimicFullBodyShotHbrgoSaki()
-        : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
+        : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
     {
     }
 
@@ -65,13 +65,18 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
             Owner.Creature,
             this);
 
-        if (!cardPlay.Target.HasPower<BreakPower>() ||
+        if (!ReptureBowPower.AnyEnemyHasPower<BreakPower>(
+                Owner.Creature,
+                cardPlay.Target) ||
             CombatManager.Instance.IsOverOrEnding)
         {
             return;
         }
 
-        int fragile = cardPlay.Target.GetPower<FragilePower>()?.Amount ?? 0;
+        int fragile = ReptureBowPower
+            .GetEnemyPowerAmount<FragilePower>(
+                Owner.Creature,
+                cardPlay.Target);
         if (fragile <= 0)
         {
             return;
@@ -102,8 +107,11 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
                 this);
         }
 
-        int destructionRate = cardPlay.Target
-            .GetPower<DestructionRatePower>()?.DisplayAmount ?? 0;
+        int destructionRate = ReptureBowPower
+            .GetEnemyPowerAmount<DestructionRatePower>(
+                Owner.Creature,
+                cardPlay.Target,
+                useDisplayAmount: true);
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             fragile * (destructionRate / 100m));
@@ -113,7 +121,7 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
         }
 
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

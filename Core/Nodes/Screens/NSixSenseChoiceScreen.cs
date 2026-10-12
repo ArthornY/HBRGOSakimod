@@ -16,6 +16,7 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
     private readonly List<Button> _buttons = new();
     private ElectronicSoldierManual _manual;
     private IReadOnlyList<SixSenseAttribute> _options;
+    private bool _canExceedMaximum;
     private Tween _fadeTween;
 
     public NetScreenType ScreenType => NetScreenType.Rewards;
@@ -24,13 +25,17 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
 
     public Control DefaultFocusedControl => (Control)_buttons.FirstOrDefault() ?? this;
 
-    public static NSixSenseChoiceScreen ShowScreen(ElectronicSoldierManual manual, IReadOnlyList<SixSenseAttribute> options)
+    public static NSixSenseChoiceScreen ShowScreen(
+        ElectronicSoldierManual manual,
+        IReadOnlyList<SixSenseAttribute> options,
+        bool canExceedMaximum = false)
     {
         NSixSenseChoiceScreen screen = new()
         {
             Name = "SixSenseChoiceScreen",
             _manual = manual,
-            _options = options
+            _options = options,
+            _canExceedMaximum = canExceedMaximum
         };
         NOverlayStack.Instance.Push(screen);
         return screen;
@@ -84,6 +89,7 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
 
     private void BuildUi()
     {
+        float panelHalfHeight = 76f + 43f * _options.Count;
         PanelContainer panel = new()
         {
             AnchorLeft = 0.5f,
@@ -91,9 +97,9 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
             AnchorRight = 0.5f,
             AnchorBottom = 0.5f,
             OffsetLeft = -300f,
-            OffsetTop = -170f,
+            OffsetTop = -panelHalfHeight,
             OffsetRight = 300f,
-            OffsetBottom = 170f,
+            OffsetBottom = panelHalfHeight,
             MouseFilter = MouseFilterEnum.Stop
         };
         panel.AddThemeStyleboxOverride("panel", CreatePanelStyle(new Color(0.08f, 0.1f, 0.14f, 0.92f), new Color(0.52f, 0.72f, 0.95f, 0.85f)));
@@ -119,10 +125,16 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
         {
             int optionIndex = _buttons.Count;
             int current = _manual.GetSenseAmount(option);
-            string text = $"{ElectronicSoldierManual.GetSenseTitle(option)}  {current} -> {Mathf.Min(current + 1, ElectronicSoldierManual.MaxSixSense)}\n{_manual.GetSenseShortDescriptionForOwner(option)}";
+            int next = _canExceedMaximum
+                ? current + 1
+                : Mathf.Min(
+                    current + 1,
+                    ElectronicSoldierManual.MaxSixSense);
+            string text = $"{ElectronicSoldierManual.GetSenseTitle(option)}  {current} -> {next}\n{_manual.GetSenseChoiceDescriptionForOwner(option)}";
             Button button = new()
             {
                 Text = text,
+                TooltipText = ElectronicSoldierManual.GetSenseShortDescription(option),
                 CustomMinimumSize = new Vector2(0f, 72f),
                 FocusMode = FocusModeEnum.All
             };

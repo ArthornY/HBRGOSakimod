@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "id": "INSIDETHEDOOR_HBRGO_SAKI",
+  "title": "门缝之内",
+  "eventPool": "shared",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A"
+    ],
+    "acts": [
+      4
+    ],
+    "oncePerRun": true,
+    "afterEventIds": []
+  },
+  "presentation": {
+    "background": "res://images/events/hbrgo_saki_mod_event_library_hbrgo_saki.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "res://images/characters/hbrgo_saki_normal.png",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你击败了拦在前往塔顶的路前的最后一个阻碍。当你准备向前时，你看到了一扇虚掩着的门。",
+          "portrait": "",
+          "background": "res://images/story/953cbdafdb5a22edac30.png",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "无视他",
+          "description": "不能再耽误时间了。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_2",
+          "text": "朝门缝内看去",
+          "description": "",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "SCENE_2",
+      "title": "朝门缝内看去",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你从门缝中看见了一个普通的房间。朝床上看去，好像有一个人在睡觉？",
+          "portrait": "",
+          "background": "res://images/story/297b5d49c9aaa4005c47.png",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "无视他",
+          "description": "不能再耽误时间了。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_2",
+          "text": "仔细观察",
+          "description": "",
+          "nextPage": "SCENE_3",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "SCENE_3",
+      "title": "仔细观察",
+      "choicePrompt": "",
+      "background": "res://images/story/aeafa71a81f6799d7d85.png",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你选择看看住在塔顶的生物会是什么样子。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "当你的目光看向床头时，你发现了，那是一只戴着国见玉帽子的……柴犬？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "无视它",
+          "description": "不能再耽误时间了。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_2",
+          "text": "叫醒她",
+          "description": "获得1次稀有卡奖励、1次删牌奖励、2次可跳过的升级奖励和1次可跳过的牌组卡牌复制奖励，恢复所有生命值，并进入一场特殊的Boss战。",
+          "nextPage": "AFTER_BATTLE",
+          "combat": "nararaShibaBoss",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 3,
+            "cardRarity": "rare",
+            "cardRemovals": 1,
+            "cardUpgrades": 2,
+            "healFull": true
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "AFTER_BATTLE",
+      "title": "战斗之后",
+      "choicePrompt": "",
+      "background": "res://images/story/94f82a588fa5f0bb389a.png",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "a3561786288",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": []
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "附上你的Steam名称和QQ号。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [],
+      "characters": []
+    },
+    {
+      "id": "SCENE",
+      "title": "ENDING",
+      "choicePrompt": "",
+      "background": "res://images/story/94f82a588fa5f0bb389a.png",
+      "lines": [
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "不能再耽误时间了。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

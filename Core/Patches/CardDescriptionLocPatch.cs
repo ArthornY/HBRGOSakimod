@@ -27,7 +27,8 @@ internal static class CardDescriptionLocPatch
         bool isUpgraded = card.IsUpgraded || card.DeckVersion?.IsUpgraded == true;
         string specialKey = card switch
         {
-            FeintHbrgoSaki when !CombatModeHelper.IsMultiplayer(card.Owner?.Creature) =>
+            FeintHbrgoSaki when !CombatModeHelper.IsMultiplayer(
+                card.IsMutable ? card.Owner?.Creature : null) =>
                 "FEINT_HBRGO_SAKI.singleplayerDescription",
             ShadowDanceSongHbrgoSaki shadowDance =>
                 $"SHADOW_DANCE_SONG_HBRGO_SAKI.level{shadowDance.SongLevel}Description",

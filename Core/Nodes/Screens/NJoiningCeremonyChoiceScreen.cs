@@ -74,7 +74,7 @@ public partial class NJoiningCeremonyChoiceScreen : Control, IOverlayScreen
     private int _selectedPredicate = -1;
     private Tween _fadeTween;
 
-    public NetScreenType ScreenType => NetScreenType.Rewards;
+    public NetScreenType ScreenType => NetScreenType.Room;
 
     // HBR leaves the current scene visible under its thought-link overlay.
     public bool UseSharedBackstop => false;

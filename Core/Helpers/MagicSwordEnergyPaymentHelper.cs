@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
@@ -15,12 +16,18 @@ internal static class MagicSwordEnergyPaymentHelper
         energyToSpend = 0;
         starsToSpend = 0;
 
-        if (card == null || card.EnergyCost.CostsX || card.Owner?.PlayerCombatState == null || card.CombatState == null)
+        if (card == null ||
+            card.Owner?.Character is not HbrgoSaki31O ||
+            card.EnergyCost.CostsX ||
+            card.Owner.PlayerCombatState == null ||
+            card.CombatState == null)
         {
             return false;
         }
 
-        if (!card.Owner.Creature.HasPower<MagicSwordModePower>())
+        bool isInMagicSwordMode = card.Owner.Creature.HasPower<MagicSwordModePower>();
+        if (!isInMagicSwordMode &&
+            !card.Owner.Creature.HasPower<MagicSwordUniversalityPower>())
         {
             return false;
         }
@@ -41,7 +48,9 @@ internal static class MagicSwordEnergyPaymentHelper
         }
 
         deficit = energyToSpend - currentEnergy;
-        decimal swordheartCost = SwordheartClarityPower.GetSwordheartConsumptionAmount(card.Owner.Creature, deficit);
+        decimal swordheartCost = isInMagicSwordMode
+            ? SwordheartClarityPower.GetSwordheartConsumptionAmount(card.Owner.Creature, deficit)
+            : deficit;
         if (deficit <= 0 || swordheart.Amount < swordheartCost)
         {
             return false;

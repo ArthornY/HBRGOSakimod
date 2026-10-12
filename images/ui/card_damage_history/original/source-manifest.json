@@ -1,0 +1,30 @@
+[
+  {
+    "sprite": "EffectLineTotalDamage",
+    "sprite_id": -7784500817238999363,
+    "source_bundle": "E:\\game\\HeavenBurnsRed\\HeavenBurnsRed Game\\AssetBundleCache\\ee90dcc721d143e2a829c97ecc46af67\\a71b00fbc6bcc5ce96f78d8b253af4a6\\__data",
+    "source_texture": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\images\\cache\\ee90dcc721d143e2a829c97ecc46af67\\a71b00fbc6bcc5ce96f78d8b253af4a6\\69c7c677bd2f28d5_-4060105222606864707_EffectLineTotalDamage.png",
+    "source_texture_sha256": "76b8caba603e866fd586ea9e9447a54f4231ec28f08479629a24aa0353237881",
+    "rect": {
+      "x": 0.0,
+      "y": 0.0,
+      "width": 64.0,
+      "height": 32.0
+    },
+    "output_sha256": "76b8caba603e866fd586ea9e9447a54f4231ec28f08479629a24aa0353237881"
+  },
+  {
+    "sprite": "DotTotalDamage",
+    "sprite_id": -1976754482203658507,
+    "source_bundle": "E:\\game\\HeavenBurnsRed\\HeavenBurnsRed Game\\AssetBundleCache\\ee90dcc721d143e2a829c97ecc46af67\\a71b00fbc6bcc5ce96f78d8b253af4a6\\__data",
+    "source_texture": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\images\\cache\\ee90dcc721d143e2a829c97ecc46af67\\a71b00fbc6bcc5ce96f78d8b253af4a6\\69c7c677bd2f28d5_-482826641158823559_sactx-0-2048x2048-BC7-BattleAtlas-88b70823.png",
+    "source_texture_sha256": "774b19a4c611ae70e4a1787b75ede38a2a999c4421d21eed14adc0f28b5abb27",
+    "rect": {
+      "x": 1513.0,
+      "y": 706.0,
+      "width": 92.0,
+      "height": 96.0
+    },
+    "output_sha256": "e2fe65b83d0d56af8c66826ee0ef89e43a0883beae4d68566cb25dfb9f03a699"
+  }
+]

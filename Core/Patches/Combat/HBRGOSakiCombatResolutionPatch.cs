@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +15,10 @@ using MegaCrit.Sts2.Core.Runs;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
 
-[HarmonyPatch(typeof(CombatManager), nameof(CombatManager.CheckWinCondition))]
+[HarmonyPatch(
+    typeof(CombatManager),
+    nameof(CombatManager.CheckWinCondition),
+    new Type[] { })]
 internal static class HBRGOSakiCombatWinDeferralPatch
 {
     private static bool Prefix(ref Task<bool> __result)

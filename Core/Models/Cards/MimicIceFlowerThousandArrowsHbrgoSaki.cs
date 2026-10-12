@@ -19,6 +19,14 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
 {
+    private const string DamagePerBowCardVar = "DamagePerBowCard";
+    private const string BowCardThresholdVar = "BowCardThreshold";
+    private const string ThresholdVulnerableVar =
+        "ThresholdVulnerablePower";
+    private const string ThresholdFragileVar =
+        "ThresholdFragilePower";
+    private const string ThresholdWeakVar = "ThresholdWeakPower";
+
     public override string PortraitPath =>
         ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/mimic_ice_flower_thousand_arrows_hbrgo_saki.png");
 
@@ -31,13 +39,19 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
     {
         new DamageVar(21m, ValueProp.Move),
         new PowerVar<VulnerablePower>(3m),
-        new PowerVar<FragilePower>(3m)
+        new PowerVar<FragilePower>(3m),
+        new IntVar(DamagePerBowCardVar, 2m),
+        new IntVar(BowCardThresholdVar, 5m),
+        new PowerVar<VulnerablePower>(ThresholdVulnerableVar, 3m),
+        new PowerVar<FragilePower>(ThresholdFragileVar, 3m),
+        new PowerVar<WeakPower>(ThresholdWeakVar, 0m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<VulnerablePower>(),
-        HoverTipFactory.FromPower<FragilePower>()
+        HoverTipFactory.FromPower<FragilePower>(),
+        HoverTipFactory.FromPower<WeakPower>()
     };
 
     public MimicIceFlowerThousandArrowsHbrgoSaki()
@@ -55,11 +69,14 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
+        int bowCardCount = ReptureBowPower.GetBowCardCount(
+            Owner.Creature);
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
-            DynamicVars.Damage.BaseValue);
+            DynamicVars.Damage.BaseValue +
+            bowCardCount * DynamicVars[DamagePerBowCardVar].BaseValue);
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .TargetingAllOpponents(CombatState)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
@@ -89,11 +106,51 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
                 DynamicVars["FragilePower"].BaseValue),
             Owner.Creature,
             this);
+
+        if (bowCardCount < DynamicVars[BowCardThresholdVar].BaseValue)
+        {
+            return;
+        }
+
+        await PowerCmd.Apply<VulnerablePower>(
+            choiceContext,
+            targets,
+            ModeTransitionHelper.GetAdjustedEffectAmount(
+                this,
+                DynamicVars[ThresholdVulnerableVar].BaseValue),
+            Owner.Creature,
+            this);
+        await PowerCmd.Apply<FragilePower>(
+            choiceContext,
+            targets,
+            ModeTransitionHelper.GetAdjustedEffectAmount(
+                this,
+                DynamicVars[ThresholdFragileVar].BaseValue),
+            Owner.Creature,
+            this);
+
+        decimal weak = DynamicVars[ThresholdWeakVar].BaseValue;
+        if (weak > 0m)
+        {
+            await PowerCmd.Apply<WeakPower>(
+                choiceContext,
+                targets,
+                ModeTransitionHelper.GetAdjustedEffectAmount(
+                    this,
+                    weak),
+                Owner.Creature,
+                this);
+        }
     }
 
     protected override void OnUpgrade()
     {
         DynamicVars["VulnerablePower"].UpgradeValueBy(2m);
         DynamicVars["FragilePower"].UpgradeValueBy(2m);
+        DynamicVars[DamagePerBowCardVar].UpgradeValueBy(1m);
+        DynamicVars[BowCardThresholdVar].UpgradeValueBy(-2m);
+        DynamicVars[ThresholdVulnerableVar].UpgradeValueBy(1m);
+        DynamicVars[ThresholdFragileVar].UpgradeValueBy(1m);
+        DynamicVars[ThresholdWeakVar].UpgradeValueBy(2m);
     }
 }

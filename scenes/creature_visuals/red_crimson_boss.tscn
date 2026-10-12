@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Core/Nodes/Combat/NRedCrimsonBossVisuals.cs" id="1_script"]
+[ext_resource type="Texture2D" path="res://images/monsters/hbrgo_act3/red_crimson_exposed.png" id="2_texture"]
+
+[node name="RedCrimsonBoss" type="Node2D"]
+script = ExtResource("1_script")
+TargetHeight = 470.0
+MaxWidth = 650.0
+MinBoundsWidth = 580.0
+VisualBottomY = -8.0
+
+[node name="Visuals" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+texture = ExtResource("2_texture")
+
+[node name="Bounds" type="Control" parent="."]
+unique_name_in_owner = true
+mouse_filter = 2
+
+[node name="IntentPos" type="Marker2D" parent="."]
+unique_name_in_owner = true
+
+[node name="CenterPos" type="Marker2D" parent="."]
+unique_name_in_owner = true
+
+[node name="TalkPos" type="Marker2D" parent="."]
+unique_name_in_owner = true

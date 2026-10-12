@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3 uid="uid://hbrgosaki_ghost_state_power"]
+
+[ext_resource type="Texture2D" path="res://images/powers/ghost_state_power.png" id="1"]
+
+[resource]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 123, 122)
+filter_clip = true

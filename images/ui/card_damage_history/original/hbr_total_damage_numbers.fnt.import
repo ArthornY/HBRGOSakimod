@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://clo5om4l2mm5j"
+path="res://.godot/imported/hbr_total_damage_numbers.fnt-b7a0be4a938dfb7618d70ad140017828.fontdata"
+
+[deps]
+
+source_file="res://images/ui/card_damage_history/original/hbr_total_damage_numbers.fnt"
+dest_files=["res://.godot/imported/hbr_total_damage_numbers.fnt-b7a0be4a938dfb7618d70ad140017828.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

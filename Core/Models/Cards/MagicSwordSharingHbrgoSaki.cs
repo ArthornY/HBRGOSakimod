@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -54,19 +52,12 @@ public sealed class MagicSwordSharingHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        Creature[] teammates =
-            TeamCombatHelper.GetLivingPlayerCreatures(Owner.Creature)
-                .Where(creature => creature != Owner.Creature)
-                .ToArray();
-        foreach (Creature teammate in teammates)
-        {
-            await PowerCmd.Apply<MagicSwordSharingPower>(
-                choiceContext,
-                teammate,
-                DynamicVars["MagicSwordSharingPower"].BaseValue,
-                Owner.Creature,
-                this);
-        }
+        await PowerCmd.Apply<MagicSwordSharingPower>(
+            choiceContext,
+            Owner.Creature,
+            DynamicVars["MagicSwordSharingPower"].BaseValue,
+            Owner.Creature,
+            this);
     }
 
     protected override void OnUpgrade()

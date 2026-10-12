@@ -1,8 +1,0 @@
-{
-  "ok": false,
-  "failure_class": "source-edge geometry",
-  "evidence": "Deterministic extended assembly rejected direction 180 because 31 non-transparent pixels remained near its final cell edge after registration.",
-  "root_condition": "The complete generated row used much larger source-canvas poses than approved row 9 and the prior body-locked row-10 attempt.",
-  "next_strategy": "Regenerate the complete row at the prior safe raw source scale and padding while preserving the staged down-tuck progression and all passing semantics.",
-  "threshold_relaxed": false
-}

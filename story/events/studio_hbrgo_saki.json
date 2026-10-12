@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "id": "STUDIO_HBRGO_SAKI",
+  "title": "录音室",
+  "eventPool": "memoryFragments",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A",
+      "HbrgoHotaru"
+    ],
+    "acts": [],
+    "oncePerRun": true,
+    "afterEventIds": [
+      "JOINING_CEREMONY_HBRGO_SAKI"
+    ]
+  },
+  "presentation": {
+    "background": "res://images/story/70208cc9205d632aae30.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "回忆起谁呢？",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "录音室",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "千早爱音",
+          "description": "才能+8，从3张卡牌中选择1张获得",
+          "nextPage": "ANON",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_TSUKASA",
+          "text": "东城司",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "TSUKASA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "ANON",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "爱音",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "才能+8，从3张卡牌中选择1张获得",
+          "description": "才能+8，从3张卡牌中选择1张获得",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Talent",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "anon"
+      ],
+      "title": "千早爱音"
+    },
+    {
+      "id": "TSUKASA",
+      "title": "东城司",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "东城司",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "tsukasa"
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCENE",
+      "title": "ENDING",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

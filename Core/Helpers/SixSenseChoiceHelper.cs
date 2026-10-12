@@ -14,7 +14,11 @@ namespace HBRGOSakiMod.Core.Helpers;
 
 public static class SixSenseChoiceHelper
 {
-    public static async Task<SixSenseAttribute?> Choose(Player player, ElectronicSoldierManual manual, IReadOnlyList<SixSenseAttribute> options)
+    public static async Task<SixSenseAttribute?> Choose(
+        Player player,
+        ElectronicSoldierManual manual,
+        IReadOnlyList<SixSenseAttribute> options,
+        bool canExceedMaximum = false)
     {
         if (options.Count == 0)
         {
@@ -25,7 +29,12 @@ public static class SixSenseChoiceHelper
         SixSenseAttribute selectedAttribute;
         if (ShouldSelectLocal(player))
         {
-            int selectedIndex = TestMode.IsOn ? 0 : await NSixSenseChoiceScreen.ShowScreen(manual, options).ChoiceSelected();
+            int selectedIndex = TestMode.IsOn
+                ? 0
+                : await NSixSenseChoiceScreen.ShowScreen(
+                    manual,
+                    options,
+                    canExceedMaximum).ChoiceSelected();
             if (selectedIndex < 0 || selectedIndex >= options.Count)
             {
                 return null;
@@ -45,7 +54,9 @@ public static class SixSenseChoiceHelper
             selectedAttribute = (SixSenseAttribute)selectedAttributeValue;
         }
 
-        return manual.CanIncreaseSense(selectedAttribute) ? selectedAttribute : null;
+        return canExceedMaximum || manual.CanIncreaseSense(selectedAttribute)
+            ? selectedAttribute
+            : null;
     }
 
     private static bool ShouldSelectLocal(Player player)

@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Relics;
 using HBRGOSakiMod.Core.Nodes.Screens;
 using MegaCrit.Sts2.addons.mega_text;
@@ -254,6 +255,13 @@ public partial class NRollHistoryWidget : Control
             return;
         }
 
+        if (AmnesiaRollVisibilityHelper.IsRollHidden(_history.Owner))
+        {
+            _countLabel.Text = "你的记忆笼上了一层雾";
+            TooltipText = "失忆\n无法查看掷骰出目。";
+            return;
+        }
+
         int count = _history.RollHistory.Count;
         _countLabel.Text = $"本场记录：{count}";
         TooltipText =
@@ -262,7 +270,9 @@ public partial class NRollHistoryWidget : Control
 
     private void OpenHistory()
     {
-        if (_history != null)
+        Refresh();
+        if (_history != null &&
+            !AmnesiaRollVisibilityHelper.IsRollHidden(_history.Owner))
         {
             NSoulRollHistoryScreen.Show(_history);
         }

@@ -69,7 +69,7 @@ public sealed class LoliFormPower : PowerModel
         return _blockGainMultiplier;
     }
 
-    public override decimal ModifyDamageMultiplicative(
+    public decimal ModifyDamageMultiplicative(
         Creature target,
         decimal amount,
         ValueProp props,

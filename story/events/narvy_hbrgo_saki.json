@@ -1,0 +1,747 @@
+{
+  "schemaVersion": 1,
+  "id": "NARVY_HBRGO_SAKI",
+  "title": "██广场",
+  "eventPool": "memoryFragments",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A",
+      "HbrgoHotaru"
+    ],
+    "acts": [],
+    "oncePerRun": true,
+    "afterEventIds": [
+      "JOINING_CEREMONY_HBRGO_SAKI"
+    ]
+  },
+  "presentation": {
+    "background": "res://images/events/hbrgo_saki_mod_event_library_hbrgo_saki.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "res://images/characters/hbrgo_saki_normal.png",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "做些什么呢",
+      "background": "res://images/story/c96da969cdec9aca63d5.png",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "又一场战斗结束后，你的脑袋突然剧烈的疼痛起来。",
+          "portrait": "",
+          "background": "res://images/story/0e7852eda2e600c2faa4.png",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "闭上眼，再睁开时，你发现自己竟然身处一片有着许多黑色史莱姆状生物的广场？",
+          "portrait": "",
+          "background": "res://images/story/c96da969cdec9aca63d5.png",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "不知为何，你在它们身上感到了亲近感，让你完全提不起防备。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "让██笑一笑",
+          "description": "温柔＋8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_2",
+          "text": "教██一些杂技吧",
+          "description": "",
+          "nextPage": "SCENE_3",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_3",
+          "text": "素世",
+          "description": "",
+          "nextPage": "SCENE_4",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_TAMA",
+          "text": "国见玉",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "TAMA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "SCENE",
+      "title": "让██笑一笑",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……好，就让它们笑一笑吧。）",
+          "portrait": "",
+          "background": "res://images/story/c96da969cdec9aca63d5.png",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "这个念头毫无来由地浮上心头。你甚至已经想好了该怎么做，随后才感到一丝困惑。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……奇怪。我以前，也做过这样的事么？）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "眼前忽然闪过几个零碎的画面。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你蹲在那些小小的生物面前，伸出手逗弄着它们。那抹粉色就在身旁，随着笑声轻轻晃动。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "助手？",
+          "text": "丰川同学，你在和██玩吗？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "近在耳边的声音将你从回忆中唤了回来。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你循声抬头，面前的女性正看着你，似乎在等你的回答。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/5fe0a2b5ea02e07f64d7.png",
+              "x": 810.9,
+              "y": 1488.7,
+              "height": 1450,
+              "flipX": false,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……这位是，入队仪式时站在那位紫发女性身旁的人。）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（记得……似乎是她的助手。）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "丰川祥子",
+          "text": "……请问，您认识我？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "女性微微一怔，随即露出有些无奈的神情。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/fb54f16f74a6bd4422ed.png",
+              "x": 810.9,
+              "y": 1488.7,
+              "height": 1450,
+              "flipX": false,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "助手？",
+          "text": "又在和茅森同学玩什么游戏吗？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/5fe0a2b5ea02e07f64d7.png",
+              "x": 810.9,
+              "y": 1488.7,
+              "height": 1450,
+              "flipX": false,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "助手？",
+          "text": "██同学，我是——",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "熟悉的刺痛骤然袭来。",
+          "portrait": "",
+          "background": "res://images/story/b04f3c2031329c67643b.png",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你下意识地按住额角，努力想听清她接下来的话，眼前的身影却已经模糊起来。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/5fe0a2b5ea02e07f64d7.png",
+              "x": 810.9,
+              "y": 1488.7,
+              "height": 1450,
+              "flipX": false,
+              "opacity": 0.7
+            }
+          ]
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……请等一下。我还没有——）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/5fe0a2b5ea02e07f64d7.png",
+              "x": 810.9,
+              "y": 1488.7,
+              "height": 1450,
+              "flipX": false,
+              "opacity": 0.3
+            }
+          ]
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "再次睁眼，面前只剩下塔内冰冷的墙壁。",
+          "portrait": "",
+          "background": "res://images/story/94f82a588fa5f0bb389a.png",
+          "portraitLayout": null,
+          "characters": []
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（又是这样......）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "温柔＋8，从3张卡牌中选择1张获得。",
+          "description": "温柔＋8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "nanami"
+      ]
+    },
+    {
+      "id": "SCENE_3",
+      "title": "教██一些杂技吧",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……好，就教它们一些杂技吧。）",
+          "portrait": "",
+          "background": "res://images/story/c96da969cdec9aca63d5.png",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（不过，教些什么才好呢……）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……有了。）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "丰川祥子",
+          "text": "千早同学？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "蓝与金的双刀从空中的虫洞里落下，稳稳地落入你手中。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你将蓝色的长刀放在一旁，右手握住金色的短刀，左手虚托在身前，仿佛正托着什么东西。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "随后，你神情认真地削起了手中的空气。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "？？？",
+          "text": "喂，丰川！你搞啥啊？！",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "？？？",
+          "text": "为啥在██广场把炽天使召出来了，还在那儿削来削去的？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你停下动作，看向声音传来的方向。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/25d626445832af3abab3.png",
+              "x": 800,
+              "y": 1300.8,
+              "height": 1286,
+              "flipX": false,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "丰川祥子",
+          "text": "我在教它们做刀削面。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "粉色的关西腔少女",
+          "text": "……刀削面？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/c46ad72ed1200b5523a8.png",
+              "x": 800,
+              "y": 1300.8,
+              "height": 1286,
+              "flipX": false,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "丰川祥子",
+          "text": "你没听说过么？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你略显意外，随即耐心地解释起来。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "丰川祥子",
+          "text": "就是一只手拿着面团，另一只手里拿刀，站在开水锅前，把面团削成细长的薄片下进锅里煮的面！",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "粉色的关西腔少女",
+          "text": "谁问你面要怎么做了啊！",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/25d626445832af3abab3.png",
+              "x": 800,
+              "y": 1300.8,
+              "height": 1286,
+              "flipX": false,
+              "opacity": 1
+            }
+          ]
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你的手停在了半空。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "粉色的关西腔少女",
+          "text": "咱问的是，为什么要召唤炽天使！削个面需要用到那种东西吗？！",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "丰川祥子",
+          "text": "……欸？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "话音刚落，熟悉的刺痛骤然袭来。",
+          "portrait": "",
+          "background": "res://images/story/0e7852eda2e600c2faa4.png",
+          "portraitLayout": null,
+          "characters": [
+            {
+              "id": "CHARACTER",
+              "image": "res://images/story/25d626445832af3abab3.png",
+              "x": 800,
+              "y": 1300.8,
+              "height": 1286,
+              "flipX": false,
+              "opacity": 0.7
+            }
+          ]
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "再次睁眼，面前只剩下塔内冰冷的墙壁。",
+          "portrait": "",
+          "background": "res://images/story/94f82a588fa5f0bb389a.png",
+          "portraitLayout": null,
+          "characters": []
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你低头看了看空空的左手。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（……说起来，我为什么会知道这种面的做法呢？）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（连手上的动作，都记得这样清楚……）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你试着回想了一会儿，最终轻轻叹了口气。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（下次若是有材料，就试着做一碗吧。）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "疯狂＋8，从3张卡牌中选择1张获得。",
+          "description": "疯狂＋8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "megumi"
+      ]
+    },
+    {
+      "id": "SCENE_4",
+      "title": "素世",
+      "choicePrompt": "",
+      "background": "res://images/story/c96da969cdec9aca63d5.png",
+      "lines": [],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "单纯＋8，从3张卡牌中选择1张获得。亚麻色长发的少女进入了记忆之庭",
+          "description": "单纯＋8，从3张卡牌中选择1张获得。亚麻色长发的少女进入了记忆之庭",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "soyo"
+      ]
+    },
+    {
+      "id": "TAMA",
+      "title": "国见玉",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "国见玉",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "tama"
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCENE_2",
+      "title": "结尾",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（继续前进吧。）",
+          "portrait": "",
+          "background": "res://images/story/94f82a588fa5f0bb389a.png",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "thought",
+          "speaker": "丰川祥子",
+          "text": "（我一定会找到你们的。）",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

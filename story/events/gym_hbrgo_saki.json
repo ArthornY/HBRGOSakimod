@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "id": "GYM_HBRGO_SAKI",
+  "title": "健身房",
+  "eventPool": "memoryFragments",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A",
+      "HbrgoHotaru"
+    ],
+    "acts": [],
+    "oncePerRun": true,
+    "afterEventIds": [
+      "JOINING_CEREMONY_HBRGO_SAKI"
+    ]
+  },
+  "presentation": {
+    "background": "res://images/story/70208cc9205d632aae30.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "回忆起谁呢？",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "健身房",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "椎名立希",
+          "description": "获得8点领袖魅力，从3张卡牌中选择1张获得",
+          "nextPage": "TAKI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "CHOICE_KAREN",
+          "text": "朝仓可怜",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "KAREN",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "TAKI",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "立希",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CHOICE",
+          "text": "获得8点领袖魅力，从3张卡牌中选择1张获得",
+          "description": "获得8点领袖魅力，从3张卡牌中选择1张获得",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "taki"
+      ],
+      "title": "椎名立希"
+    },
+    {
+      "id": "KAREN",
+      "title": "朝仓可怜",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "朝仓可怜",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "karen"
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "SCENE",
+      "title": "ENDING",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

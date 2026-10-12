@@ -29,13 +29,16 @@ public sealed class HBRGOSakiCardPool : CustomCardPoolModel
                 and not MagicSwordModeHbrgoSaki
                 and not FeintHbrgoSaki
                 and not ChihayaClassmateHbrgoSaki
+                and not AnokoHbrgoSaki
                 and not ReptureBowChoiceHbrgoSaki
                 and not ReptureDualSwordsChoiceHbrgoSaki
                 and not RaptureScytheChoiceHbrgoSaki
                 and not HighSongHbrgoSaki
                 and not ShadowDanceSongHbrgoSaki
                 and not BlueSkySongHbrgoSaki
-                and not LostDaysSongHbrgoSaki)
+                and not LostDaysSongHbrgoSaki
+                and not PhantomChoiceHbrgoSaki
+                and not PhantomKnowledgeChoiceHbrgoSaki)
             .Distinct();
     }
 }

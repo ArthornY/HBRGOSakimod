@@ -23,7 +23,7 @@ public sealed class RestTimeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new PowerVar<EnergyNextTurnPower>(2m)
+            new EnergyVar(2)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -73,13 +73,13 @@ public sealed class RestTimeHbrgoSaki : CardModel
         await PowerCmd.Apply<EnergyNextTurnPower>(
             choiceContext,
             Owner.Creature,
-            DynamicVars["EnergyNextTurnPower"].BaseValue,
+            DynamicVars.Energy.BaseValue,
             Owner.Creature,
             this);
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars["EnergyNextTurnPower"].UpgradeValueBy(1m);
+        DynamicVars.Energy.UpgradeValueBy(1m);
     }
 }

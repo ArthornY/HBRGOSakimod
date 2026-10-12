@@ -1,13 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Entities.RestSite;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
@@ -15,15 +21,21 @@ using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HBRGOSakiMod.Core.Models.Relics;
 
-public sealed class DeflectorProtection : RelicModel
+public sealed partial class DeflectorProtection : RelicModel
 {
+    private static readonly AsyncLocal<int>
+        MaxHpGainConversionBypassDepth = new();
+
     public const int DpPerMaxHp = 2;
 
     public static readonly Color DpColor = new("6ED7FF");
 
     private int _dp;
     private int _bonusMaxDp;
+    private int _cancerMaxDp;
+    private int _lostMaxDp;
     private bool _hasInitializedDp;
+    private bool _hasUsedMagicSwordBreakProtection;
 
     public override RelicRarity Rarity => RelicRarity.Starter;
 
@@ -32,6 +44,9 @@ public sealed class DeflectorProtection : RelicModel
     public override int DisplayAmount => GetDisplayDp();
 
     public int MaxDp => GetMaxDp();
+
+    internal static bool IsMaxHpGainConversionBypassed =>
+        MaxHpGainConversionBypassDepth.Value > 0;
 
     public override string PackedIconPath => ImageHelper.GetImagePath("relics/deflector_protection.png");
 
@@ -69,6 +84,28 @@ public sealed class DeflectorProtection : RelicModel
     }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int CancerMaxDp
+    {
+        get => _cancerMaxDp;
+        private set
+        {
+            AssertMutable();
+            _cancerMaxDp = Math.Max(0, value);
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int LostMaxDp
+    {
+        get => _lostMaxDp;
+        private set
+        {
+            AssertMutable();
+            _lostMaxDp = Math.Max(0, value);
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public bool HasInitializedDp
     {
         get => _hasInitializedDp;
@@ -76,6 +113,17 @@ public sealed class DeflectorProtection : RelicModel
         {
             AssertMutable();
             _hasInitializedDp = value;
+        }
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasUsedMagicSwordBreakProtection
+    {
+        get => _hasUsedMagicSwordBreakProtection;
+        private set
+        {
+            AssertMutable();
+            _hasUsedMagicSwordBreakProtection = value;
         }
     }
 
@@ -89,9 +137,25 @@ public sealed class DeflectorProtection : RelicModel
         return Task.CompletedTask;
     }
 
+    internal static async Task GainMaxHpWithoutConversion(
+        Creature creature,
+        decimal amount)
+    {
+        MaxHpGainConversionBypassDepth.Value++;
+        try
+        {
+            await CreatureCmd.GainMaxHp(creature, amount);
+        }
+        finally
+        {
+            MaxHpGainConversionBypassDepth.Value--;
+        }
+    }
+
     public override Task BeforeCombatStart()
     {
         EnsureDpInitialized();
+        HasLostDpThisCombat = false;
         return Task.CompletedTask;
     }
 
@@ -102,6 +166,7 @@ public sealed class DeflectorProtection : RelicModel
             return Task.CompletedTask;
         }
 
+        if (Owner.Character is HbrgoHotaru) GainMaxDp(10);
         RestoreDpFromHealAmount(HealRestSiteOption.GetHealAmount(player));
 
         return Task.CompletedTask;
@@ -114,7 +179,9 @@ public sealed class DeflectorProtection : RelicModel
             return currentExtraText;
         }
 
-        LocString extraText = AdditionalRestSiteHealText;
+        LocString extraText = Owner.Character is HbrgoHotaru
+            ? new LocString("relics", "DEFLECTOR_PROTECTION.hotaruAdditionalRestSiteHealText")
+            : AdditionalRestSiteHealText;
         if (extraText == null)
         {
             return currentExtraText;
@@ -134,6 +201,7 @@ public sealed class DeflectorProtection : RelicModel
         int maxDp = MaxDp;
         if (maxDp <= 0)
         {
+            SetDpClamped(0);
             return;
         }
 
@@ -171,6 +239,7 @@ public sealed class DeflectorProtection : RelicModel
 
         decimal absorbed = Math.Min(amount, dpToSpend);
         SetDpClamped(Dp - dpToSpend);
+        RegisterMentalStrengthDpLoss(dpToSpend);
         Flash();
         return absorbed;
     }
@@ -182,8 +251,11 @@ public sealed class DeflectorProtection : RelicModel
         return maxDp > 0 && Dp < maxDp * percent;
     }
 
-    public int RestoreDpByMaxPercent(decimal percent)
+    public int RestoreDpByMaxPercent(decimal percent) => RestoreDpByMaxPercent(percent, out _);
+
+    internal int RestoreDpByMaxPercent(decimal percent, out int overflow)
     {
+        overflow = 0;
         EnsureDpInitialized();
         int maxDp = MaxDp;
         if (maxDp <= 0 ||
@@ -195,15 +267,35 @@ public sealed class DeflectorProtection : RelicModel
 
         int previousDp = Dp;
         decimal recoveryMultiplier = DisabledPower.GetDpRecoveryMultiplier(Owner.Creature) * ElectronicSoldierManual.GetSimplicityDpRecoveryMultiplier(Owner);
-        int restoredDp = (int)(maxDp * percent * recoveryMultiplier);
-        SetDpClamped(Dp + restoredDp);
+        int restoredDp = (int)Math.Clamp(maxDp * percent * recoveryMultiplier, 0m, int.MaxValue);
+        int acceptedDp = Math.Min(restoredDp, Math.Max(0, maxDp - previousDp));
+        overflow = restoredDp - acceptedDp;
+        SetDpClamped(previousDp + acceptedDp);
         int actualRestoredDp = Dp - previousDp;
         if (actualRestoredDp > 0)
         {
             Flash();
         }
-
+        HotaruCannonSupportUpgradeHelper.OnDpRecoveryOverflow(this, overflow);
         return actualRestoredDp;
+    }
+
+    internal int RestoreDpByMissingPercent(decimal percent)
+    {
+        Player owner = GetOwnerOrNull();
+        if (owner == null || percent <= 0m)
+        {
+            return 0;
+        }
+
+        EnsureDpInitialized();
+        int missingDp = Math.Max(0, MaxDp - Dp);
+        decimal recoveryMultiplier = DisabledPower.GetDpRecoveryMultiplier(owner.Creature) * ElectronicSoldierManual.GetSimplicityDpRecoveryMultiplier(owner);
+        int restoredDp = (int)Math.Clamp(
+            missingDp * percent * recoveryMultiplier,
+            0m,
+            missingDp);
+        return RestoreDp(restoredDp);
     }
 
     public int RestoreDpToAtLeastMaxPercent(decimal percent)
@@ -248,40 +340,28 @@ public sealed class DeflectorProtection : RelicModel
         }
 
         int restoredDp = GetDpRestoreForHealAmount(owner, healAmount, recoveryFactor);
-        if (restoredDp <= 0 || Dp >= MaxDp)
-        {
-            return 0;
-        }
-
-        int previousDp = Dp;
-        SetDpClamped(Dp + restoredDp);
-        int actualRestoredDp = Dp - previousDp;
-        if (actualRestoredDp > 0)
-        {
-            Flash();
-        }
-
-        return actualRestoredDp;
+        return RestoreDp(restoredDp);
     }
 
     public int RestoreDp(int amount)
     {
         EnsureDpInitialized();
         if (amount <= 0 ||
-            Dp >= MaxDp ||
             Owner.Creature.HasPower<LastStandPower>())
         {
             return 0;
         }
 
         int previousDp = Dp;
-        SetDpClamped(Dp + amount);
+        int acceptedDp = Math.Min(amount, Math.Max(0, MaxDp - previousDp));
+        int overflow = amount - acceptedDp;
+        SetDpClamped(previousDp + acceptedDp);
         int actualRestoredDp = Dp - previousDp;
         if (actualRestoredDp > 0)
         {
             Flash();
         }
-
+        HotaruCannonSupportUpgradeHelper.OnDpRecoveryOverflow(this, overflow);
         return actualRestoredDp;
     }
 
@@ -294,7 +374,16 @@ public sealed class DeflectorProtection : RelicModel
 
         EnsureDpInitialized();
         int previousMaxDp = MaxDp;
-        BonusMaxDp += amount;
+        var gain = GetMaxDpGainPlan(amount);
+        LostMaxDp = gain.Loss;
+        if (CancerMaxDp > 0)
+        {
+            CancerMaxDp = gain.StoredMaximum;
+        }
+        else
+        {
+            BonusMaxDp = gain.StoredMaximum;
+        }
         int gainedMaxDp = MaxDp - previousMaxDp;
         if (gainedMaxDp <= 0)
         {
@@ -314,6 +403,40 @@ public sealed class DeflectorProtection : RelicModel
         return gainedMaxDp;
     }
 
+    public void ActivateCancerMaxDp(int maxDp)
+    {
+        if (!IsMutable || maxDp <= 0)
+        {
+            return;
+        }
+
+        EnsureDpInitialized();
+        CancerMaxDp = maxDp;
+        SetDpClamped(Dp);
+        InvokeDisplayAmountChanged();
+        Flash();
+    }
+
+    public int LoseMaxDp(int amount)
+    {
+        if (!IsMutable || amount <= 0) return 0;
+
+        EnsureDpInitialized();
+        int previousMaximum = MaxDp;
+        int lost = Math.Min(previousMaximum, amount);
+        if (lost <= 0) return 0;
+
+        // Keep the penalty separate from bonuses so that it survives battle
+        // transitions and alternate DP formulas, without creating negative DP.
+        LostMaxDp = (int)Math.Min(int.MaxValue, (long)LostMaxDp + lost);
+        int previousDp = Dp;
+        SetDpClamped(Dp);
+        if (Dp < previousDp) RegisterMentalStrengthDpLoss(previousDp - Dp);
+        InvokeDisplayAmountChanged();
+        Flash();
+        return previousMaximum - MaxDp;
+    }
+
     public int LoseDpByCurrentPercent(decimal percent)
     {
         EnsureDpInitialized();
@@ -329,6 +452,8 @@ public sealed class DeflectorProtection : RelicModel
         }
 
         SetDpClamped(Dp - lostDp);
+        CardDamageHistoryHelper.RecordDpDamage(GetOwnerOrNull()?.Creature, lostDp);
+        RegisterMentalStrengthDpLoss(lostDp);
         Flash();
 
         return lostDp;
@@ -344,8 +469,23 @@ public sealed class DeflectorProtection : RelicModel
 
         int lostDp = Math.Min(Dp, amount);
         SetDpClamped(Dp - lostDp);
+        CardDamageHistoryHelper.RecordDpDamage(GetOwnerOrNull()?.Creature, lostDp);
+        RegisterMentalStrengthDpLoss(lostDp);
         Flash();
         return lostDp;
+    }
+
+    public async Task ResolveMentalStrengthDpLossRewards(
+        PlayerChoiceContext choiceContext,
+        CardModel cardSource = null)
+    {
+        await ResolveMatchaDpLossReturn();
+        ElectronicSoldierManual manual =
+            Owner.GetRelic<ElectronicSoldierManual>();
+        await (manual?.ResolveMentalStrengthDpLossRewards(
+                choiceContext,
+                cardSource) ??
+            Task.CompletedTask);
     }
 
     public bool WouldDpBeDepletedBy(decimal amount)
@@ -359,10 +499,35 @@ public sealed class DeflectorProtection : RelicModel
         return Dp > 0 && (int)amount >= Dp;
     }
 
+    public bool TryUseMagicSwordBreakProtection()
+    {
+        if (!IsMutable || HasUsedMagicSwordBreakProtection)
+        {
+            return false;
+        }
+
+        HasUsedMagicSwordBreakProtection = true;
+        return true;
+    }
+
     public void SyncAfterMaxHpChanged(int oldMaxHp, int newMaxHp)
     {
         if (!IsMutable || newMaxHp <= 0)
         {
+            return;
+        }
+
+        if (TemporaryMaxHpChangeDepth.Value > 0)
+        {
+            SetDpClamped(Dp);
+            InvokeDisplayAmountChanged();
+            return;
+        }
+
+        if (CancerMaxDp > 0)
+        {
+            SetDpClamped(Dp);
+            InvokeDisplayAmountChanged();
             return;
         }
 
@@ -372,12 +537,8 @@ public sealed class DeflectorProtection : RelicModel
             return;
         }
 
-        int oldMaxDp = Math.Max(
-            0,
-            oldMaxHp * DpPerMaxHp + BonusMaxDp);
-        int newMaxDp = Math.Max(
-            0,
-            newMaxHp * DpPerMaxHp + BonusMaxDp);
+        int oldMaxDp = GetNormalMaxDp(oldMaxHp);
+        int newMaxDp = GetNormalMaxDp(newMaxHp);
         if (newMaxDp > oldMaxDp &&
             !Owner.Creature.HasPower<LastStandPower>())
         {
@@ -409,7 +570,14 @@ public sealed class DeflectorProtection : RelicModel
     private void SetDpClamped(int value)
     {
         int maxDp = MaxDp;
-        Dp = maxDp > 0 ? Math.Min(value, maxDp) : value;
+        Dp = Math.Clamp(value, 0, maxDp);
+    }
+
+    private void RegisterMentalStrengthDpLoss(int amount)
+    {
+        RegisterMatchaDpLoss(amount);
+        Owner.GetRelic<ElectronicSoldierManual>()?
+            .RegisterMentalStrengthDpLoss(amount);
     }
 
     private int GetDisplayDp()
@@ -420,26 +588,57 @@ public sealed class DeflectorProtection : RelicModel
         }
 
         int maxDp = MaxDp;
-        return maxDp > 0 ? Math.Min(Dp, maxDp) : Dp;
+        return Math.Min(Dp, maxDp);
     }
 
     private int GetMaxDp()
     {
         Player owner = GetOwnerOrNull();
-        return owner == null
-            ? 0
-            : Math.Max(
-                0,
-                owner.Creature.MaxHp * DpPerMaxHp +
-                BonusMaxDp);
+        if (owner == null)
+        {
+            return 0;
+        }
+
+        if (CancerMaxDp > 0)
+        {
+            return Math.Max(0, CancerMaxDp - LostMaxDp);
+        }
+
+        return GetNormalMaxDp(owner.Creature.MaxHp);
+    }
+
+    private int GetNormalMaxDp(int maxHp) =>
+        Math.Max(0, GetNormalBaseMaxDp(maxHp, BonusMaxDp) - LostMaxDp);
+
+    private static int GetNormalBaseMaxDp(int maxHp, int bonus) =>
+        (int)Math.Clamp((long)maxHp * DpPerMaxHp + bonus, 0L, int.MaxValue);
+
+    private (int StoredMaximum, int Loss) GetMaxDpGainPlan(int amount)
+    {
+        int baseMaximum = CancerMaxDp > 0
+            ? CancerMaxDp : GetNormalBaseMaxDp(Owner.Creature.MaxHp, BonusMaxDp);
+        // The effective cap bottoms out at zero. Clear any hidden overflow
+        // debt, then recover loss before adding bonuses above the old cap.
+        int loss = Math.Min(LostMaxDp, baseMaximum);
+        int recoveredLoss = Math.Min(loss, amount);
+        int stored = CancerMaxDp > 0 ? CancerMaxDp : BonusMaxDp;
+        return (AddClamped(stored, amount - recoveredLoss), loss - recoveredLoss);
     }
 
     private int GetRestSiteDpRestore(Player player)
     {
-        return GetDpRestoreForHealAmount(player, HealRestSiteOption.GetHealAmount(player), 1m);
+        int maxDpAfterRest = MaxDp;
+        if (player.Character is HbrgoHotaru)
+        {
+            var gain = GetMaxDpGainPlan(10);
+            int baseAfterGain = CancerMaxDp > 0
+                ? gain.StoredMaximum : GetNormalBaseMaxDp(player.Creature.MaxHp, gain.StoredMaximum);
+            maxDpAfterRest = Math.Max(0, baseAfterGain - gain.Loss);
+        }
+        return GetDpRestoreForHealAmount(player, HealRestSiteOption.GetHealAmount(player), 1m, maxDpAfterRest);
     }
 
-    private int GetDpRestoreForHealAmount(Player player, decimal healAmount, decimal recoveryFactor)
+    private int GetDpRestoreForHealAmount(Player player, decimal healAmount, decimal recoveryFactor, int? maxDpOverride = null)
     {
         if (player.Creature.MaxHp <= 0 || healAmount <= 0m || recoveryFactor <= 0m)
         {
@@ -448,7 +647,7 @@ public sealed class DeflectorProtection : RelicModel
 
         decimal healPercent = healAmount / player.Creature.MaxHp;
         decimal recoveryMultiplier = DisabledPower.GetDpRecoveryMultiplier(player.Creature) * ElectronicSoldierManual.GetSimplicityDpRecoveryMultiplier(player);
-        decimal dpRestore = MaxDp * healPercent * recoveryFactor * recoveryMultiplier;
+        decimal dpRestore = (maxDpOverride ?? MaxDp) * healPercent * recoveryFactor * recoveryMultiplier;
         return Math.Max(0, (int)dpRestore);
     }
 

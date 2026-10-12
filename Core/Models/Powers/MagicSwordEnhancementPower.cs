@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -34,6 +35,12 @@ public sealed class MagicSwordEnhancementPower : PowerModel
         Creature applier,
         CardModel cardSource)
     {
+        RegisterCardSource(cardSource);
+        return Task.CompletedTask;
+    }
+
+    internal void RegisterCardSource(CardModel cardSource)
+    {
         if (cardSource is MagicSwordEnhancementHbrgoSaki
             {
                 HasEnhancedHpDamage: true
@@ -42,8 +49,6 @@ public sealed class MagicSwordEnhancementPower : PowerModel
             AssertMutable();
             HasEnhancedHpDamage = true;
         }
-
-        return Task.CompletedTask;
     }
 
     public override async Task AfterDamageGiven(
@@ -63,22 +68,18 @@ public sealed class MagicSwordEnhancementPower : PowerModel
             return;
         }
 
-        HighDimensionalShellPower shell =
-            target.GetPower<HighDimensionalShellPower>();
-        int absorbedDamage =
-            shell?.ConsumeLastAbsorbedDamage() ?? 0;
-        if (absorbedDamage <= 0)
+        if (!HpOnlyDamageContext.TryTakeDpReceipt(result, out decimal absorbedDamage) ||
+            absorbedDamage <= 0m)
         {
             return;
         }
 
         decimal divisor = HasEnhancedHpDamage ? 2m : 3m;
         Flash();
-        await CreatureCmd.Damage(
+        await HpOnlyDamageContext.Damage(
             choiceContext,
             target,
             absorbedDamage / divisor,
-            ValueProp.Unblockable | ValueProp.Unpowered,
             Owner,
             cardSource);
     }

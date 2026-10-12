@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using BaseLib.Patches.Content;
 using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Integration;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
@@ -16,30 +18,33 @@ namespace HBRGOSakiMod.Core.Rewards;
 
 public sealed class SixSenseReward : ModCustomReward
 {
-    private const int OptionCountMask = 0x3;
+    private const int LegacyOptionCountMask = 0x3;
     private const int OptionBits = 3;
-    private const int FirstOptionShift = 2;
-    private const int FixedAttributeFlag = 1 << 11;
-    private const int FixedAttributeShift = 12;
+    private const int LegacyFirstOptionShift = 2;
+    private const int LegacyFixedAttributeFlag = 1 << 11;
+    private const int LegacyFixedAttributeShift = 12;
+    private const int ExtendedFormatFlag = 1 << 20;
+    private const int ExtendedOptionCountMask = 0x7;
+    private const int ExtendedFirstOptionShift = 3;
+    private const int ExtendedFixedAttributeFlag = 1 << 15;
+    private const int ExtendedFixedAttributeShift = 16;
+    private const int ExceedMaximumFlag = 1 << 19;
 
     [CustomEnum(null)]
     public static RewardType SixSense;
 
     private readonly ElectronicSoldierManual _manual;
     private readonly SixSenseAttribute? _fixedAttribute;
+    private readonly bool _canExceedMaximum;
     private IReadOnlyList<SixSenseAttribute> _options = new List<SixSenseAttribute>();
 
     public override RewardType ModRewardType => SixSense;
 
     public override int RewardsSetIndex => 4;
 
-    public override LocString Description => new(
-        "relics",
-        _fixedAttribute.HasValue
-            ? ElectronicSoldierManual.GetSenseRewardDescriptionKey(_fixedAttribute.Value)
-            : "SIX_SENSE_REWARD.description");
+    public override LocString Description => new("relics", "SIX_SENSE_POINT_REWARD.description");
 
-    public override bool IsPopulated => _options.Count > 0;
+    public override bool IsPopulated => _manual != null;
 
     protected override string RewardIconPath =>
         _manual?.PackedIconPath ??
@@ -51,11 +56,13 @@ public sealed class SixSenseReward : ModCustomReward
         Player player,
         ElectronicSoldierManual manual,
         SixSenseAttribute? fixedAttribute = null,
-        IReadOnlyList<SixSenseAttribute> restoredOptions = null)
+        IReadOnlyList<SixSenseAttribute> restoredOptions = null,
+        bool canExceedMaximum = false)
         : base(player)
     {
         _manual = manual;
         _fixedAttribute = fixedAttribute;
+        _canExceedMaximum = canExceedMaximum;
         if (restoredOptions != null)
         {
             _options = restoredOptions.ToArray();
@@ -64,33 +71,10 @@ public sealed class SixSenseReward : ModCustomReward
 
     public override void Populate()
     {
-        if (_options.Count > 0)
-        {
-            return;
-        }
-
-        _options = _fixedAttribute.HasValue
-            ? new[] { _fixedAttribute.Value }
-            : _manual?.RollSixSenseRewardOptions() ??
-              new List<SixSenseAttribute>();
+        // Legacy saves may still contain these entries; keep their payload without rolling new choices.
     }
 
-    protected override async Task<bool> OnSelect()
-    {
-        if (_manual == null)
-        {
-            return false;
-        }
-
-        Populate();
-        if (_fixedAttribute.HasValue)
-        {
-            await _manual.TryIncreaseSense(_fixedAttribute.Value);
-            return true;
-        }
-
-        return await _manual.ChooseAndIncreaseSense(_options);
-    }
+    protected override Task<bool> OnSelect() => Task.FromResult(SixSenseNetActions.ClaimLegacyPoint(_manual));
 
     public override void MarkContentAsSeen()
     {
@@ -99,7 +83,10 @@ public sealed class SixSenseReward : ModCustomReward
     public override string ToModRewardJson()
     {
         Populate();
-        return PackState(_fixedAttribute, _options)
+        return PackState(
+                _fixedAttribute,
+                _options,
+                _canExceedMaximum)
             .ToString(CultureInfo.InvariantCulture);
     }
 
@@ -122,32 +109,40 @@ public sealed class SixSenseReward : ModCustomReward
         UnpackState(
             payload,
             out SixSenseAttribute? fixedAttribute,
-            out IReadOnlyList<SixSenseAttribute> options);
+            out IReadOnlyList<SixSenseAttribute> options,
+            out bool canExceedMaximum);
 
         return new SixSenseReward(
             player,
             player.GetRelic<ElectronicSoldierManual>(),
             fixedAttribute,
-            options);
+            options,
+            canExceedMaximum);
     }
 
     private static int PackState(
         SixSenseAttribute? fixedAttribute,
-        IReadOnlyList<SixSenseAttribute> options)
+        IReadOnlyList<SixSenseAttribute> options,
+        bool canExceedMaximum)
     {
-        int count = System.Math.Min(options.Count, 3);
-        int payload = count;
+        int count = System.Math.Min(options.Count, 4);
+        int payload = ExtendedFormatFlag | count;
         for (int i = 0; i < count; i++)
         {
             payload |= (((int)options[i] + 1) & 0x7)
-                << (FirstOptionShift + i * OptionBits);
+                << (ExtendedFirstOptionShift + i * OptionBits);
         }
 
         if (fixedAttribute.HasValue)
         {
-            payload |= FixedAttributeFlag;
+            payload |= ExtendedFixedAttributeFlag;
             payload |= (((int)fixedAttribute.Value + 1) & 0x7)
-                << FixedAttributeShift;
+                << ExtendedFixedAttributeShift;
+        }
+
+        if (canExceedMaximum)
+        {
+            payload |= ExceedMaximumFlag;
         }
 
         return payload;
@@ -156,13 +151,30 @@ public sealed class SixSenseReward : ModCustomReward
     private static void UnpackState(
         int payload,
         out SixSenseAttribute? fixedAttribute,
-        out IReadOnlyList<SixSenseAttribute> options)
+        out IReadOnlyList<SixSenseAttribute> options,
+        out bool canExceedMaximum)
     {
+        bool isExtended = (payload & ExtendedFormatFlag) != 0;
+        int fixedAttributeFlag = isExtended
+            ? ExtendedFixedAttributeFlag
+            : LegacyFixedAttributeFlag;
+        int fixedAttributeShift = isExtended
+            ? ExtendedFixedAttributeShift
+            : LegacyFixedAttributeShift;
+        int optionCountMask = isExtended
+            ? ExtendedOptionCountMask
+            : LegacyOptionCountMask;
+        int firstOptionShift = isExtended
+            ? ExtendedFirstOptionShift
+            : LegacyFirstOptionShift;
+        canExceedMaximum = isExtended &&
+            (payload & ExceedMaximumFlag) != 0;
+
         fixedAttribute = null;
-        if ((payload & FixedAttributeFlag) != 0)
+        if ((payload & fixedAttributeFlag) != 0)
         {
             int fixedValue =
-                ((payload >> FixedAttributeShift) & 0x7) - 1;
+                ((payload >> fixedAttributeShift) & 0x7) - 1;
             if (System.Enum.IsDefined(
                     typeof(SixSenseAttribute),
                     fixedValue))
@@ -171,12 +183,12 @@ public sealed class SixSenseReward : ModCustomReward
             }
         }
 
-        int count = payload & OptionCountMask;
+        int count = payload & optionCountMask;
         List<SixSenseAttribute> restoredOptions = new(count);
         for (int i = 0; i < count; i++)
         {
             int optionValue =
-                ((payload >> (FirstOptionShift + i * OptionBits)) & 0x7) - 1;
+                ((payload >> (firstOptionShift + i * OptionBits)) & 0x7) - 1;
             if (System.Enum.IsDefined(
                     typeof(SixSenseAttribute),
                     optionValue))

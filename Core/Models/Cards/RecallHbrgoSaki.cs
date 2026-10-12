@@ -41,7 +41,7 @@ public sealed class RecallHbrgoSaki : CardModel
             .Where(entry => entry.CardPlay.IsFirstInSeries)
             .Select(entry => entry.CardPlay.Card)
             .Where(card => card is not RecallHbrgoSaki)
-            .GroupBy(card => card.Id)
+            .GroupBy(card => (card.Id, EnchantmentId: card.Enchantment?.Id))
             .Select(group => CreateOwnedCopy(group.Last()))
             .ToArray();
         if (choices.Length == 0)

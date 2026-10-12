@@ -62,6 +62,10 @@ public sealed class SoulRollBreakdown
 
     public int FinalRoll { get; }
 
+    public bool IsForcedCritical { get; init; }
+
+    public SoulRollTier? ResolvedTier { get; init; }
+
     public string DiceSource { get; }
 
     public IReadOnlyList<SoulRollBonusDetail> Bonuses { get; }
@@ -96,9 +100,12 @@ public sealed class SoulRollBonusDetail
 
     public string Source { get; }
 
-    public SoulRollBonusDetail(int amount, string source)
+    public bool IsPercentage { get; }
+
+    public SoulRollBonusDetail(int amount, string source, bool isPercentage = false)
     {
         Amount = amount;
         Source = string.IsNullOrWhiteSpace(source) ? "未知加成" : source;
+        IsPercentage = isPercentage;
     }
 }

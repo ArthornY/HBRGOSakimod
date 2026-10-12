@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -27,8 +28,13 @@ public sealed class MagicSwordModeHbrgoSaki : CardModel
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
-        HoverTipFactory.FromPower<MagicSwordModePower>()
+        HoverTipFactory.FromPower<MagicSwordModePower>(),
+        HoverTipFactory.FromPower<ReptureDualSwordsPower>()
     };
+
+    protected override bool IsPlayable =>
+        Owner?.Character is HbrgoSaki31O &&
+        Owner.Creature?.HasPower<MagicSwordModePower>() != true;
 
     public MagicSwordModeHbrgoSaki()
         : base(0, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: false)
@@ -37,16 +43,28 @@ public sealed class MagicSwordModeHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (Owner.Creature.HasPower<MagicSwordModePower>())
+        if (Owner.Character is not HbrgoSaki31O ||
+            Owner.Creature.HasPower<MagicSwordModePower>())
         {
             return;
         }
 
+        bool wasInNormalState = Owner.Creature.HasPower<NormalStatePower>();
         await PowerCmd.Apply<MagicSwordModePower>(
             choiceContext,
             Owner.Creature,
             1m,
             Owner.Creature,
             this);
+
+        if (wasInNormalState)
+        {
+            await PowerCmd.Apply<ReptureDualSwordsPower>(
+                choiceContext,
+                Owner.Creature,
+                1m,
+                Owner.Creature,
+                this);
+        }
     }
 }

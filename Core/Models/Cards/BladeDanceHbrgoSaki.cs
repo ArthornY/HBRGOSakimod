@@ -55,7 +55,7 @@ public sealed class BladeDanceHbrgoSaki : CardModel
         for (int i = 0; i < hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
         {
             await DamageCmd.Attack(damage)
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);

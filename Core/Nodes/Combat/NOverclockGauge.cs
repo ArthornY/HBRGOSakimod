@@ -4,6 +4,10 @@ using HBRGOSakiMod.Core.DevConsole;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.DevConsole;
+using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.addons.mega_text;
 
@@ -13,41 +17,46 @@ public partial class NOverclockGauge : Control
 {
     private const float GaugeWidth = 380f;
     private const float GaugeHeight = 102f;
-    private const float BarWidth = 280f;
-    private const float BarHeight = 96f;
     private const float ViewportPadding = 12f;
     private const float AnnouncementOverflowTop = 30f;
     private const string FontPath = "res://themes/kreon_bold_glyph_space_one.tres";
-    private const string EmptyGaugePath = "res://images/ui/overclock/hbr_od_gauge_empty.png";
-    private const string FullGaugePath = "res://images/ui/overclock/hbr_od_gauge_full.png";
-    private const string InactiveEmblemPath = "res://images/ui/overclock/hbr_od_emblem_inactive.png";
-    private const string ActiveEmblemPath = "res://images/ui/overclock/hbr_od_emblem_active.png";
-    private const string LevelUpPath = "res://images/ui/overclock/hbr_od_level_up.png";
+    private const string OriginalAssetPath = "res://images/ui/overclock/original/";
 
-    private static readonly Vector2 BarPosition = new(0f, 2f);
-    private static readonly Vector2 BarSize = new(BarWidth, BarHeight);
     private static Vector2? _savedPositionRatio;
 
     private Overclock _relic;
-    private Control _fillClip;
-    private TextureRect _fillTexture;
-    private TextureRect _inactiveEmblem;
-    private TextureRect _activeEmblem;
-    private TextureRect _levelUpTexture;
-    private MegaLabel _levelLabel;
+    private readonly Control[] _fillClips = new Control[Overclock.MaxLevel];
+    private readonly TextureRect[] _fills = new TextureRect[Overclock.MaxLevel];
+    private readonly TextureRect[] _buttons = new TextureRect[Overclock.MaxLevel];
+    private readonly TextureRect[] _activeButtons = new TextureRect[Overclock.MaxLevel];
+    private readonly TextureRect[] _rings = new TextureRect[Overclock.MaxLevel];
+    private readonly TextureRect[] _numbers = new TextureRect[Overclock.MaxLevel];
+    private readonly TextureRect[] _markers = new TextureRect[Overclock.MaxLevel];
+    private ShaderMaterial _fillFlash;
+    private ShaderMaterial _disabledMaterial;
+    private NHbrOverdriveButtonEffects _buttonEffects;
+    private NHbrOverdriveFloorBudget _floorBudget;
+    private MegaLabel _floorLabel;
     private MegaLabel _chargeLabel;
-    private MegaLabel _announcementLabel;
     private float _displayCharge;
     private float _targetCharge;
-    private float _chargePulseTime;
     private float _levelBurstTime;
     private float _animationTime;
-    private decimal _observedCharge;
     private int _observedLevel;
     private int _observedActiveLevel;
-    private bool _showLevelUpTexture;
+    private int _burstLevel;
+    private int _observedRemainingFloorLevels = -1;
+    private bool? _observedReadiness;
     private bool _isDragging;
+    private bool _isHovered;
+    private bool _rightPressed;
+    private bool _rightPressCancelled;
+    private NHoverTipSet _hoverTips;
     private Vector2 _dragPointerOffset;
+    private NOverclockSelectionMenu _selectionMenu;
+
+    private bool HasSelectionMenu => GodotObject.IsInstanceValid(_selectionMenu) &&
+        !_selectionMenu.IsQueuedForDeletion();
 
     public override void _Ready()
     {
@@ -62,6 +71,9 @@ public partial class NOverclockGauge : Control
         CustomMinimumSize = new Vector2(GaugeWidth, GaugeHeight);
         PivotOffset = new Vector2(GaugeWidth / 2f, GaugeHeight / 2f);
         MouseFilter = MouseFilterEnum.Stop;
+        // Native card-style hover tips render rich text; Godot's TooltipText
+        // treats color tags as plain text and can stretch across the screen.
+        TooltipText = string.Empty;
         ZIndex = 30;
 
         BuildUi();
@@ -75,18 +87,35 @@ public partial class NOverclockGauge : Control
     {
         MouseEntered -= OnMouseEntered;
         MouseExited -= OnMouseExited;
+        _isHovered = false;
+        _selectionMenu?.Close();
+        HideHoverTip();
         BindRelic(null);
     }
 
     public override void _Process(double delta)
     {
-        if (_relic == null)
+        if (_relic == null || !IsVisibleInTree())
         {
+            _isHovered = false;
+            CancelRightPress();
+            _buttonEffects?.ResetEffects();
+            HideHoverTip();
             return;
         }
 
+        // Opening a modal can clear native hover tips without moving the
+        // pointer. Only explicit hover/drag-release events may recreate ours.
+        if (_isDragging || HasSelectionMenu || NHoverTipSet.shouldBlockHoverTips)
+        {
+            CancelRightPress();
+            HideHoverTip();
+        }
+
         float deltaSeconds = (float)delta;
-        _animationTime += deltaSeconds;
+        RefreshFloorBudget();
+        RefreshButtonReadiness();
+        _animationTime = (_animationTime + deltaSeconds) % HbrOverdriveGaugeVisuals.FlashDuration;
         if (!Mathf.IsEqualApprox(_displayCharge, _targetCharge))
         {
             float distance = Math.Abs(_targetCharge - _displayCharge);
@@ -95,13 +124,16 @@ public partial class NOverclockGauge : Control
             RefreshGaugeFill();
         }
 
-        UpdateNativeGlow();
-        UpdateChargePulse(deltaSeconds);
+        _fillFlash.SetShaderParameter("flash_amount", HbrOverdriveGaugeVisuals.Flash(_animationTime));
         UpdateLevelBurst(deltaSeconds);
+        _buttonEffects.SetStandby(_relic.CanActivateLevel(_relic.Level) && !_isDragging && !_rightPressed &&
+            !HasSelectionMenu && !NHoverTipSet.shouldBlockHoverTips);
+        _buttonEffects.Advance(deltaSeconds);
     }
 
     public override void _GuiInput(InputEvent inputEvent)
     {
+        if (HasSelectionMenu) return;
         if (inputEvent is InputEventMouseButton
             {
                 ButtonIndex: MouseButton.Left
@@ -109,7 +141,9 @@ public partial class NOverclockGauge : Control
         {
             if (leftButton.Pressed)
             {
+                CancelRightPress();
                 _isDragging = true;
+                HideHoverTip();
                 _dragPointerOffset = GetGlobalMousePosition() - GlobalPosition;
                 MouseDefaultCursorShape = CursorShape.Move;
             }
@@ -119,6 +153,8 @@ public partial class NOverclockGauge : Control
                 MoveToClampedPosition(GetGlobalMousePosition() - _dragPointerOffset);
                 SavePosition();
                 RefreshText();
+                _isHovered = GetGlobalRect().HasPoint(GetGlobalMousePosition());
+                ShowHoverTip();
             }
 
             AcceptEvent();
@@ -132,22 +168,45 @@ public partial class NOverclockGauge : Control
             return;
         }
 
-        if (inputEvent is not InputEventMouseButton
-            {
-                ButtonIndex: MouseButton.Right,
-                Pressed: false
-            } ||
-            _relic?.CanActivate != true)
+        if (inputEvent is not InputEventMouseButton { ButtonIndex: MouseButton.Right } rightButton)
         {
             return;
         }
 
-        int level = _relic.Level;
+        if (rightButton.Pressed)
+        {
+            _rightPressCancelled = _isDragging || NHoverTipSet.shouldBlockHoverTips;
+            if (!_rightPressCancelled && _relic != null && CombatManager.Instance.IsInProgress)
+            {
+                _rightPressed = true;
+                _buttonEffects.SetStandby(false);
+                _buttonEffects.Push();
+                AcceptEvent();
+            }
+            return;
+        }
+
+        bool cancelled = _rightPressCancelled || !_rightPressed;
+        _rightPressed = false;
+        _rightPressCancelled = false;
+        _buttonEffects.CancelPush();
+        if (cancelled || _isDragging || _relic == null || !CombatManager.Instance.IsInProgress) return;
+        HideHoverTip();
+        _chargeLabel.Visible = false;
+        _selectionMenu = NOverclockSelectionMenu.Show(_relic, ActivateSelectedLevel,
+            () => _selectionMenu = null);
+        AcceptEvent();
+    }
+
+    private void ActivateSelectedLevel(int level)
+    {
+        // Recheck at selection time; the synchronized command rechecks again
+        // when executed if another player or queued action changed combat.
+        if (_relic?.CanActivateLevel(level) != true) return;
         string command =
             $"hbrgosakimod {FixedSoulRollConsoleCmd.ActivateOverclockSubcommand} {level}";
         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
             new ConsoleCmdGameAction(_relic.Owner, command, CombatManager.Instance.IsInProgress));
-        AcceptEvent();
     }
 
     private void RestoreSavedPosition()
@@ -200,7 +259,16 @@ public partial class NOverclockGauge : Control
             _relic.DisplayAmountChanged -= OnChargeChanged;
         }
 
+        HideHoverTip();
+
+        if (HasSelectionMenu) _selectionMenu.Close();
+
+        CancelRightPress();
+        _buttonEffects?.ResetEffects();
+
         _relic = relic;
+        _observedRemainingFloorLevels = -1;
+        _observedReadiness = null;
         if (_relic != null)
         {
             _relic.DisplayAmountChanged += OnChargeChanged;
@@ -208,310 +276,318 @@ public partial class NOverclockGauge : Control
 
         Visible = _relic != null;
         RefreshImmediately();
+        ShowHoverTip();
     }
 
     private void BuildUi()
     {
-        TextureRect shadow = CreateTextureRect(
-            "GaugeShadow",
-            EmptyGaugePath,
-            BarPosition + new Vector2(4f, 5f),
-            BarSize);
-        shadow.Modulate = new Color(0f, 0f, 0f, 0.62f);
-        AddChild(shadow);
-
-        TextureRect emptyGauge = CreateTextureRect(
-            "GaugeEmpty",
-            EmptyGaugePath,
-            BarPosition,
-            BarSize);
-        AddChild(emptyGauge);
-
-        _fillClip = new Control
+        // The source canvas is normalized to the left cap's edge and the
+        // 192-pixel icon's top. All original dimensions share one HUD scale.
+        Control artwork = new()
         {
-            Name = "GaugeFillClip",
-            Position = BarPosition,
-            Size = new Vector2(0f, BarHeight),
-            ClipContents = true,
+            Name = "OriginalOverdrive",
+            Position = new Vector2(7f, 0f),
+            Size = new Vector2(HbrOverdriveGaugeVisuals.SourceWidth, HbrOverdriveGaugeVisuals.SourceHeight),
+            Scale = Vector2.One * HbrOverdriveGaugeVisuals.DisplayScale,
             MouseFilter = MouseFilterEnum.Ignore
         };
-        AddChild(_fillClip);
+        AddChild(artwork);
 
-        _fillTexture = CreateTextureRect(
-            "GaugeFill",
-            FullGaugePath,
-            Vector2.Zero,
-            BarSize);
-        _fillClip.AddChild(_fillTexture);
+        Vector2 barPosition = new(HbrOverdriveGaugeVisuals.BarX, HbrOverdriveGaugeVisuals.BarY);
+        Vector2 barSize = new(HbrOverdriveGaugeVisuals.BarWidth, HbrOverdriveGaugeVisuals.BarHeight);
+        artwork.AddChild(CreateSlicedBar("GaugeBase", "GaugeOverdriveBase", barPosition, barSize));
 
-        _inactiveEmblem = CreateTextureRect(
-            "InactiveEmblem",
-            InactiveEmblemPath,
-            new Vector2(241f, 0f),
-            new Vector2(126f, 100f));
-        AddChild(_inactiveEmblem);
+        NinePatchRect fillMask = CreateSlicedBar("GaugeMask", "GaugeOverdriveBase", barPosition, barSize);
+        fillMask.ClipChildren = ClipChildrenMode.Only;
+        artwork.AddChild(fillMask);
+        _fillFlash = new ShaderMaterial
+        {
+            Shader = ResourceLoader.Load<Shader>(OriginalAssetPath + "od_fill_flash.gdshader")
+        };
+        _disabledMaterial = new ShaderMaterial
+        {
+            Shader = new Shader
+            {
+                Code = "shader_type canvas_item; varying vec4 vertex_tint; void vertex(){ vertex_tint = COLOR; } " +
+                    "void fragment(){ vec4 c = texture(TEXTURE, UV); " +
+                    "float grey = dot(c.rgb, vec3(0.299, 0.587, 0.114)); COLOR = vec4(vec3(grey), c.a) * vertex_tint; }"
+            }
+        };
+        for (int i = 0; i < Overclock.MaxLevel; i++)
+        {
+            _fillClips[i] = new Control
+            {
+                Name = $"Level{i + 1}FillClip",
+                Size = new Vector2(0f, HbrOverdriveGaugeVisuals.BarHeight),
+                ClipContents = true,
+                MouseFilter = MouseFilterEnum.Ignore
+            };
+            fillMask.AddChild(_fillClips[i]);
+            _fills[i] = CreateOriginalSprite($"Level{i + 1}Fill", $"GaugeOverdrive{i + 1}",
+                Vector2.Zero, new Vector2(HbrOverdriveGaugeVisuals.FillWidth, HbrOverdriveGaugeVisuals.BarHeight));
+            _fills[i].Material = _fillFlash;
+            _fillClips[i].AddChild(_fills[i]);
+        }
+        artwork.AddChild(CreateSlicedBar("GaugeFrame", "GaugeOverdriveFrame", barPosition, barSize));
+        artwork.AddChild(CreateOriginalSprite("LeftFrame", "FrameOverdriveGaugeL",
+            new Vector2(0f, 67.4f), new Vector2(60f, 60f)));
+        artwork.AddChild(CreateOriginalSprite("RightFrame", "FrameOverdriveGaugeR",
+            new Vector2(466.3f, 12f), new Vector2(212f, 168f)));
 
-        _activeEmblem = CreateTextureRect(
-            "ActiveEmblem",
-            ActiveEmblemPath,
-            new Vector2(265f, -1f),
-            new Vector2(104f, 104f));
-        _activeEmblem.PivotOffset = _activeEmblem.Size / 2f;
-        AddChild(_activeEmblem);
+        Vector2 iconPosition = new(HbrOverdriveGaugeVisuals.ButtonX, 0f);
+        Vector2 iconSize = new(192f, 192f);
+        Vector2[] markerPositions =
+        {
+            new(583.4f, 54.5f), new(558.6f, 97f), new(606.6f, 97f)
+        };
+        for (int i = 0; i < Overclock.MaxLevel; i++)
+        {
+            int level = i + 1;
+            _buttons[i] = CreateOriginalSprite($"Level{level}Button", $"ButtonOverdrive{level}Default", iconPosition, iconSize);
+            artwork.AddChild(_buttons[i]);
+            _activeButtons[i] = CreateOriginalSprite($"Level{level}Active", $"ButtonOverdrive{level}Active", iconPosition, iconSize);
+            artwork.AddChild(_activeButtons[i]);
+            _rings[i] = CreateOriginalSprite($"Level{level}Burst", $"EffectOverdrive{level}", iconPosition, iconSize);
+            _rings[i].PivotOffset = iconSize / 2f;
+            _rings[i].Visible = false;
+            artwork.AddChild(_rings[i]);
+            _numbers[i] = CreateOriginalSprite($"Level{level}Number", $"NumberOverdrive{level}",
+                new Vector2(565f, 66.2f), new Vector2(56f, 60f));
+            artwork.AddChild(_numbers[i]);
+            _markers[i] = CreateOriginalSprite($"Level{level}Marker", $"MarkerOverdrive{level}",
+                markerPositions[i], new Vector2(24f, 24f));
+            _markers[i].PivotOffset = new Vector2(12f, 12f);
+            artwork.AddChild(_markers[i]);
+        }
 
-        _chargeLabel = CreateLabel(
-            "Charge",
-            "0 / 100",
-            new Vector2(54f, 36f),
-            new Vector2(166f, 24f),
-            16,
-            HorizontalAlignment.Center,
-            new Color("F9EFFFD8"));
+        _buttonEffects = new NHbrOverdriveButtonEffects
+        {
+            Name = "OriginalOverdriveButtonEffects",
+            Position = new Vector2(HbrOverdriveGaugeVisuals.ButtonX + 96f, 96f),
+            MouseFilter = MouseFilterEnum.Ignore
+        };
+        artwork.AddChild(_buttonEffects);
+
+        _floorBudget = new NHbrOverdriveFloorBudget
+        {
+            Name = "OriginalFloorBudgetTokens",
+            Position = new Vector2(HbrOverdriveGaugeVisuals.BarX, 43f),
+            MouseFilter = MouseFilterEnum.Ignore
+        };
+        artwork.AddChild(_floorBudget);
+        _floorLabel = CreateLabel("FloorBudget", string.Empty,
+            new Vector2(22f, -1f), new Vector2(240f, 23f), 14,
+            HorizontalAlignment.Left, new Color("F1D7F4"));
+        AddChild(_floorLabel);
+
+        // Keep the existing numerical inspection readout outside the source
+        // artwork. It appears only while hovered, along with the native tip.
+        _chargeLabel = CreateLabel("Charge", string.Empty,
+            new Vector2(46f, 66f), new Vector2(245f, 24f), 16,
+            HorizontalAlignment.Center, new Color("F9EFFFD8"));
         _chargeLabel.Visible = false;
         AddChild(_chargeLabel);
-
-        _levelLabel = CreateLabel(
-            "Level",
-            "OD Lv.0",
-            new Vector2(265f, 77f),
-            new Vector2(85f, 19f),
-            13,
-            HorizontalAlignment.Center,
-            new Color("FFF4FFFF"));
-        AddChild(_levelLabel);
-
-        _levelUpTexture = CreateTextureRect(
-            "LevelUp",
-            LevelUpPath,
-            new Vector2(109f, -25f),
-            new Vector2(139f, 38f));
-        _levelUpTexture.PivotOffset = _levelUpTexture.Size / 2f;
-        _levelUpTexture.Visible = false;
-        AddChild(_levelUpTexture);
-
-        _announcementLabel = CreateLabel(
-            "StateAnnouncement",
-            string.Empty,
-            new Vector2(74f, -24f),
-            new Vector2(270f, 24f),
-            17,
-            HorizontalAlignment.Right,
-            new Color("F9E7FFFF"));
-        _announcementLabel.Visible = false;
-        AddChild(_announcementLabel);
     }
 
     private void OnChargeChanged()
     {
-        if (_relic == null)
-        {
-            return;
-        }
+        if (_relic == null) return;
 
-        decimal nextCharge = _relic.PreciseCharge;
-        decimal nextGaugeCharge = _relic.ChargeIntoLevel;
         int nextLevel = _relic.Level;
         int nextActiveLevel = _relic.ActiveLevel;
-        bool crossedChargeThreshold =
-            nextCharge > _observedCharge &&
-            Math.Floor(nextCharge / Overclock.ChargePerLevel) >
-            Math.Floor(_observedCharge / Overclock.ChargePerLevel);
-        if (nextCharge > _observedCharge)
+        // The command can be rejected by action timing. Animate activation
+        // only after the relic reports that it actually became active.
+        if (_observedActiveLevel == 0 && nextActiveLevel > 0)
         {
-            _chargePulseTime = 0.34f;
+            _rightPressed = false;
+            _buttonEffects?.Activate();
         }
-
-        if (crossedChargeThreshold)
-        {
-            _displayCharge = (float)nextGaugeCharge;
-        }
-
         if (nextLevel > _observedLevel)
         {
-            StartLevelBurst(showLevelUpTexture: true);
+            _burstLevel = nextLevel;
+            _levelBurstTime = HbrOverdriveGaugeVisuals.LevelUpDuration;
+        }
+        else if (nextActiveLevel != _observedActiveLevel)
+        {
+            _levelBurstTime = 0f;
         }
 
-        if (nextActiveLevel > 0 && _observedActiveLevel == 0)
-        {
-            _announcementLabel.Text = $"OVERDRIVE Lv.{nextActiveLevel}";
-            StartLevelBurst(showLevelUpTexture: false);
-        }
-        else if (nextActiveLevel == 0 && _observedActiveLevel > 0)
-        {
-            _announcementLabel.Text = "OVERDRIVE END";
-            StartLevelBurst(showLevelUpTexture: false);
-        }
-
-        _observedCharge = nextCharge;
         _observedLevel = nextLevel;
         _observedActiveLevel = nextActiveLevel;
-        _targetCharge = (float)nextGaugeCharge;
+        _targetCharge = (float)_relic.PreciseCharge;
         RefreshText();
-        if (crossedChargeThreshold)
-        {
-            RefreshGaugeFill();
-        }
-    }
-
-    private void StartLevelBurst(bool showLevelUpTexture)
-    {
-        _levelBurstTime = 1.25f;
-        _showLevelUpTexture = showLevelUpTexture;
-        _levelUpTexture.Visible = showLevelUpTexture;
-        _announcementLabel.Visible = !showLevelUpTexture;
     }
 
     private void RefreshImmediately()
     {
-        if (_relic == null || _levelLabel == null)
+        if (_relic == null || _chargeLabel == null)
         {
             Visible = false;
             return;
         }
 
         Visible = true;
-        _displayCharge = (float)_relic.ChargeIntoLevel;
-        _targetCharge = (float)_relic.ChargeIntoLevel;
-        _observedCharge = _relic.PreciseCharge;
+        _displayCharge = (float)_relic.PreciseCharge;
+        _targetCharge = _displayCharge;
         _observedLevel = _relic.Level;
         _observedActiveLevel = _relic.ActiveLevel;
+        _levelBurstTime = 0f;
         RefreshText();
         RefreshGaugeFill();
+        UpdateLevelBurst(0f);
     }
 
     private void RefreshText()
     {
-        bool isActive = _relic.ActiveLevel > 0;
-        int displayedLevel = isActive ? _relic.ActiveLevel : _relic.Level;
-        _levelLabel?.SetTextAutoSize(isActive
-            ? $"OD Lv.{displayedLevel}"
-            : $"OD Lv.{_relic.Level}");
-        _chargeLabel?.SetTextAutoSize(
-            $"{_relic.DisplayChargeIntoLevel} / {Overclock.ChargePerLevel}");
-
-        bool emblemIsReady = displayedLevel > 0;
-        if (_activeEmblem != null)
+        bool active = _relic.ActiveLevel > 0;
+        int displayedLevel = active ? _relic.ActiveLevel : _relic.Level;
+        _chargeLabel?.SetTextAutoSize($"{_relic.DisplayChargeIntoLevel} / {_relic.ChargePerLevel}");
+        for (int i = 0; i < Overclock.MaxLevel; i++)
         {
-            _activeEmblem.Visible = emblemIsReady;
-        }
-
-        if (_inactiveEmblem != null)
-        {
-            _inactiveEmblem.Modulate = emblemIsReady
-                ? new Color(1f, 1f, 1f, 0.42f)
-                : Colors.White;
+            bool selected = displayedLevel == i + 1;
+            _buttons[i].Visible = selected && !active;
+            _activeButtons[i].Visible = selected && active;
+            _numbers[i].Visible = selected;
+            _markers[i].Visible = selected;
         }
 
         MouseDefaultCursorShape = _relic.CanActivate
             ? CursorShape.PointingHand
             : CursorShape.Move;
-        TooltipText = _relic.CanActivate
-            ? $"{_relic.Title.GetRawText()}\n{_relic.DynamicDescription.GetRawText()}\n左键拖动，右键启动当前等级。"
-            : $"{_relic.Title.GetRawText()}\n{_relic.DynamicDescription.GetRawText()}\n左键拖动。";
+        RefreshFloorBudget();
+        RefreshButtonReadiness();
+    }
+
+    private void RefreshFloorBudget()
+    {
+        int remaining = _relic.RemainingFloorLevels;
+        if (_observedRemainingFloorLevels == remaining) return;
+        _observedRemainingFloorLevels = remaining;
+        _floorBudget?.SetRemaining(remaining);
+        _floorLabel?.SetTextAutoSize($"全队本幕剩余 {remaining} / {Overclock.FloorLevelLimit} 级");
+    }
+
+    private void RefreshButtonReadiness()
+    {
+        int displayedLevel = _relic.ActiveLevel > 0 ? _relic.ActiveLevel : _relic.Level;
+        bool ready = _relic.ActiveLevel > 0 || _relic.CanActivateLevel(displayedLevel);
+        if (_observedReadiness == ready) return;
+        _observedReadiness = ready;
+        ShaderMaterial material = ready ? null : _disabledMaterial;
+        for (int i = 0; i < Overclock.MaxLevel; i++)
+        {
+            _buttons[i].Material = material;
+            _numbers[i].Material = material;
+            _markers[i].Material = material;
+        }
     }
 
     private void RefreshGaugeFill()
     {
-        if (_fillClip == null)
+        if (_fillClips[0] == null) return;
+        for (int i = 0; i < Overclock.MaxLevel; i++)
         {
-            return;
+            float ratio = HbrOverdriveGaugeVisuals.LevelFill(_displayCharge, _relic.ChargePerLevel, i);
+            float hiddenWidth = HbrOverdriveGaugeVisuals.FillWidth * (1f - ratio);
+            _fillClips[i].Position = new Vector2(HbrOverdriveGaugeVisuals.FillInset + hiddenWidth, 0f);
+            _fillClips[i].Size = new Vector2(HbrOverdriveGaugeVisuals.FillWidth * ratio, HbrOverdriveGaugeVisuals.BarHeight);
+            _fills[i].Position = new Vector2(-hiddenWidth, 0f);
+            _fillClips[i].Visible = ratio > 0f;
         }
-
-        float ratio = Mathf.Clamp(_displayCharge / Overclock.ChargePerLevel, 0f, 1f);
-        _fillClip.Size = new Vector2(BarWidth * ratio, BarHeight);
-        _fillClip.Visible = ratio > 0f;
     }
 
     private void OnMouseEntered()
     {
+        _isHovered = true;
         if (_chargeLabel != null)
         {
             _chargeLabel.Visible = true;
         }
+        ShowHoverTip();
     }
 
     private void OnMouseExited()
     {
+        _isHovered = false;
+        CancelRightPress();
+        HideHoverTip();
         if (_chargeLabel != null)
         {
             _chargeLabel.Visible = false;
         }
     }
 
-    private void UpdateNativeGlow()
+    private void CancelRightPress()
     {
-        if (_fillTexture == null || _activeEmblem == null)
-        {
-            return;
-        }
-
-        float pulse = 0.88f + 0.12f * (Mathf.Sin(_animationTime * 4.6f) * 0.5f + 0.5f);
-        _fillTexture.Modulate = new Color(1f, 1f, 1f, pulse);
-        if (_activeEmblem.Visible)
-        {
-            float emblemPulse = _relic.ActiveLevel > 0
-                ? 0.86f + 0.14f * (Mathf.Sin(_animationTime * 6.2f) * 0.5f + 0.5f)
-                : pulse;
-            _activeEmblem.Modulate = new Color(1f, 1f, 1f, emblemPulse);
-        }
+        if (_rightPressed) _rightPressCancelled = true;
+        _rightPressed = false;
+        _buttonEffects?.CancelPush();
     }
 
-    private void UpdateChargePulse(float delta)
+    private void ShowHoverTip()
     {
-        if (_chargePulseTime <= 0f)
-        {
-            Scale = Vector2.One;
+        if (!_isHovered || _isDragging || HasSelectionMenu || _relic == null || !IsVisibleInTree() ||
+            NHoverTipSet.shouldBlockHoverTips ||
+            (GodotObject.IsInstanceValid(_hoverTips) && !_hoverTips.IsQueuedForDeletion()))
             return;
-        }
 
-        _chargePulseTime = Math.Max(0f, _chargePulseTime - delta);
-        float normalized = _chargePulseTime / 0.34f;
-        float pulse = Mathf.Sin((1f - normalized) * Mathf.Pi) * 0.025f;
-        Scale = Vector2.One * (1f + pulse);
+        // This explanation is independent of activation readiness, so charge
+        // changes and action locks never rebuild a stationary reading tooltip.
+        LocString description = new("relics", "OVERCLOCK.gaugeDescription");
+        description.Add("chargePerLevel", _relic.ChargePerLevel);
+        description.Add("energyPrefix", EnergyIconHelper.GetPrefix(_relic));
+        NHoverTipSet.Remove(this);
+        _hoverTips = NHoverTipSet.CreateAndShow(this, new HoverTip(_relic.Title, description),
+            HoverTip.GetHoverTipAlignment(this));
+    }
+
+    private void HideHoverTip()
+    {
+        if (GodotObject.IsInstanceValid(_hoverTips)) _hoverTips.Hide();
+        NHoverTipSet.Remove(this);
+        _hoverTips = null;
     }
 
     private void UpdateLevelBurst(float delta)
     {
-        if (_levelBurstTime <= 0f)
-        {
-            _levelUpTexture.Visible = false;
-            _announcementLabel.Visible = false;
-            _activeEmblem.Scale = Vector2.One;
-            return;
-        }
-
         _levelBurstTime = Math.Max(0f, _levelBurstTime - delta);
-        float elapsed = 1.25f - _levelBurstTime;
-        float fadeIn = Mathf.Clamp(elapsed / 0.12f, 0f, 1f);
-        float fadeOut = Mathf.Clamp(_levelBurstTime / 0.32f, 0f, 1f);
-        float alpha = Math.Min(fadeIn, fadeOut);
-        float burstScale = 1f + Mathf.Sin(Mathf.Clamp(elapsed / 0.42f, 0f, 1f) * Mathf.Pi) * 0.13f;
-
-        _levelUpTexture.Visible = _showLevelUpTexture;
-        _levelUpTexture.Modulate = new Color(1f, 1f, 1f, alpha);
-        _levelUpTexture.Scale = Vector2.One * burstScale;
-        _announcementLabel.Visible = !_showLevelUpTexture;
-        _announcementLabel.Modulate = new Color(1f, 1f, 1f, alpha);
-        _activeEmblem.Scale = Vector2.One * burstScale;
-    }
-
-    private static TextureRect CreateTextureRect(
-        string name,
-        string texturePath,
-        Vector2 position,
-        Vector2 size)
-    {
-        return new TextureRect
+        float elapsed = HbrOverdriveGaugeVisuals.LevelUpDuration - _levelBurstTime;
+        bool playing = _levelBurstTime > 0f;
+        float ringAlpha = playing ? HbrOverdriveGaugeVisuals.LevelRingAlpha(elapsed) : 0f;
+        float markerScale = playing ? HbrOverdriveGaugeVisuals.LevelMarkerScale(elapsed) : 1f;
+        float detailsAlpha = playing ? HbrOverdriveGaugeVisuals.LevelDetailsAlpha(elapsed) : 1f;
+        for (int i = 0; i < Overclock.MaxLevel; i++)
         {
-            Name = name,
-            Position = position,
-            Size = size,
-            Texture = LoadTexture(texturePath),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
-            MouseFilter = MouseFilterEnum.Ignore
-        };
+            _rings[i].Visible = playing && _burstLevel == i + 1;
+            _rings[i].Scale = Vector2.One * HbrOverdriveGaugeVisuals.LevelRingScale(elapsed);
+            _rings[i].Modulate = new Color(1f, 1f, 1f, ringAlpha * (125f / 255f));
+            _markers[i].Scale = Vector2.One * markerScale;
+            _markers[i].Modulate = new Color(1f, 1f, 1f, detailsAlpha);
+            _numbers[i].Modulate = new Color(1f, 1f, 1f, detailsAlpha);
+        }
     }
+
+    private static NinePatchRect CreateSlicedBar(string name, string sprite, Vector2 position, Vector2 size) => new()
+    {
+        Name = name,
+        Position = position,
+        Size = size,
+        Texture = LoadTexture(OriginalAssetPath + sprite + ".png"),
+        PatchMarginLeft = 20,
+        PatchMarginRight = 20,
+        MouseFilter = MouseFilterEnum.Ignore
+    };
+
+    private static TextureRect CreateOriginalSprite(string name, string sprite, Vector2 position, Vector2 size) => new()
+    {
+        Name = name,
+        Position = position,
+        Size = size,
+        Texture = LoadTexture(OriginalAssetPath + sprite + ".png"),
+        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+        StretchMode = TextureRect.StretchModeEnum.Scale,
+        MouseFilter = MouseFilterEnum.Ignore
+    };
 
     private static MegaLabel CreateLabel(
         string name,

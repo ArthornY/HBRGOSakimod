@@ -29,7 +29,7 @@ public sealed class NextTurnEnergyStrikeHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new DamageVar(7m, ValueProp.Move),
-            new PowerVar<EnergyNextTurnPower>(1m)
+            new EnergyVar(1)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -67,7 +67,7 @@ public sealed class NextTurnEnergyStrikeHbrgoSaki : CardModel
                 ModeTransitionHelper.GetAdjustedEffectAmount(
                     this,
                     DynamicVars.Damage.BaseValue))
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
@@ -77,7 +77,7 @@ public sealed class NextTurnEnergyStrikeHbrgoSaki : CardModel
             Owner.Creature,
             ModeTransitionHelper.GetAdjustedEffectAmount(
                 this,
-                DynamicVars["EnergyNextTurnPower"].BaseValue),
+                DynamicVars.Energy.BaseValue),
             Owner.Creature,
             this);
     }

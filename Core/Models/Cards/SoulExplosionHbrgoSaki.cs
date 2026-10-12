@@ -58,7 +58,7 @@ public sealed class SoulExplosionHbrgoSaki : CardModel
                 ModeTransitionHelper.GetAdjustedEffectAmount(
                     this,
                     damage))
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
@@ -282,9 +283,10 @@ public sealed class RedCrimson : MonsterModel
         SpendRelicCounter(10);
     }
 
-    private int MaxDp => HighDimensionalShellPower.CalculateAmount(Creature);
+    private decimal MaxDp => HighDimensionalShellPower.CalculateAmount(Creature);
 
-    private int BaseIntentDamage => Math.Max(1, MaxDp / 2);
+    private int BaseIntentDamage => (int)Math.Clamp(decimal.Floor(MaxDp / 2m),
+        1m, DamageLimitHelper.MaximumSingleHitDamage);
 
     private async Task StrikeMove(IReadOnlyList<Creature> _)
     {
@@ -318,6 +320,28 @@ public sealed class RedCrimson : MonsterModel
             counterCost: 2);
     }
 
+    internal async Task AfterPhantomIntentPerformed(
+        MoveState move,
+        IReadOnlyList<Creature> targets,
+        IReadOnlyList<Creature> attackedTargets)
+    {
+        var context = new ThrowingPlayerChoiceContext();
+        if (move.Id == "DELTA_SCRAPE_MOVE")
+        {
+            // Delta Scrape weakens its attacked target rather than the
+            // whole enemy side. A multi-hit replay can change targets.
+            await PowerCmd.Apply<WeakPower>(context,
+                attackedTargets.Where(target => target.IsAlive).Distinct(),
+                2m, Creature, null);
+        }
+        else if (move.Id == "BLOOD_FALL_MOVE")
+        {
+            await PowerCmd.Apply<VulnerablePower>(context,
+                targets.Where(target => target.IsAlive),
+                3m, Creature, null);
+        }
+    }
+
     private async Task DespairingStarlightMove(
         IReadOnlyList<Creature> _)
     {
@@ -346,7 +370,7 @@ public sealed class RedCrimson : MonsterModel
 
             Creature target =
                 CombatState.RunState.Rng.CombatTargets.NextItem(targets);
-            await CreatureCmd.Damage(
+            await CreatureCommandCompatibility.Damage(
                 choiceContext,
                 target,
                 BaseIntentDamage,
@@ -385,7 +409,7 @@ public sealed class RedCrimson : MonsterModel
                 break;
             }
 
-            await CreatureCmd.Damage(
+            await CreatureCommandCompatibility.Damage(
                 choiceContext,
                 targets,
                 BaseIntentDamage * 2m,
@@ -424,7 +448,7 @@ public sealed class RedCrimson : MonsterModel
              target.IsHittable;
              hit++)
         {
-            await CreatureCmd.Damage(
+            await CreatureCommandCompatibility.Damage(
                 choiceContext,
                 target,
                 damage,
@@ -476,7 +500,7 @@ public sealed class RedCrimson : MonsterModel
                 break;
             }
 
-            await CreatureCmd.Damage(
+            await CreatureCommandCompatibility.Damage(
                 choiceContext,
                 currentTargets,
                 damage,

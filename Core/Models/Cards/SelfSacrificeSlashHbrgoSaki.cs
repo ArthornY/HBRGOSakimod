@@ -53,13 +53,22 @@ public sealed class SelfSacrificeSlashHbrgoSaki : CardModel
         ArgumentNullException.ThrowIfNull(
             cardPlay.Target,
             nameof(cardPlay.Target));
-        Owner.GetRelic<DeflectorProtection>()?.LoseDp(
+        DeflectorProtection protection =
+            Owner.GetRelic<DeflectorProtection>();
+        protection?.LoseDp(
             (int)DynamicVars[_dpLossVar].BaseValue);
+        if (protection != null)
+        {
+            await protection.ResolveMentalStrengthDpLossRewards(
+                choiceContext,
+                this);
+        }
+
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             Owner.Creature.Block / 2m);
         await DamageCmd.Attack(damage)
-            .FromCard(this)
+            .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);

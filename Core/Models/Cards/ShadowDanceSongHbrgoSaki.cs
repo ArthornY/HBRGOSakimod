@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
@@ -8,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
@@ -19,8 +21,14 @@ public sealed class ShadowDanceSongHbrgoSaki : HighSongChoiceCard
 
     public override string BetaPortraitPath => PortraitPath;
 
+    protected override IEnumerable<DynamicVar> CanonicalVars =>
+        new DynamicVar[]
+        {
+            new EnergyVar(2)
+        };
+
     public ShadowDanceSongHbrgoSaki()
-        : base(HBRGOSakiTargetTypes.FriendlyPlayerIncludingSelf)
+        : base(HBRGOSakiTargetTypes.FriendlyPlayerOrPhantom)
     {
     }
 
@@ -50,12 +58,15 @@ public sealed class ShadowDanceSongHbrgoSaki : HighSongChoiceCard
 
         if (songLevel >= 2 && target.Player != null)
         {
-            await PlayerCmd.GainEnergy(2m, target.Player);
+            await PlayerCmd.GainEnergy(
+                DynamicVars.Energy.BaseValue,
+                target.Player);
             await CardPileCmd.Draw(choiceContext, 2m, target.Player);
         }
 
         if (songLevel >= 3)
         {
+            // Extra turns belong to players; their phantoms act with them via PhantomPower.
             foreach (Creature ally in TeamCombatHelper.GetLivingPlayerCreatures(Owner.Creature))
             {
                 await PowerCmd.Apply<ShadowDanceExtraTurnPower>(
@@ -67,6 +78,6 @@ public sealed class ShadowDanceSongHbrgoSaki : HighSongChoiceCard
             }
         }
 
-        ScheduleHighSongReturn(PileType.Discard);
+        await ScheduleHighSongReturn(PileType.Discard);
     }
 }

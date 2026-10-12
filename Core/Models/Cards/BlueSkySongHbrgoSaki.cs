@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -37,7 +38,7 @@ public sealed class BlueSkySongHbrgoSaki : HighSongChoiceCard
     {
         int songLevel = SongLevel;
         int highSongAmount = HighSongAmount;
-        int reductionPerLayer = songLevel >= 3 ? 20 : 10;
+        int dexterityPerLayer = songLevel >= 3 ? 2 : 1;
         int counterBonus = songLevel switch
         {
             2 => highSongAmount,
@@ -45,15 +46,25 @@ public sealed class BlueSkySongHbrgoSaki : HighSongChoiceCard
             _ => 0
         };
 
-        foreach (Creature ally in TeamCombatHelper.GetLivingPlayerCreatures(Owner.Creature))
+        foreach (Creature ally in TeamCombatHelper.GetLivingAllies(Owner.Creature))
         {
-            BlueSkyPower blueSky = await PowerCmd.Apply<BlueSkyPower>(
+            await PowerCmd.Apply<DexterityPower>(
                 choiceContext,
                 ally,
-                highSongAmount * reductionPerLayer,
+                highSongAmount * dexterityPerLayer,
                 Owner.Creature,
                 this);
-            blueSky?.AddCounterDamageBonus(counterBonus);
+
+            if (counterBonus > 0)
+            {
+                BlueSkyPower blueSky = await PowerCmd.Apply<BlueSkyPower>(
+                    choiceContext,
+                    ally,
+                    1m,
+                    Owner.Creature,
+                    this);
+                blueSky?.AddCounterDamageBonus(counterBonus);
+            }
 
             if (songLevel >= 3)
             {
@@ -78,6 +89,6 @@ public sealed class BlueSkySongHbrgoSaki : HighSongChoiceCard
                 damage);
         }
 
-        ScheduleHighSongReturn(PileType.Discard);
+        await ScheduleHighSongReturn(PileType.Discard);
     }
 }

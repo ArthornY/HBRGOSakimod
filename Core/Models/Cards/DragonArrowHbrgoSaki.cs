@@ -56,7 +56,7 @@ public sealed class DragonArrowHbrgoSaki : CardModel
              i++)
         {
             await DamageCmd.Attack(damage)
-                .FromCard(this)
+                .FromCardCompat(this, cardPlay)
                 .TargetingAllOpponents(CombatState)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
