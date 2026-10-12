@@ -253,15 +253,13 @@ internal static class CreatureCmdGainMaxHpPatch
     {
         DeflectorProtection protection =
             creature.Player?.GetRelic<DeflectorProtection>();
-        if (protection == null ||
-            amount <= 0m ||
-            DeflectorProtection.IsMaxHpGainConversionBypassed)
+        if (protection == null || amount <= 0m)
         {
             return true;
         }
 
         protection.GainMaxDp(
-            Math.Min((int)amount, 999999999));
+            (int)Math.Min(decimal.Floor(amount), 999999999m));
         __result = Task.CompletedTask;
         return false;
     }

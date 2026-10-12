@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
@@ -23,9 +22,6 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 
 public sealed partial class DeflectorProtection : RelicModel
 {
-    private static readonly AsyncLocal<int>
-        MaxHpGainConversionBypassDepth = new();
-
     public const int DpPerMaxHp = 2;
 
     public static readonly Color DpColor = new("6ED7FF");
@@ -44,9 +40,6 @@ public sealed partial class DeflectorProtection : RelicModel
     public override int DisplayAmount => GetDisplayDp();
 
     public int MaxDp => GetMaxDp();
-
-    internal static bool IsMaxHpGainConversionBypassed =>
-        MaxHpGainConversionBypassDepth.Value > 0;
 
     public override string PackedIconPath => ImageHelper.GetImagePath("relics/deflector_protection.png");
 
@@ -135,21 +128,6 @@ public sealed partial class DeflectorProtection : RelicModel
         }
 
         return Task.CompletedTask;
-    }
-
-    internal static async Task GainMaxHpWithoutConversion(
-        Creature creature,
-        decimal amount)
-    {
-        MaxHpGainConversionBypassDepth.Value++;
-        try
-        {
-            await CreatureCmd.GainMaxHp(creature, amount);
-        }
-        finally
-        {
-            MaxHpGainConversionBypassDepth.Value--;
-        }
     }
 
     public override Task BeforeCombatStart()
