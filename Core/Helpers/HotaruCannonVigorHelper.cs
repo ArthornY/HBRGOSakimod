@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Monsters;
+using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using HBRGOSakiMod.Core.Patches.Combat;
 using MegaCrit.Sts2.Core.Combat;
@@ -218,9 +219,9 @@ internal static class HotaruCannonVigorHelper
     private static int GetCompleteActionHitCount(Millsage relic, HotaruCannonKind kind, bool fireHappiness) => kind switch
     {
         HotaruCannonKind.Happiness when fireHappiness => GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
-        HotaruCannonKind.Absolution => GetPlannedHitCount(relic, kind, HotaruCannonPhase.Start) +
-            GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
-        HotaruCannonKind.Endgame => (relic?.EndgameStartHitCount ?? 0) + (relic?.EndgameEndHitCount ?? 0),
+        HotaruCannonKind.Absolution or HotaruCannonKind.Endgame => (int)Math.Min(int.MaxValue,
+            (long)GetPlannedHitCount(relic, kind, HotaruCannonPhase.Start) +
+            GetPlannedHitCount(relic, kind, HotaruCannonPhase.End)),
         HotaruCannonKind.Contest or HotaruCannonKind.Longing =>
             GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
         _ => 0
@@ -296,7 +297,7 @@ internal static class HotaruCannonVigorHelper
     }
 
     internal static int GetPlannedHitCount(Millsage relic, HotaruCannonKind kind, HotaruCannonPhase phase) =>
-        phase switch
+        HotaruMyIndulgencePower.GetHitCount(relic?.GetCannon(kind), phase switch
         {
             HotaruCannonPhase.Start => kind == HotaruCannonKind.Absolution ? 3 :
                 kind == HotaruCannonKind.Endgame ? relic?.EndgameStartHitCount ?? 0 : 0,
@@ -310,5 +311,5 @@ internal static class HotaruCannonVigorHelper
                 _ => 0
             },
             _ => 0
-        };
+        });
 }

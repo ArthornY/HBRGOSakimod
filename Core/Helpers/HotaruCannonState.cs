@@ -8,6 +8,7 @@ namespace HBRGOSakiMod.Core.Helpers;
 
 public enum HotaruCannonKind { Happiness, Coffin, Contest, Longing, Absolution, Endgame }
 public enum HotaruCannonPhase { Start, End }
+public enum HotaruCannonRetirementChoice { None, Sacrifice, Redemption }
 
 internal static class HotaruCannonKinds
 {
@@ -27,9 +28,36 @@ public sealed class HotaruCannonState
 
     [JsonInclude] public decimal HappinessDamage { get; private set; }
     [JsonInclude] public decimal NextHappinessIncrease { get; private set; } = 1m;
+    [JsonInclude] public decimal BaseDamageBonus { get; internal set; }
+    [JsonInclude] public decimal BaseBlockBonus { get; internal set; }
+    [JsonInclude] public decimal PendingReplyBlock { get; internal set; }
+    [JsonInclude] public int PendingReplyDraw { get; internal set; }
+    [JsonInclude] public int PendingResistanceLoss { get; internal set; }
+    [JsonInclude] public int PendingLightVulnerable { get; internal set; }
+    [JsonInclude] public int PendingLightFragile { get; internal set; }
+    [JsonInclude] public List<int> PendingRollBonuses { get; internal set; } = new();
     [JsonInclude] public int PendingActionRepeats { get; private set; }
     [JsonInclude] public string StartRollData { get; private set; } = string.Empty;
     [JsonInclude] public string EndRollData { get; private set; } = string.Empty;
+    // Revival belongs to this combat snapshot; permanent relic upgrades and
+    // retirement choices never receive these temporary values.
+    [JsonInclude] public int RecalledUpgradeLevel { get; private set; }
+    [JsonInclude] public int RecalledSoulPercent { get; private set; }
+    [JsonInclude] public int RecalledSoulMaximumBonus { get; private set; }
+    [JsonIgnore] internal bool RecallPending { get; set; }
+
+    internal void InitializeRecall(int upgradeLevel, int soulPercent)
+    {
+        RecalledUpgradeLevel = Math.Clamp(upgradeLevel, 1, 7);
+        RecalledSoulPercent = Math.Max(0, soulPercent);
+        RecalledSoulMaximumBonus = 0;
+    }
+
+    internal void GainRecalledSoulPower()
+    {
+        RecalledSoulMaximumBonus = (int)Math.Min(int.MaxValue, (long)RecalledSoulMaximumBonus + 1);
+        RecalledSoulPercent = (int)Math.Min(int.MaxValue, (long)RecalledSoulPercent + 1);
+    }
 
     internal string GetRollData(HotaruCannonPhase phase) =>
         phase == HotaruCannonPhase.Start ? StartRollData : EndRollData;
@@ -63,10 +91,11 @@ public sealed class HotaruCannonState
         return count;
     }
 
-    public decimal GrowHappiness(decimal baseValueBonus = 0m)
+    public decimal GrowHappiness(decimal baseValueBonus = 0m, decimal multiplier = 1m)
     {
         decimal increase = Math.Min(MaximumStoredValue,
             NextHappinessIncrease + Math.Clamp(baseValueBonus, 0m, MaximumStoredValue));
+        increase = Math.Min(MaximumStoredValue, DamageAmplificationLimits.MultiplySaturated(increase, Math.Max(0m, multiplier)));
         HappinessDamage = Math.Min(MaximumStoredValue, HappinessDamage + increase);
         // Every repeated complete growth advances its own sequence step.
         NextHappinessIncrease = Math.Min(MaximumStoredValue, NextHappinessIncrease + 1m);
@@ -90,9 +119,20 @@ public sealed class HotaruCannonState
 
     internal void Normalize()
     {
+        BaseDamageBonus = Math.Clamp(BaseDamageBonus, 0m, MaximumStoredValue);
+        BaseBlockBonus = Math.Clamp(BaseBlockBonus, 0m, MaximumStoredValue);
+        PendingReplyBlock = Math.Clamp(PendingReplyBlock, 0m, MaximumStoredValue);
+        PendingReplyDraw = Math.Max(0, PendingReplyDraw);
+        PendingResistanceLoss = Math.Max(0, PendingResistanceLoss);
+        PendingLightVulnerable = Math.Max(0, PendingLightVulnerable);
+        PendingLightFragile = Math.Max(0, PendingLightFragile);
+        PendingRollBonuses = (PendingRollBonuses ?? new()).Where(b => b > 0).ToList();
         HappinessDamage = Math.Clamp(HappinessDamage, 0m, MaximumStoredValue);
         NextHappinessIncrease = decimal.Floor(Math.Clamp(NextHappinessIncrease, 0m, MaximumStoredValue));
         PendingActionRepeats = Math.Clamp(PendingActionRepeats, 0, int.MaxValue - 1);
+        RecalledUpgradeLevel = Math.Clamp(RecalledUpgradeLevel, 0, 7);
+        RecalledSoulPercent = RecalledUpgradeLevel == 0 ? 0 : Math.Max(0, RecalledSoulPercent);
+        RecalledSoulMaximumBonus = RecalledUpgradeLevel == 0 ? 0 : Math.Max(0, RecalledSoulMaximumBonus);
         StartRollData ??= string.Empty;
         EndRollData ??= string.Empty;
     }
@@ -101,6 +141,7 @@ public sealed class HotaruCannonState
 public sealed class HotaruCannonCombatState
 {
     public int PhaseVersion { get; set; } = 2;
+    public HotaruRareCannonState Rare { get; set; } = new();
     public HotaruCannonState[] Cannons { get; set; } =
         Enumerable.Range(0, HotaruCannonKinds.Count).Select(_ => new HotaruCannonState()).ToArray();
     public int LastNaturalStartTurn { get; set; }
@@ -117,6 +158,9 @@ public sealed class HotaruCannonCombatState
         try { state = JsonSerializer.Deserialize<HotaruCannonCombatState>(data ?? string.Empty); }
         catch (JsonException) { state = null; }
         state ??= new HotaruCannonCombatState();
+        state.Rare ??= new HotaruRareCannonState();
+        state.Rare.BrokenResistanceMasks ??= new();
+        state.Rare.InheritedRolls ??= new();
         HotaruCannonState[] saved = state.Cannons ?? Array.Empty<HotaruCannonState>();
         state.Cannons = Enumerable.Range(0, HotaruCannonKinds.Count)
             .Select(index => index < saved.Length ? saved[index] ?? new HotaruCannonState() : new HotaruCannonState())

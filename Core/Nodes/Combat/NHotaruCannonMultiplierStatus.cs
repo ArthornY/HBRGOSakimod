@@ -137,7 +137,7 @@ public partial class NHotaruCannonMultiplierStatus : Control
         _lastLevel = level;
         _amount.SetTextAutoSize(percent.ToString(CultureInfo.InvariantCulture) + "%");
         _level.SetTextAutoSize(_kind == HotaruCannonKind.Endgame
-            ? _relic.EndgameSign < 0 ? "救赎" : "牺牲"
+            ? _relic.EndgameSign < 0 ? "牺牲" : "救赎"
             : level.ToString(CultureInfo.InvariantCulture) + "级");
         if (_hovered) ShowHoverTip();
     }

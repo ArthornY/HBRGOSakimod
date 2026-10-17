@@ -40,13 +40,7 @@ public abstract class HotaruCannonModel : MonsterModel
     private HotaruCannonState State => Relic?.StateFor(Kind) ?? new HotaruCannonState();
     // Charge repeats whole actions; individual base values are never doubled.
     internal int PhaseMultiplier(HotaruCannonPhase phase) => 1;
-    private int EndHitCount => Kind switch
-    {
-        HotaruCannonKind.Happiness => Relic?.HasCannonUpgrade(Kind, 7) == true ? 2 : 1,
-        HotaruCannonKind.Contest => Relic?.HasCannonUpgrade(Kind, 7) == true ? 2 : 1,
-        HotaruCannonKind.Absolution => HotaruAbsolutionUpgradeHelper.GetEndHitCount(Relic),
-        _ => 1
-    };
+    private int EndHitCount => HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.End);
     internal virtual decimal CurrentDamage => Kind switch
     {
         HotaruCannonKind.Happiness => State.HappinessDamage,
@@ -72,7 +66,7 @@ public abstract class HotaruCannonModel : MonsterModel
                 cannon?.PetOwner?.Creature, (Kind == HotaruCannonKind.Coffin ? 4m : 3m) * PhaseMultiplier(HotaruCannonPhase.Start), null, cannon)));
         if (template.Contains("{StartDamage", StringComparison.Ordinal))
             text.Add("StartDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, PhaseMultiplier(HotaruCannonPhase.Start), previewPhase: HotaruCannonPhase.Start));
-        text.Add("Repeat", 3);
+        text.Add("Repeat", HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.Start));
         if (template.Contains("{EndDamage", StringComparison.Ordinal))
             text.Add("EndDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, 2m * PhaseMultiplier(HotaruCannonPhase.End)));
         text.Add("ResistanceBonus", PhaseMultiplier(HotaruCannonPhase.End));
@@ -114,7 +108,8 @@ public abstract class HotaruCannonModel : MonsterModel
         // Use real enemy candidates and the same final owner modifiers as
         // firing; never apply the local player's defenses.
         public override int GetTotalDamage(IEnumerable<Creature> targets, Creature owner) =>
-            BigCombatNumbers.ToNativeSigned(HotaruCannonStatsHelper.PreviewDamage(owner, _damage(), includeContestBonus: true) * _repeats());
+            BigCombatNumbers.ToNativeSigned(DamageAmplificationLimits.MultiplySaturated(
+                HotaruCannonStatsHelper.PreviewDamage(owner, _damage(), includeContestBonus: true), _repeats()));
         public override LocString GetIntentLabel(IEnumerable<Creature> targets, Creature owner)
         {
             int repeats = _repeats();
@@ -132,13 +127,17 @@ public abstract class HotaruCannonModel : MonsterModel
         private readonly Func<LocString> _description;
         internal CannonMultiAttackIntent(Func<decimal> damage, int repeat, Func<LocString> description) : base(0, repeat)
         { _damage = damage; _description = description; DamageCalc = damage; }
+        private int CurrentRepeats(Creature owner) => owner?.Monster is HotaruCannonModel model
+            ? HotaruCannonVigorHelper.GetPlannedHitCount(owner.PetOwner?.GetRelic<Millsage>(), model.Kind, HotaruCannonPhase.Start)
+            : Repeats;
         public override int GetTotalDamage(IEnumerable<Creature> targets, Creature owner) =>
-            BigCombatNumbers.ToNativeSigned(HotaruCannonStatsHelper.PreviewDamage(owner, _damage(), previewPhase: HotaruCannonPhase.Start) * Repeats);
+            BigCombatNumbers.ToNativeSigned(DamageAmplificationLimits.MultiplySaturated(
+                HotaruCannonStatsHelper.PreviewDamage(owner, _damage(), previewPhase: HotaruCannonPhase.Start), CurrentRepeats(owner)));
         public override LocString GetIntentLabel(IEnumerable<Creature> targets, Creature owner)
         {
             LocString text = new("intents", "FORMAT_DAMAGE_MULTI");
             text.Add("Damage", HotaruCannonStatsHelper.FormatDamagePreview(owner, _damage(), previewPhase: HotaruCannonPhase.Start));
-            text.Add("Repeat", Repeats);
+            text.Add("Repeat", CurrentRepeats(owner));
             return text;
         }
         protected override LocString GetIntentDescription(IEnumerable<Creature> targets, Creature owner) => _description();

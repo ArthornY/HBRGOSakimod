@@ -344,6 +344,15 @@ internal static class OverclockImmediateTurnCoordinator
         }
         if (IsCurrent(session) && player.Creature.IsAlive && !hand.IsEmpty)
             await CardPileCmd.Add(hand.Cards.ToArray(), PileType.Discard);
+        // Hand cleanup may auto-play another copy after the cannon END phase.
+        // Its temporary effect still belongs to this inserted turn.
+        await HotaruSeeYouAgainHelper.OnTurnEnd(context, player, session);
+        await HotaruEchoLocationPower.TurnEnd(context, player, session);
+        await HotaruCommonCannonHelper.OnTurnEnd(context, player, session);
+        await HotaruUncommonCardHelper.OnTurnEnd(context, player, session);
+        await HotaruUncommonCannonHelper.OnTurnEnd(context, player, session);
+        await HotaruRareRollHelper.OnTurnEnd(context, player, session);
+        await HotaruRareCannonHelper.OnTurnEnd(context, player, session);
     }
 
     private static void Restore(Session session)

@@ -111,6 +111,7 @@ public sealed class RollGlossaryCapability :
         percent += creature.GetPower<AccelerationPower>()?.Amount ?? 0;
         percent += LostStarSongSupportPower.GetRollBonus(creature);
         percent += HotaruCannonSupportUpgradeHelper.GetRollPercentBonus(player, CardType.Attack);
+        percent += HotaruRareRollHelper.GetRollPercent(player);
         percent += player.GetRelic<HotaruIridescence>()?.RollBonus ?? 0;
         bonus += PhantomHelper.GetSummonerRollBonus(player);
 
@@ -139,6 +140,8 @@ public sealed class RollGlossaryCapability :
         }
 
         percent += creature.GetPower<NextRollBonusPower>()?.Amount ?? 0;
+        bonus += HotaruEchoLocationPower.GetProjectedBonus(player);
+        bonus += HotaruLingeringEchoPower.GetProjectedBonus(player);
         bonus += (long)decimal.Floor(creature.GetPower<SixSenseCombatPower>()?.CombatRollBonus ?? 0m);
         return (
             (int)Math.Clamp(bonus, int.MinValue, int.MaxValue),
@@ -533,7 +536,8 @@ public sealed class RollGlossaryCapability :
     private Player Controller => _standalonePlayer ?? Owner?.Owner;
 
     internal static async Task<(SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded)>
-        RollForCannon(PlayerChoiceContext context, Player player, CardType type)
+        RollForCannon(PlayerChoiceContext context, Player player, CardType type, bool forceAdvantage = false,
+            SoulRollBreakdown inheritedRoll = null)
     {
         StrengthenPower strengthen = player.Creature.GetPower<StrengthenPower>();
         ExtremeDodgeRollPenaltyPower penalty = player.Creature.GetPower<ExtremeDodgeRollPenaltyPower>();
@@ -542,7 +546,8 @@ public sealed class RollGlossaryCapability :
         int oldPenalty = penalty?.ReservedRollCount ?? 0;
         int oldCritical = critical?.ReservedRollCount ?? 0;
         RollGlossaryCapability pipeline = CreateCannonPipeline(player, type);
-        SoulRollResult result = pipeline.RollD100(true, null, allowMaidBonus: false, advantageOnly: false);
+        SoulRollResult result = pipeline.RollD100(true, null, allowMaidBonus: false, advantageOnly: false,
+            forceAdvantage: forceAdvantage, inheritedRoll: inheritedRoll);
         int newStrengthen = (strengthen?.ReservedRollCount ?? 0) - oldStrengthen;
         int newPenalty = (penalty?.ReservedRollCount ?? 0) - oldPenalty;
         int newCritical = (critical?.ReservedRollCount ?? 0) - oldCritical;
@@ -693,6 +698,8 @@ public sealed class RollGlossaryCapability :
         _hasRolledForCurrentPlay = true;
         _currentRoll = roll;
         _currentRollDetails = rollResult.WinningRoll;
+        HotaruUncommonCardHelper.RecordResolvedRoll(card, roll);
+        HotaruRareRollHelper.RecordResolvedRoll(card, _currentRollDetails);
         _currentValueMultiplier = card.Type is
             CardType.Attack or CardType.Skill
                 ? RollKeywordRules.GetAttackOrSkillValueMultiplier(
@@ -724,6 +731,8 @@ public sealed class RollGlossaryCapability :
         AssertMutable();
         _currentRoll = roll;
         _currentRollDetails = rollResult.WinningRoll;
+        HotaruUncommonCardHelper.RecordResolvedRoll(card, roll);
+        HotaruRareRollHelper.RecordResolvedRoll(card, _currentRollDetails);
         _currentValueMultiplier = card.Type is
             CardType.Attack or CardType.Skill
                 ? RollKeywordRules.GetAttackOrSkillValueMultiplier(
@@ -748,7 +757,8 @@ public sealed class RollGlossaryCapability :
         CardModel cardSource,
         bool allowMaidBonus,
         bool advantageOnly,
-        bool forceAdvantage = false)
+        bool forceAdvantage = false,
+        SoulRollBreakdown inheritedRoll = null)
     {
         Player player = Controller;
         if (player?.RunState == null)
@@ -758,12 +768,39 @@ public sealed class RollGlossaryCapability :
                 Array.Empty<SoulRollBreakdown>());
         }
 
+        int echoBonus = !advantageOnly
+            ? player.Creature.GetPower<HotaruEchoLocationPower>()?.GetRollBonus(cardSource) ?? 0
+            : 0;
+        int lingeringEchoBonus = !advantageOnly
+            ? player.Creature.GetPower<HotaruLingeringEchoPower>()?.GetRollBonus(cardSource) ?? 0
+            : 0;
+        SoulRollBreakdown AddEchoBonus(SoulRollBreakdown roll)
+        {
+            if (echoBonus != 0)
+                roll = RollModifierHelper.Apply(roll,
+                    new[] { new SoulRollBonusDetail(echoBonus, "身体记得") });
+            return lingeringEchoBonus == 0 ? roll : RollModifierHelper.Apply(roll,
+                new[] { new SoulRollBonusDetail(lingeringEchoBonus, "低处的余响") });
+        }
+
+        int thisBeatPercent = HotaruRareRollHelper.GetRollPercent(player);
+        SoulRollBreakdown FinishSpecialRoll(SoulRollBreakdown roll)
+        {
+            if (thisBeatPercent != 0)
+                roll = RollModifierHelper.Apply(roll, new[]
+                {
+                    new SoulRollBonusDetail(thisBeatPercent, "只为眼前这一拍", isPercentage: true)
+                });
+            return RollKeywordRules.ResolveRollTier(player,
+                HotaruRareRollHelper.ApplyCertainVoice(cardSource, AddEchoBonus(roll)));
+        }
+
         NextCriticalSuccessPower nextCriticalSuccess =
             player.Creature.GetPower<NextCriticalSuccessPower>();
-        if (nextCriticalSuccess?.TryReserveRoll() == true)
+        if (inheritedRoll == null && nextCriticalSuccess?.TryReserveRoll() == true)
         {
             return new SoulRollResult(
-                RollKeywordRules.ResolveRollTier(player, SoulRollBreakdown.FromFinalRoll(
+                FinishSpecialRoll(SoulRollBreakdown.FromFinalRoll(
                     RollKeywordRules.RollMaximum,
                     "不应如此：必定大成功")),
                 Array.Empty<SoulRollBreakdown>());
@@ -778,10 +815,10 @@ public sealed class RollGlossaryCapability :
                 .GetPower<ExtremeDodgeRollPenaltyPower>();
         bool useRollPenalty = rollPenalty?.TryReserveRoll() == true;
 
-        if (RollKeywordCombatState.RollsAreFixedToOneHundred(player))
+        if (inheritedRoll == null && RollKeywordCombatState.RollsAreFixedToOneHundred(player))
         {
             return new SoulRollResult(
-                RollKeywordRules.ResolveRollTier(player, SoulRollBreakdown.FromFinalRoll(
+                FinishSpecialRoll(SoulRollBreakdown.FromFinalRoll(
                     RollKeywordRules.RollMaximum,
                     "控制台指令：固定出目")),
                 Array.Empty<SoulRollBreakdown>());
@@ -789,12 +826,13 @@ public sealed class RollGlossaryCapability :
 
         List<SoulRollBreakdown> rolls = new()
         {
-            RollD100Die("基础骰", advantageOnly)
+            RollD100Die(inheritedRoll == null ? "基础骰" : "沿用我的答案：继承原始出目",
+                advantageOnly, inheritedRoll?.BaseRoll)
         };
 
         GuideLittleHand guideLittleHand =
             player.GetRelic<GuideLittleHand>();
-        if (guideLittleHand != null)
+        if (inheritedRoll == null && guideLittleHand != null)
         {
             rolls.Add(RollD100Die(
                 "优势骰：导游的小手",
@@ -804,7 +842,7 @@ public sealed class RollGlossaryCapability :
                 rolls[1].FinalRoll);
         }
 
-        if (useStrengthen)
+        if (inheritedRoll == null && useStrengthen)
         {
             rolls.Add(RollD100Die(
                 "优势骰：强化",
@@ -813,21 +851,21 @@ public sealed class RollGlossaryCapability :
 
         ProtagonistPrivilegePower protagonistPrivilege =
             player.Creature.GetPower<ProtagonistPrivilegePower>();
-        if (protagonistPrivilege != null)
+        if (inheritedRoll == null && protagonistPrivilege != null)
         {
             rolls.Add(RollD100Die(
                 "优势骰：主人公特典",
                 advantageOnly));
         }
 
-        if (forceAdvantage)
+        if (inheritedRoll == null && forceAdvantage)
         {
             rolls.Add(RollD100Die(
                 "优势骰：还没有结束",
                 advantageOnly));
         }
 
-        if (HotaruEndgameEffectsHelper.HasAdvantage(player))
+        if (inheritedRoll == null && HotaruEndgameEffectsHelper.HasAdvantage(player))
         {
             rolls.Add(RollD100Die("优势骰：救赎／牺牲", advantageOnly));
         }
@@ -835,6 +873,8 @@ public sealed class RollGlossaryCapability :
         CardType? rollType = _standaloneType ?? cardSource?.Type;
         bool isAttackCardRoll = !advantageOnly && rollType == CardType.Attack;
         List<SoulRollBonusDetail> sharedBonuses = new();
+        if (thisBeatPercent != 0)
+            sharedBonuses.Add(new SoulRollBonusDetail(thisBeatPercent, "只为眼前这一拍", isPercentage: true));
 
         int iridescenceBonus = player.GetRelic<HotaruIridescence>()?.RollBonus ?? 0;
         if (iridescenceBonus != 0)
@@ -995,6 +1035,14 @@ public sealed class RollGlossaryCapability :
             .Select(roll => RollModifierHelper.Apply(
                 roll,
                 sharedBonuses))
+            .Select(AddEchoBonus)
+            .Select(roll => HotaruRareRollHelper.ApplyCertainVoice(cardSource, roll))
+            .Select(roll => inheritedRoll == null ? roll : new SoulRollBreakdown(
+                roll.BaseRoll, roll.FinalRoll, roll.DiceSource, roll.Bonuses)
+            {
+                IsForcedCritical = RollKeywordRules.IsCriticalRoll(player, inheritedRoll),
+                ResolvedTier = RollKeywordRules.IsCriticalRoll(player, inheritedRoll) ? SoulRollTier.Critical : null
+            })
             .Select(roll => RollKeywordRules.ResolveRollTier(player, roll))
             .ToList();
         int winningIndex = GetWinningRollIndex(finalRolls);
@@ -1008,10 +1056,11 @@ public sealed class RollGlossaryCapability :
 
     private SoulRollBreakdown RollD100Die(
         string diceSource,
-        bool advantageOnly)
+        bool advantageOnly,
+        int? inheritedRaw = null)
     {
         Player player = Controller;
-        int baseRoll = player.RunState.Rng.Niche.NextInt(
+        int baseRoll = inheritedRaw ?? player.RunState.Rng.Niche.NextInt(
             RollKeywordRules.RollMinimum,
             RollKeywordRules.RollExclusiveMaximum);
         int finalRoll = baseRoll;
@@ -1078,8 +1127,12 @@ public sealed class RollGlossaryCapability :
         Controller?.GetRelic<Millsage>()?.QueueCriticalCannonReward();
     }
 
-    private Task ResolveHotaruCriticalRewards(PlayerChoiceContext context) =>
-        Controller?.GetRelic<Millsage>()?.ResolveCriticalCannonRewards(context) ?? Task.CompletedTask;
+    private async Task ResolveHotaruCriticalRewards(PlayerChoiceContext context)
+    {
+        await HotaruRareRollHelper.ResolvePending(context, Controller);
+        if (Controller?.GetRelic<Millsage>() is { } millsage)
+            await millsage.ResolveCriticalCannonRewards(context);
+    }
 
     private void RecordRoll(
         SoulRollResult result,

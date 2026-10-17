@@ -23,6 +23,7 @@ internal static class CardPlayContextHelper
         internal DamageBudget Damage;
         internal CardDamageHistoryHelper.PlayScope History;
         internal HighHitDamageVisualHelper.CardBatchScope Visuals;
+        internal HotaruFirstManualCardHelper.PlayScope FirstManual;
     }
 
     private static readonly AsyncLocal<PlayScope> Current = new();
@@ -43,6 +44,9 @@ internal static class CardPlayContextHelper
         Current.Value = scope;
         scope.History = CardDamageHistoryHelper.Begin(card);
         scope.Visuals = HighHitDamageVisualHelper.BeginCardBatch(card);
+        scope.FirstManual = HotaruFirstManualCardHelper.Begin(card, isAutoPlay);
+        HotaruUncommonCardHelper.CapturePlayStart(card, isAutoPlay, scope);
+        HotaruRareRollHelper.CapturePlayStart(card, isAutoPlay, scope);
         return scope;
     }
 
@@ -71,12 +75,22 @@ internal static class CardPlayContextHelper
         return false;
     }
 
+    // Identity remains stable across awaits and a replay series, but nested
+    // wrappers (including the same CardModel) each have a separate identity.
+    internal static object GetCurrentPlayToken(CardModel card)
+    {
+        for (PlayScope scope = Current.Value; scope != null; scope = scope.Previous)
+            if (scope.Active && ReferenceEquals(scope.Card, card)) return scope;
+        return null;
+    }
+
     // The original async wrapper captures this scope; its caller must not keep
     // it while the returned task is pending, especially in multiplayer combat.
     internal static void RestoreCaller(PlayScope scope)
     {
         CardDamageHistoryHelper.RestoreCaller(scope?.History);
         HighHitDamageVisualHelper.RestoreCardCaller(scope?.Visuals);
+        HotaruFirstManualCardHelper.RestoreCaller(scope?.FirstManual);
         if (scope != null && ReferenceEquals(Current.Value, scope))
             Current.Value = scope.Previous;
     }
@@ -92,6 +106,10 @@ internal static class CardPlayContextHelper
         if (scope != null) scope.Active = false;
         RestoreCaller(scope);
         try { HighHitDamageVisualHelper.CloseCard(scope?.Visuals); }
-        finally { CardDamageHistoryHelper.Close(scope?.History); }
+        finally
+        {
+            try { CardDamageHistoryHelper.Close(scope?.History); }
+            finally { HotaruFirstManualCardHelper.Close(scope?.FirstManual); }
+        }
     }
 }

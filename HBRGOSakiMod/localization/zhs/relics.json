@@ -3,9 +3,9 @@
   "SEA_GLASS.HBRGO_SAKI_31O.title": "救世玻璃",
   "SEA_GLASS.HBRGO_SAKI_30A.title": "救世玻璃",
   "HOTARU_ELECTRONIC_SOLDIER_MANUAL.title": "汐见萤的电子军人手册",
-  "HOTARU_ELECTRONIC_SOLDIER_MANUAL.description": "初始生命值为[blue]1/30[/blue]。\n[gold]偏导护盾（DP）[/gold]：初始充满，上限以最大生命值的[blue]2[/blue]倍为基础；获得生命上限改为增加等量DP上限。未被格挡的伤害优先扣除DP，生命移除除外。先古之民无法回复小萤的生命值或DP。\n战斗开始时召唤尚未永久失去的[gold]幸福、棺木、胜负、思念、赦罪[/gold]五门原有浮游炮。大成功随机激发两门不同的炮，并提升被选中原有炮的[gold]灵魂之力[/gold]。战斗胜利提升六感；在火堆消耗共享升级点升级庭园卡牌或浮游炮。\n右键打开手册查看详细规则。",
+  "HOTARU_ELECTRONIC_SOLDIER_MANUAL.description": "初始生命值为[blue]1/30[/blue]。\n[gold]偏导护盾（DP）[/gold]：初始充满，上限以最大生命值的[blue]2[/blue]倍为基础；生命上限的增加与减少均按[blue]1:1[/blue]转换为DP上限的等量增减，当前生命值和生命上限保持不变。DP上限最低为[blue]0[/blue]；减少后，当前DP若超过新上限则降至新上限。未被格挡的伤害优先扣除DP，生命移除除外。先古之民无法回复小萤的生命值或DP。\n战斗开始时召唤尚未永久失去的[gold]幸福、棺木、胜负、思念、赦罪[/gold]五门原有浮游炮。大成功随机激发两门不同的炮，并提升被选中原有炮的[gold]灵魂之力[/gold]。战斗胜利提升六感；在火堆消耗共享升级点升级庭园卡牌或浮游炮。\n右键打开手册查看详细规则。",
   "HOTARU_MANUAL_DP_RULES.title": "小萤的偏导护盾",
-  "HOTARU_MANUAL_DP_RULES.description": "DP上限以最大生命值的[blue]2[/blue]倍为基础，初始DP充满；获得生命上限时，改为获得等量DP上限，生命上限与当前生命值不增加，并补充新增上限对应的DP。\n\n受到非生命移除伤害时，未被格挡的伤害优先扣除DP。\n\n每场普通、精英、Boss战斗结束后，DP上限分别降低[blue]1、2、4[/blue]点，最低为[blue]0[/blue]；虹光达到[blue]3[/blue]层充能后，改为增加同样数值。\n\n在火堆休息时，额外获得[blue]10[/blue]点DP上限并补充新增上限对应的DP，随后按回血比例回复DP。\n\n先古之民无法回复小萤的生命值或DP。",
+  "HOTARU_MANUAL_DP_RULES.description": "DP上限以最大生命值的[blue]2[/blue]倍为基础，初始DP充满；生命上限的增加与减少均按[blue]1:1[/blue]转换为DP上限的等量增减，当前生命值和生命上限保持不变。增加DP上限时，补充新增上限对应的DP；减少DP上限时，最低为[blue]0[/blue]，当前DP若超过新上限则降至新上限。\n\n受到非生命移除伤害时，未被格挡的伤害优先扣除DP。\n\n每场普通、精英、Boss战斗结束后，DP上限分别降低[blue]1、2、4[/blue]点，最低为[blue]0[/blue]；虹光达到[blue]3[/blue]层充能后，改为增加同样数值。\n\n在火堆休息时，额外获得[blue]10[/blue]点DP上限并补充新增上限对应的DP，随后按回血比例回复DP。\n\n先古之民无法回复小萤的生命值或DP。",
   "HOTARU_MANUAL_SIX_SENSE_RULES.title": "六感成长与分配",
   "HOTARU_MANUAL_SIX_SENSE_RULES.description": "开局时，攻击、技能、能力各自对应的两项六感随机分配合计[blue]5[/blue]点，总计[blue]15[/blue]点。\n\n每场战斗胜利时，攻击、技能、能力各自对应的两项六感中，随机一项未满级的六感[blue]+1[/blue]，并获得[blue]1[/blue]点六感点数。精英战斗再获得[blue]1[/blue]点，Boss战斗再获得[blue]3[/blue]点；其他额外六感奖励每次转为[blue]1[/blue]点。\n\n点数可在手册中分配，确认后锁定。每项六感每提升1级，使对应属性牌的掷骰出目[blue]+1[/blue]；上限[blue]99[/blue]级。\n\n已分配与未分配的六感总点数最多[blue]594[/blue]点；六项全部满级后，不再获得六感点数。\n\n达到[blue]30[/blue]级后，其他属性牌也可削减该属性抗性，但不获得其出目加值和出牌效果。",
   "HOTARU_MANUAL_GARDEN_RULES.title": "记忆之庭升级点",
@@ -16,6 +16,7 @@
   "MILLSAGE.additionalRestSiteHealText": "浮游炮：各自的[gold]灵魂之力[/gold]（最终伤害倍率）恢复[blue]10[/blue]个百分点，最高恢复至各炮的灵魂之力上限。",
   "MILLSAGE.title": "millsage",
   "MILLSAGE.description": "初始拥有[blue]1[/blue]层充能，每额外获得一次本遗物，获得[blue]1[/blue]层充能，最高[blue]6[/blue]层。\n[blue]6[/blue]层时：⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛",
+  "MILLSAGE.fullChargeDescription": "初始拥有[blue]1[/blue]层充能，每额外获得一次本遗物，获得[blue]1[/blue]层充能，最高[blue]6[/blue]层。\n[blue]6[/blue]层时：[b][color=#AA22EE]将双手满载的幸福，献给你。[/color][/b]",
   "MILLSAGE.flavor": "她记得怎样使用它们。",
   "HOTARU_IRIDESCENCE.title": "虹光",
   "HOTARU_IRIDESCENCE.flavor": "你的欲望，使你迎来终局。",
@@ -44,7 +45,7 @@
   "FABRICATED_SOUL_OF_ANCHOR.description": "记录本场战斗的掷骰出目。点击战斗界面的出目历史控件查看详细记录。",
   "FABRICATED_SOUL_OF_ANCHOR.flavor": "一枚20面骰。",
   "DEFLECTOR_PROTECTION.title": "偏导护盾",
-  "DEFLECTOR_PROTECTION.description": "拥有[blue]DP[/blue]，上限为最大生命的[blue]2[/blue]倍；获得最大生命时，改为获得等量DP上限。受到非生命移除伤害时，优先扣除DP。休息时，DP按回血比例回复；进入先古之民事件时，按相同治疗比例恢复已损失的DP，即使生命已满也会生效。",
+  "DEFLECTOR_PROTECTION.description": "拥有[blue]DP[/blue]，上限以最大生命值的[blue]2[/blue]倍为基础；生命上限的增加与减少均按[blue]1:1[/blue]转换为DP上限的等量增减，当前生命值和生命上限保持不变。DP上限最低为[blue]0[/blue]；减少后，当前DP若超过新上限则降至新上限。受到非生命移除伤害时，优先扣除DP。休息时，DP按回血比例回复；进入先古之民事件时，按相同治疗比例恢复已损失的DP，即使生命已满也会生效。",
   "DEFLECTOR_PROTECTION.flavor": "炽天使的防御机能。它会使攻击偏离方向，从而减轻或抵消伤害；承受一定量伤害后便会消失。",
   "DEFLECTOR_PROTECTION.hotaruAdditionalRestSiteHealText": "偏导护盾：DP上限[blue]+10[/blue]，另回复[blue]{DP}[/blue]点DP。",
   "DEFLECTOR_PROTECTION.additionalRestSiteHealText": "偏导护盾：回复[blue]{DP}[/blue]点DP。",
@@ -125,5 +126,5 @@
   "THIRTY_ONE_A_COLLECTION.description": "计数等于当前永久牌组中不同[gold]31A[/gold]牌的种类数，重复卡牌不增加计数。\n[gold]基础效果[/gold]：每层[gold]闪避[/gold]使造成的伤害增加[blue]2.5%[/blue]。\n[blue]2[/blue]种：获得的[gold]格挡[/gold]转为半值的[gold]闪避[/gold]（向下取整）；闪避已达上限时，正常获得[gold]格挡[/gold]。\n[blue]4[/blue]种：[gold]闪避[/gold]层数同时视为[gold]格挡[/gold]值。\n[blue]6[/blue]种：[gold]闪避[/gold]上限翻倍（[blue]40→80[/blue]层），你的回合开始时不再失去闪避。",
   "THIRTY_ONE_A_COLLECTION.flavor": "即使走到世界尽头，也要一起活下去。",
   "HOTARU_MANUAL_ENDGAME_RULES.title": "救赎与牺牲",
-  "HOTARU_MANUAL_ENDGAME_RULES.description": "[gold]终局：救赎／牺牲[/gold]\n每门原有浮游炮首次达到[blue]Lv.7[/blue]时，该玩家获得一次[gold]牺牲／救赎[/gold]二选一；选中的衍生卡加入永久卡组。可以跳过；任意一次跳过后，本局不再出现这个选项。\n[gold]牺牲[/gold]：无需能量，打出后获得[EEE]。仅可对自己Lv.7的原有浮游炮使用，永久失去该炮，虹光计数+1，并永久获得等同该炮当前灵魂之力数值的伤害增幅（例如77%获得77层，每层+1%）。将此牌移出卡组。\n[gold]救赎[/gold]：消耗[EEE]。仅可对自己Lv.7的原有浮游炮使用，永久失去该炮，millsage计数+1。将此牌移出卡组。\n永久失去的原有炮不再召唤，其升级效果不再生效。两件遗物最高仍为6层。\n[gold]终局浮游炮[/gold]：至少失去一门炮后显现，固定占据第一门失去炮的位置。millsage计数−虹光计数等于0时不显现；负数为[gold]救赎[/gold]形态，正数为[gold]牺牲[/gold]形态。\n[gold]救赎（负数）[/gold]：灵魂之力为50%+10%×失去炮数。回合结束时，造成2^失去炮数点基础伤害。失去幸福后，基础伤害改为3^失去炮数−1；失去棺木后，本炮造成实际伤害时获得等同实际伤害5%的格挡；失去胜负后，本炮造成DP伤害时额外造成25%的HP伤害；失去思念后，掷骰获得优势骰；失去赦罪后，回合开始额外攻击一次，仍保留回合结束攻击。\n[gold]牺牲（正数）[/gold]：灵魂之力固定80%。回合开始时，造成失去炮数阶乘（N!）点基础伤害。失去幸福后，每回合开始获得等同当前回合数×20%的伤害增幅；失去棺木后，小萤及全部浮游炮获得的格挡×150%；失去胜负后，浮游炮的实际伤害提供等量的本回合伤害增幅；失去思念后，掷骰获得优势骰；失去赦罪后，回合开始额外攻击一次。"
+  "HOTARU_MANUAL_ENDGAME_RULES.description": "[gold]终局：救赎／牺牲[/gold]\n每门原有浮游炮首次达到[blue]Lv.7[/blue]时，该玩家获得一次[gold]牺牲／救赎[/gold]二选一；选中的衍生卡加入永久卡组。可以跳过；任意一次跳过后，本局不再出现这个选项。\n[gold]牺牲[/gold]：无需能量，打出后获得[EEE]。仅可对自己Lv.7的原有浮游炮使用，永久失去该炮，虹光计数+1，并永久获得等同该炮当前灵魂之力数值的伤害增幅（例如77%获得77层，每层+1%）。将此牌移出卡组。\n[gold]救赎[/gold]：消耗[EEE]。仅可对自己Lv.7的原有浮游炮使用，永久失去该炮，millsage计数+1。将此牌移出卡组。\n永久失去的原有炮不再召唤，其升级效果不再生效。两件遗物最高仍为6层。\n[gold]终局浮游炮[/gold]：至少失去一门炮后显现，固定占据第一门失去炮的位置。millsage计数−虹光计数等于0时不显现；负数为[gold]牺牲[/gold]形态，正数为[gold]救赎[/gold]形态。\n[gold]牺牲（负数）[/gold]：灵魂之力为50%+10%×失去炮数。回合结束时，造成2^失去炮数点基础伤害。失去幸福后，基础伤害改为3^失去炮数−1；失去棺木后，本炮造成实际伤害时获得等同实际伤害5%的格挡；失去胜负后，本炮造成DP伤害时额外造成25%的HP伤害；失去思念后，掷骰获得优势骰；失去赦罪后，回合开始额外攻击一次，仍保留回合结束攻击。\n[gold]救赎（正数）[/gold]：灵魂之力固定80%。回合开始时，造成失去炮数阶乘（N!）点基础伤害。失去幸福后，每回合开始获得等同当前回合数×20%的伤害增幅；失去棺木后，小萤及全部浮游炮获得的格挡×150%；失去胜负后，浮游炮的实际伤害提供等量的本回合伤害增幅；失去思念后，掷骰获得优势骰；失去赦罪后，回合开始额外攻击一次。"
 }

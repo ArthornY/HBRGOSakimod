@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
@@ -12,6 +13,16 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 
 public sealed partial class Millsage
 {
+    private int TakeCannonActionCount(HotaruCannonKind kind)
+    {
+        int actions = StateFor(kind).TakeActionCount();
+        if (kind != HotaruCannonKind.Coffin) return actions;
+        int extra = Owner.Creature.GetPower<HotaruMyCoffinPower>()?.ExtraActivationCount ?? 0;
+        // Plan every original/charged action's repeats once. Extra activations
+        // are complete actions, but cannot recursively create more repeats.
+        return (int)Math.Min(int.MaxValue, actions * (1L + Math.Max(0, extra)));
+    }
+
     public void QueueDefensiveEcho(decimal baseValueBonus)
     {
         if (!CanAct()) return;
@@ -29,15 +40,8 @@ public sealed partial class Millsage
             .Where(request => request.Overclock == overclock).ToArray();
         _combat.PendingDefensiveEchoes.RemoveAll(request => request.Overclock == overclock);
         foreach (HotaruDefensiveEcho request in requests)
-            foreach (HotaruCannonKind kind in new[] { HotaruCannonKind.Coffin, HotaruCannonKind.Longing })
-            {
-                Creature cannon = GetCannon(kind);
-                if (!CanAct() || cannon == null) continue;
-                int actions = StateFor(kind).TakeActionCount();
-                for (int action = 0; action < actions && CanAct() && IsOwnedCannon(cannon, Owner); action++)
-                    await ExecutePhase(cannon, HotaruCannonPhase.Start, context, null,
-                        baseValueBonus: request.BaseValueBonus);
-            }
+            await ExecutePhaseBatch(context, HotaruCannonPhase.Start,
+                new[] { HotaruCannonKind.Coffin, HotaruCannonKind.Longing }, request.BaseValueBonus);
     }
 
     public async Task TriggerAllCannons(PlayerChoiceContext context, CardModel cardSource = null, CardPlay cardPlay = null)
@@ -76,6 +80,8 @@ public sealed partial class Millsage
             HotaruCannonPhase first = hasStart ? HotaruCannonPhase.Start : HotaruCannonPhase.End;
             for (int action = 0; action < actions && CanAct() && IsOwnedCannon(cannon, Owner) && IsEnemy(target, Owner); action++)
             {
+                using var uncommon = HotaruUncommonCannonHelper.BeginAction(cannon, cardSource, cardPlay, isExtraAction: true);
+                await HotaruUncommonCannonHelper.BeforeAction(context, uncommon);
                 var vigorAttack = HotaruCannonVigorHelper.BeginCompleteAction(cannon, first);
                 try
                 {
@@ -87,6 +93,8 @@ public sealed partial class Millsage
                             actionVigor: vigorAttack, fixedTarget: target);
                 }
                 finally { await vigorAttack.Complete(context); }
+                await NotifyCannonActionsCompleted(context, new[] { cannon });
+                await HotaruUncommonCannonHelper.AfterAction(context, uncommon);
             }
         }
     }
@@ -95,11 +103,30 @@ public sealed partial class Millsage
         CardModel cardSource, CardPlay cardPlay)
     {
         HotaruCannonState state = StateFor(HotaruCannonKind.Happiness);
-        decimal before = state.HappinessDamage;
-        state.GrowHappiness(baseValueBonus);
-        decimal increase = state.HappinessDamage - before;
-        if (increase > 0m && Owner.Creature.GetPower<HotaruOverchargePower>() is { } power)
-            await power.OnHappinessGrowth(context, this, cannon, increase, cardSource, cardPlay);
+        decimal before = HotaruMyIndulgencePower.ModifyBaseDamage(cannon, state.HappinessDamage);
+        state.GrowHappiness(baseValueBonus, HotaruCannonSupportUpgradeHelper.GetCannonRollMultiplier(
+            cannon, CardType.Attack, resolve: true));
+        decimal increase = HotaruMyIndulgencePower.ModifyBaseDamage(cannon, state.HappinessDamage) - before;
+        await NotifyCannonBaseDamageIncreased(context, cannon, increase, cardSource, cardPlay);
+    }
+
+    internal async Task NotifyCannonBaseDamageIncreased(PlayerChoiceContext context, Creature cannon,
+        decimal actualIncrease, CardModel cardSource = null, CardPlay cardPlay = null)
+    {
+        if (actualIncrease <= 0m || !CanAct() || !IsOwnedCannon(cannon, Owner)) return;
+        if (Owner.Creature.GetPower<HotaruMyHappinessPower>() is { } happiness)
+            await happiness.OnCannonBaseDamageGrowth(context, this, cannon, actualIncrease, cardSource, cardPlay);
+        if (Owner.Creature.GetPower<HotaruOverchargePower>() is { } overcharge)
+            await overcharge.OnCannonBaseDamageGrowth(context, this, cannon, actualIncrease, cardSource, cardPlay);
+    }
+
+    private Task NotifyCannonActionsCompleted(PlayerChoiceContext context, IReadOnlyList<Creature> cannons)
+    {
+        foreach (Creature cannon in cannons)
+            HotaruUncommonCannonHelper.RecordCompletedExtraAction(HotaruUncommonCannonHelper.CurrentAction(cannon));
+        HotaruRareCannonHelper.RecordActions(Owner, cannons);
+        return CanAct() && Owner.Creature.GetPower<HotaruMyHappinessPower>() is { } happiness
+            ? happiness.OnCannonActions(context, this, cannons) : Task.CompletedTask;
     }
 
     private Task DealPhaseDamage(Creature cannon, Creature fixedTarget, decimal amount,

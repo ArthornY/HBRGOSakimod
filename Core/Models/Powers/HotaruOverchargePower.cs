@@ -93,11 +93,11 @@ public sealed class HotaruOverchargePower : PowerModel, ICustomPower
         }
     }
 
-    internal async Task OnHappinessGrowth(PlayerChoiceContext context, Millsage relic,
+    internal async Task OnCannonBaseDamageGrowth(PlayerChoiceContext context, Millsage relic,
         Creature cannon, decimal actualIncrease, CardModel growthSource = null, CardPlay growthPlay = null)
     {
         if (actualIncrease <= 0m || _resolvingGrowth || HotaruCannonStatsHelper.IsDamagePreview ||
-            relic?.Owner != Owner?.Player || cannon?.Monster is not HotaruHappinessCannon ||
+            relic?.Owner != Owner?.Player || cannon?.Monster is not HotaruCannonModel ||
             !CanResolve(cannon)) return;
 
         int chargeAmount = Amount;

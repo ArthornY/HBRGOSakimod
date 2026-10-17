@@ -38,6 +38,7 @@ internal static class HotaruCannonBlockHelper
 
     internal static decimal Preview(Creature owner, decimal baseAmount, CardPlay sourcePlay = null, Creature cannon = null)
     {
+        baseAmount = DamageAmplificationLimits.AddSaturated(baseAmount, HotaruUncommonCannonHelper.BlockBonus(cannon));
         if (owner?.CombatState == null) return FinalValue(baseAmount, cannon, false);
         // Preview observes the same live owner powers, card enchantment and
         // already resolved card Roll as the command; it never resolves a roll.
@@ -53,6 +54,7 @@ internal static class HotaruCannonBlockHelper
 
     internal static async Task<decimal> Gain(Creature owner, decimal baseAmount, CardPlay sourcePlay = null, Creature cannon = null)
     {
+        baseAmount = DamageAmplificationLimits.AddSaturated(baseAmount, HotaruUncommonCannonHelper.BlockBonus(cannon));
         if (owner == null || baseAmount <= 0m) return 0m;
         Intent previous = Pending.Value;
         Intent intent = new() { Owner = owner, BaseAmount = baseAmount, Play = sourcePlay, Cannon = cannon };
@@ -98,10 +100,14 @@ internal static class HotaruCannonBlockHelper
 
     internal static decimal FinalCurrentGain(decimal amount) => FinalValue(amount, Current.Value?.Cannon, false);
 
-    private static decimal FinalValue(decimal amount, Creature cannon, bool resolve) => Floor(
-        DamageAmplificationLimits.MultiplySaturated(amount,
+    private static decimal FinalValue(decimal amount, Creature cannon, bool resolve) => Math.Min(
+        BigCombatNumbers.NativeStatCap, Floor(
+        DamageAmplificationLimits.MultiplySaturated(
+            DamageAmplificationLimits.MultiplySaturated(amount, HotaruSeeYouAgainHelper.GetCannonMultiplier(cannon)),
             HotaruCannonSupportUpgradeHelper.GetBlockMultiplier(cannon) * 0.5m *
-            HotaruCannonSupportUpgradeHelper.GetCannonRollMultiplier(cannon, CardType.Skill, resolve)));
+            (1m + HotaruRareCannonHelper.BonusPercent(cannon) / 100m + HotaruRareDebuffHelper.GetCannonBlockBonus(cannon)) *
+            HotaruRareCannonHelper.FinalMultiplier(cannon) *
+            HotaruCannonSupportUpgradeHelper.GetCannonRollMultiplier(cannon, CardType.Skill, resolve))));
 
     internal static void RestoreCaller(GainScope scope)
     {

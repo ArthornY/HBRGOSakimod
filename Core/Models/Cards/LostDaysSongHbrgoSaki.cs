@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
@@ -39,14 +40,16 @@ public sealed class LostDaysSongHbrgoSaki : HighSongChoiceCard
         HighSongPower highSong = Owner.Creature.GetPower<HighSongPower>();
         if (songLevel >= 3 && highSong != null)
         {
-            int teamCriticalSuccesses = Owner.Creature.CombatState.Players
-                .Sum(RollKeywordCombatState.GetCriticalSuccessCount);
-            if (teamCriticalSuccesses > 0)
+            long teamCriticalSuccesses = Owner.Creature.CombatState.Players
+                .Sum(player => (long)RollKeywordCombatState.GetCriticalSuccessCount(player));
+            int highSongGain = (int)Math.Min(teamCriticalSuccesses,
+                Math.Max(0, HighSongPower.GetMaximumAmount(Owner.Creature) - highSong.Amount));
+            if (highSongGain > 0)
             {
                 await PowerCmd.ModifyAmount(
                     choiceContext,
                     highSong,
-                    teamCriticalSuccesses,
+                    highSongGain,
                     Owner.Creature,
                     this);
             }

@@ -50,35 +50,35 @@ public sealed partial class Millsage
     [SavedProperty]
     public int HappinessDamagePercent
     {
-        get => GetCannonDamagePercent(HotaruCannonKind.Happiness);
+        get => GetPermanentCannonDamagePercent(HotaruCannonKind.Happiness);
         private set => SetCannonDamagePercent(HotaruCannonKind.Happiness, value);
     }
 
     [SavedProperty]
     public int CoffinDamagePercent
     {
-        get => GetCannonDamagePercent(HotaruCannonKind.Coffin);
+        get => GetPermanentCannonDamagePercent(HotaruCannonKind.Coffin);
         private set => SetCannonDamagePercent(HotaruCannonKind.Coffin, value);
     }
 
     [SavedProperty]
     public int ContestDamagePercent
     {
-        get => GetCannonDamagePercent(HotaruCannonKind.Contest);
+        get => GetPermanentCannonDamagePercent(HotaruCannonKind.Contest);
         private set => SetCannonDamagePercent(HotaruCannonKind.Contest, value);
     }
 
     [SavedProperty]
     public int LongingDamagePercent
     {
-        get => GetCannonDamagePercent(HotaruCannonKind.Longing);
+        get => GetPermanentCannonDamagePercent(HotaruCannonKind.Longing);
         private set => SetCannonDamagePercent(HotaruCannonKind.Longing, value);
     }
 
     [SavedProperty]
     public int AbsolutionDamagePercent
     {
-        get => GetCannonDamagePercent(HotaruCannonKind.Absolution);
+        get => GetPermanentCannonDamagePercent(HotaruCannonKind.Absolution);
         private set => SetCannonDamagePercent(HotaruCannonKind.Absolution, value);
     }
 
@@ -119,8 +119,14 @@ public sealed partial class Millsage
 
     public int GetMaximumCannonDamagePercent(HotaruCannonKind kind) =>
         kind == HotaruCannonKind.Endgame ? EndgameSoulPercent :
+        IsCannonRecalledThisCombat(kind)
+            ? (int)Math.Min(int.MaxValue, (long)InitialCannonDamagePercent +
+                CannonDamagePercentPerUpgrade * StateFor(kind).RecalledUpgradeLevel + StateFor(kind).RecalledSoulMaximumBonus)
+            : GetPermanentMaximumCannonDamagePercent(kind);
+
+    private int GetPermanentMaximumCannonDamagePercent(HotaruCannonKind kind) =>
         (int)Math.Min(int.MaxValue, (long)InitialCannonDamagePercent +
-            CannonDamagePercentPerUpgrade * GetCannonUpgradeLevel(kind) + GetMaximumCannonDamagePercentBonus(kind));
+            CannonDamagePercentPerUpgrade * GetPermanentCannonUpgradeLevel(kind) + GetMaximumCannonDamagePercentBonus(kind));
 
     private int GetMaximumCannonDamagePercentBonus(HotaruCannonKind kind) => kind switch
     {
@@ -150,7 +156,14 @@ public sealed partial class Millsage
 
     internal void GainCannonSoulPower(HotaruCannonKind kind)
     {
-        if (!HotaruCannonKinds.IsOriginal(kind) || WasCannonRetired(kind)) return;
+        if (!HotaruCannonKinds.IsOriginal(kind)) return;
+        if (IsCannonRecalledThisCombat(kind))
+        {
+            StateFor(kind).GainRecalledSoulPower();
+            InvokeDisplayAmountChanged();
+            return;
+        }
+        if (WasCannonRetired(kind)) return;
         InitializeCannonDamagePercents();
         int current = GetCannonDamagePercent(kind);
         SetMaximumCannonDamagePercentBonus(kind,
@@ -164,6 +177,13 @@ public sealed partial class Millsage
     public int GetCannonDamagePercent(HotaruCannonKind kind)
     {
         if (kind == HotaruCannonKind.Endgame) return EndgameSoulPercent;
+        return IsCannonRecalledThisCombat(kind)
+            ? Math.Clamp(StateFor(kind).RecalledSoulPercent, 0, GetMaximumCannonDamagePercent(kind))
+            : GetPermanentCannonDamagePercent(kind);
+    }
+
+    private int GetPermanentCannonDamagePercent(HotaruCannonKind kind)
+    {
         int stored = kind switch
         {
             HotaruCannonKind.Happiness => _happinessDamagePercent,
@@ -174,8 +194,8 @@ public sealed partial class Millsage
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         return Math.Clamp(stored < 0
-            ? CannonDamagePercent + CannonDamagePercentPerUpgrade * GetCannonUpgradeLevel(kind)
-            : stored, 0, GetMaximumCannonDamagePercent(kind));
+            ? CannonDamagePercent + CannonDamagePercentPerUpgrade * GetPermanentCannonUpgradeLevel(kind)
+            : stored, 0, GetPermanentMaximumCannonDamagePercent(kind));
     }
 
     internal decimal GetCannonDamageMultiplier(HotaruCannonKind kind) => GetCannonDamagePercent(kind) / 100m;
@@ -206,15 +226,15 @@ public sealed partial class Millsage
     {
         AssertMutable();
         foreach (HotaruCannonKind kind in HotaruCannonKinds.Original)
-            StoreCannonDamagePercent(kind, GetCannonDamagePercent(kind));
+            StoreCannonDamagePercent(kind, GetPermanentCannonDamagePercent(kind));
     }
 
     private void ShiftCannonDamagePercents(int amount)
     {
         InitializeCannonDamagePercents();
         foreach (HotaruCannonKind kind in HotaruCannonKinds.Original)
-            StoreCannonDamagePercent(kind, Math.Clamp(AddCannonPercent(GetCannonDamagePercent(kind), amount),
-                0, GetMaximumCannonDamagePercent(kind)));
+            StoreCannonDamagePercent(kind, Math.Clamp(AddCannonPercent(GetPermanentCannonDamagePercent(kind), amount),
+                0, GetPermanentMaximumCannonDamagePercent(kind)));
         CannonDamagePercent += amount;
     }
 

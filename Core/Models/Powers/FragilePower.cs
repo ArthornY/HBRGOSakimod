@@ -51,7 +51,7 @@ public sealed class FragilePower : PowerModel
         decimal multiplier = target == Owner &&
             amount > 0m &&
             Owner.HasPower<BreakPower>()
-            ? _damageMultiplier
+            ? _damageMultiplier + HotaruUnfadingScarsPower.AdditionalEffect(Owner)
             : 1m;
         return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BaseLib.Utils.Attributes;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
@@ -17,7 +18,7 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
     public override HotaruCannonKind Kind => HotaruCannonKind.Endgame;
     protected override string SceneName => "endgame";
     public override LocString Title => new("monsters", Id.Entry + (Relic == null ? ".name"
-        : Relic.EndgameSign > 0 ? ".sacrificeName" : ".redemptionName"));
+        : Relic.EndgameSign > 0 ? ".redemptionName" : ".sacrificeName"));
     internal override decimal CurrentDamage => Relic?.EndgameBaseDamage ?? 0m;
 
     internal override LocString IntentDescription()
@@ -27,10 +28,10 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
         LocString shape = new("monsters", Id.Entry + (positive ? ".positiveShape" : ".negativeShape"));
         shape.Add("Count", Relic?.RetiredCannonCount ?? 0);
         shape.Add("Soul", Relic?.EndgameSoulPercent ?? (positive ? 80 : 50));
-        shape.Add("BaseDamage", CurrentDamage);
+        shape.Add("BaseDamage", HotaruMyIndulgencePower.ModifyBaseDamage(cannon, CurrentDamage));
         shape.Add("Formula", positive ? "失去炮数!"
             : Relic?.WasCannonRetired(HotaruCannonKind.Happiness) == true ? "3^失去炮数−1" : "2^失去炮数");
-        int startRepeat = Relic?.EndgameStartHitCount ?? 0;
+        int startRepeat = HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.Start);
         if (positive)
         {
             shape.Add("StartDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, CurrentDamage,
@@ -41,7 +42,7 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
         {
             shape.Add("EndDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, CurrentDamage,
                 previewPhase: HotaruCannonPhase.End));
-            shape.Add("EndRepeat", Relic?.EndgameEndHitCount ?? 0);
+            shape.Add("EndRepeat", HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.End));
             string extraStart = string.Empty;
             if (startRepeat > 0)
             {
@@ -92,16 +93,16 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
     {
         private readonly HotaruFinalCannon _cannon;
         private readonly HotaruCannonPhase _phase;
-        private int Repeats => _phase == HotaruCannonPhase.Start
-            ? _cannon.Relic?.EndgameStartHitCount ?? 0 : _cannon.Relic?.EndgameEndHitCount ?? 0;
+        private int Repeats => HotaruCannonVigorHelper.GetPlannedHitCount(_cannon.Relic, _cannon.Kind, _phase);
 
         internal FinalAttackIntent(HotaruFinalCannon cannon, HotaruCannonPhase phase)
             : base(() => cannon.CurrentDamage)
         { _cannon = cannon; _phase = phase; }
 
         public override int GetTotalDamage(IEnumerable<Creature> targets, Creature owner) =>
-            BigCombatNumbers.ToNativeSigned(HotaruCannonStatsHelper.PreviewDamage(owner,
-                _cannon.CurrentDamage, previewPhase: _phase) * Repeats);
+            BigCombatNumbers.ToNativeSigned(DamageAmplificationLimits.MultiplySaturated(
+                HotaruCannonStatsHelper.PreviewDamage(owner,
+                    _cannon.CurrentDamage, previewPhase: _phase), Repeats));
 
         public override LocString GetIntentLabel(IEnumerable<Creature> targets, Creature owner)
         {

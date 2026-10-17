@@ -42,7 +42,7 @@ public abstract class HotaruEndgameCard : HotaruCannonCard
         bool previouslyRetired = relic.WasCannonRetired(kind);
         try
         {
-            if (!await relic.RetireCannon(play.Target, sacrifice, context, this)) return false;
+            if (!await relic.RetireCannon(play.Target, sacrifice, context, this, play)) return false;
         }
         catch
         {

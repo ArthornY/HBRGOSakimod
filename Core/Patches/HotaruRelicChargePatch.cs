@@ -41,7 +41,7 @@ internal static class HotaruRelicChargePatch
 }
 
 [HarmonyPatch]
-internal static class HotaruIridescenceDescriptionPatch
+internal static class HotaruRelicDescriptionPatch
 {
     private static IEnumerable<MethodBase> TargetMethods()
     {
@@ -49,8 +49,10 @@ internal static class HotaruIridescenceDescriptionPatch
         yield return AccessTools.PropertyGetter(typeof(RelicModel), nameof(RelicModel.DynamicEventDescription));
     }
 
-    private static void Postfix(RelicModel __instance, LocString __result)
+    private static void Postfix(RelicModel __instance, ref LocString __result)
     {
         if (__instance is HotaruIridescence iridescence) iridescence.AddDescriptionVariables(__result);
+        else if (__instance is Millsage millsage && millsage.Layers >= Millsage.MaximumLayers)
+            __result = new LocString("relics", "MILLSAGE.fullChargeDescription");
     }
 }

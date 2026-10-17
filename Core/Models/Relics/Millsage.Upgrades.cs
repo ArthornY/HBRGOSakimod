@@ -48,7 +48,10 @@ public sealed partial class Millsage
         private set { AssertMutable(); _absolutionUpgradeLevel = Math.Clamp(value, 0, MaximumCannonUpgradeLevel); }
     }
 
-    public int GetCannonUpgradeLevel(HotaruCannonKind kind) => kind switch
+    public int GetCannonUpgradeLevel(HotaruCannonKind kind) => IsCannonRecalledThisCombat(kind)
+        ? StateFor(kind).RecalledUpgradeLevel : GetPermanentCannonUpgradeLevel(kind);
+
+    private int GetPermanentCannonUpgradeLevel(HotaruCannonKind kind) => kind switch
     {
         HotaruCannonKind.Happiness => HappinessUpgradeLevel,
         HotaruCannonKind.Coffin => CoffinUpgradeLevel,
@@ -59,7 +62,7 @@ public sealed partial class Millsage
     };
 
     public bool HasCannonUpgrade(HotaruCannonKind kind, int tier) =>
-        !WasCannonRetired(kind) && tier is >= 1 and <= MaximumCannonUpgradeLevel && GetCannonUpgradeLevel(kind) >= tier;
+        IsCannonAvailableInCombat(kind) && tier is >= 1 and <= MaximumCannonUpgradeLevel && GetCannonUpgradeLevel(kind) >= tier;
 
     internal bool IsCannonUnlocked(HotaruCannonKind kind) =>
         HotaruCannonKinds.IsOriginal(kind) && !WasCannonRetired(kind);

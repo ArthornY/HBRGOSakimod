@@ -75,9 +75,9 @@ internal static class SixSenseCombatHelper
         IsEligibleEnemy(target) ? target.GetPower<SixSenseResistancePower>()?.BrokenCount ?? 0 : 0;
 
     internal static async Task ResolvePhantomAttack(
-        PlayerChoiceContext context, Player player, Creature target, CardModel cardSource)
+        PlayerChoiceContext context, Player player, Creature target, CardModel cardSource, int amount = 1)
     {
-        if (player?.Creature?.IsAlive != true || !IsEligibleEnemy(target) ||
+        if (amount <= 0 || player?.Creature?.IsAlive != true || !IsEligibleEnemy(target) ||
             target.GetPower<SixSenseResistancePower>() is not { } resistance)
             return;
 
@@ -86,11 +86,39 @@ internal static class SixSenseCombatHelper
                 target.GetPower<NararaNullificationPower>()?.IsResistanceLocked(attribute) != true).ToArray();
         if (remaining.Length == 0) return;
 
-        // One resistance per completed hit, independent of card attributes and Godspeed.
+        // One randomly selected resistance per completed hit, independent of
+        // card attributes and Godspeed. Callers may amplify the loss amount.
         SixSenseAttribute selected = remaining[target.CombatState.RunState.Rng.Niche.NextInt(remaining.Length)];
         int before = resistance.BrokenCount;
-        if (resistance.Reduce(selected, 1))
+        if (resistance.Reduce(selected, amount))
+        {
             await RegisterResistanceBreaks(context, player, cardSource, 1);
+            await NotifyResistanceBroken(context, player, target, selected, cardSource);
+        }
+        MoreThanOneTruthCombatHelper.OnResistanceTransition(player, target, before, resistance.BrokenCount);
+        player.PlayerCombatState?.RecalculateCardValues();
+    }
+
+    internal static async Task ReduceHighestResistance(
+        PlayerChoiceContext context, Player player, Creature target, CardModel cardSource, int amount)
+    {
+        if (amount <= 0 || player?.Creature?.IsAlive != true || !IsEligibleEnemy(target) ||
+            target.GetPower<SixSenseResistancePower>() is not { } resistance) return;
+        SixSenseAttribute[] remaining = ElectronicSoldierManual.AllSixSenseAttributes
+            .Where(attribute => resistance.GetResistance(attribute) > 0 &&
+                target.GetPower<NararaNullificationPower>()?.IsResistanceLocked(attribute) != true).ToArray();
+        if (remaining.Length == 0) return;
+        int highest = remaining.Max(resistance.GetResistance);
+        SixSenseAttribute[] candidates = remaining
+            .Where(attribute => resistance.GetResistance(attribute) == highest).ToArray();
+        SixSenseAttribute selected = candidates.Length == 1 ? candidates[0]
+            : candidates[target.CombatState.RunState.Rng.Niche.NextInt(candidates.Length)];
+        int before = resistance.BrokenCount;
+        if (resistance.Reduce(selected, amount))
+        {
+            await RegisterResistanceBreaks(context, player, cardSource, 1);
+            await NotifyResistanceBroken(context, player, target, selected, cardSource);
+        }
         MoreThanOneTruthCombatHelper.OnResistanceTransition(player, target, before, resistance.BrokenCount);
         player.PlayerCombatState?.RecalculateCardValues();
     }
@@ -108,6 +136,7 @@ internal static class SixSenseCombatHelper
         int before = resistance.BrokenCount;
         int breaks = Math.Min(count, remaining.Count);
         int brokenCount = 0;
+        var brokenAttributes = new List<SixSenseAttribute>();
         for (int i = 0; i < breaks; i++)
         {
             int index = target.CombatState.RunState.Rng.Niche.NextInt(remaining.Count);
@@ -115,12 +144,53 @@ internal static class SixSenseCombatHelper
             remaining.RemoveAt(index);
             // A direct break removes the entire remaining resistance. Each
             // choice is removed from the pool before the next random draw.
-            if (resistance.Reduce(selected, resistance.GetResistance(selected))) brokenCount++;
+            if (resistance.Reduce(selected, resistance.GetResistance(selected)))
+            {
+                brokenCount++;
+                brokenAttributes.Add(selected);
+            }
         }
         await RegisterResistanceBreaks(context, player, cardSource, brokenCount);
+        foreach (var attribute in brokenAttributes)
+            await NotifyResistanceBroken(context, player, target, attribute, cardSource);
         MoreThanOneTruthCombatHelper.OnResistanceTransition(player, target, before, resistance.BrokenCount);
         player.PlayerCombatState?.RecalculateCardValues();
     }
+
+    internal static async Task BreakLowestResistance(PlayerChoiceContext context, Player player,
+        Creature target, CardModel source)
+    {
+        if (player?.Creature?.IsAlive != true || !IsEligibleEnemy(target) ||
+            target.GetPower<SixSenseResistancePower>() is not { } resistance) return;
+        SixSenseAttribute[] remaining = ElectronicSoldierManual.AllSixSenseAttributes
+            .Where(attribute => resistance.GetResistance(attribute) > 0 &&
+                target.GetPower<NararaNullificationPower>()?.IsResistanceLocked(attribute) != true).ToArray();
+        if (remaining.Length == 0) return;
+        int lowest = remaining.Min(resistance.GetResistance);
+        SixSenseAttribute[] candidates = remaining.Where(attribute => resistance.GetResistance(attribute) == lowest).ToArray();
+        SixSenseAttribute selected = candidates.Length == 1 ? candidates[0]
+            : candidates[target.CombatState.RunState.Rng.Niche.NextInt(candidates.Length)];
+        await ReduceResistance(context, player, target, source, selected, resistance.GetResistance(selected));
+    }
+
+    internal static async Task ReduceResistance(PlayerChoiceContext context, Player player,
+        Creature target, CardModel source, SixSenseAttribute attribute, int amount)
+    {
+        if (amount <= 0 || player?.Creature?.IsAlive != true || !IsEligibleEnemy(target) ||
+            target.GetPower<SixSenseResistancePower>() is not { } resistance) return;
+        int before = resistance.BrokenCount;
+        if (resistance.Reduce(attribute, amount))
+        {
+            await RegisterResistanceBreaks(context, player, source, 1);
+            await NotifyResistanceBroken(context, player, target, attribute, source);
+        }
+        MoreThanOneTruthCombatHelper.OnResistanceTransition(player, target, before, resistance.BrokenCount);
+        player.PlayerCombatState?.RecalculateCardValues();
+    }
+
+    internal static Task NotifyResistanceBroken(PlayerChoiceContext context, Player player,
+        Creature target, SixSenseAttribute attribute, CardModel source) =>
+        HotaruRareCannonHelper.OnResistanceBroken(context, player, target, attribute, source);
 
     private static async Task RegisterResistanceBreaks(
         PlayerChoiceContext context, Player player, CardModel cardSource, int count)
@@ -191,16 +261,23 @@ internal static class SixSenseCombatHelper
         }
 
         int brokenCount = 0;
+        var brokenAttributes = new List<(Creature Target, SixSenseAttribute Attribute)>();
         foreach (Creature enemy in ResistanceTargets(play))
         {
             SixSenseResistancePower resistance = enemy.GetPower<SixSenseResistancePower>();
             if (resistance == null) continue;
             int before = resistance.BrokenCount;
             foreach (SixSenseAttribute attribute in resistanceAttributes.Distinct())
-                if (resistance.Reduce(attribute, ResistanceLossForPlayer(player, attribute))) brokenCount++;
+                if (resistance.Reduce(attribute, ResistanceLossForPlayer(player, attribute)))
+                {
+                    brokenCount++;
+                    brokenAttributes.Add((enemy, attribute));
+                }
             MoreThanOneTruthCombatHelper.OnResistanceTransition(player, enemy, before, resistance.BrokenCount);
         }
         await RegisterResistanceBreaks(context, player, play.Card, brokenCount);
+        foreach (var broken in brokenAttributes)
+            await NotifyResistanceBroken(context, player, broken.Target, broken.Attribute, play.Card);
         player.PlayerCombatState?.RecalculateCardValues();
     }
 }

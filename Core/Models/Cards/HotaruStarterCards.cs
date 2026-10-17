@@ -104,8 +104,7 @@ public sealed class HotaruCharge : HotaruStarterCard
     protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target);
-        Owner.GetRelic<Millsage>().Charge(cardPlay.Target, DynamicVars["ExtraTriggers"].IntValue);
-        return Task.CompletedTask;
+        return Owner.GetRelic<Millsage>().ChargeFromCard(choiceContext, cardPlay.Target, DynamicVars["ExtraTriggers"].IntValue, this);
     }
 
     protected override void OnUpgrade() => DynamicVars["ExtraTriggers"].UpgradeValueBy(1m);

@@ -102,7 +102,9 @@ internal static class HotaruCannonStatsHelper
             .Where(enemy => Millsage.IsEnemy(enemy, cannon.PetOwner)).ToArray() ?? Array.Empty<Creature>();
         if (targets.Length == 0 || dealer?.CombatState?.RunState == null)
         {
-            decimal fallback = Math.Max(1m, decimal.Floor(Math.Max(0m, baseDamage) * GetCannonDamageMultiplier(cannon)));
+            decimal amount = HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, baseDamage);
+            decimal fallback = Math.Max(1m, decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
+                Math.Max(0m, amount), GetCannonDamageMultiplier(cannon))));
             return (fallback, fallback);
         }
         Creature previous = PreviewCannon.Value;
@@ -215,7 +217,9 @@ internal static class HotaruCannonStatsHelper
         PreviewCannon.Value == null && Current.Value?.Matches(target, dealer, card, props) == true;
     private static decimal GetCannonDamageMultiplier(Creature cannon) =>
         cannon?.Monster is HotaruCannonModel model
-            ? cannon.PetOwner?.GetRelic<Millsage>()?.GetCannonDamageMultiplier(model.Kind) ?? 0.5m
+            ? DamageAmplificationLimits.MultiplySaturated(
+                cannon.PetOwner?.GetRelic<Millsage>()?.GetCannonDamageMultiplier(model.Kind) ?? 0.5m,
+                HotaruSeeYouAgainHelper.GetCannonMultiplier(cannon))
             : 0.5m;
     internal static decimal GetFinalDamageScale(Creature target, Creature dealer, CardModel card, ValueProp props) =>
         GetFinalDamageScale(target, dealer, card, props, out _);
@@ -223,7 +227,8 @@ internal static class HotaruCannonStatsHelper
         out bool isCannonDamage)
     {
         isCannonDamage = TryGetCurrentCannon(target, dealer, card, props, out Creature cannon);
-        return isCannonDamage ? GetCannonDamageMultiplier(cannon) : 1m;
+        return isCannonDamage ? DamageAmplificationLimits.MultiplySaturated(GetCannonDamageMultiplier(cannon),
+            HotaruRareCannonHelper.FinalMultiplier(cannon)) : 1m;
     }
     internal static void ContributeCannonRollMultiplier(Creature target, Creature dealer, CardModel card, ValueProp props) =>
         HotaruCannonDamageUpgradeHelper.ContributeCannonRollMultiplier(target, dealer, card, props);
@@ -276,10 +281,27 @@ internal static class HotaruCannonStatsHelper
         receipt = state.Receipt;
         return true;
     }
+    internal static Task NotifyDirectDpDamage(PlayerChoiceContext context, Creature dealer,
+        Creature target, decimal actualDamage, decimal activeDpMaximum, CardModel cardSource,
+        Creature cannon = null, CardPlay cardPlay = null)
+    {
+        if (actualDamage <= 0m) return Task.CompletedTask;
+        // Derived DP damage has already been resolved from actual block. Feed
+        // its receipt through the usual owner/cannon reactions without scaling
+        // it again or treating it as a new primary attack.
+        return FinishAfterDamageGiven(Task.CompletedTask, context, new CannonHitReceipt {
+            Cannon = cannon, Dealer = dealer, Target = target,
+            ActualDpDamage = actualDamage, ActiveDpMaximum = activeDpMaximum,
+            FinalDamage = actualDamage, CardSource = cardSource,
+            CardPlay = cardPlay, IsReaction = true
+        });
+    }
+
     internal static async Task FinishAfterDamageGiven(Task original, PlayerChoiceContext context, CannonHitReceipt receipt)
     {
         await original;
         if (receipt == null) return;
+        HotaruUncommonCannonHelper.OnDamage(receipt);
         await HotaruAbsolutionUpgradeHelper.OnOwnerDpDamage(context, receipt.Dealer, receipt.Target,
             receipt.ActualDpDamage, receipt.CardSource);
         if (receipt.Cannon != null)
@@ -288,6 +310,8 @@ internal static class HotaruCannonStatsHelper
             await HotaruCannonSupportUpgradeHelper.AfterCannonDamage(context, receipt);
             await HotaruEndgameEffectsHelper.OnCannonDamage(context, receipt);
             await HotaruAbsolutionUpgradeHelper.OnCannonDamage(context, receipt);
+            if (receipt.Cannon.PetOwner?.Creature?.GetPower<HotaruMyCoffinPower>() is { } coffin)
+                await coffin.OnCannonDamage(context, receipt);
         }
         if (CapturesIncoming(receipt.Target))
             await HotaruCannonSupportUpgradeHelper.AfterOwnerDamage(context, receipt);

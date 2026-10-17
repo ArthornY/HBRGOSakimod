@@ -63,6 +63,16 @@ public partial class NHotaruCannonLayout : Node
         return new Vector2(0f, (float)Math.Sin(phase) * FloatingAmplitude * scale);
     }
 
+    internal static Vector2 GetRecallOffset(Vector2 ownerSize, float scale)
+    {
+        Vector2 upper = GetOffset(HotaruCannonKind.Coffin, ownerSize, scale);
+        Vector2 lower = GetOffset(HotaruCannonKind.Contest, ownerSize, scale);
+        // The terminal cannon keeps its historical first-retirement slot.
+        // A recalled occupant gets a sixth slot beyond the right-hand pair;
+        // 190 pixels clears the cannon's maximum 165-pixel portrait width.
+        return new Vector2(upper.X + 190f * scale, (upper.Y + lower.Y) * 0.5f);
+    }
+
     internal void RefreshLayout()
     {
         if (!Usable(_room)) return;
@@ -78,9 +88,13 @@ public partial class NHotaruCannonLayout : Node
             cannon.Scale = player.Scale * scale;
             // Move the entity as a whole so its intents and targeting hitbox
             // follow the same gentle motion as the cannon artwork.
+            Millsage relic = owner.GetRelic<Millsage>();
             HotaruCannonKind slot = model.Kind == HotaruCannonKind.Endgame
-                ? owner.GetRelic<Millsage>()?.FirstRetiredCannonKind ?? HotaruCannonKind.Happiness : model.Kind;
-            Vector2 offset = GetOffset(slot, player.Visuals.Bounds.Size, scale) +
+                ? relic?.FirstRetiredCannonKind ?? HotaruCannonKind.Happiness : model.Kind;
+            bool recalledOverlap = relic?.IsCannonRecalledThisCombat(model.Kind) == true &&
+                model.Kind == relic.FirstRetiredCannonKind && relic.GetCannon(HotaruCannonKind.Endgame) != null;
+            Vector2 offset = (recalledOverlap ? GetRecallOffset(player.Visuals.Bounds.Size, scale)
+                : GetOffset(slot, player.Visuals.Bounds.Size, scale)) +
                 GetFloatingOffset(slot, _floatingTime, scale);
             cannon.GlobalPosition = player.GetGlobalTransform() * offset;
             cannon.Visuals.Modulate = player.Visuals.Modulate;

@@ -21,7 +21,7 @@ public abstract class HotaruCannonCard : CardModel
     }
 
     public override string PortraitPath => ImageHelper.GetImagePath(
-        "packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png");
+        "packed/card_portraits/hbrgo_hotaru/default_hotaru.jpg");
 
     public override string BetaPortraitPath => PortraitPath;
 

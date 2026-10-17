@@ -363,6 +363,46 @@ public class HighDimensionalShellPower : PowerModel
         return true;
     }
 
+    // The amount has already been resolved from another effect (for example,
+    // actual block gained). Spend only DP: no block, damage multipliers or HP.
+    // Callers dispatch their own owner/cannon receipt from the returned amount.
+    internal async Task<decimal> DamageDpOnly(PlayerChoiceContext choiceContext, decimal amount)
+    {
+        if (!IsMutable || Owner?.IsAlive != true || amount <= 0m || CurrentDp <= 0m ||
+            _pendingBreak || NararaNullificationHelper.IsCardNullified(Owner)) return 0m;
+
+        decimal previousAbsorbed = _lastAbsorbedDamage;
+        decimal actualDamage;
+        // A nested DP effect must not inherit a bow bonus reserved for an
+        // enclosing ordinary hit, or overwrite that hit's absorption receipt.
+        _pendingExtraDpDamage.Push(0m);
+        try
+        {
+            if (!TryAbsorb(BigCombatNumbers.ClampStat(amount))) return 0m;
+            actualDamage = ConsumeLastAbsorbedDamage();
+        }
+        finally
+        {
+            _pendingExtraDpDamage.Pop();
+            _lastAbsorbedDamage = previousAbsorbed;
+        }
+
+        // Layered DP can refill its next bar during TryAbsorb. Its receipt,
+        // rather than a before/after subtraction, preserves the actual spend.
+        CardDamageHistoryHelper.RecordDpDamage(Owner, actualDamage);
+        if (_pendingBreak)
+        {
+            _pendingBreak = false;
+            await ResolveBreak(choiceContext, 0);
+        }
+        else if (actualDamage > 0m)
+        {
+            await CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
+        }
+
+        return actualDamage;
+    }
+
     public decimal Restore(decimal amount)
     {
         if (amount <= 0 || !CanRestoreDp)

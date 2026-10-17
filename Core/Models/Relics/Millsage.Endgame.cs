@@ -21,6 +21,7 @@ namespace HBRGOSakiMod.Core.Models.Relics;
 public sealed partial class Millsage
 {
     private int _retiredCannonsMask;
+    private int _cannonRetirementChoices;
     private int _endgameOfferMask;
     private int _firstRetiredCannon = -1;
     private decimal _permanentSacrificeDamagePercent;
@@ -89,6 +90,20 @@ public sealed partial class Millsage
     public bool WasCannonRetired(HotaruCannonKind kind) =>
         HotaruCannonKinds.IsOriginal(kind) && (RetiredCannonsMask & (1 << (int)kind)) != 0;
 
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int CannonRetirementChoices
+    {
+        get => _cannonRetirementChoices;
+        private set { AssertMutable(); _cannonRetirementChoices = Math.Clamp(value, 0, 1023); }
+    }
+
+    public HotaruCannonRetirementChoice GetCannonRetirementChoice(HotaruCannonKind kind)
+    {
+        if (!WasCannonRetired(kind)) return HotaruCannonRetirementChoice.None;
+        int choice = (CannonRetirementChoices >> ((int)kind * 2)) & 3;
+        return choice is 1 or 2 ? (HotaruCannonRetirementChoice)choice : HotaruCannonRetirementChoice.None;
+    }
+
     public bool CanOfferEndgameCard(HotaruCannonKind kind) => IsMutable && !EndgameOffersDeclined &&
         HotaruCannonKinds.IsOriginal(kind) && !WasCannonRetired(kind) && GetCannonUpgradeLevel(kind) == 7 &&
         (EndgameOfferMask & (1 << (int)kind)) == 0;
@@ -111,7 +126,8 @@ public sealed partial class Millsage
     public bool CanRetireCannon(Creature cannon) => IsMutable && CanAct() && IsOwnedCannon(cannon, Owner) &&
         cannon.Monster is HotaruCannonModel model && IsCannonUnlocked(model.Kind) && GetCannonUpgradeLevel(model.Kind) == 7;
 
-    public async Task<bool> RetireCannon(Creature cannon, bool sacrifice, PlayerChoiceContext context, CardModel source = null)
+    public async Task<bool> RetireCannon(Creature cannon, bool sacrifice, PlayerChoiceContext context,
+        CardModel source = null, CardPlay cardPlay = null)
     {
         if (!CanRetireCannon(cannon)) return false;
         HotaruIridescence rainbow = Owner.GetRelic<HotaruIridescence>();
@@ -124,10 +140,24 @@ public sealed partial class Millsage
         }
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
         int currentSoul = GetCannonDamagePercent(kind);
+        Creature previousEndgame = GetCannon(HotaruCannonKind.Endgame);
+        bool hadEndgameCannon = previousEndgame != null;
+        decimal previousEndgameDamage = HotaruMyIndulgencePower.ModifyBaseDamage(previousEndgame, EndgameBaseDamage + HotaruUncommonCannonHelper.DamageBonus(previousEndgame));
+        // Retiring Absolution can turn an already active Indulgence into its
+        // redemption form, increasing every surviving cannon's base damage.
+        var previousOriginalDamage = HotaruCannonKinds.Original
+            .Select(original => GetCannon(original))
+            .Where(original => original?.Monster is HotaruCannonModel)
+            .Select(original => (Kind: ((HotaruCannonModel)original.Monster).Kind,
+                Damage: HotaruMyIndulgencePower.ModifyBaseDamage(original,
+                    ((HotaruCannonModel)original.Monster).CurrentDamage + HotaruUncommonCannonHelper.DamageBonus(original)))).ToArray();
         // Commit the identity before awaiting effects. Copies and nested hooks
         // cannot retire this cannon twice or choose a different first slot.
         if (RetiredCannonCount == 0) FirstRetiredCannon = (int)kind;
         RetiredCannonsMask |= 1 << (int)kind;
+        int choiceShift = (int)kind * 2;
+        CannonRetirementChoices = (CannonRetirementChoices & ~(3 << choiceShift)) |
+            ((int)(sacrifice ? HotaruCannonRetirementChoice.Sacrifice : HotaruCannonRetirementChoice.Redemption) << choiceShift);
         if (sacrifice)
         {
             rainbow.GainCharge();
@@ -139,7 +169,20 @@ public sealed partial class Millsage
         await RefreshEndgameCannon();
         if (sacrifice && currentSoul > 0 && Owner.Creature.IsAlive)
             await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, Owner.Creature, currentSoul, Owner.Creature, source);
+        // Rebuilding an existing terminal cannon preserves its logical growth.
+        // First summoning or reappearing after a tie initializes its base value.
+        var growthReceipts = new List<(Creature Cannon, decimal Increase)>();
+        if (hadEndgameCannon && GetCannon(HotaruCannonKind.Endgame) is { } endgame)
+            growthReceipts.Add((endgame,
+                HotaruMyIndulgencePower.ModifyBaseDamage(endgame, EndgameBaseDamage + HotaruUncommonCannonHelper.DamageBonus(endgame)) - previousEndgameDamage));
+        foreach (var previous in previousOriginalDamage)
+            if (GetCannon(previous.Kind) is { Monster: HotaruCannonModel model } original)
+                growthReceipts.Add((original,
+                    HotaruMyIndulgencePower.ModifyBaseDamage(original, model.CurrentDamage + HotaruUncommonCannonHelper.DamageBonus(original)) - previous.Damage));
+        foreach (var growth in growthReceipts)
+            await NotifyCannonBaseDamageIncreased(context, growth.Cannon, growth.Increase, source, cardPlay);
         InvokeDisplayAmountChanged();
+        CombatPreviewRefreshHelper.RefreshCombatState(Owner.Creature, nameof(RetireCannon));
         return true;
     }
 

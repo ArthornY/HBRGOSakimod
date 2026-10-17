@@ -155,6 +155,13 @@ internal static class HotaruCannonSupportUpgradeHelper
     internal static async Task PreparePhase(PlayerChoiceContext context, Creature cannon, HotaruCannonPhase phase)
     {
         Millsage relic = cannon?.PetOwner?.GetRelic<Millsage>();
+        if (HotaruUncommonCannonHelper.CurrentAction(cannon) is { } action &&
+            (action.RollBonuses.Length > 0 || action.Modifier?.InheritedRoll != null ||
+             action.Modifier?.AdvantageRoll == true || (action.Modifier?.RollAmplificationMultiplier ?? 1m) != 1m))
+        {
+            await PrepareEnhancedRoll(context, cannon, phase, action);
+            return;
+        }
         if (cannon?.Monster is not HotaruCannonModel model ||
             relic?.HasCannonUpgrade(HotaruCannonKind.Longing, 7) != true ||
             ReadCache(relic.StateFor(model.Kind), phase)?.Winning != null) return;
@@ -166,6 +173,9 @@ internal static class HotaruCannonSupportUpgradeHelper
     {
         Player owner = cannon?.PetOwner;
         Millsage relic = owner?.GetRelic<Millsage>();
+        if (!HotaruCannonStatsHelper.IsDamagePreview && !HotaruCannonBlockHelper.IsBlockPreview &&
+            HotaruUncommonCannonHelper.CurrentAction(cannon) is { Winning: not null } enhanced)
+            return EnhancedMultiplier(cannon, type, resolve, enhanced);
         if (cannon?.Monster is not HotaruCannonModel model ||
             relic?.HasCannonUpgrade(HotaruCannonKind.Longing, 7) != true) return 1m;
         PhaseScope scope = CurrentPhase.Value;
@@ -190,17 +200,102 @@ internal static class HotaruCannonSupportUpgradeHelper
             WriteCache(state, phase, cache);
             RollGlossaryCapability.CommitCannonRoll(owner, winning, discarded);
         }
-        return RollKeywordRules.GetAttackOrSkillValueMultiplier(owner, winning, type);
+        decimal multiplier = RollKeywordRules.GetAttackOrSkillValueMultiplier(owner, winning, type);
+        return DamageAmplificationLimits.AddSaturated(1m, DamageAmplificationLimits.MultiplySaturated(
+            multiplier - 1m, HotaruSeeYouAgainHelper.GetMultiplier(owner)));
+    }
+
+    private static async Task PrepareEnhancedRoll(PlayerChoiceContext context, Creature cannon,
+        HotaruCannonPhase phase, HotaruUncommonCannonHelper.ActionScope action)
+    {
+        if (action.Winning != null) return;
+        var owner = cannon.PetOwner;
+        var relic = owner.GetRelic<Millsage>();
+        var model = (HotaruCannonModel)cannon.Monster;
+        action.RollWasNative = relic.HasCannonUpgrade(HotaruCannonKind.Longing, 7);
+        SoulRollBreakdown winning;
+        IReadOnlyList<SoulRollBreakdown> discarded;
+        if (action.Modifier?.InheritedRoll is { } inherited)
+        {
+            var rolled = await RollGlossaryCapability.RollForCannon(context, owner,
+                PhaseRollType(model.Kind, phase), inheritedRoll: inherited);
+            winning = rolled.Winning;
+            discarded = rolled.Discarded;
+        }
+        else if (action.Modifier?.AdvantageRoll == true)
+        {
+            var rolled = await RollGlossaryCapability.RollForCannon(context, owner, PhaseRollType(model.Kind, phase), forceAdvantage: true);
+            winning = rolled.Winning;
+            discarded = rolled.Discarded;
+        }
+        else if (action.RollWasNative)
+        {
+            CacheDto cached = ReadCache(relic.StateFor(model.Kind), phase);
+            if (cached?.Winning == null || cached.Committed)
+                cached = await PrepareCache(context, cannon, phase, PhaseRollType(model.Kind, phase));
+            winning = cached.WinningRoll;
+            discarded = cached.DiscardedRolls;
+            action.BorrowedPhase = phase;
+        }
+        else
+        {
+            var rolled = await RollGlossaryCapability.RollForCannon(context, owner, PhaseRollType(model.Kind, phase));
+            winning = rolled.Winning;
+            discarded = rolled.Discarded;
+        }
+        action.Winning = action.RollBonuses.Length == 0 ? winning : Enhance(winning, owner, action);
+        action.Discarded = action.RollBonuses.Length == 0 ? discarded : discarded.Select(roll => Enhance(roll, owner, action)).ToArray();
+    }
+
+    private static SoulRollBreakdown Enhance(SoulRollBreakdown roll, Player owner,
+        HotaruUncommonCannonHelper.ActionScope action)
+    {
+        long final = roll.FinalRoll;
+        foreach (int bonus in action.RollBonuses)
+            final = action.RollWasNative ? Math.Min(int.MaxValue, final * 2L)
+                : Math.Min(int.MaxValue, final + bonus);
+        var details = roll.Bonuses.Concat(new[] { new SoulRollBonusDetail(
+            (int)final - roll.FinalRoll, "交给那束光") });
+        return RollKeywordRules.ResolveRollTier(owner, new SoulRollBreakdown(roll.BaseRoll,
+            (int)final, roll.DiceSource, details) { IsForcedCritical = roll.IsForcedCritical });
+    }
+
+    private static decimal EnhancedMultiplier(Creature cannon, CardType type, bool resolve,
+        HotaruUncommonCannonHelper.ActionScope action)
+    {
+        var owner = cannon.PetOwner;
+        bool suppress = CurrentPhase.Value is { Active: true, SuppressCritical: true } phase &&
+            ReferenceEquals(phase.Cannon, cannon);
+        SoulRollBreakdown winning = suppress ? RollKeywordRules.WithoutCritical(action.Winning) : action.Winning;
+        var discarded = suppress ? action.Discarded.Select(RollKeywordRules.WithoutCritical).ToArray() : action.Discarded;
+        if (resolve && !action.Committed)
+        {
+            action.Committed = true;
+            if (action.BorrowedPhase is { } borrowed)
+            {
+                var state = owner.GetRelic<Millsage>().StateFor(((HotaruCannonModel)cannon.Monster).Kind);
+                var cache = ReadCache(state, borrowed);
+                if (cache != null) { cache.Committed = true; WriteCache(state, borrowed, cache); }
+            }
+            RollGlossaryCapability.CommitCannonRoll(owner, winning, discarded);
+        }
+        decimal multiplier = RollKeywordRules.GetAttackOrSkillValueMultiplier(owner, winning, type);
+        decimal scale = DamageAmplificationLimits.MultiplySaturated(HotaruSeeYouAgainHelper.GetMultiplier(owner),
+            action.Modifier?.RollAmplificationMultiplier ?? 1m);
+        return DamageAmplificationLimits.AddSaturated(1m, DamageAmplificationLimits.MultiplySaturated(multiplier - 1m, scale));
     }
 
     internal static int GetRollPercentBonus(Player player, CardType? type)
     {
         Millsage relic = player?.GetRelic<Millsage>();
         if (relic == null) return 0;
-        int bonus = relic.HasCannonUpgrade(HotaruCannonKind.Longing, 3) ? 20 : 0;
-        if (type == CardType.Skill && relic.HasCannonUpgrade(HotaruCannonKind.Coffin, 4)) bonus += 30;
-        if (type == CardType.Attack && relic.HasCannonUpgrade(HotaruCannonKind.Absolution, 2)) bonus += 30;
-        return bonus;
+        decimal bonus = relic.HasCannonUpgrade(HotaruCannonKind.Longing, 3)
+            ? DamageAmplificationLimits.MultiplySaturated(20m, HotaruSeeYouAgainHelper.GetMultiplier(player)) : 0m;
+        if (type == CardType.Skill && relic.HasCannonUpgrade(HotaruCannonKind.Coffin, 4))
+            bonus = DamageAmplificationLimits.AddSaturated(bonus, 30m);
+        if (type == CardType.Attack && relic.HasCannonUpgrade(HotaruCannonKind.Absolution, 2))
+            bonus = DamageAmplificationLimits.AddSaturated(bonus, 30m);
+        return BigCombatNumbers.ToNativeSigned(bonus);
     }
 
     internal static decimal GetBlockMultiplier(Creature cannon) =>
@@ -252,7 +347,8 @@ internal static class HotaruCannonSupportUpgradeHelper
             await PrepareCache(context, cannon, phase, PhaseRollType(kind, phase));
         if (kind == HotaruCannonKind.Longing && HotaruCannonState.HasEffect(kind, phase) &&
             relic?.Owner?.Creature?.IsAlive == true && relic.HasCannonUpgrade(HotaruCannonKind.Longing, 1))
-            await CardPileCmd.Draw(context, 1m, relic.Owner);
+            await CardPileCmd.Draw(context, BigCombatNumbers.ToNativeSigned(
+                HotaruSeeYouAgainHelper.GetMultiplier(relic.Owner)), relic.Owner);
     }
 
     private static CardType PhaseRollType(HotaruCannonKind kind, HotaruCannonPhase phase) =>
@@ -275,17 +371,19 @@ internal static class HotaruCannonSupportUpgradeHelper
         Millsage relic = owner?.GetRelic<Millsage>();
         if (receipt == null || receipt.ActualDamage <= 0m ||
             owner?.Creature?.IsAlive != true || relic == null) return;
+        int effectAmount = BigCombatNumbers.ToNativeSigned(HotaruSeeYouAgainHelper.GetMultiplier(owner));
         if (relic.HasCannonUpgrade(HotaruCannonKind.Longing, 5))
-            await PowerCmd.Apply<DodgePower>(context, owner.Creature, 1m, owner.Creature, receipt.CardSource);
+            await PowerCmd.Apply<DodgePower>(context, owner.Creature, effectAmount, owner.Creature, receipt.CardSource);
         if (relic.HasCannonUpgrade(HotaruCannonKind.Longing, 6))
-            await SixSenseCombatHelper.ResolvePhantomAttack(context, owner, receipt.Target, receipt.CardSource);
+            await SixSenseCombatHelper.ResolvePhantomAttack(context, owner, receipt.Target, receipt.CardSource, effectAmount);
     }
 
     internal static void OnDpRecoveryOverflow(DeflectorProtection deflector, int overflow)
     {
         if (overflow <= 0 || deflector?.Owner?.GetRelic<Millsage>()
             ?.HasCannonUpgrade(HotaruCannonKind.Longing, 4) != true) return;
-        int gain = (int)decimal.Floor(overflow * 0.2m);
+        int gain = (int)Math.Min(int.MaxValue, decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
+            overflow * 0.2m, HotaruSeeYouAgainHelper.GetMultiplier(deflector.Owner))));
         if (gain > 0) deflector.GainMaxDp(gain);
     }
 }

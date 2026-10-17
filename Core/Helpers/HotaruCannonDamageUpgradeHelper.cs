@@ -21,18 +21,23 @@ internal static class HotaruCannonDamageUpgradeHelper
 
     internal static decimal PrepareBaseDamage(Creature cannon, Creature target, decimal amount, int phaseMultiplier = 1)
     {
+        amount = DamageAmplificationLimits.AddSaturated(amount, HotaruUncommonCannonHelper.DamageBonus(cannon));
         if (Has(cannon, HotaruCannonKind.Contest, 4))
         {
             amount = DamageAmplificationLimits.AddSaturated(amount,
                 Math.Max(0, target?.GetPowerAmount<FragilePower>() ?? 0) * Math.Clamp(phaseMultiplier, 1, 2));
         }
-        return amount;
+        return HotaruMyIndulgencePower.ModifyBaseDamage(cannon, amount);
     }
 
     internal static void ContributeCannonRollMultiplier(Creature target, Creature dealer,
         CardModel card, ValueProp props)
     {
         if (!HotaruCannonStatsHelper.TryGetCurrentCannon(target, dealer, card, props, out Creature cannon)) return;
+        decimal bonus = HotaruRareCannonHelper.BonusPercent(cannon) / 100m;
+        if (bonus != 0m) HbrgoSakiDamageMultiplierHelper.AddTemporary(1m + bonus, cannon.PetOwner.GetRelic<Millsage>());
+        decimal debuffBonus = HotaruRareDebuffHelper.GetDamageBonus(cannon, target);
+        if (debuffBonus != 0m) HbrgoSakiDamageMultiplierHelper.Add(1m + debuffBonus, cannon.PetOwner.GetRelic<Millsage>());
         decimal multiplier = HotaruCannonSupportUpgradeHelper.GetCannonRollMultiplier(cannon,
             CardType.Attack, resolve: false, previewPhase: HotaruCannonStatsHelper.CurrentPreviewPhase);
         if (multiplier != 1m)

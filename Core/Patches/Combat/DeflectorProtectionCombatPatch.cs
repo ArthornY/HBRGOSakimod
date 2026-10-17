@@ -252,7 +252,7 @@ internal static class CreatureCmdGainMaxHpPatch
         ref Task __result)
     {
         DeflectorProtection protection =
-            creature.Player?.GetRelic<DeflectorProtection>();
+            DeflectorProtectionMaxHpTarget.Get(creature);
         if (protection == null || amount <= 0m)
         {
             return true;

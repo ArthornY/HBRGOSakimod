@@ -21,6 +21,13 @@ internal static class PhantomEventMaxHp
 
     internal static decimal GetExactEventMaxHp(Creature creature) =>
         MomentOfReignMaxHpTarget.Get(creature)?.GetEventMaxHpReference() ?? creature.MaxHp;
+
+    internal static int GetMaxHpForLossCheck(Creature creature) =>
+        // Tablet's costs fit within the native HP ceiling. A DP-cap payment
+        // cannot kill the player, including when it exhausts the remaining DP.
+        DeflectorProtectionMaxHpTarget.Get(creature) != null
+            ? int.MaxValue
+            : GetEventMaxHp(creature);
 }
 
 [HarmonyPatch]
@@ -64,7 +71,10 @@ internal static class PhantomTabletOfTruthMaxHpPatch
     {
         List<CodeInstruction> result = instructions.ToList();
         MethodInfo replacement = AccessTools.Method(
-            typeof(PhantomEventMaxHp), nameof(PhantomEventMaxHp.GetEventMaxHp));
+            typeof(PhantomEventMaxHp),
+            __originalMethod.Name == nameof(TabletOfTruth.GetDecipherCost)
+                ? nameof(PhantomEventMaxHp.GetEventMaxHp)
+                : nameof(PhantomEventMaxHp.GetMaxHpForLossCheck));
         int replacements = 0;
         for (int index = 0; index < result.Count; index++)
         {
@@ -93,7 +103,8 @@ internal static class PhantomEventMaxHpWarningPatch
         // Drowning Beacon, Unrest Site and Vakuu's Distinguished Cape use this
         // shared warning. Ordinary HP damage and healing keep their own checks.
         __result = __instance.ThatWillKillPlayerIf(
-            player => PhantomEventMaxHp.GetExactEventMaxHp(player.Creature) <= value);
+            player => DeflectorProtectionMaxHpTarget.Get(player.Creature) == null &&
+                PhantomEventMaxHp.GetExactEventMaxHp(player.Creature) <= value);
         return false;
     }
 }
