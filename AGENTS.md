@@ -6,3 +6,5 @@
 - Read and validate only the areas affected by the task. Continue through implementation and appropriate checks without stopping merely at a first draft; distinguish source/build validation from an actual in-game test.
 - In localization, show gained/lost energy with the matching number of vanilla-style energy icons, such as BaseLib SimpleLoc `[E]` and `[EE]`, instead of plain numeric energy text.
 - Default new card portraits to `images/packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png` unless the user provides another image.
+- Use an isolated worktree for new implementation tasks by default. Start from the current accepted source state, including relevant uncommitted fixes; keep the primary checkout for integration and releases. Do not reuse the old `test` worktree without checking its branch and changes.
+- `.worktreeinclude` supplies the four ignored runtime dependency assemblies to local Codex-managed worktrees. For manually created worktrees, copy those files or use the existing assembly-path build parameters. Keep `.godot/`, `bin/`, `obj/`, and `build/` separate per checkout.

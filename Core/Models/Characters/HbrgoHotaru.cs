@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using BaseLib.Abstracts;
 using BaseLib.Utils.Attributes;
 using Godot;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Relics;
 using HBRGOSakiMod.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Entities.Characters;
@@ -34,6 +37,21 @@ public sealed class HbrgoHotaru : CustomCharacterModel, IModCharacterVanillaSele
     public override string CustomCharacterSelectBg => "res://scenes/screens/char_select/char_select_bg_hbrgo_hotaru.tscn";
     public override string CustomCharacterSelectTransitionPath => "res://materials/transitions/hbrgo_saki_transition_mat.tres";
     public override string CustomMapMarkerPath => CustomIconTexturePath;
+
+    // Pets are spawned by Millsage after room preloading has finished. Include
+    // their native asset sets in the run session so the first combat does not
+    // synchronously load each cannon scene while the room is still concealed.
+    protected override IEnumerable<string> ExtraAssetPaths => base.ExtraAssetPaths
+        .Concat(new MonsterModel[]
+        {
+            ModelDb.Monster<HotaruHappinessCannon>(),
+            ModelDb.Monster<HotaruCoffinCannon>(),
+            ModelDb.Monster<HotaruContestCannon>(),
+            ModelDb.Monster<HotaruLongingCannon>(),
+            ModelDb.Monster<HotaruAbsolutionCannon>(),
+            ModelDb.Monster<HotaruFinalCannon>()
+        }.SelectMany(cannon => cannon.AssetPaths))
+        .Distinct(StringComparer.Ordinal);
 
     public override Color NameColor => new("D4D6EEFF");
     public override CharacterGender Gender => CharacterGender.Feminine;

@@ -111,7 +111,7 @@ public sealed class HotaruPocketSort : HotaruCannonCard
         if (!HotaruCommonUtilityCardHelper.CanContinue(this)) return;
         var combat = Owner.Creature.CombatState;
         await CardPileCmd.Draw(context, DynamicVars.Cards.BaseValue, Owner);
-        if (!HotaruCommonUtilityCardHelper.CanContinue(this, combat)) return;
+        if (!IsUpgraded || !HotaruCommonUtilityCardHelper.CanContinue(this, combat)) return;
         CardModel selected = (await CardSelectCmd.FromHandForDiscard(context, Owner,
                 new CardSelectorPrefs(CardSelectorPrefs.DiscardSelectionPrompt, 1),
                 card => !ReferenceEquals(card, this), this))

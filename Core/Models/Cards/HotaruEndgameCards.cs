@@ -68,9 +68,11 @@ public abstract class HotaruEndgameCard : HotaruCannonCard
             await CardPileCmd.RemoveFromDeck(origin, showPreview: false);
         // Native deck removal also prevents detached ordinary copies from being
         // restored by OD. Match the permanent object, never another card's ID.
+        // Removing a model also clears its pile, so the normal post-play cleanup
+        // will no longer see it in Play. Let the native removal clear its visual.
         foreach (CardModel copy in copies)
             if (!copy.HasBeenRemovedFromState && copy.Pile?.IsCombatPile == true)
-                await CardPileCmd.RemoveFromCombat(copy, skipVisuals: true);
+                await CardPileCmd.RemoveFromCombat(copy);
         if (!HasBeenRemovedFromState && Pile == null) RemoveFromState();
     }
 

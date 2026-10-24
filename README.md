@@ -45,9 +45,17 @@ dotnet build .\HBRGOSakiMod.csproj --no-restore -c Release -p:SkipModOutputCopy=
 
 `SkipModOutputCopy=true` 用于源码验证，避免覆盖本地交付文件。主项目会构建并嵌入 `HextechCompat`；其 `Reference/` 是必要的编译接口源码，应保留。
 
+## 使用 worktree 开发
+
+在 Codex 中将本仓库根目录（包含 `.git` 和 `HBRGOSakiMod.csproj` 的目录）添加为项目，不要选择它的父目录。新开发任务默认使用独立 worktree，主工作区用于集成和发布；每个 worktree 使用自己的构建缓存和输出目录。
+
+创建时选择所需的起始分支。如果主工作区还有需要带入的未提交修复，应从包含这些本地修改的状态开始，避免新 worktree 缺少最新修复。
+
+根目录的 `.worktreeinclude` 让本机 Codex 管理的 worktree 复制上表中的四个依赖 DLL，程序集仍不进入 Git。手动执行 `git worktree add` 时需自行复制这四个文件到新目录的 `libs/`，或使用上文的程序集路径参数。随后在新 worktree 中执行上述 `dotnet restore` 和源码构建命令；无需复制旧的 `.godot/`、`bin/`、`obj/` 或 `build/`。
+
 ## 打包与分支
 
-`main` 用于已验证的版本，`test` 用于性能优化与回归验证。`test` 的修改通过验证后再决定是否合入主分支。
+`main` 用于已验证的版本。日常修改在各任务的 worktree 中进行，通过验证后再集成；已有 `test` 分支继续保留，使用前先检查它与主线的差异。
 
 打包使用 Godot 的 `Windows Desktop` 导出预设，将 C# 程序集、PCK 与根目录的模组清单写入本地 `build/`。常规交付为 JSON、DLL、PCK 和用于调试的 PDB，默认不生成 ZIP。
 

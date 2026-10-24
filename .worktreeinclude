@@ -1,0 +1,5 @@
+# Local build dependencies for Codex-managed worktrees; assemblies stay out of Git.
+libs/sts2.dll
+libs/0Harmony.dll
+libs/BaseLib.dll
+libs/STS2-RitsuLib.dll

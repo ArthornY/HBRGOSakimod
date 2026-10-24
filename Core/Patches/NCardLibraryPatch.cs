@@ -22,8 +22,8 @@ namespace HBRGOSakiMod.Core.Patches;
 
 internal static class HbrgoSakiCardLibraryVariantSelector
 {
-    private const string SelectorNodeName =
-        "HBRGOSakiCompendiumVariantSelector";
+    [ThreadStatic]
+    private static NCardPoolFilter _repeatedPortrait;
 
     private static readonly ConditionalWeakTable<
         NCardLibrary,
@@ -55,25 +55,6 @@ internal static class HbrgoSakiCardLibraryVariantSelector
             return;
         }
 
-        HBoxContainer root = new()
-        {
-            Name = SelectorNodeName,
-            CustomMinimumSize = new Vector2(0f, 88f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        root.AddThemeConstantOverride("separation", 6);
-        Button thirtyAButton = CreateButton(GetCharacterTitle(thirtyA));
-        Button thirtyOneOButton = CreateButton(GetCharacterTitle(thirtyOneO));
-        root.AddChild(thirtyAButton);
-        root.AddChild(thirtyOneOButton);
-
-        VBoxContainer topVBox = library.GetNode<VBoxContainer>(
-            "Sidebar/MarginContainer/TopVBox");
-        topVBox.AddChild(root);
-        GridContainer poolFilterContainer = topVBox.GetNode<GridContainer>(
-            "PoolFilters");
-        topVBox.MoveChild(root, poolFilterContainer.GetIndex() + 1);
-
         HbrgoSakiVariant selectedVariant =
             HbrgoSakiVariantPreference.GetPreferredVariant();
         if (selectedVariant == HbrgoSakiVariant.ThirtyA &&
@@ -82,12 +63,7 @@ internal static class HbrgoSakiCardLibraryVariantSelector
             selectedVariant = HbrgoSakiVariant.ThirtyOneO;
         }
 
-        SelectorState state = new(
-            root,
-            thirtyOneOButton,
-            thirtyAButton,
-            visibleSakiFilter,
-            selectedVariant);
+        SelectorState state = new(visibleSakiFilter, selectedVariant);
         States.Add(library, state);
         library.TreeExiting += () => Close(library);
 
@@ -101,11 +77,30 @@ internal static class HbrgoSakiCardLibraryVariantSelector
                 card,
                 state.SelectedVariant == HbrgoSakiVariant.ThirtyOneO);
 
-        thirtyAButton.Pressed += () =>
-            SelectVariant(library, HbrgoSakiVariant.ThirtyA);
-        thirtyOneOButton.Pressed += () =>
-            SelectVariant(library, HbrgoSakiVariant.ThirtyOneO);
         Refresh(state);
+    }
+
+    internal static NCardPoolFilter BeginPortraitRelease(NCardPoolFilter filter)
+    {
+        NCardPoolFilter previous = _repeatedPortrait;
+        _repeatedPortrait = filter.IsSelected ? filter : null;
+        return previous;
+    }
+
+    internal static void EndPortraitRelease(NCardPoolFilter previous) => _repeatedPortrait = previous;
+
+    internal static bool TryTogglePortrait(NCardLibrary library, NCardPoolFilter filter)
+    {
+        // Native OnRelease has already toggled IsSelected before emitting the
+        // signal. Only a real reactivation changes forms; programmatic clearing
+        // and the first click keep the normal library filtering behavior.
+        if (!ReferenceEquals(_repeatedPortrait, filter) || filter.IsSelected ||
+            !States.TryGetValue(library, out SelectorState state) || !state.IsOpen ||
+            !ReferenceEquals(filter, state.VisibleSakiFilter)) return false;
+        filter.IsSelected = true;
+        SelectVariant(library, state.SelectedVariant == HbrgoSakiVariant.ThirtyOneO
+            ? HbrgoSakiVariant.ThirtyA : HbrgoSakiVariant.ThirtyOneO);
+        return true;
     }
 
     internal static void SyncBeforeOpen(
@@ -130,7 +125,7 @@ internal static class HbrgoSakiCardLibraryVariantSelector
         }
         state.IsOpen = true;
         HbrgoSakiCardPortraitContext.SetLibraryVariant(library, state.SelectedVariant);
-        RefreshButtons(state);
+        Refresh(state);
     }
 
     internal static void Close(NCardLibrary library)
@@ -162,13 +157,13 @@ internal static class HbrgoSakiCardLibraryVariantSelector
         if (variant == HbrgoSakiVariant.ThirtyA &&
             !HbrgoSakiVariantPreference.IsThirtyAUnlocked())
         {
-            RefreshButtons(state);
+            Refresh(state);
             return;
         }
 
         if (state.SelectedVariant == variant)
         {
-            RefreshButtons(state);
+            Refresh(state);
             return;
         }
 
@@ -178,25 +173,8 @@ internal static class HbrgoSakiCardLibraryVariantSelector
             HbrgoSakiCardPortraitContext.SetLibraryVariant(library, variant);
         }
         HbrgoSakiVariantPreference.SetPreferredVariant(variant);
-        RefreshButtons(state);
+        Refresh(state);
         UpdateFilter(library, false);
-    }
-
-    private static Button CreateButton(string title)
-    {
-        Button button = new()
-        {
-            Text = title,
-            TooltipText = title,
-            ToggleMode = true,
-            ClipText = true,
-            CustomMinimumSize = new Vector2(0f, 40f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            FocusMode = Control.FocusModeEnum.All,
-            MouseDefaultCursorShape = Control.CursorShape.PointingHand
-        };
-        button.AddThemeFontSizeOverride("font_size", 14);
-        return button;
     }
 
     private static string GetCharacterTitle(CharacterModel character)
@@ -208,45 +186,29 @@ internal static class HbrgoSakiCardLibraryVariantSelector
 
     private static void Refresh(SelectorState state)
     {
-        state.Root.Visible = state.VisibleSakiFilter.IsSelected;
-        RefreshButtons(state);
-    }
-
-    private static void RefreshButtons(SelectorState state)
-    {
-        state.ThirtyOneOButton.ButtonPressed =
-            state.SelectedVariant == HbrgoSakiVariant.ThirtyOneO;
-        state.ThirtyAButton.ButtonPressed =
-            state.SelectedVariant == HbrgoSakiVariant.ThirtyA;
-        bool thirtyAUnlocked =
-            HbrgoSakiVariantPreference.IsThirtyAUnlocked();
-        state.ThirtyAButton.Disabled = !thirtyAUnlocked;
-        state.ThirtyAButton.TooltipText = thirtyAUnlocked
-            ? state.ThirtyAButton.Text
-            : "使用丰川祥子（31O）击败一次 FlatHand 后解锁";
+        CharacterModel current = HbrgoSakiVariantPreference.GetCharacter(state.SelectedVariant);
+        bool unlocked = HbrgoSakiVariantPreference.IsThirtyAUnlocked();
+        LocString description = LocString.GetIfExists("card_library", unlocked
+            ? "HBRGO_SAKI_VARIANT_PORTRAIT" : "HBRGO_SAKI_VARIANT_PORTRAIT_LOCKED");
+        if (description != null)
+        {
+            description.Add("Current", GetCharacterTitle(current));
+            description.Add("Next", GetCharacterTitle(
+                HbrgoSakiVariantPreference.GetCharacter(state.SelectedVariant == HbrgoSakiVariant.ThirtyOneO
+                    ? HbrgoSakiVariant.ThirtyA : HbrgoSakiVariant.ThirtyOneO)));
+        }
+        state.VisibleSakiFilter.Loc = description ?? new LocString("characters", current.CharacterSelectTitle);
     }
 
     private sealed class SelectorState
     {
         internal SelectorState(
-            HBoxContainer root,
-            Button thirtyOneOButton,
-            Button thirtyAButton,
             NCardPoolFilter visibleSakiFilter,
             HbrgoSakiVariant selectedVariant)
         {
-            Root = root;
-            ThirtyOneOButton = thirtyOneOButton;
-            ThirtyAButton = thirtyAButton;
             VisibleSakiFilter = visibleSakiFilter;
             SelectedVariant = selectedVariant;
         }
-
-        internal HBoxContainer Root { get; }
-
-        internal Button ThirtyOneOButton { get; }
-
-        internal Button ThirtyAButton { get; }
 
         internal NCardPoolFilter VisibleSakiFilter { get; }
 
@@ -254,6 +216,17 @@ internal static class HbrgoSakiCardLibraryVariantSelector
 
         internal bool IsOpen { get; set; }
     }
+}
+
+[HarmonyPatch(typeof(NCardPoolFilter), "OnRelease")]
+internal static class NCardPoolFilterPortraitReleasePatch
+{
+    private static void Prefix(NCardPoolFilter __instance, out NCardPoolFilter __state) =>
+        __state = HbrgoSakiCardLibraryVariantSelector.BeginPortraitRelease(__instance);
+
+    // Finalizers also restore the input scope if another release callback fails.
+    private static void Finalizer(NCardPoolFilter __state) =>
+        HbrgoSakiCardLibraryVariantSelector.EndPortraitRelease(__state);
 }
 
 [HarmonyPatch(typeof(NCardLibrary), nameof(NCardLibrary._Ready))]
@@ -278,6 +251,9 @@ internal static class NCardLibraryReadyVariantSelectorPatch
 [HarmonyPatch(typeof(NCardLibrary), "UpdateCardPoolFilter")]
 internal static class NCardLibraryUpdateCardPoolFilterVariantSelectorPatch
 {
+    private static bool Prefix(NCardLibrary __instance, NCardPoolFilter __0) =>
+        !HbrgoSakiCardLibraryVariantSelector.TryTogglePortrait(__instance, __0);
+
     private static void Postfix(NCardLibrary __instance)
     {
         HbrgoSakiCardLibraryVariantSelector.Refresh(__instance);
