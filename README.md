@@ -53,6 +53,8 @@ dotnet build .\HBRGOSakiMod.csproj --no-restore -c Release -p:SkipModOutputCopy=
 
 根目录的 `.worktreeinclude` 让本机 Codex 管理的 worktree 复制上表中的四个依赖 DLL，程序集仍不进入 Git。手动执行 `git worktree add` 时需自行复制这四个文件到新目录的 `libs/`，或使用上文的程序集路径参数。随后在新 worktree 中执行上述 `dotnet restore` 和源码构建命令；无需复制旧的 `.godot/`、`bin/`、`obj/` 或 `build/`。
 
+此开发工作区使用 `ArthornY/HBRGOSakiMod-dev` 私有仓库，远端名为 `private`。开发分支跟踪私有库的同名分支，默认推送到 `private`；公开仓库的 `origin` 和正式 `main` 保留原设置。后续从当前开发分支创建 worktree，并为新任务分支设置 `git config branch.<分支名>.pushRemote private`，首次推送使用 `git push -u private <分支名>`。
+
 ## 打包与分支
 
 `main` 用于已验证的版本。日常修改在各任务的 worktree 中进行，通过验证后再集成；已有 `test` 分支继续保留，使用前先检查它与主线的差异。
