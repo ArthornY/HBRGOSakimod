@@ -48,7 +48,7 @@ public partial class NManualBattleStatsPanel : Control
         bool enabled = manual?.IsHbrNumericsEnabled == true;
         Creature enemy = enabled ? manual.Owner?.Creature?.CombatState?.Enemies
             .FirstOrDefault(EnemyStatScalingHelper.IsEnemy) : null;
-        decimal? enemyParameter = enemy == null ? null : HbrBattleStatsHelper.GetEnemyParameter(enemy);
+        decimal? enemyParameter = enemy == null ? null : HbrEnemyProfileHelper.GetEnemyParameter(enemy);
         string state = $"{manual?.HbrBattleProgressData}|{enemyParameter?.ToString(CultureInfo.InvariantCulture)}";
         if (enabled)
             state += "|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
@@ -153,9 +153,14 @@ public partial class NManualBattleStatsPanel : Control
         AddSection(content, "破坏率与格挡",
             "破坏率以 100% 为起点。DP 击破后，按敌方与技能各自的破坏系数增长；增量与本次实际伤害量分别计算。\n" +
             "主动格挡先将旧基础值 ×100，再按知性计算增益曲线：下端 80%、上端 120%、阈值 300；高于阈值后仍继续成长。按实际伤害比例派生的格挡不重复换算。");
+        AddSection(content, "敌方能力与受击",
+            "敌人使用独立能力值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
+            "敌方技能按自身配置参照（2 × 体力 + 精神）÷3，或（体力 + 2 × 精神）÷3。参照属性不随实际命中人数或当前 DP 改变。\n" +
+            "受击基础威力按敌能力与防御参照的差值插值，最低为 1，达到该技能威力上端后封顶。后续再结算原有增减伤、格挡与 DP。\n" +
+            "尖塔敌人沿用当前适配的资源与技能威力参数；尚未逐个替换成 HBR 原作敌技能数据。");
         AddSection(content, "测试量级与来源",
             "六维、成长速度及与尖塔数值的换算为本模组测试设定。玩家最大 HP ×50，敌人 HP ×1000；普通技能威力下端为旧基础伤害 ×1000，上端为下端的 2 倍，阈值为 140。\n" +
-            "HBR 部分公式参照社区作者 hbr-tool/damage-calculator 的当前开源实现，属于社区逆向结果。敌方受击曲线及各技能防御权重为适配配置，仍待逐项验证。\n" +
+            "出伤公式参照 hbr-tool/damage-calculator，受击基础曲线参照カンタータ仮面的公式整理，均为社区研究。尖塔敌人的参数及技能防御权重为本模组适配配置。\n" +
             "卡牌、OD、掷骰与六感玩法继续保留。完整参数与来源见测试分支文档 docs/hbr-numerics-test.md。");
     }
 

@@ -24,6 +24,8 @@ internal readonly record struct HbrSkillPowerCurve(
 /// https://github.com/hbr-tool/damage-calculator/blob/ead9f319d18fb47e749718adac0d4384b785c0bc/src/components/dmgCalc/logic.js#L890-L921
 /// https://github.com/hbr-tool/damage-calculator/blob/ead9f319d18fb47e749718adac0d4384b785c0bc/src/components/dmgCalc/logic.js#L1141-L1311
 /// https://github.com/hbr-tool/damage-calculator/blob/ead9f319d18fb47e749718adac0d4384b785c0bc/src/components/dmgCalc/logicBuff.js#L76-L132
+/// Incoming damage uses Cantata Kamen's separately frozen 2025-08-03 diagram:
+/// https://note.com/gazou774/n/n82b99b359f2b . Source limits are documented in validation/hbr-numerics/incoming-reference/.
 /// Equipment jewels and named skill exceptions are deliberately not inferred.
 /// </remarks>
 internal static class HbrOriginalNumericFormula
@@ -104,6 +106,34 @@ internal static class HbrOriginalNumericFormula
                 Multiply(difference - limit, AttackOverflowPerPoint)));
         }
         return FloorHundredths(Math.Max(1m, power));
+    }
+
+    // Community reconstruction of enemy-to-player damage, kept separate from
+    // the outgoing curve. Cantata Kamen's original summary 2 (2025-08-03),
+    // incoming-damage box: https://note.com/gazou774/n/n82b99b359f2b .
+    // Incoming power caps at MaximumPower; above the defensive border it uses
+    // MinimumPower * (1 + difference / limit), with a 1 floor. This is not an
+    // official exact formula. The skill row supplies defensive weights;
+    // neither current HP/DP nor the number of targets selects those weights.
+    // No rounding, variance, enemy damage-rate or defensive multipliers occur
+    // here. Snapshot, author provenance and comparison fixtures live under
+    // validation/hbr-numerics/incoming-reference/.
+    internal static decimal EvaluateIncomingAttackCurve(decimal enemyParameter,
+        decimal defensiveParameter, HbrSkillPowerCurve curve)
+    {
+        decimal minimum = Math.Max(1m, curve.MinimumPower);
+        decimal maximum = Math.Max(minimum, curve.MaximumPower);
+        decimal limit = Positive(curve.ParameterLimit);
+        decimal difference = Positive(enemyParameter) - Positive(defensiveParameter);
+        if (difference >= limit) return maximum;
+        if (difference >= 0m)
+            return Add(minimum, Multiply(maximum - minimum, difference / limit));
+        if (difference <= -limit) return 1m;
+
+        // Normalize before multiplying so Decimal extrema cannot overflow an
+        // intermediate sum. A nonpositive threshold is a defensive guardrail:
+        // it produces a maximum/1 step without dividing by zero.
+        return Math.Max(1m, Multiply(minimum, 1m + difference / limit));
     }
 
     // The two curve endpoints have different skill-level growth in the reference.

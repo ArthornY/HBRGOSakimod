@@ -1,0 +1,66 @@
+{
+  "status": "Community research reconstruction; not official source or an exact final-damage specification.",
+  "retrievedDate": "2026-10-28",
+  "primary": {
+    "author": "カンタータ仮面 (Cantata Kamen)",
+    "article": "https://note.com/gazou774/n/n82b99b359f2b",
+    "formula": {
+      "image": "https://assets.st-note.com/img/1756949797-JLWeI3ChdsDx1EAyXfgiN09Z.png",
+      "imageDate": "2025-08-03",
+      "region": "Lower-right incoming-damage box",
+      "local": "cantata-incoming-formula.png"
+    },
+    "weights": {
+      "image": "https://assets.st-note.com/img/1777423576-BmpvS7yDb6ZuWAN4YxERPU5f.png",
+      "imageDate": "2026-04-29",
+      "region": "Upper-left defense rows",
+      "local": "cantata-stat-weights.png"
+    },
+    "scope": "At attack multiplier R=1: base curve only. Final rounding, random variance and the order of final minimum-damage and multiplier operations are not established by these diagrams.",
+    "transcription": "For x=E-D and positive T: x>=T => U; 0<=x<T => L+(U-L)*x/T; -T<x<0 => max(1,L*(1+x/T)); x<=-T => 1.",
+    "threshold": "The diagram assigns the threshold to the enemy instance/encounter variant; same-named enemies can differ in alternate dimensions and score attack.",
+    "defense": "Normal: (2*VIT+SPR)/3; special: (VIT+2*SPR)/3. The diagram says mainly single-target / mainly area, not a strict targeting rule."
+  },
+  "compared": {
+    "repository": "https://github.com/RoyWu0922/hbr_calc_web",
+    "commit": "68015b0b06699193c87963aa81e1204606661723",
+    "sourcePath": "src/engine/damage.ts",
+    "sourceBlob": "05ca914dd4cade202e1d514d433a18d4f90b466a",
+    "function": "calcIncomingDamage",
+    "lines": [
+      688,
+      756
+    ],
+    "readmePath": "README.md",
+    "readmeBlob": "972408f0ef57391db987af786350d5b38776228a",
+    "firstIncomingCommit": "cdc83922970ec51d6a1b98edde4c5338d7e72acf",
+    "readmeLimit": "The author states that the majority of the project code was AI-written. README points to community spreadsheets/data but does not establish an official incoming formula.",
+    "discrepancy": "For -T<x<0 Roy uses L+(L-1)*x/T, instead of the primary diagram's L*(1+x/T) and a 1 floor. The fixture stores both results; this is not claimed as an equality.",
+    "referenceScope": "Only skillPower is compared. Roy's damage-rate, accessory reductions and +/-10% output ranges are preserved in the source snapshot but not ported by this pure curve.",
+    "excerptLocal": "roy-incoming.ts",
+    "excerptSourceLines": [
+      688,
+      756
+    ],
+    "archiveLocal": "upstream-damage.ts",
+    "archiveReadmeLocal": "upstream-README.md"
+  },
+  "independentMeasurement": {
+    "url": "https://appmedia.jp/heavenburnsred/75256617",
+    "publishedDate": "2022-09-12",
+    "scope": "Original equipment-swap measurements support different VIT/SPR defensive references. The June 15 addendum identifies area Confusion Flash as VIT-dependent, confirming that target count is not a sufficient rule. These old measurements do not validate exact current slopes or final rounding."
+  },
+  "files": {
+    "roy-incoming.ts": "27c7746776b31e4108510d58c89239a1721500f76a9064248fa9bcc0686d98b6",
+    "cantata-incoming.cjs": "2f1cd4e5331c517cd2fa1d42a4c1e2ac647723c767566e5d2795e4271a2fc4f8"
+  },
+  "researchArchive": "D:/stsmod/output/hbr-numeric-research-20261028/incoming-reference",
+  "acquisitionSnapshots": {
+    "cantata-incoming-formula.png": "0af08737dd3167c392c9b5071154c15324bea069d224bf61f5b646abcc44a0a6",
+    "cantata-stat-weights.png": "87b1b64a0a48574a0887a795152f91ddcd73851990a43bf9c69fe5a071cc649e",
+    "note-source.html": "7a911d9b9065442aa36469d670fa64cf9ddde917fdeb1d0cecfaeda4428698d9",
+    "upstream-damage.ts": "07a745f567f8f42390bf7c02800051ff7e6e13091f526f95bd3ede9437f9cbd9",
+    "upstream-README.md": "78f17b7230ca05d63bbf2547c598eeee6c214f351c4b7a57b3cf95d33c1a463e"
+  },
+  "acquisitionSnapshotStatus": "Full image, article HTML and full upstream source/README acquisition copies are kept outside Git in researchArchive. These hashes were checked when acquired; the offline regression does not re-read or re-validate those archived files."
+}

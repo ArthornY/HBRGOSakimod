@@ -22,7 +22,7 @@ internal static class EnemyStatScalingHelper
                 HBRGOSakiConfig.EnemyMaxHpPercent,
                 HBRGOSakiConfig.EnemyMaxHpGrowthPerActPercent,
                 GetActIndex(creature)) *
-                (HbrBattleStatsHelper.IsEnabled(creature) ? HbrBattleStatsHelper.EnemyHealthScale : 1m)
+                HbrEnemyResourceAdapter.GetMaxHpScale(creature)
             : 1m;
 
     internal static decimal GetDamageMultiplier(Creature creature) =>

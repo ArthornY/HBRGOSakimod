@@ -1,0 +1,1090 @@
+{
+  "primarySource": "https://note.com/gazou774/n/n82b99b359f2b",
+  "primaryImageDate": "2025-08-03",
+  "comparedSourceCommit": "68015b0b06699193c87963aa81e1204606661723",
+  "oracle": "cantata-incoming.cjs: declared transcription; comparedRoy: frozen original calcIncomingDamage",
+  "tolerance": 1e-7,
+  "documentedRoyDifferences": 29,
+  "vectors": [
+    {
+      "name": "curve 100/200/100 difference ratio -2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4200,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4100.1,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4100,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -0.9995",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4099.95,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1.0495000000001795
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -0.99",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4099,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1.9899999999999949
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4050,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 50,
+      "comparedRoy": 50.5
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4010,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 90,
+      "comparedRoy": 90.1
+    },
+    {
+      "name": "curve 100/200/100 difference ratio -0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.1,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 99.90000000000009,
+      "comparedRoy": 99.9010000000001
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 0",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 100,
+      "comparedRoy": 100
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.9,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 100.09999999999991,
+      "comparedRoy": 100.09999999999991
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3990,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 110,
+      "comparedRoy": 110
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3950,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 150,
+      "comparedRoy": 150
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 0.999",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3900.1,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 199.9000000000001,
+      "comparedRoy": 199.9000000000001
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3900,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 200,
+      "comparedRoy": 200
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3899.9,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 200,
+      "comparedRoy": 200
+    },
+    {
+      "name": "curve 100/200/100 difference ratio 2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3800,
+      "minimum": 100,
+      "maximum": 200,
+      "limit": 100,
+      "expected": 200,
+      "comparedRoy": 200
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4200,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4100.1,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4100,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -0.9995",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4099.95,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1,
+      "comparedRoy": 1.4995000000018308
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -0.99",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4099,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 10,
+      "comparedRoy": 10.990000000000009
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4050,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 500,
+      "comparedRoy": 500.5
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4010,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 900,
+      "comparedRoy": 900.1
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio -0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.1,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 999.0000000000009,
+      "comparedRoy": 999.0010000000009
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 0",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1000,
+      "comparedRoy": 1000
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.9,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1000.9999999999991,
+      "comparedRoy": 1000.9999999999991
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3990,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1100,
+      "comparedRoy": 1100
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3950,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1500,
+      "comparedRoy": 1500
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 0.999",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3900.1,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 1999.000000000001,
+      "comparedRoy": 1999.000000000001
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3900,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3899.9,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000
+    },
+    {
+      "name": "curve 1000/2000/100 difference ratio 2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3800,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4400,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4200.2,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4200,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -0.9995",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4199.9,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 1,
+      "comparedRoy": 1.1995000000007394
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -0.99",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4198,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 4,
+      "comparedRoy": 4.990000000000009
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4100,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 200,
+      "comparedRoy": 200.5
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4020,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 360,
+      "comparedRoy": 360.1
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio -0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.1999999999994,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 399.6000000000013,
+      "comparedRoy": 399.60100000000125
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 0",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 400,
+      "comparedRoy": 400
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.8000000000006,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 406.67999999997875,
+      "comparedRoy": 406.67999999997875
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3980,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 1068,
+      "comparedRoy": 1068
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3900,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 3740,
+      "comparedRoy": 3740
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 0.999",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3800.1999999999994,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 7073.320000000021,
+      "comparedRoy": 7073.3200000000215
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3800,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 7080,
+      "comparedRoy": 7080
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3799.8000000000006,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 7080,
+      "comparedRoy": 7080
+    },
+    {
+      "name": "curve 400/7080/200 difference ratio 2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3600,
+      "minimum": 400,
+      "maximum": 7080,
+      "limit": 200,
+      "expected": 7080,
+      "comparedRoy": 7080
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 7000,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 5501.5,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 5500,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -0.9995",
+      "enemyParameter": 4000,
+      "defensiveParameter": 5499.25,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 1.4849999999999999,
+      "comparedRoy": 2.4845000000000255
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -0.99",
+      "enemyParameter": 4000,
+      "defensiveParameter": 5485,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 29.7,
+      "comparedRoy": 30.690000000000055
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4750,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 1485,
+      "comparedRoy": 1485.5
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4150,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 2673,
+      "comparedRoy": 2673.1
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio -0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4001.5,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 2967.03,
+      "comparedRoy": 2967.031
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 0",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 2970,
+      "comparedRoy": 2970
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3998.5,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 2980.1,
+      "comparedRoy": 2980.1
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3850,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 3980,
+      "comparedRoy": 3980
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3250,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 8020,
+      "comparedRoy": 8020
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 0.999",
+      "enemyParameter": 4000,
+      "defensiveParameter": 2501.5,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 13059.9,
+      "comparedRoy": 13059.9
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 2500,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 13070,
+      "comparedRoy": 13070
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 2498.5,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 13070,
+      "comparedRoy": 13070
+    },
+    {
+      "name": "curve 2970/13070/1500 difference ratio 2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 1000,
+      "minimum": 2970,
+      "maximum": 13070,
+      "limit": 1500,
+      "expected": 13070,
+      "comparedRoy": 13070
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4012.5,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4006.25625,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4006.25,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -0.9995",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4006.2468749999994,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 1,
+      "comparedRoy": 1.0056725000011557
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -0.99",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4006.1875,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 1,
+      "comparedRoy": 1.1134500000000003
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4003.125,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 6.1725,
+      "comparedRoy": 6.6725
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.625,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 11.1105,
+      "comparedRoy": 11.2105
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio -0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.00625,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 12.33265500000018,
+      "comparedRoy": 12.333655000000165
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 0",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 12.345,
+      "comparedRoy": 12.345
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.99375,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 12.431419999998743,
+      "comparedRoy": 12.431419999998743
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.375,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 20.987000000000002,
+      "comparedRoy": 20.987000000000002
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3996.875,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 55.555,
+      "comparedRoy": 55.555
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 0.999",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3993.75625,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 98.67858000000125,
+      "comparedRoy": 98.67858000000126
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3993.75,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 98.765,
+      "comparedRoy": 98.765
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3993.74375,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 98.765,
+      "comparedRoy": 98.765
+    },
+    {
+      "name": "curve 12.345/98.765/6.25 difference ratio 2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3987.5,
+      "minimum": 12.345,
+      "maximum": 98.765,
+      "limit": 6.25,
+      "expected": 98.765,
+      "comparedRoy": 98.765
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4002,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4001.001,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4001,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -0.9995",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.9995,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -0.99",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.99,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.5,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.1,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio -0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000.001,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 0",
+      "enemyParameter": 4000,
+      "defensiveParameter": 4000,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1,
+      "comparedRoy": 1
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 0.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.999,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 1.099000000020169,
+      "comparedRoy": 1.099000000020169
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 0.1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.9,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 10.899999999990996,
+      "comparedRoy": 10.899999999990996
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 0.5",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.5,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 50.5,
+      "comparedRoy": 50.5
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 0.999",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999.001,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 99.90099999997983,
+      "comparedRoy": 99.90099999997983
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 1",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3999,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 100,
+      "comparedRoy": 100
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 1.001",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3998.999,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 100,
+      "comparedRoy": 100
+    },
+    {
+      "name": "curve 1/100/1 difference ratio 2",
+      "enemyParameter": 4000,
+      "defensiveParameter": 3998,
+      "minimum": 1,
+      "maximum": 100,
+      "limit": 1,
+      "expected": 100,
+      "comparedRoy": 100
+    },
+    {
+      "name": "weighted hp 510:390",
+      "enemyParameter": 400,
+      "defensiveParameter": 470,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 300,
+      "comparedRoy": 300.70000000000005,
+      "weightedInput": {
+        "vit": 510,
+        "spr": 390,
+        "biasType": "hp"
+      }
+    },
+    {
+      "name": "weighted hp 390:510",
+      "enemyParameter": 400,
+      "defensiveParameter": 430,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 700,
+      "comparedRoy": 700.3,
+      "weightedInput": {
+        "vit": 390,
+        "spr": 510,
+        "biasType": "hp"
+      }
+    },
+    {
+      "name": "weighted hp 125.25:375.75",
+      "enemyParameter": 400,
+      "defensiveParameter": 208.75,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000,
+      "weightedInput": {
+        "vit": 125.25,
+        "spr": 375.75,
+        "biasType": "hp"
+      }
+    },
+    {
+      "name": "weighted hp 375.75:125.25",
+      "enemyParameter": 400,
+      "defensiveParameter": 292.25,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000,
+      "weightedInput": {
+        "vit": 375.75,
+        "spr": 125.25,
+        "biasType": "hp"
+      }
+    },
+    {
+      "name": "weighted dp 510:390",
+      "enemyParameter": 400,
+      "defensiveParameter": 430,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 700,
+      "comparedRoy": 700.3,
+      "weightedInput": {
+        "vit": 510,
+        "spr": 390,
+        "biasType": "dp"
+      }
+    },
+    {
+      "name": "weighted dp 390:510",
+      "enemyParameter": 400,
+      "defensiveParameter": 470,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 300,
+      "comparedRoy": 300.70000000000005,
+      "weightedInput": {
+        "vit": 390,
+        "spr": 510,
+        "biasType": "dp"
+      }
+    },
+    {
+      "name": "weighted dp 125.25:375.75",
+      "enemyParameter": 400,
+      "defensiveParameter": 292.25,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000,
+      "weightedInput": {
+        "vit": 125.25,
+        "spr": 375.75,
+        "biasType": "dp"
+      }
+    },
+    {
+      "name": "weighted dp 375.75:125.25",
+      "enemyParameter": 400,
+      "defensiveParameter": 208.75,
+      "minimum": 1000,
+      "maximum": 2000,
+      "limit": 100,
+      "expected": 2000,
+      "comparedRoy": 2000,
+      "weightedInput": {
+        "vit": 375.75,
+        "spr": 125.25,
+        "biasType": "dp"
+      }
+    }
+  ]
+}

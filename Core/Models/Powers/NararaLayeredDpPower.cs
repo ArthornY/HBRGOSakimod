@@ -40,7 +40,7 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
                 (decimal)HBRGOSakiConfig.DefaultEnemyHighDimensionalShellPercent
             : 1m;
         return BigCombatNumbers.ScaleHealth(
-            LargeCreatureHealthHelper.GetMaxHp(creature),
+            HbrEnemyResourceAdapter.GetDpReferenceMaximum(creature),
             settingMultiplier * GetEnemyShellMultiplier(creature));
     }
 

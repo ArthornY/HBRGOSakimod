@@ -50,6 +50,7 @@ Check("destruction resist",F.DestructionGain(5,2.75m,100,50),13.75m);
 Check("destruction rate cap",F.AdvanceDestruction(298,10,300),300);
 Check("destruction no regression on malformed cap",F.AdvanceDestruction(100,10,50),100);
 SkillPowerChecks.Run(Check);
+IncomingCurveCheckReport incoming = IncomingCurveChecks.Run(Check);
 foreach (var vector in JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "reference-vectors.json"))).RootElement.EnumerateArray())
 {
     var c = new HbrSkillPowerCurve(vector.GetProperty("minimum").GetDecimal(),vector.GetProperty("maximum").GetDecimal(),vector.GetProperty("limit").GetDecimal());
@@ -61,7 +62,7 @@ foreach (var vector in JsonDocument.Parse(File.ReadAllText(Path.Combine(AppConte
     // engine uses decimal. A single hundredth rounding difference is allowed.
     Check($"reference {kind} {p}:{e} lv{level}",result,vector.GetProperty("expected").GetDecimal(),kind=="attack"?0.01m:0.000001m);
 }
-var report=new{passed=true,checks,source="ead9f319d18fb47e749718adac0d4384b785c0bc",sourcePath="Core/Helpers/HbrOriginalNumericFormula.cs",sourceSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(SourceFile()))),skillPowerSourcePath="Core/Helpers/HbrSkillPower.cs",skillPowerSourceSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(SourceFile())!, "HbrSkillPower.cs"))))};
+var report=new{passed=true,checks,source="ead9f319d18fb47e749718adac0d4384b785c0bc",incoming,sourcePath="Core/Helpers/HbrOriginalNumericFormula.cs",sourceSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(SourceFile()))),skillPowerSourcePath="Core/Helpers/HbrSkillPower.cs",skillPowerSourceSha256=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(SourceFile())!, "HbrSkillPower.cs"))))};
 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"),JsonSerializer.Serialize(report,new JsonSerializerOptions{WriteIndented=true}));
 Console.WriteLine(JsonSerializer.Serialize(report));
 

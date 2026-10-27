@@ -5,7 +5,6 @@ using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -13,7 +12,6 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class HbrBattleStatsHelper
 {
     internal const int PlayerHealthScale = 50;
-    internal const decimal EnemyHealthScale = 1000m;
     internal const decimal InitialStat = 200m;
     internal const decimal StatGainPerLevel = 4m;
     internal const decimal SenseStatGainPerLevel = 2m;
@@ -80,23 +78,13 @@ internal static class HbrBattleStatsHelper
             return true;
         }
 
-        decimal parameter = GetEnemyParameter(creature);
-        stats = new(parameter, parameter, parameter, parameter, parameter, parameter);
-        return true;
+        // Original HBR enemy rows have one enemy parameter, HP and DP, not a
+        // second set of player stats. Never synthesize six copies of that value.
+        return false;
     }
 
-    internal static decimal GetEnemyParameter(Creature creature)
-    {
-        if (creature?.CombatState?.RunState is not { } run) return 170m;
-        int act = Math.Max(0, run.CurrentActIndex);
-        // Map row is local to the act and remains stable in endless/custom acts.
-        int localFloor = run.CurrentMapCoord is { } coord ? Math.Max(1, coord.row + 1) :
-            Math.Max(1, run.TotalFloor - act * 17);
-        RoomType room = creature.CombatState.Encounter?.RoomType ??
-            run.CurrentRoom?.RoomType ?? RoomType.Monster;
-        return 170m + 60m * act + 3m * localFloor +
-            (room == RoomType.Boss ? 25m : room == RoomType.Elite ? 15m : 0m);
-    }
+    internal static decimal GetEnemyParameter(Creature creature) =>
+        HbrEnemyProfileHelper.GetEnemyParameter(creature);
 
     // Called only by CharacterModel's fresh-player maximum, never on load or on
     // arbitrary max-HP writes. Native saved HP is therefore never re-scaled.

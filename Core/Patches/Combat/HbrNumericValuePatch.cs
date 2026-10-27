@@ -27,22 +27,12 @@ internal static class HbrNumericCriticalScopePatch
         }).OrderBy(method => method.GetParameters().Length).First();
 
     [HarmonyPriority(Priority.Last)]
-    private static void Prefix(ref IEnumerable<Creature> targets, ValueProp props, Creature dealer,
+    private static void Prefix(ValueProp props, Creature dealer,
         CardModel cardSource, out HbrCriticalDamageContext.Scope __state)
     {
-        int count = 1;
-        if (targets != null && dealer?.IsDead != true && props.IsPoweredAttack() &&
-            HbrBattleStatsHelper.IsEnabled(dealer) && !targets.TryGetNonEnumeratedCount(out count))
-        {
-            // Native Damage snapshots targets synchronously before its first
-            // modifier/RNG/await. Snapshot a lazy source at that same boundary
-            // and pass it on, so area defense is correct without enumerating
-            // a target query twice or changing the subsequent hit targets.
-            Creature[] snapshot = targets.ToArray();
-            targets = snapshot;
-            count = snapshot.Length;
-        }
-        __state = HbrCriticalDamageContext.Begin(dealer, cardSource, props, count);
+        // Enemy defense references belong to skill profiles. Critical sampling
+        // needs no target count or extra materialization of native target queries.
+        __state = HbrCriticalDamageContext.Begin(dealer, cardSource, props);
     }
 
     private static void Postfix(HbrCriticalDamageContext.Scope __state,

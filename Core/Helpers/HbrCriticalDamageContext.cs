@@ -14,24 +14,23 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class HbrCriticalDamageContext
 {
     private static readonly AsyncLocal<Scope> Current = new();
-    internal static int CurrentTargetCount => Current.Value?.TargetCount ?? 1;
 
     internal sealed class Scope
     {
         internal Creature Dealer;
         internal CardModel Card;
         internal ValueProp Props;
-        internal int TargetCount;
         internal int? Sample;
         internal bool Active = true;
         internal Scope Previous;
     }
 
-    internal static Scope Begin(Creature dealer, CardModel card, ValueProp props, int targets)
+    internal static Scope Begin(Creature dealer, CardModel card, ValueProp props)
     {
-        if (!props.IsPoweredAttack() || !HbrBattleStatsHelper.IsEnabled(dealer)) return null;
+        if (!props.IsPoweredAttack() || !HbrBattleStatsHelper.IsEnabled(dealer) ||
+            EnemyStatScalingHelper.IsEnemy(dealer)) return null;
         Scope scope = new() { Dealer = dealer, Card = card, Props = props,
-            TargetCount = Math.Max(1, targets), Previous = Current.Value };
+            Previous = Current.Value };
         Current.Value = scope;
         return scope;
     }

@@ -14,7 +14,7 @@ public sealed class PartialDerivativeShieldPower :
     // percentage setting, but still receives difficulty and per-act DP growth.
     internal static decimal CalculateInitialAmount(Creature creature) =>
         BigCombatNumbers.ScaleHealth(
-            LargeCreatureHealthHelper.GetMaxHp(creature), GetEnemyShellMultiplier(creature));
+            HbrEnemyResourceAdapter.GetDpReferenceMaximum(creature), GetEnemyShellMultiplier(creature));
 
     protected override decimal MaximumAmount => CalculateInitialAmount(Owner);
 

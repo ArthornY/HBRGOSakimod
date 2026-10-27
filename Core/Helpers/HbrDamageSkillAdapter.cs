@@ -16,17 +16,14 @@ internal static class HbrDamageSkillAdapter
     internal const decimal OutgoingPowerUnit = HbrSkillPower.OutgoingDamageUnit;
     internal const decimal IncomingPowerUnit = 100m;
     internal const decimal PlayerBlockUnit = HbrSkillPower.PlayerBlockUnit;
-    internal const decimal DefaultParameterLimit = HbrSkillPower.ParameterLimit;
     internal static readonly HbrStatWeights HpWeights = new(2, 1, 0, 0, 0, 0);
     internal static readonly HbrStatWeights DpWeights = new(1, 2, 0, 0, 0, 0);
-    internal static readonly HbrStatWeights SingleDefense = new(0, 0, 0, 2, 1, 0);
-    internal static readonly HbrStatWeights AreaDefense = new(0, 0, 0, 1, 2, 0);
 
     internal static decimal ConvertBaseDamage(Creature target, Creature dealer,
         decimal legacyPower, ValueProp props, CardModel cardSource)
     {
         if (legacyPower <= 0m || !props.IsPoweredAttack() ||
-            !HbrBattleStatsHelper.TryGetStats(dealer, out HbrBattleStats stats))
+            !HbrBattleStatsHelper.IsEnabled(dealer))
             return legacyPower;
 
         // Resource-derived attacks already carry a world-space DP/HP/block
@@ -40,16 +37,15 @@ internal static class HbrDamageSkillAdapter
         {
             if (!HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats defense))
                 return legacyPower;
-            bool area = HbrCriticalDamageContext.CurrentTargetCount > 1;
-            decimal defensiveParameter = HbrOriginalNumericFormula.EvaluateWeightedStat(
-                defense, area ? AreaDefense : SingleDefense);
-            // Enemy skill rows and their exact incoming formula are not yet
-            // verified. This named profile is the test adaptation boundary.
-            return HbrOriginalNumericFormula.EvaluateAttackCurve(stats.Strength,
-                defensiveParameter, Curve(legacyPower, IncomingPowerUnit));
+            HbrEnemySkillProfile skill = HbrEnemySkillProfiles.Get(dealer);
+            return HbrOriginalNumericFormula.EvaluateIncomingAttackCurve(
+                HbrEnemyProfileHelper.GetEnemyParameter(dealer),
+                skill.EvaluateDefense(defense), skill.CurveFromUnits(legacyPower));
         }
 
-        decimal parameter = HbrBattleStatsHelper.GetEnemyParameter(target);
+        if (!HbrBattleStatsHelper.TryGetStats(dealer, out HbrBattleStats stats))
+            return legacyPower;
+        decimal parameter = HbrEnemyProfileHelper.GetEnemyParameter(target);
         bool critical = HbrCriticalDamageContext.IsCritical(target, dealer,
             cardSource, props, stats.Luck, parameter);
         HbrStatWeights weights = target?.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m
@@ -58,13 +54,6 @@ internal static class HbrDamageSkillAdapter
             parameter, HbrSkillPower.DamageCurveFromUnits(legacyPower), critical);
         return critical ? DamageAmplificationLimits.MultiplySaturated(power,
             HbrOriginalNumericFormula.CriticalMultiplier()) : power;
-    }
-
-    private static HbrSkillPowerCurve Curve(decimal legacyPower, decimal unit)
-    {
-        decimal minimum = DamageAmplificationLimits.MultiplySaturated(legacyPower, unit);
-        return new(minimum, DamageAmplificationLimits.MultiplySaturated(minimum, 2m),
-            DefaultParameterLimit);
     }
 
     internal static decimal ConvertFlatDamageBonus(AbstractModel model, Creature dealer,
@@ -81,11 +70,19 @@ internal static class HbrDamageSkillAdapter
     internal static decimal ConvertBlock(Creature target, decimal amount, ValueProp props)
     {
         if (amount <= 0m || !props.IsPoweredAttack() ||
-            HotaruCannonBlockHelper.IsResolvedCurrentGain(target, props) ||
-            !HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats stats)) return amount;
-        decimal unit = EnemyStatScalingHelper.IsEnemy(target) ? OutgoingPowerUnit : PlayerBlockUnit;
+            HotaruCannonBlockHelper.IsResolvedCurrentGain(target, props)) return amount;
+        if (EnemyStatScalingHelper.IsEnemy(target))
+        {
+            // Block is a STS-only resource. Retain its explicit support bridge,
+            // using E as an adaptation parameter without inventing enemy INT.
+            return HbrBattleStatsHelper.IsEnabled(target)
+                ? HbrSkillPower.EvaluateBlockFromUnits(amount,
+                    HbrEnemyProfileHelper.GetEnemyParameter(target), OutgoingPowerUnit)
+                : amount;
+        }
+        if (!HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats stats)) return amount;
         // Block is a STS resource. The HBR intelligence buff curve supplies its
         // stat-dependent support coefficient without treating Dexterity as DEX.
-        return HbrSkillPower.EvaluateBlockFromUnits(amount, stats.Intelligence, unit);
+        return HbrSkillPower.EvaluateBlockFromUnits(amount, stats.Intelligence, PlayerBlockUnit);
     }
 }

@@ -262,7 +262,7 @@ public class HighDimensionalShellPower : PowerModel
             maxHpRatio *= GetEnemyShellMultiplier(creature);
         }
 
-        return CalculateAmount(LargeCreatureHealthHelper.GetMaxHp(creature), maxHpRatio);
+        return CalculateAmount(HbrEnemyResourceAdapter.GetDpReferenceMaximum(creature), maxHpRatio);
     }
 
     internal static decimal GetEnemyShellMultiplier(Creature creature) =>

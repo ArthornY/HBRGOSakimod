@@ -1,0 +1,149 @@
+{
+  "status": "Exact decimal guardrails and representational extremes; these are not claims about original HBR data or JavaScript numerical agreement.",
+  "vectors": [
+    {
+      "name": "maximum endpoints at border",
+      "enemyParameter": "79228162514264337593543950335",
+      "defensiveParameter": "79228162514264337593543950335",
+      "minimum": "79228162514264337593543950335",
+      "maximum": "79228162514264337593543950335",
+      "limit": "100",
+      "expected": "79228162514264337593543950335"
+    },
+    {
+      "name": "maximum endpoints above enemy border",
+      "enemyParameter": "400",
+      "defensiveParameter": "450",
+      "minimum": "79228162514264337593543950335",
+      "maximum": "79228162514264337593543950335",
+      "limit": "100",
+      "expected": "39614081257132168796771975168"
+    },
+    {
+      "name": "maximum curve interpolation",
+      "enemyParameter": "450",
+      "defensiveParameter": "400",
+      "minimum": "1",
+      "maximum": "79228162514264337593543950335",
+      "limit": "100",
+      "expected": "39614081257132168796771975168"
+    },
+    {
+      "name": "maximum parameter difference saturates by curve cap",
+      "enemyParameter": "79228162514264337593543950335",
+      "defensiveParameter": "0",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "1",
+      "expected": "200"
+    },
+    {
+      "name": "maximum defense reaches floor",
+      "enemyParameter": "0",
+      "defensiveParameter": "79228162514264337593543950335",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "1",
+      "expected": "1"
+    },
+    {
+      "name": "maximum threshold at exact attack limit",
+      "enemyParameter": "79228162514264337593543950335",
+      "defensiveParameter": "0",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "79228162514264337593543950335",
+      "expected": "200"
+    },
+    {
+      "name": "maximum threshold at exact defense limit",
+      "enemyParameter": "0",
+      "defensiveParameter": "79228162514264337593543950335",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "79228162514264337593543950335",
+      "expected": "1"
+    },
+    {
+      "name": "smallest positive threshold at border",
+      "enemyParameter": "0",
+      "defensiveParameter": "0",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "0.0000000000000000000000000001",
+      "expected": "100"
+    },
+    {
+      "name": "small fractional threshold",
+      "enemyParameter": "0.0000000000000000000000000005",
+      "defensiveParameter": "0",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "0.000000000000000000000000001",
+      "expected": "150"
+    },
+    {
+      "name": "negative parameters normalize safely",
+      "enemyParameter": "-79228162514264337593543950335",
+      "defensiveParameter": "-79228162514264337593543950335",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "100",
+      "expected": "100"
+    },
+    {
+      "name": "negative enemy parameter normalizes safely",
+      "enemyParameter": "-79228162514264337593543950335",
+      "defensiveParameter": "79228162514264337593543950335",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "100",
+      "expected": "1"
+    },
+    {
+      "name": "negative curve endpoints normalize",
+      "enemyParameter": "400",
+      "defensiveParameter": "400",
+      "minimum": "-79228162514264337593543950335",
+      "maximum": "-79228162514264337593543950335",
+      "limit": "100",
+      "expected": "1"
+    },
+    {
+      "name": "inverted endpoints normalize",
+      "enemyParameter": "400",
+      "defensiveParameter": "400",
+      "minimum": "200",
+      "maximum": "100",
+      "limit": "100",
+      "expected": "200"
+    },
+    {
+      "name": "zero threshold at border",
+      "enemyParameter": "400",
+      "defensiveParameter": "400",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "0",
+      "expected": "200"
+    },
+    {
+      "name": "zero threshold above defense border",
+      "enemyParameter": "400",
+      "defensiveParameter": "401",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "0",
+      "expected": "1"
+    },
+    {
+      "name": "negative threshold normalizes",
+      "enemyParameter": "400",
+      "defensiveParameter": "401",
+      "minimum": "100",
+      "maximum": "200",
+      "limit": "-79228162514264337593543950335",
+      "expected": "1"
+    }
+  ]
+}
