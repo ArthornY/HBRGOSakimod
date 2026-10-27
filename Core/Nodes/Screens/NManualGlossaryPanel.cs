@@ -31,8 +31,10 @@ public partial class NManualGlossaryPanel : Control
     private Texture2D _fallbackIcon;
     private string _selectedId;
     private bool _refreshing;
+    private bool? _catalogMode;
 
     internal Control DefaultFocusedControl => _search;
+    internal bool HbrNumericsEnabled { get; set; }
 
     public override void _Ready()
     {
@@ -40,14 +42,22 @@ public partial class NManualGlossaryPanel : Control
         ClipContents = true;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         BuildUi();
-        _entries = HbrManualGlossaryCatalog.Build();
-        FilterEntries();
+        Refresh(HbrNumericsEnabled);
         LayoutContent();
     }
 
     public override void _Notification(int what)
     {
         if (what == NotificationResized) LayoutContent();
+    }
+
+    internal void Refresh(bool hbrNumericsEnabled)
+    {
+        HbrNumericsEnabled = hbrNumericsEnabled;
+        if (_search == null || _catalogMode == hbrNumericsEnabled) return;
+        _catalogMode = hbrNumericsEnabled;
+        _entries = HbrManualGlossaryCatalog.Build(hbrNumericsEnabled);
+        FilterEntries();
     }
 
     internal void FocusSearch()

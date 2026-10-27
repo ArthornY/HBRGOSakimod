@@ -36,7 +36,7 @@ internal static class HbrManualGlossaryCatalog
             return comparison != 0 ? comparison : StringComparer.Ordinal.Compare(left.Id, right.Id);
         });
 
-    internal static IReadOnlyList<HbrManualGlossaryEntry> Build()
+    internal static IReadOnlyList<HbrManualGlossaryEntry> Build(bool hbrNumericsEnabled = false)
     {
         Dictionary<string, HbrManualGlossaryEntry> entries = new(StringComparer.Ordinal);
         LocTable powers = LocManager.Instance.GetTable("powers");
@@ -54,7 +54,8 @@ internal static class HbrManualGlossaryCatalog
         LocTable keywords = LocManager.Instance.GetTable("card_keywords");
         foreach (string prefix in GetPrefixes(keywords).Where(prefix =>
                      prefix.StartsWith("HBRGO_", StringComparison.Ordinal) || commonKeywords.Contains(prefix)))
-            AddEntry(entries, keywords, "card_keywords", prefix, commonKeywords.Contains(prefix) ? "通用词条" : "HBR 词条");
+            AddEntry(entries, keywords, "card_keywords", prefix, commonKeywords.Contains(prefix) ? "通用词条" : "HBR 词条",
+                hbrNumericsEnabled: hbrNumericsEnabled);
 
         // A keyword can use its own localization tables instead of card_keywords.
         // Registered definitions also supply the actual icon when one was provided.
@@ -89,7 +90,8 @@ internal static class HbrManualGlossaryCatalog
         foreach (string prefix in new[]
                  { "HOTARU_MANUAL_DP_RULES", "HOTARU_MANUAL_SIX_SENSE_RULES", "HOTARU_MANUAL_GARDEN_RULES",
                      "HOTARU_MANUAL_CRITICAL_RULES", "HOTARU_MANUAL_ENDGAME_RULES" })
-            AddEntry(entries, relics, "relics", prefix, "小萤手册", manualIcon);
+            AddEntry(entries, relics, "relics", prefix, "小萤手册", manualIcon,
+                hbrNumericsEnabled: hbrNumericsEnabled);
         AddEntry(entries, LocManager.Instance.GetTable("static_hover_tips"), "static_hover_tips", "BLOCK", "通用词条");
         return Order(entries.Values);
     }
@@ -115,7 +117,7 @@ internal static class HbrManualGlossaryCatalog
 
     private static void AddEntry(Dictionary<string, HbrManualGlossaryEntry> entries,
         LocTable table, string tableName, string prefix, string category, string iconPath = "",
-        string descriptionFallback = "")
+        string descriptionFallback = "", bool hbrNumericsEnabled = false)
     {
         if (!table.HasEntry(prefix + TitleSuffix)) return;
         string title = PlainText(table.GetRawText(prefix + TitleSuffix));
@@ -124,7 +126,12 @@ internal static class HbrManualGlossaryCatalog
             (prefix == SixSensePrefix || prefix.StartsWith(SixSensePrefix + ".", StringComparison.Ordinal));
         string descriptionKey = sixSense && table.HasEntry(prefix + ".menuDescription")
             ? prefix + ".menuDescription" : prefix + ".description";
+        if (hbrNumericsEnabled && table.HasEntry(prefix + ".hbrDescription"))
+            descriptionKey = prefix + ".hbrDescription";
         string raw = table.HasEntry(descriptionKey) ? table.GetRawText(descriptionKey) : descriptionFallback;
+        if (hbrNumericsEnabled && prefix == SixSensePrefix)
+            raw = raw.Replace("{statName}", "对应战斗属性", StringComparison.Ordinal)
+                .Replace("{statBonus}", "（2×有效等级）", StringComparison.Ordinal);
         if (tableName == "card_keywords" && !sixSense)
         {
             foreach ((string suffix, string heading) in DescriptionVariants)
@@ -139,6 +146,8 @@ internal static class HbrManualGlossaryCatalog
         {
             iconPath = SixSenseBadgeHelper.AtlasPath;
             region = SixSenseBadgeHelper.AtlasRegion(attribute);
+            if (hbrNumericsEnabled)
+                raw = $"每级使{HbrBattleStatsHelper.GetBattleStatTitle(attribute)} +{HbrBattleStatsHelper.SenseStatGainPerLevel}，按已确认有效等级结算。等级不直接增加掷骰出目。\n\n" + raw;
         }
         entries[id] = CreateEntry(id, title, raw, sixSense ? "六感" : category, iconPath, region);
     }

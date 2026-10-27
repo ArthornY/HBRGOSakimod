@@ -18,6 +18,7 @@ public partial class NManualBattleStatsPanel : Control
     private ScrollContainer _scroll;
     private GridContainer _statsGrid;
     private readonly Label[] _values = new Label[6];
+    private readonly Label[] _senseGrowth = new Label[6];
     private Label _status;
     private Label _enemy;
     private Label _growth;
@@ -49,6 +50,9 @@ public partial class NManualBattleStatsPanel : Control
             .FirstOrDefault(EnemyStatScalingHelper.IsEnemy) : null;
         decimal? enemyParameter = enemy == null ? null : HbrBattleStatsHelper.GetEnemyParameter(enemy);
         string state = $"{manual?.HbrBattleProgressData}|{enemyParameter?.ToString(CultureInfo.InvariantCulture)}";
+        if (enabled)
+            state += "|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
+                attribute => $"{manual.GetSenseAmount(attribute)}:{manual.GetEffectiveSenseAmount(attribute)}"));
         if (_lastState == state) return;
         _lastState = state;
 
@@ -57,16 +61,27 @@ public partial class NManualBattleStatsPanel : Control
             ? $"HBR 战斗等级  Lv.{manual.HbrBattleLevel}"
             : "本局未启用 HBR 数值测试";
         _growth.Text = enabled
-            ? "初始六维各 200；普通战、精英战、Boss 战胜利分别提升 1、2、3 级，每级六维各 +4。\n浮游炮继承本体六维；幻影沿用本体六维，并保留自身等级加成。"
+            ? "初始六维基础各 200；普通战、精英战、Boss 战胜利分别提升 1、2、3 级，每级六维各 +4。\n已确认的六感每级使对应战斗属性 +2，按有效等级结算；未确认的分配不改变此处数值。等级本身不再直接增加掷骰出目，原有六感出牌效果仍保留。\n浮游炮继承本体六维；幻影沿用本体六维，并保留自身等级加成。"
             : "旧存档继续使用原有数值，不会在读档或打开手册时自动转换。\n使用此测试版本新开一局，才会启用 HBR 数值系统。";
         _enemy.Visible = enabled;
         if (!enabled) return;
 
         HbrBattleStats stats = manual.GetHbrBattleStats();
+        HbrBattleStats senseBonuses = HbrBattleStatsHelper.GetSixSenseBonuses(manual);
         decimal[] values = [stats.Strength, stats.Dexterity, stats.Intelligence,
             stats.Vitality, stats.Spirit, stats.Luck];
+        decimal[] bonuses = [senseBonuses.Strength, senseBonuses.Dexterity, senseBonuses.Intelligence,
+            senseBonuses.Vitality, senseBonuses.Spirit, senseBonuses.Luck];
+        SixSenseAttribute[] senses = [SixSenseAttribute.Madness, SixSenseAttribute.LeadershipCharm,
+            SixSenseAttribute.Talent, SixSenseAttribute.Gentleness, SixSenseAttribute.MentalStrength,
+            SixSenseAttribute.Simplicity];
         for (int i = 0; i < _values.Length; i++)
+        {
             _values[i].Text = values[i].ToString("0.##", CultureInfo.InvariantCulture);
+            _senseGrowth[i].Text = $"{ElectronicSoldierManual.GetSenseTitle(senses[i])} Lv.{manual.GetSenseAmount(senses[i])}" +
+                $" → +{bonuses[i].ToString("0.##", CultureInfo.InvariantCulture)}\n" +
+                $"有效等级 {manual.GetEffectiveSenseAmount(senses[i]).ToString("0.##", CultureInfo.InvariantCulture)} × {HbrBattleStatsHelper.SenseStatGainPerLevel}";
+        }
         _enemy.Text = enemyParameter.HasValue
             ? $"当前战斗敌能力参数：{enemyParameter.Value.ToString("0.##", CultureInfo.InvariantCulture)}。技能参照属性与此参数的差值决定基础威力。"
             : "进入战斗后，此处会显示用于技能威力计算的敌能力参数。";
@@ -92,7 +107,7 @@ public partial class NManualBattleStatsPanel : Control
         content.AddThemeConstantOverride("separation", 14);
         _scroll.AddChild(content);
         content.AddChild(MakeLabel("战斗属性", 26, Colors.White));
-        content.AddChild(MakeLabel("力、器用、知性、体力、精神、运用于战斗计算，与「六感」页的六种属性分别成长。", 18, Muted));
+        content.AddChild(MakeLabel("力、器用、知性、体力、精神、运用于战斗计算。启用测试数值后，由战斗等级与已确认六感共同成长。", 18, Muted));
         _status = MakeLabel("", 21, Accent);
         content.AddChild(_status);
         _statsGrid = new GridContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -120,6 +135,8 @@ public partial class NManualBattleStatsPanel : Control
             _values[i] = MakeLabel("—", 25, Accent);
             cell.AddChild(_values[i]);
             cell.AddChild(MakeLabel(uses[i], 15, Muted));
+            _senseGrowth[i] = MakeLabel("", 15, Muted);
+            cell.AddChild(_senseGrowth[i]);
         }
         _growth = MakeLabel("", 18, Muted);
         content.AddChild(_growth);

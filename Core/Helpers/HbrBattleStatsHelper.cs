@@ -16,6 +16,35 @@ internal static class HbrBattleStatsHelper
     internal const decimal EnemyHealthScale = 1000m;
     internal const decimal InitialStat = 200m;
     internal const decimal StatGainPerLevel = 4m;
+    internal const decimal SenseStatGainPerLevel = 2m;
+
+    internal static string GetBattleStatTitle(SixSenseAttribute attribute) => attribute switch
+    {
+        SixSenseAttribute.Madness => "力",
+        SixSenseAttribute.LeadershipCharm => "器用",
+        SixSenseAttribute.Talent => "知性",
+        SixSenseAttribute.Gentleness => "体力",
+        SixSenseAttribute.MentalStrength => "精神",
+        SixSenseAttribute.Simplicity => "运",
+        _ => string.Empty
+    };
+
+    internal static HbrBattleStats GetSixSenseBonuses(ElectronicSoldierManual manual)
+    {
+        if (manual?.IsHbrNumericsEnabled != true) return default;
+        // Resolve the two live sense modifiers once for all six stats. Derived
+        // bonuses are never saved, so allocations, form changes and refunds
+        // cannot apply the same levels twice or retain a stale stat increment.
+        Creature creature = manual.Owner?.Creature;
+        decimal multiplier = creature?.GetPower<AllRounderPower>()?.SenseMultiplier ?? 1m;
+        LoliFormPower form = creature?.GetPower<LoliFormPower>();
+        decimal Bonus(SixSenseAttribute attribute) => Math.Max(0m,
+            ElectronicSoldierManual.CalculateEffectiveSenseAmount(attribute,
+                manual.GetSenseAmount(attribute), multiplier, form)) * SenseStatGainPerLevel;
+        return new(Bonus(SixSenseAttribute.Madness), Bonus(SixSenseAttribute.LeadershipCharm),
+            Bonus(SixSenseAttribute.Talent), Bonus(SixSenseAttribute.Gentleness),
+            Bonus(SixSenseAttribute.MentalStrength), Bonus(SixSenseAttribute.Simplicity));
+    }
 
     internal static bool IsEnabled(Player player) =>
         player?.GetRelic<ElectronicSoldierManual>()?.IsHbrNumericsEnabled == true;

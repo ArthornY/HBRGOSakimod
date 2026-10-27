@@ -302,6 +302,8 @@ public partial class ElectronicSoldierManual : RelicModel
         SixSensePoints = remaining;
         SixSenseAllocationRevision++;
         Flash();
+        if (IsHbrNumericsEnabled)
+            CombatPreviewRefreshHelper.RefreshCombatState(Owner?.Creature, nameof(ApplySixSenseAllocation));
         return true;
     }
 
@@ -437,9 +439,13 @@ public partial class ElectronicSoldierManual : RelicModel
     internal decimal GetEffectiveSenseAmount(SixSenseAttribute attribute, int level)
     {
         decimal multiplier = Owner?.Creature?.GetPower<AllRounderPower>()?.SenseMultiplier ?? 1m;
-        multiplier *= Owner?.Creature?.GetPower<LoliFormPower>()?.GetSenseMultiplier(attribute) ?? 1m;
-        return level * multiplier;
+        return CalculateEffectiveSenseAmount(attribute, level, multiplier,
+            Owner?.Creature?.GetPower<LoliFormPower>());
     }
+
+    internal static decimal CalculateEffectiveSenseAmount(SixSenseAttribute attribute, int level,
+        decimal multiplier, LoliFormPower form) =>
+        level * (multiplier * (form?.GetSenseMultiplier(attribute) ?? 1m));
 
     public void QueueSixSenseReward(SixSenseAttribute attribute)
     {
@@ -483,14 +489,20 @@ public partial class ElectronicSoldierManual : RelicModel
     }
 
     public string GetSenseShortDescriptionForOwner(SixSenseAttribute attribute) =>
-        GetSenseShortDescription(attribute);
+        IsHbrNumericsEnabled
+            ? GetSenseChoiceDescriptionForOwner(attribute) +
+                $"达到{SixSenseBonusThreshold}级后，其他属性牌也可削减{GetSenseTitle(attribute)}抗性，但不获得该属性的出牌效果。上限{MaxSixSense}级。"
+            : GetSenseShortDescription(attribute);
 
     public static string GetSenseChoiceDescription(SixSenseAttribute attribute) =>
         $"每级使{GetSenseTitle(attribute)}属性牌的出目+1。" +
         (attribute == SixSenseAttribute.Talent ? "每点才能使获得的金币+2%。" : string.Empty);
 
     public string GetSenseChoiceDescriptionForOwner(SixSenseAttribute attribute) =>
-        GetSenseChoiceDescription(attribute);
+        IsHbrNumericsEnabled
+            ? $"每级使战斗属性{HbrBattleStatsHelper.GetBattleStatTitle(attribute)}+{HbrBattleStatsHelper.SenseStatGainPerLevel}，六感等级不再直接增加掷骰出目。" +
+                (attribute == SixSenseAttribute.Talent ? "每点才能使获得的金币+2%。" : string.Empty)
+            : GetSenseChoiceDescription(attribute);
 
     public static string GetSenseRewardDescriptionKey(SixSenseAttribute attribute)
     {
@@ -550,6 +562,8 @@ public partial class ElectronicSoldierManual : RelicModel
 
         SetSenseAmount(attribute, GetSenseAmount(attribute) + 1, canExceedMaximum);
         Flash();
+        if (IsHbrNumericsEnabled)
+            CombatPreviewRefreshHelper.RefreshCombatState(Owner?.Creature, nameof(ApplySenseIncrease));
         return Task.FromResult(true);
     }
 

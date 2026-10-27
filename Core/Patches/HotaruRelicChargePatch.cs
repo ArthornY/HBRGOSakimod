@@ -54,5 +54,12 @@ internal static class HotaruRelicDescriptionPatch
         if (__instance is HotaruIridescence iridescence) iridescence.AddDescriptionVariables(__result);
         else if (__instance is Millsage millsage && millsage.Layers >= Millsage.MaximumLayers)
             __result = new LocString("relics", "MILLSAGE.fullChargeDescription");
+        else if (__instance is ElectronicSoldierManual manual &&
+            (!manual.IsMutable || manual.IsHbrNumericsEnabled))
+        {
+            LocString replacement = new("relics", __instance.Id.Entry + ".hbrDescription");
+            replacement.AddVariablesFrom(__result);
+            __result = replacement;
+        }
     }
 }

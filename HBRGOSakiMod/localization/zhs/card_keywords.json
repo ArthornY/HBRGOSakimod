@@ -42,6 +42,7 @@
   "HBRGO_SIX_SENSE.Gentleness.title": "温柔",
   "HBRGO_SIX_SENSE.Gentleness.description": "{state}效果：打出后，本场战斗出目+{value}。基础值为0.5×温柔层数；强化后等于温柔层数。小数保留累积。削减温柔抗性{loss}点，已包含额外1点。",
   "HBRGO_SIX_SENSE.description": "固有属性：[gold]{primary}[/gold]。\n可削减抗性：{attributes}。\n固有属性出目加值：[gold]+{bonus}[/gold]。兼具只扩展抗性削减，不获得额外属性的出目加值或出牌效果。复制牌不削减抗性。",
+  "HBRGO_SIX_SENSE.hbrDescription": "固有属性：[gold]{primary}[/gold]。\n可削减抗性：{attributes}。\n固有六感提供的战斗属性加成：[gold]{statName}+{statBonus}[/gold]（每级+2，按已确认有效等级结算）。等级不直接增加掷骰出目，原有六感出牌效果保留。兼具只扩展抗性削减，不额外触发该属性的出牌效果。复制牌不削减抗性。",
   "HBRGO_SIX_SENSE.Madness.menuDescription": "普通：此牌本次基础伤害×{normal}%，打出后受到1点伤害。\n强化：基础伤害倍率提升为{enhanced}%，仍受到1点伤害。原牌和复制牌各计算一次，不重复叠乘。\n非复制牌削减疯狂抗性{loss}点；复制牌不削减抗性。",
   "HBRGO_SIX_SENSE.LeadershipCharm.menuDescription": "普通：打出后，下一张非攻击牌出目+{normal}。\n强化：出目加值提升为+{enhanced}。可叠加，整张牌结算后消耗。\n非复制牌削减领袖魅力抗性{loss}点；复制牌不削减抗性。",
   "HBRGO_SIX_SENSE.Simplicity.menuDescription": "普通：打出后，获得{normal}点格挡。\n强化：获得{enhanced}点格挡。\n非复制牌削减单纯抗性{loss}点；复制牌不削减抗性。",

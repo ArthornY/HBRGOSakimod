@@ -273,7 +273,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
                 CustomMinimumSize = new Vector2(0, 54),
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
                 Alignment = HorizontalAlignment.Left,
-                TooltipText = ElectronicSoldierManual.GetSenseShortDescription(attribute)
+                TooltipText = _manual.GetSenseShortDescriptionForOwner(attribute)
             };
             button.AddThemeFontSizeOverride("font_size", 19);
             button.Pressed += () => { _selected = attribute; Refresh(_manual); };
@@ -383,7 +383,10 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         _glossaryPage?.ReleaseSearchFocus();
         if (page == ManualPage.Glossary && _glossaryPage == null)
         {
-            _glossaryPage = new NManualGlossaryPanel { Name = "ManualGlossary" };
+            _glossaryPage = new NManualGlossaryPanel
+            {
+                Name = "ManualGlossary", HbrNumericsEnabled = _manual?.IsHbrNumericsEnabled == true
+            };
             _pageHost.AddChild(_glossaryPage);
             _glossaryPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         }
@@ -437,6 +440,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         }
         _cannonsPage?.Refresh(SupportsCannonUpgrades ? _manual.Owner.GetRelic<Millsage>() : null);
         _battleStatsPage?.Refresh(_manual);
+        _glossaryPage?.Refresh(_manual.IsHbrNumericsEnabled);
         _draft.Reconcile();
         int total = ElectronicSoldierManual.AllSixSenseAttributes.Sum(_draft.Level);
         int unlocked = ElectronicSoldierManual.AllSixSenseAttributes.Count(sense => _draft.Level(sense) >= ElectronicSoldierManual.SixSenseBonusThreshold);
@@ -449,12 +453,13 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         {
             int level = _draft.Level(attribute);
             button.Text = $"{ElectronicSoldierManual.GetSenseTitle(attribute)}  {level}/99";
+            button.TooltipText = _manual.GetSenseShortDescriptionForOwner(attribute);
             StyleButton(button, attribute == _selected);
         }
         string name = ElectronicSoldierManual.GetSenseTitle(_selected);
         int amount = _draft.Level(_selected);
         _selectionTitle.Text = $"{name}   Lv.{amount}" + (_draft.Added(_selected) > 0 ? $"  (+{_draft.Added(_selected)})" : "");
-        _details.Text = BuildEffectDescription(_selected,
+        _details.Text = BuildBattleGrowthDescription(_selected) + BuildEffectDescription(_selected,
             _manual.GetEffectiveSenseAmount(_selected, amount)).GetFormattedText();
         _radar.Manual = _manual;
         _radar.Draft = _draft;
@@ -463,6 +468,23 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         _radar.RefreshButtons();
         _radar.QueueRedraw();
         if (sectionChanged) LayoutBody();
+    }
+
+    private string BuildBattleGrowthDescription(SixSenseAttribute attribute)
+    {
+        if (!_manual.IsHbrNumericsEnabled) return string.Empty;
+        string stat = HbrBattleStatsHelper.GetBattleStatTitle(attribute);
+        decimal perLevel = HbrBattleStatsHelper.SenseStatGainPerLevel;
+        decimal current = _manual.GetEffectiveSenseAmount(attribute) * perLevel;
+        string text = $"战斗属性：每级使{stat} +{perLevel}，按有效等级结算。\n" +
+            $"已确认 Lv.{_manual.GetSenseAmount(attribute)}：{stat} +{current.ToString("0.##", CultureInfo.InvariantCulture)}。\n";
+        if (_draft.Added(attribute) > 0)
+        {
+            decimal planned = _manual.GetEffectiveSenseAmount(attribute, _draft.Level(attribute)) * perLevel;
+            text += $"待确认：此项加成将为 +{planned.ToString("0.##", CultureInfo.InvariantCulture)}；确认前战斗属性不变。\n";
+        }
+        return text + "等级不直接增加掷骰出目；以下为出牌效果" +
+            (_draft.Added(attribute) > 0 ? "预览。\n\n" : "。\n\n");
     }
 
     private static LocString BuildEffectDescription(SixSenseAttribute attribute, decimal level)

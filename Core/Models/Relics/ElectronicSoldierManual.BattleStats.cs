@@ -48,7 +48,10 @@ public partial class ElectronicSoldierManual
         if (!IsHbrNumericsEnabled) return default;
         decimal amount = HbrBattleStatsHelper.InitialStat +
             Math.Max(0m, (decimal)HbrBattleLevel - 1m) * HbrBattleStatsHelper.StatGainPerLevel;
-        return new(amount, amount, amount, amount, amount, amount);
+        HbrBattleStats senses = HbrBattleStatsHelper.GetSixSenseBonuses(this);
+        return new(amount + senses.Strength, amount + senses.Dexterity,
+            amount + senses.Intelligence, amount + senses.Vitality,
+            amount + senses.Spirit, amount + senses.Luck);
     }
 
     internal void InitializeHbrBattleNumerics()

@@ -134,7 +134,7 @@ public partial class NSixSenseChoiceScreen : Control, IOverlayScreen
             Button button = new()
             {
                 Text = text,
-                TooltipText = ElectronicSoldierManual.GetSenseShortDescription(option),
+                TooltipText = _manual.GetSenseShortDescriptionForOwner(option),
                 CustomMinimumSize = new Vector2(0f, 72f),
                 FocusMode = FocusModeEnum.All
             };

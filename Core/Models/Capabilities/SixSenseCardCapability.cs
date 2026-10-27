@@ -97,7 +97,7 @@ public sealed class SixSenseCardCapability :
         ElectronicSoldierManual manual = card?.IsMutable == true
             ? card.Owner?.GetRelic<ElectronicSoldierManual>()
             : null;
-        if (manual == null)
+        if (manual == null || manual.IsHbrNumericsEnabled)
         {
             return 0;
         }
@@ -162,10 +162,19 @@ public sealed class SixSenseCardCapability :
 
         string names = string.Join("、", GetResistanceAttributes(card).Select(ElectronicSoldierManual.GetSenseTitle));
         string primary = ElectronicSoldierManual.GetSenseTitle(_attribute.Value);
-        LocString description = new("card_keywords", "HBRGO_SIX_SENSE.description");
+        ElectronicSoldierManual manual = card.Owner?.GetRelic<ElectronicSoldierManual>();
+        bool hbrNumerics = manual == null || manual.IsHbrNumericsEnabled;
+        LocString description = new("card_keywords", "HBRGO_SIX_SENSE." +
+            (hbrNumerics ? "hbrDescription" : "description"));
         description.Add("primary", primary);
         description.Add("attributes", names);
-        description.Add("bonus", GetRollBonus(card));
+        if (hbrNumerics)
+        {
+            description.Add("statName", HbrBattleStatsHelper.GetBattleStatTitle(_attribute.Value));
+            description.Add("statBonus", Math.Max(0m, manual?.GetEffectiveSenseAmount(_attribute.Value) ?? 0m) *
+                HbrBattleStatsHelper.SenseStatGainPerLevel);
+        }
+        else description.Add("bonus", GetRollBonus(card));
         yield return new HoverTip(new LocString("card_keywords", "HBRGO_SIX_SENSE.title"), description);
         foreach (SixSenseAttribute attribute in attributes)
         {
