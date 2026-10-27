@@ -17,6 +17,7 @@ internal static class HotaruCannonBlockHelper
         internal decimal BaseAmount;
         internal CardPlay Play;
         internal Creature Cannon;
+        internal bool ResolvedAmount;
         internal bool Active = true;
         internal bool Claimed;
     }
@@ -28,6 +29,7 @@ internal static class HotaruCannonBlockHelper
         internal CardPlay Play;
         internal Creature Cannon;
         internal bool Enabled;
+        internal bool ResolvedAmount;
         internal bool Active = true;
     }
 
@@ -52,12 +54,14 @@ internal static class HotaruCannonBlockHelper
         finally { PreviewDepth.Value = previous; }
     }
 
-    internal static async Task<decimal> Gain(Creature owner, decimal baseAmount, CardPlay sourcePlay = null, Creature cannon = null)
+    internal static async Task<decimal> Gain(Creature owner, decimal baseAmount, CardPlay sourcePlay = null,
+        Creature cannon = null, bool resolvedAmount = false)
     {
         baseAmount = DamageAmplificationLimits.AddSaturated(baseAmount, HotaruUncommonCannonHelper.BlockBonus(cannon));
         if (owner == null || baseAmount <= 0m) return 0m;
         Intent previous = Pending.Value;
-        Intent intent = new() { Owner = owner, BaseAmount = baseAmount, Play = sourcePlay, Cannon = cannon };
+        Intent intent = new() { Owner = owner, BaseAmount = baseAmount, Play = sourcePlay,
+            Cannon = cannon, ResolvedAmount = resolvedAmount };
         // Resolve independent Skill dice only for the real cannon phase. The
         // original CardPlay remains unchanged for native source-card modifiers.
         if (cannon != null) HotaruCannonSupportUpgradeHelper.GetCannonRollMultiplier(cannon, CardType.Skill, resolve: true);
@@ -84,7 +88,8 @@ internal static class HotaruCannonBlockHelper
             ReferenceEquals(intent.Owner, owner) && intent.BaseAmount == amount && ReferenceEquals(intent.Play, play);
         if (enabled) intent.Claimed = true;
         GainScope scope = new() { Previous = parent, Owner = owner, Play = play,
-            Cannon = enabled ? intent.Cannon : null, Enabled = enabled };
+            Cannon = enabled ? intent.Cannon : null, Enabled = enabled,
+            ResolvedAmount = enabled && intent.ResolvedAmount };
         Current.Value = scope;
         return scope;
     }
@@ -95,6 +100,12 @@ internal static class HotaruCannonBlockHelper
         return PreviewDepth.Value == 0 && scope?.Active == true && scope.Enabled && props == ValueProp.Move &&
             ReferenceEquals(scope.Owner, owner) && ReferenceEquals(scope.Play, play);
     }
+
+    // A percentage of an actual hit is already in combat units. Native block
+    // modifiers still run, but the HBR bridge must not multiply it by 100 again.
+    internal static bool IsResolvedCurrentGain(Creature owner, ValueProp props) =>
+        Current.Value is { Active: true, Enabled: true, ResolvedAmount: true } scope &&
+        ReferenceEquals(scope.Owner, owner) && props == ValueProp.Move;
 
     internal static decimal Floor(decimal amount) => decimal.Floor(Math.Max(0m, amount));
 

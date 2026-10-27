@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BaseLib.Abstracts;
 using BaseLib.Utils.Attributes;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.PotionPools;
@@ -80,7 +81,7 @@ public class HbrgoSaki :
 
     protected override CharacterModel UnlocksAfterRunAs => null;
 
-    public override int StartingHp => 35;
+    public override int StartingHp => HbrBattleStatsHelper.GetInitialPlayerHp(35);
 
     public override int StartingGold => 99;
 

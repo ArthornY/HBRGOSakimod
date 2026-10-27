@@ -152,8 +152,8 @@ public sealed class PhantomChoiceHbrgoSaki : CardModel
 
         PhantomRosterEntry entry = RosterEntry;
         Creature currentPhantom = GetCurrentPhantom();
-        decimal summonedMinHp = entry.GetBasePhantomHp(monster.MinInitialHp);
-        decimal summonedMaxHp = entry.GetBasePhantomHp(monster.MaxInitialHp);
+        decimal summonedMinHp = entry.GetBasePhantomHp(monster.MinInitialHp, owner: Owner);
+        decimal summonedMaxHp = entry.GetBasePhantomHp(monster.MaxInitialHp, owner: Owner);
         decimal appliedBonusHp = System.Math.Min(
             BigCombatNumbers.MaximumCreatureStat - summonedMaxHp,
             decimal.Floor(System.Math.Max(0m, entry.BonusMaxHp)));

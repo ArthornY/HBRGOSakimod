@@ -1,0 +1,81 @@
+using System;
+using System.Linq;
+using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Rooms;
+
+namespace HBRGOSakiMod.Core.Helpers;
+
+// Test-branch bridge values, not the original game's character stat profiles.
+internal static class HbrBattleStatsHelper
+{
+    internal const int PlayerHealthScale = 50;
+    internal const decimal EnemyHealthScale = 1000m;
+    internal const decimal InitialStat = 200m;
+    internal const decimal StatGainPerLevel = 4m;
+
+    internal static bool IsEnabled(Player player) =>
+        player?.GetRelic<ElectronicSoldierManual>()?.IsHbrNumericsEnabled == true;
+
+    internal static bool IsEnabled(Creature creature)
+    {
+        if (creature == null) return false;
+        Player owner = creature.Player ?? creature.PetOwner;
+        if (owner != null) return IsEnabled(owner);
+        return EnemyStatScalingHelper.IsEnemy(creature) &&
+            creature.CombatState?.RunState?.Players.Any(IsEnabled) == true;
+    }
+
+    internal static bool TryGetStats(Creature creature, out HbrBattleStats stats)
+    {
+        stats = default;
+        if (!IsEnabled(creature)) return false;
+        Player owner = creature.Player ?? creature.PetOwner;
+        if (owner != null)
+        {
+            stats = owner.GetRelic<ElectronicSoldierManual>().GetHbrBattleStats();
+            // Pet cannons inherit the owner exactly. Phantom levels retain
+            // their existing effects and add a small explicit stat bonus.
+            if (creature.GetPower<PhantomPower>() is { } phantom)
+            {
+                int level = phantom.IsSummonedMinion ? phantom.SummonedMinionLevel :
+                    owner.GetRelic<MomentOfReign>()?.GetActivePhantomBaseLevel() ?? 1;
+                decimal bonus = Math.Max(0m, (decimal)level - 1m) * 2m;
+                stats = new(stats.Strength + bonus, stats.Dexterity + bonus,
+                    stats.Intelligence + bonus, stats.Vitality + bonus,
+                    stats.Spirit + bonus, stats.Luck + bonus);
+            }
+            return true;
+        }
+
+        decimal parameter = GetEnemyParameter(creature);
+        stats = new(parameter, parameter, parameter, parameter, parameter, parameter);
+        return true;
+    }
+
+    internal static decimal GetEnemyParameter(Creature creature)
+    {
+        if (creature?.CombatState?.RunState is not { } run) return 170m;
+        int act = Math.Max(0, run.CurrentActIndex);
+        // Map row is local to the act and remains stable in endless/custom acts.
+        int localFloor = run.CurrentMapCoord is { } coord ? Math.Max(1, coord.row + 1) :
+            Math.Max(1, run.TotalFloor - act * 17);
+        RoomType room = creature.CombatState.Encounter?.RoomType ??
+            run.CurrentRoom?.RoomType ?? RoomType.Monster;
+        return 170m + 60m * act + 3m * localFloor +
+            (room == RoomType.Boss ? 25m : room == RoomType.Elite ? 15m : 0m);
+    }
+
+    // Called only by CharacterModel's fresh-player maximum, never on load or on
+    // arbitrary max-HP writes. Native saved HP is therefore never re-scaled.
+    internal static int GetInitialPlayerHp(int legacyHp) =>
+        (int)Math.Min(BigCombatNumbers.NativeStatCap, (long)Math.Max(1, legacyHp) * PlayerHealthScale);
+
+    // Callers supply only raw, newly-created allied monster HP. Enemy room HP
+    // and stored cross-battle phantom health must never enter this adapter.
+    internal static decimal GetPhantomBaseHp(Player owner, decimal rawBaseHp) =>
+        IsEnabled(owner) ? BigCombatNumbers.ScaleHealth(rawBaseHp, PlayerHealthScale) : rawBaseHp;
+}

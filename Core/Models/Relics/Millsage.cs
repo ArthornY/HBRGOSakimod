@@ -337,6 +337,8 @@ public sealed partial class Millsage : RelicModel
             if (growBeforeDamage) await GrowHappiness(choiceContext, cannon, 0m, cardSource, cardPlay);
             decimal damage = state.HappinessDamage;
             var vigorAttack = HotaruCannonVigorHelper.BeginAttack(cannon, HotaruCannonPhase.End);
+            using var destructionSkill = HbrBattleStatsHelper.IsEnabled(Owner) && hits > 0
+                ? HbrDestructionGainHelper.BeginSkill(Owner.Creature, cardSource, hits) : null;
             try
             {
                 for (int hit = 0; hit < hits && CanAct(); hit++)
@@ -426,6 +428,8 @@ public sealed partial class Millsage : RelicModel
         HotaruCannonState state = StateFor(kind);
         var vigorAttack = actionVigor ?? HotaruCannonVigorHelper.BeginAttack(cannon, phase);
         int hitCount = HotaruCannonVigorHelper.GetPlannedHitCount(this, kind, phase);
+        using var destructionSkill = HbrBattleStatsHelper.IsEnabled(Owner) && hitCount > 0
+            ? HbrDestructionGainHelper.BeginSkill(Owner.Creature, cardSource, hitCount) : null;
         try
         {
             if (kind == HotaruCannonKind.Endgame)

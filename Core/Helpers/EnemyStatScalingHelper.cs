@@ -21,7 +21,8 @@ internal static class EnemyStatScalingHelper
             ? BigCombatNumbers.CalculateHealthMultiplier(
                 HBRGOSakiConfig.EnemyMaxHpPercent,
                 HBRGOSakiConfig.EnemyMaxHpGrowthPerActPercent,
-                GetActIndex(creature))
+                GetActIndex(creature)) *
+                (HbrBattleStatsHelper.IsEnabled(creature) ? HbrBattleStatsHelper.EnemyHealthScale : 1m)
             : 1m;
 
     internal static decimal GetDamageMultiplier(Creature creature) =>

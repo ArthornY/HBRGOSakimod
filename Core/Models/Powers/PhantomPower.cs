@@ -478,7 +478,8 @@ public sealed class PhantomPower : PowerModel
             Owner.Monster?.MaxInitialHp ?? 2;
         PhantomRosterEntry? entry = Owner.PetOwner?.GetRelic<MomentOfReign>()?.GetActiveRosterEntry();
         InitializeSizeBaseMaxHp(entry?.GetBasePhantomHp(originalHp,
-            Owner.Monster is RedCrimsonBossMonster) ?? Math.Max(1, originalHp / 2));
+            Owner.Monster is RedCrimsonBossMonster, Owner.PetOwner) ??
+            HbrBattleStatsHelper.GetPhantomBaseHp(Owner.PetOwner, Math.Max(1, originalHp / 2)));
         return Math.Max(1m, BigCombatNumbers.ReadSigned(SizeBaseMaxHpData, SizeBaseMaxHp));
     }
 

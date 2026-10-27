@@ -44,13 +44,19 @@ internal static class HbrCombatDamagePipeline
             ModeTransitionHelper.TryGetDamagePreview(
                 cardSource,
                 out previewState);
-        decimal modifiedDamage = damage *
+        bool hbrNumerics = HbrBattleStatsHelper.IsEnabled(dealer) ||
+            HbrBattleStatsHelper.IsEnabled(target);
+        decimal baseDamage = !isPrecalculatedDamage &&
+            modifyDamageHookType.HasFlag(ModifyDamageHookType.Additive)
+                ? HbrDamageSkillAdapter.ConvertBaseDamage(target, dealer, damage, props, cardSource)
+                : damage;
+        decimal modifiedDamage = baseDamage *
             (isModeTransitionPreview
                 ? previewState.BaseDamageMultiplier
                 : 1m);
         List<AbstractModel> appliedModifiers = new();
         // Capture pre-reduction damage alongside the live hooks, without evaluating any hook twice.
-        decimal rawDamage = Math.Max(0m, damage) * (isModeTransitionPreview
+        decimal rawDamage = Math.Max(0m, baseDamage) * (isModeTransitionPreview
             ? Math.Max(1m, previewState.BaseDamageMultiplier) : 1m);
 
         // Apply to the base value before Strength and the existing damage multipliers.
@@ -84,6 +90,8 @@ internal static class HbrCombatDamagePipeline
                     dealer,
                     cardSource,
                     cardPlay);
+                additiveAmount = HbrDamageSkillAdapter.ConvertFlatDamageBonus(model, dealer,
+                    additiveAmount, hbrNumerics && props.IsPoweredAttack());
                 modifiedDamage += additiveAmount;
                 rawDamage += Math.Max(0m, additiveAmount);
                 if (additiveAmount != 0m)
@@ -95,7 +103,7 @@ internal static class HbrCombatDamagePipeline
 
         HbrDamageMultiplierAccumulator multipliers = new(dealer,
             isModeTransitionPreview ? previewState.ModeDamageMultiplier : 1m,
-            HbrDamageMultiplierPolicy.Combat);
+            HbrDamageMultiplierPolicy.Combat, hbrNumerics, target);
         decimal enemyDamageMultiplier = 1m;
         decimal multiplierBaseDamage = modifiedDamage;
         decimal rawMultiplierBaseDamage = rawDamage;
@@ -115,7 +123,7 @@ internal static class HbrCombatDamagePipeline
             rawMultiplierBaseDamage = rawDamage;
             bool completed = false;
             decimal hbrgoReferenceDamage = modifiedDamage;
-            HbrgoSakiDamageMultiplierHelper.Begin(dealer);
+            HbrgoSakiDamageMultiplierHelper.Begin(dealer, target, hbrNumerics);
             try
             {
                 HotaruCannonStatsHelper.ContributeCannonRollMultiplier(target, dealer, cardSource, props);
@@ -223,7 +231,7 @@ internal static class HbrCombatDamagePipeline
 
                 hbrgoMultiplier = Math.Max(0m, DamageAmplificationLimits.AddSaturated(hbrgoMultiplier,
                     DamageAmplificationLimits.MultiplySaturated(
-                        strongestShield.IncomingDamageMultiplier - 1m, multipliers.TemporaryMultiplier)));
+                        strongestShield.IncomingDamageMultiplier - 1m, multipliers.ShieldReductionMultiplier)));
                 appliedModifiers.Add(strongestShield);
             }
         }

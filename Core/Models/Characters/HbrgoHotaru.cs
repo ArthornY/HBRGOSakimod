@@ -4,6 +4,7 @@ using System.Linq;
 using BaseLib.Abstracts;
 using BaseLib.Utils.Attributes;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Monsters;
@@ -63,7 +64,7 @@ public sealed class HbrgoHotaru : CustomCharacterModel, IModCharacterVanillaSele
 
     // Native CharacterModel uses StartingHp as the initial maximum as well.
     // The existing new-run initialization applies InitialCurrentHp separately.
-    public override int StartingHp => InitialMaxHp;
+    public override int StartingHp => HbrBattleStatsHelper.GetInitialPlayerHp(InitialMaxHp);
     public override int StartingGold => 99;
     public override CardPoolModel CardPool => ModelDb.CardPool<HbrgoHotaruCardPool>();
     public override RelicPoolModel RelicPool => ModelDb.RelicPool<HbrgoHotaruRelicPool>();

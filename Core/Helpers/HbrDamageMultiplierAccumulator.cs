@@ -18,6 +18,13 @@ internal struct HbrDamageMultiplierAccumulator
 {
     private readonly Creature _dealer;
     private readonly HbrDamageMultiplierPolicy _policy;
+    private readonly bool _hbrNumerics;
+    private readonly Creature _target;
+    private decimal _defenseDownOffset;
+    private decimal _destructionMultiplier;
+    private decimal _nativeTemporaryAttackOffset;
+    private decimal _nativeOtherAttackOffset;
+    private decimal _targetMultiplier;
 
     internal decimal ModeMultiplier { get; private set; }
     internal decimal ManualOffset { get; private set; }
@@ -27,12 +34,20 @@ internal struct HbrDamageMultiplierAccumulator
     internal decimal RawModeMultiplier { get; private set; }
     internal decimal RawManualOffset { get; private set; }
     internal decimal RawOtherMultiplier { get; private set; }
+    internal readonly decimal ShieldReductionMultiplier => DamageAmplificationLimits.MultiplySaturated(
+        TemporaryMultiplier, _targetMultiplier);
 
     internal HbrDamageMultiplierAccumulator(Creature dealer, decimal modeMultiplier,
-        HbrDamageMultiplierPolicy policy)
+        HbrDamageMultiplierPolicy policy, bool hbrNumerics = false, Creature target = null)
     {
         _dealer = dealer;
         _policy = policy;
+        _hbrNumerics = hbrNumerics;
+        _target = target;
+        _defenseDownOffset = 0m;
+        _destructionMultiplier = 1m;
+        _nativeTemporaryAttackOffset = _nativeOtherAttackOffset = 0m;
+        _targetMultiplier = 1m;
         ModeMultiplier = modeMultiplier;
         ManualOffset = RawManualOffset = 0m;
         FinalMultiplier = TemporaryMultiplier = OtherMultiplier = RawOtherMultiplier = 1m;
@@ -61,10 +76,33 @@ internal struct HbrDamageMultiplierAccumulator
         }
         else if (combat && model is HighDimensionalShellPower)
         {
+            // HBR's DP pool is not an additional 25% defensive multiplier.
+            // The native hook was still evaluated exactly once by the caller.
+            if (_hbrNumerics && model.GetType() == typeof(HighDimensionalShellPower)) return;
             // The target's DP reduction remains outside outgoing amplification.
             // Its raw ledger update has the same position as before extraction.
             FinalMultiplier *= multiplier;
             rawDamage *= Math.Max(1m, multiplier);
+        }
+        else if (_hbrNumerics && model is DestructionRatePower)
+        {
+            _destructionMultiplier = DamageAmplificationLimits.MultiplySaturated(
+                _destructionMultiplier, multiplier);
+        }
+        else if (_hbrNumerics && HbrgoSakiDamageMultiplierHelper.IsDefenseDownSource(
+            model, _target, _dealer, multiplier))
+        {
+            _defenseDownOffset = DamageAmplificationLimits.AddSaturated(
+                _defenseDownOffset, multiplier - 1m);
+        }
+        else if (_hbrNumerics && multiplier > 1m)
+        {
+            if (TemporaryDamageBonusHelper.IsTemporarySource(model, _dealer))
+                _nativeTemporaryAttackOffset = DamageAmplificationLimits.AddSaturated(
+                    _nativeTemporaryAttackOffset, multiplier - 1m);
+            else
+                _nativeOtherAttackOffset = DamageAmplificationLimits.AddSaturated(
+                    _nativeOtherAttackOffset, multiplier - 1m);
         }
         else
         {
@@ -84,10 +122,33 @@ internal struct HbrDamageMultiplierAccumulator
         }
     }
 
-    internal readonly decimal Resolve(AdditiveDamageResult group, bool capped, bool positiveOnly = false) =>
-        TemporaryDamageBonusHelper.ResolveMultiplier(
+    internal decimal Resolve(AdditiveDamageResult group, bool capped, bool positiveOnly = false)
+    {
+        if (_hbrNumerics)
+        {
+            decimal native = DamageAmplificationLimits.AddSaturated(
+                _nativeTemporaryAttackOffset, _nativeOtherAttackOffset);
+            group = new AdditiveDamageResult(
+                DamageAmplificationLimits.AddSaturated(group.MultiplierOffset, native), group.Sources,
+                DamageAmplificationLimits.AddSaturated(group.PositiveMultiplierOffset, native),
+                group.PermanentMultiplierOffset,
+                DamageAmplificationLimits.AddSaturated(group.TemporaryPositiveMultiplierOffset,
+                    _nativeTemporaryAttackOffset), group.NegativeMultiplierOffset,
+                DamageAmplificationLimits.AddSaturated(group.OtherPositiveMultiplierOffset,
+                    _nativeOtherAttackOffset), group.DefenseDownMultiplierOffset);
+        }
+        decimal attack = TemporaryDamageBonusHelper.ResolveMultiplier(
             DamageAmplificationLimits.MultiplySaturated(
                 positiveOnly ? RawModeMultiplier : ModeMultiplier,
                 positiveOnly ? 1m + RawManualOffset : Math.Max(0m, 1m + ManualOffset)),
             group, TemporaryMultiplier, capped, positiveOnly);
+        if (!_hbrNumerics) return attack;
+        decimal defenseDown = Math.Max(0m, DamageAmplificationLimits.AddSaturated(1m,
+            DamageAmplificationLimits.AddSaturated(_defenseDownOffset, group.DefenseDownMultiplierOffset)));
+        _targetMultiplier = DamageAmplificationLimits.MultiplySaturated(defenseDown, _destructionMultiplier);
+        // Strongest Shield subtracts from the attack bucket after Resolve. Its
+        // reduction must pass through these target factors too, otherwise a
+        // higher destruction rate would dilute the same shield's reduction.
+        return DamageAmplificationLimits.MultiplySaturated(attack, _targetMultiplier);
+    }
 }

@@ -193,6 +193,8 @@
   "BREAK_POWER.compactDescription": "回合开始时层数减1。层数归零时，失去[gold]破坏率[/gold]，并重新获得[gold]高维外壳[/gold]。",
   "BREAK_POWER.description": "无视[gold]人工制品[/gold]。回合开始时层数减少1。层数归零时，失去[gold]破坏率[/gold]，并重新获得[gold]高维外壳[/gold]。",
   "DESTRUCTION_RATE_POWER.title": "破坏率",
+  "DESTRUCTION_RATE_POWER.hbrDescription": "受到的伤害独立乘以当前[gold]破坏率[/gold]，初始为100%。攻击击破DP或造成HP伤害后，按敌人的易破坏系数×技能破坏系数增长，按该技能的完整伤害段数分摊，与实际伤害大小无关。普通、精英和Boss敌人的基础总上限分别为150%、300%和300%，技能效果可进一步提高。\n当前：[blue]{CurrentDestruction}%[/blue]；上限：[blue]{MaximumDestruction}%[/blue]。",
+  "DESTRUCTION_RATE_POWER.hbrCompactDescription": "受到的伤害独立乘以[gold]破坏率[/gold]。攻击击破DP或造成HP伤害后，按技能系数增长，按完整段数分摊，与伤害大小无关。\n当前：[blue]{CurrentDestruction}%[/blue]；上限：[blue]{MaximumDestruction}%[/blue]。",
   "DESTRUCTION_RATE_POWER.compactDescription": "受到伤害后，增加该伤害一定比例的[gold]破坏率[/gold]。每层使受到的伤害增加[blue]{damagePerStack}%[/blue]。",
   "DESTRUCTION_RATE_POWER.description": "无视[gold]人工制品[/gold]。受到伤害后，增加等同于该次伤害50%的破坏率。每层使受到的伤害增加{damagePerStack}%。六感每有一项抗性被击破，每层增伤再乘以110%。普通、精英和Boss怪物的破坏率上限分别为50、150和300。",
   "SIX_SENSE_RESISTANCE_POWER.title": "六感抗性",

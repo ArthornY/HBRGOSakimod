@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Powers;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -11,11 +12,15 @@ internal static class HbrgoSakiDamageMultiplierHelper
     [ThreadStatic]
     private static Stack<AdditiveDamageContext> _contexts;
 
-    internal static void Begin(Creature dealer = null)
+    internal static void Begin(Creature dealer = null, Creature target = null, bool hbrNumerics = false)
     {
         _contexts ??= new Stack<AdditiveDamageContext>();
-        _contexts.Push(new AdditiveDamageContext(dealer));
+        _contexts.Push(new AdditiveDamageContext(dealer, target, hbrNumerics));
     }
+
+    internal static bool IsDefenseDownSource(AbstractModel source, Creature target,
+        Creature dealer, decimal multiplier) => multiplier > 1m && target != null && target != dealer &&
+        source is PowerModel { Type: PowerType.Debuff } power && power.Owner == target;
 
     internal static decimal Add(decimal multiplier, AbstractModel source)
     {
@@ -65,7 +70,8 @@ internal static class HbrgoSakiDamageMultiplierHelper
             context.PermanentMultiplierOffset,
             context.TemporaryPositiveMultiplierOffset,
             context.NegativeMultiplierOffset,
-            context.OtherPositiveMultiplierOffset);
+            context.OtherPositiveMultiplierOffset,
+            context.DefenseDownMultiplierOffset);
     }
 
     internal static void Abort()
@@ -79,7 +85,16 @@ internal static class HbrgoSakiDamageMultiplierHelper
     private sealed class AdditiveDamageContext
     {
         internal Creature Dealer { get; }
-        internal AdditiveDamageContext(Creature dealer) => Dealer = dealer;
+        private Creature Target { get; }
+        private bool HbrNumerics { get; }
+        internal AdditiveDamageContext(Creature dealer, Creature target, bool hbrNumerics)
+        {
+            Dealer = dealer;
+            Target = target;
+            HbrNumerics = hbrNumerics;
+        }
+
+        internal decimal DefenseDownMultiplierOffset { get; private set; }
 
         internal decimal MultiplierOffset { get; private set; }
 
@@ -95,6 +110,13 @@ internal static class HbrgoSakiDamageMultiplierHelper
         internal void Add(decimal multiplier, AbstractModel source, bool temporary, bool permanent = false)
         {
             decimal offset = multiplier - 1m;
+            if (HbrNumerics && IsDefenseDownSource(source, Target, Dealer, multiplier))
+            {
+                DefenseDownMultiplierOffset = DamageAmplificationLimits.AddSaturated(
+                    DefenseDownMultiplierOffset, offset);
+                if (source != null) Sources.Add(source);
+                return;
+            }
             MultiplierOffset = DamageAmplificationLimits.AddSaturated(MultiplierOffset, offset);
             PositiveMultiplierOffset = DamageAmplificationLimits.AddSaturated(
                 PositiveMultiplierOffset, Math.Max(0m, offset));
@@ -132,6 +154,8 @@ internal readonly struct AdditiveDamageResult
 
     internal decimal OtherPositiveMultiplierOffset { get; }
 
+    internal decimal DefenseDownMultiplierOffset { get; }
+
     internal IReadOnlyList<AbstractModel> Sources { get; }
 
     internal AdditiveDamageResult(
@@ -141,7 +165,8 @@ internal readonly struct AdditiveDamageResult
         decimal permanentMultiplierOffset = 0m,
         decimal temporaryPositiveMultiplierOffset = 0m,
         decimal negativeMultiplierOffset = 0m,
-        decimal otherPositiveMultiplierOffset = 0m)
+        decimal otherPositiveMultiplierOffset = 0m,
+        decimal defenseDownMultiplierOffset = 0m)
     {
         MultiplierOffset = multiplierOffset;
         PositiveMultiplierOffset = positiveMultiplierOffset;
@@ -149,6 +174,7 @@ internal readonly struct AdditiveDamageResult
         TemporaryPositiveMultiplierOffset = temporaryPositiveMultiplierOffset;
         NegativeMultiplierOffset = negativeMultiplierOffset;
         OtherPositiveMultiplierOffset = otherPositiveMultiplierOffset;
+        DefenseDownMultiplierOffset = defenseDownMultiplierOffset;
         Sources = sources ?? Array.Empty<AbstractModel>();
     }
 }

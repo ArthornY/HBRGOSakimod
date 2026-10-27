@@ -163,7 +163,8 @@ public sealed class EmberRecoveryHbrgoSaki : CardModel
             return;
         }
 
-        await CreatureCmd.Heal(phantom, DynamicVars["Recovery"].BaseValue);
+        await CreatureCmd.Heal(phantom, HbrResourceValueHelper.ConvertFixedRecovery(
+            Owner.Creature, DynamicVars["Recovery"].BaseValue));
     }
 
     protected override void OnUpgrade() => DynamicVars["Recovery"].UpgradeValueBy(3m);

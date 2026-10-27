@@ -38,7 +38,8 @@ internal static class PhantomMixedIntentHelper
         switch (phantom.Monster)
         {
             case KnowledgeDemon demon when move.Id == "PONDER_MOVE":
-                await CreatureCmd.Heal(phantom, 30 * phantom.CombatState.Players.Count);
+                await CreatureCmd.Heal(phantom, HbrResourceValueHelper.ConvertFixedRecovery(
+                    phantom, 30m * phantom.CombatState.Players.Count));
                 break;
             case InfestedPrism prism when move.Id == "PULSATE_MOVE":
                 await CreatureCmd.GainBlock(phantom, PulsateBlock(prism), ValueProp.Move, null);

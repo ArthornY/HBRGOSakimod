@@ -40,6 +40,7 @@ internal static class HotaruCannonStatsHelper
         internal Creature Dealer;
         internal CardModel Card;
         internal CardPlay Play;
+        internal ValueProp Props;
         internal bool Active = true;
         internal bool Capture;
         internal decimal PendingDpSpent;
@@ -206,7 +207,8 @@ internal static class HotaruCannonStatsHelper
         if (claim) claim = candidates?.Count == 1 && ReferenceEquals(candidates[0], intent.Target);
         if (claim) intent.Claimed = true;
         CommandScope scope = new() { Previous = previous, Intent = claim ? intent : null,
-            Dealer = dealer, Card = card, Play = claim ? intent.Play : play, Capture = claim || owner || incoming };
+            Dealer = dealer, Card = card, Play = claim ? intent.Play : play, Props = props,
+            Capture = claim || owner || incoming };
         if (scope.Capture && candidates != null)
             foreach (Creature target in candidates)
                 if (target != null) scope.DpMaximums[target] = target.GetPower<HighDimensionalShellPower>()?.MaxAmount ?? 0m;
@@ -267,6 +269,7 @@ internal static class HotaruCannonStatsHelper
         CannonHitReceipt receipt = new() { Cannon = scope.Cannon, Dealer = scope.Dealer, Target = target,
             ActualHpDamage = hp, ActualDpDamage = dp, ActiveDpMaximum = scope.DpMaximums.GetValueOrDefault(target),
             FinalDamage = scope.FinalAmounts.GetValueOrDefault(target), CardSource = scope.Card, CardPlay = scope.Play,
+            DamageProps = scope.Props,
             IsReaction = scope.Intent?.IsReaction == true };
         ReceiptState state = new() { Receipt = receipt };
         foreach (DamageResult result in hits) { Receipts.Remove(result); Receipts.Add(result, state); }
@@ -293,7 +296,7 @@ internal static class HotaruCannonStatsHelper
             Cannon = cannon, Dealer = dealer, Target = target,
             ActualDpDamage = actualDamage, ActiveDpMaximum = activeDpMaximum,
             FinalDamage = actualDamage, CardSource = cardSource,
-            CardPlay = cardPlay, IsReaction = true
+            CardPlay = cardPlay, DamageProps = ValueProp.Unpowered, IsReaction = true
         });
     }
 
@@ -303,7 +306,7 @@ internal static class HotaruCannonStatsHelper
         if (receipt == null) return;
         HotaruUncommonCannonHelper.OnDamage(receipt);
         await HotaruAbsolutionUpgradeHelper.OnOwnerDpDamage(context, receipt.Dealer, receipt.Target,
-            receipt.ActualDpDamage, receipt.CardSource);
+            receipt.ActualDpDamage, receipt.CardSource, receipt.DamageProps, receipt.IsPrimary);
         if (receipt.Cannon != null)
         {
             await HotaruCannonDamageUpgradeHelper.AfterCannonDamage(context, receipt);

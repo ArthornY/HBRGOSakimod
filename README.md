@@ -4,6 +4,8 @@
 
 模组包含祥子的 31O、30A 玩法与小萤：六感成长与掷骰、DP 护盾与破坏率、幻影、五门浮游炮及其升级，以及 OD 额外回合。具体规则可在游戏内的角色手册中查看。
 
+当前 `test-hbr-numerics` 分支用于 HBR 战斗数值测试。新局启用力、器用、知性、体力、精神、运，以及新的技能威力、暴击与破坏率计算；保留卡牌、掷骰、六感和 OD 玩法。旧档保持原数值。范围、适配参数和公式来源见 [数值测试说明](docs/hbr-numerics-test.md)，数学回归运行方法见 [验证说明](validation/hbr-numerics/README.md)。
+
 ## 安装与设置
 
 在 [Steam 创意工坊页面](https://steamcommunity.com/sharedfiles/filedetails/?id=3799277911)订阅本模组，并同时订阅该页面列出的 **BaseLib** 和 **STS2-RitsuLib** 必须物品。启动游戏时启用这些模组。

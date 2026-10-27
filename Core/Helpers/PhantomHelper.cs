@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Cards;
@@ -31,6 +32,8 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class PhantomHelper
 {
     private const string SceneBossReviveMoveId = "RESPAWN_MOVE";
+    private sealed record RawSummonedMinionHealth(decimal Maximum);
+    private static readonly ConditionalWeakTable<Creature, RawSummonedMinionHealth> RawMinionHealth = new();
 
     internal static bool IsOwnedMainPhantom(Creature creature, Player owner)
     {
@@ -654,6 +657,8 @@ internal static class PhantomHelper
         bool dealtUnblockedDamage = false;
         using var damageBatch = HighHitDamageVisualHelper.BeginDirectDamageBatch(
             segments.Count, phantom, null, ValueProp.Move);
+        using var destructionSkill = HbrBattleStatsHelper.IsEnabled(phantom)
+            ? HbrDestructionGainHelper.BeginSkill(phantom, null, segments.Count) : null;
         try
         {
             await CreatureCmd.TriggerAnim(phantom, "Attack", 0.15f);
@@ -2434,7 +2439,7 @@ internal static class PhantomHelper
             monster,
             leader.Side,
             null);
-        ConfigureSummonedMinionHealth(minion, level);
+        ConfigureSummonedMinionHealth(minion, level, owner);
         await PlayerCmd.AddPet(minion, owner);
         await InitializeSummonedMinion(
             leader,
@@ -2505,7 +2510,7 @@ internal static class PhantomHelper
         int normalizedLevel = Math.Max(1, level);
         if (configureHealth)
         {
-            ConfigureSummonedMinionHealth(minion, normalizedLevel);
+            ConfigureSummonedMinionHealth(minion, normalizedLevel, owner);
         }
 
         await RunPhantomEntryEffects(minion);
@@ -2546,7 +2551,8 @@ internal static class PhantomHelper
 
     internal static void ConfigureSummonedMinionHealth(
         Creature minion,
-        int level)
+        int level,
+        Player owner = null)
     {
         if (minion == null)
         {
@@ -2554,7 +2560,13 @@ internal static class PhantomHelper
         }
 
         int normalizedLevel = Math.Max(1, level);
-        decimal baseHp = Math.Max(1m, decimal.Floor(LargeCreatureHealthHelper.GetMaxHp(minion) / 2m));
+        owner ??= minion.PetOwner;
+        decimal originalHp = HbrBattleStatsHelper.IsEnabled(owner)
+            ? RawMinionHealth.GetValue(minion,
+                creature => new(LargeCreatureHealthHelper.GetMaxHp(creature))).Maximum
+            : LargeCreatureHealthHelper.GetMaxHp(minion);
+        decimal baseHp = HbrBattleStatsHelper.GetPhantomBaseHp(owner,
+            Math.Max(1m, decimal.Floor(originalHp / 2m)));
         decimal bonusHp = Math.Max(0, normalizedLevel - 1) * PhantomRosterEntry.LevelBonusMaxHp;
         decimal maxHp = BigCombatNumbers.ClampStat(baseHp + bonusHp);
         minion.SetMaxHpInternal(maxHp);

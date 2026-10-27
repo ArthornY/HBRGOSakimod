@@ -113,6 +113,7 @@ public partial class ElectronicSoldierManual
 
     public override Task AfterCombatVictory(CombatRoom room)
     {
+        GrantHbrBattleVictory(room);
         MemoryGardenUpgradePointsHelper.OnCombatVictory(this, room);
         return Task.CompletedTask;
     }

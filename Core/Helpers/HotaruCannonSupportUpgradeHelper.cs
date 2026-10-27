@@ -310,10 +310,11 @@ internal static class HotaruCannonSupportUpgradeHelper
         PlayerChoiceContext context = new BlockingPlayerChoiceContext();
         if (relic.HasCannonUpgrade(HotaruCannonKind.Coffin, 3))
         {
-            decimal overflow = Math.Max(0m, 6m - Math.Max(0m, creature.MaxHp - creature.CurrentHp));
-            await CreatureCmd.Heal(creature, 6m);
+            decimal recovery = HbrResourceValueHelper.ConvertFixedRecovery(creature, 6m);
+            decimal overflow = Math.Max(0m, recovery - Math.Max(0m, creature.MaxHp - creature.CurrentHp));
+            await CreatureCmd.Heal(creature, recovery);
             if (overflow > 0m && !creature.HasPower<LastStandPower>())
-                owner.GetRelic<DeflectorProtection>()?.RestoreDp((int)decimal.Floor(overflow));
+                owner.GetRelic<DeflectorProtection>()?.RestoreDp((int)Math.Min(int.MaxValue, decimal.Floor(overflow)));
         }
         if (relic.HasCannonUpgrade(HotaruCannonKind.Coffin, 5) &&
             owner.GetRelic<DeflectorProtection>() is { } deflector)

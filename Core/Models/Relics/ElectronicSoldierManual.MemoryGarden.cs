@@ -108,5 +108,6 @@ public partial class ElectronicSoldierManual
         MemoryGardenUpgradePoints = source.MemoryGardenUpgradePoints;
         MemoryGardenSixSenseUpgradeTier = source.MemoryGardenSixSenseUpgradeTier;
         MemoryGardenUpgradeRewardedRooms = source.MemoryGardenUpgradeRewardedRooms;
+        HbrBattleProgressData = source.HbrBattleProgressData;
     }
 }

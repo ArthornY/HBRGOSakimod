@@ -564,10 +564,14 @@ public partial class NHbrgoSakiMapStatusWidget : Control
         decimal modeMultiplier = 1m;
         decimal manualMultiplierOffset = 0m;
         decimal finalMultiplier = 1m;
+        bool hbrNumerics = HbrBattleStatsHelper.IsEnabled(creature);
+        HbrDamageMultiplierAccumulator hbrFactors = new(dealer, 1m,
+            HbrDamageMultiplierPolicy.Combat, hbrNumerics, target);
+        decimal unusedRawDamage = 0m;
         AdditiveDamageResult groupedResult = AdditiveDamageResult.Empty;
         bool completed = false;
 
-        HbrgoSakiDamageMultiplierHelper.Begin();
+        HbrgoSakiDamageMultiplierHelper.Begin(dealer, target, hbrNumerics);
         try
         {
             foreach (AbstractModel model in player.RunState
@@ -606,7 +610,11 @@ public partial class NHbrgoSakiMapStatusWidget : Control
                     continue;
                 }
 
-                if (IsModeDamageModel(model))
+                if (hbrNumerics)
+                {
+                    hbrFactors.Add(model, multiplier, ref modifiedDamage, ref unusedRawDamage);
+                }
+                else if (IsModeDamageModel(model))
                 {
                     modeMultiplier *= multiplier;
                 }
@@ -640,6 +648,12 @@ public partial class NHbrgoSakiMapStatusWidget : Control
                 HbrgoSakiDamageMultiplierHelper.Abort();
             }
         }
+
+        if (hbrNumerics)
+            return DamageAmplificationLimits.MultiplySaturated(
+                DamageAmplificationLimits.MultiplySaturated(
+                    hbrFactors.Resolve(groupedResult, false), hbrFactors.OtherMultiplier),
+                hbrFactors.FinalMultiplier);
 
         decimal manualMultiplier = Math.Max(
             0m,

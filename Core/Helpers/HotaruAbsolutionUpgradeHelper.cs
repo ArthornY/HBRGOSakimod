@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -86,7 +87,8 @@ internal static class HotaruAbsolutionUpgradeHelper
     }
 
     internal static async Task OnOwnerDpDamage(PlayerChoiceContext context, Creature dealer,
-        Creature target, decimal actualDpDamage, CardModel cardSource)
+        Creature target, decimal actualDpDamage, CardModel cardSource,
+        ValueProp props = ValueProp.Move, bool primary = true)
     {
         if (actualDpDamage <= 0m || target?.IsAlive != true || dealer == null ||
             target.Side == dealer.Side || target.CombatState != dealer.CombatState ||
@@ -97,6 +99,16 @@ internal static class HotaruAbsolutionUpgradeHelper
         if (!target.HasPower<DestructionRatePower>())
             await PowerCmd.Apply<DestructionRatePower>(context, target,
                 DestructionRatePower.BaselineAmount, target, null);
+        if (HbrBattleStatsHelper.IsEnabled(target))
+        {
+            // A normal shell's breaking hit already advanced destruction after
+            // creating Break. Its later receipt has no active DP and must not
+            // advance twice. A still-active (including layered) pool retains
+            // the upgrade's ability to accumulate destruction before Break.
+            if (primary && HasActiveDp(target))
+                target.GetPower<DestructionRatePower>()?.AddHbrHitGain(dealer, cardSource, props);
+            return;
+        }
         if (target.IsAlive)
             await PowerCmd.Apply<DestructionRatePower>(context, target,
                 DamageAmplificationLimits.MultiplySaturated(actualDpDamage * DoomPerDamage,

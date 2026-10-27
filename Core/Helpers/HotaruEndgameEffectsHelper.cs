@@ -70,7 +70,7 @@ internal static class HotaruEndgameEffectsHelper
         if (model.Kind != HotaruCannonKind.Endgame) return;
         if (relic.WasCannonRetired(HotaruCannonKind.Coffin))
             await HotaruCannonBlockHelper.Gain(relic.Owner.Creature, receipt.ActualDamage * 0.05m,
-                receipt.CardPlay, receipt.Cannon);
+                receipt.CardPlay, receipt.Cannon, resolvedAmount: true);
         if (receipt.IsPrimary && receipt.ActualDpDamage > 0m &&
             relic.WasCannonRetired(HotaruCannonKind.Contest) && Millsage.IsEnemy(receipt.Target, relic.Owner))
         {
@@ -85,7 +85,7 @@ internal static class HotaruEndgameEffectsHelper
                 decimal actualHp = results.Sum(hit => Math.Max(0m, hit.UnblockedDamage));
                 if (actualHp > 0m)
                     await HotaruCannonBlockHelper.Gain(relic.Owner.Creature, actualHp * 0.05m,
-                        receipt.CardPlay, receipt.Cannon);
+                        receipt.CardPlay, receipt.Cannon, resolvedAmount: true);
             }
         }
     }

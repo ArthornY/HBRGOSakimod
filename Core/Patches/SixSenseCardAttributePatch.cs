@@ -67,7 +67,12 @@ internal static class SixSenseStartingInventoryPatch
         bool isNewPlayer = SixSenseStartingSeedState.IsAwaitingRunSeed(__instance);
         SixSenseStartingSeedState.CompleteRunSeed(__instance);
         if (isNewPlayer)
+        {
+            if (__instance.Character is HBRGOSakiMod.Core.Models.Characters.HbrgoSaki or
+                HBRGOSakiMod.Core.Models.Characters.HbrgoHotaru)
+                __instance.GetRelic<ElectronicSoldierManual>()?.InitializeHbrBattleNumerics();
             __instance.GetRelic<HotaruElectronicSoldierManual>()?.InitializeStartingHealth();
+        }
         // Starting cards enter RunState before its real player RNG is initialized.
         __instance.GetRelic<ElectronicSoldierManual>()?.GrantStartingSixSense();
         if (__instance.Deck == null) return;

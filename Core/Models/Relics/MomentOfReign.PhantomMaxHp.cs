@@ -180,7 +180,7 @@ public partial class MomentOfReign
         return GetStoredUnadjustedMaxHp(instanceId, entry, bases);
     }
 
-    private static decimal GetStoredUnadjustedMaxHp(int instanceId, PhantomRosterEntry? entry,
+    private decimal GetStoredUnadjustedMaxHp(int instanceId, PhantomRosterEntry? entry,
         Dictionary<int, decimal> bases)
     {
         if (!bases.TryGetValue(instanceId, out decimal baseHp))
@@ -191,7 +191,8 @@ public partial class MomentOfReign
                 ? ModelDb.GetByIdOrNull<MonsterModel>(existing.MonsterId)
                 : ModelDb.Monster<SmallHopper>();
             baseHp = entry?.GetBasePhantomHp(monster?.MaxInitialHp ?? 2,
-                monster is RedCrimsonBossMonster) ?? Math.Max(1, (monster?.MaxInitialHp ?? 2) / 2);
+                monster is RedCrimsonBossMonster, Owner) ?? HbrBattleStatsHelper.GetPhantomBaseHp(
+                    Owner, Math.Max(1, (monster?.MaxInitialHp ?? 2) / 2));
         }
         return Math.Clamp((decimal)baseHp +
             decimal.Floor(Math.Max(0m, entry?.BonusMaxHp ?? 0m)), 1m, MaximumPhantomHp);

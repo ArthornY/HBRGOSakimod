@@ -20,8 +20,9 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
-// The scopes only replace presentation. Native damage commands, their results,
-// hooks, targeting, RNG and history still execute for every individual hit.
+// Existing action boundaries merge presentation and, in HBR numeric mode,
+// divide a skill's fixed destruction budget between its real hits. Native
+// damage commands, hooks, targeting, RNG and history still run for every hit.
 internal static class HighHitDamageVisualHelper
 {
     internal const int MergeThreshold = 10;
@@ -51,6 +52,8 @@ internal static class HighHitDamageVisualHelper
         internal long Order;
         internal bool CountUnknownHits;
         internal long StartedHits;
+        internal long ExpectedLoopHits;
+        internal decimal DestructionLoopsStarted;
         internal readonly Dictionary<Creature, Total> Totals = new();
         internal readonly List<DirectDamageBatchScope> Contexts = new();
         internal readonly List<DeferredNumber> DeferredNumbers = new();
@@ -63,6 +66,9 @@ internal static class HighHitDamageVisualHelper
         internal bool Active = true;
         internal bool Enabled;
         internal CardBatchScope Card;
+        internal HbrDestructionGainHelper.SkillScope DestructionSkill;
+        internal HbrDestructionGainHelper.Activation DestructionActivation;
+        internal bool OwnsDestructionSkill;
         internal long Order;
         internal readonly Dictionary<Creature, Total> Totals = new();
     }
@@ -90,6 +96,7 @@ internal static class HighHitDamageVisualHelper
 
     internal sealed class DamageScope
     {
+        internal HbrDestructionGainHelper.HitScope DestructionHit;
         internal AttackScope Attack;
         internal DirectDamageBatchScope DirectBatch;
         internal DamageScope Previous;
@@ -99,8 +106,9 @@ internal static class HighHitDamageVisualHelper
         internal Creature Dealer;
     }
 
-    // Card-level callers use this for cards whose X hits are separate Execute
-    // calls. The expected hit count is presentation-only and never changes X.
+    // X-loop cards issue several Execute calls. This shared boundary merges
+    // their presentation and keeps one destruction budget, without changing X,
+    // replaying hit-count hooks, or changing the number of damage commands.
     internal static CardBatchScope BeginCardBatch(CardModel card) =>
         BeginCardBatch(card, GetExpectedLoopHits(card));
 
@@ -121,7 +129,8 @@ internal static class HighHitDamageVisualHelper
             Order = Interlocked.Increment(ref NextScopeOrder),
             Previous = CurrentCard.Value,
             Enabled = expectedHits > MergeThreshold,
-            CountUnknownHits = expectedHits > 1
+            CountUnknownHits = expectedHits > 1,
+            ExpectedLoopHits = expectedHits
         };
         CurrentCard.Value = scope;
         return scope;
@@ -161,6 +170,7 @@ internal static class HighHitDamageVisualHelper
             // wrapper started. Read their now-resolved values without replaying
             // any modifier, RNG or card effect.
             long loops = GetExpectedLoopHits(card.Card);
+            card.ExpectedLoopHits = loops;
             card.CountUnknownHits |= loops > 1;
             if (loops > MergeThreshold) EnableCardBatch(card);
         }
@@ -196,11 +206,42 @@ internal static class HighHitDamageVisualHelper
         {
             scope.Enabled |= hits > MergeThreshold;
             if (scope.Enabled) EnableCardBatch(scope.Card ?? CurrentCard.Value);
+            BeginDestructionSkill(scope, command, hits);
         }
+    }
+
+    private static void BeginDestructionSkill(AttackScope scope, AttackCommand command, decimal hits)
+    {
+        if (scope.DestructionSkill != null || hits <= 0m ||
+            !command.DamageProps.IsPoweredAttack() || !HbrBattleStatsHelper.IsEnabled(command.Attacker)) return;
+        CardModel source = command.ModelSource as CardModel;
+        CardBatchScope card = scope.Card;
+        bool loopCard = card?.Active == true && card.ExpectedLoopHits > 0;
+        if (loopCard)
+        {
+            decimal loops = card.ExpectedLoopHits;
+            decimal previous = Math.Min(loops, card.DestructionLoopsStarted);
+            decimal next = Math.Min(loops, previous + 1m);
+            card.DestructionLoopsStarted = next;
+            // Each outer loop gets an equal portion. Its own resolved count
+            // divides that portion, so one-shot extra hits on the first loop
+            // cannot change the budget of later native Execute calls.
+            decimal coefficient = next / loops - previous / loops;
+            scope.DestructionSkill = HbrDestructionGainHelper.BeginSkill(
+                command.Attacker, source, hits, coefficient);
+        }
+        else
+        {
+            scope.DestructionSkill = HbrDestructionGainHelper.BeginSkill(command.Attacker, source, hits);
+        }
+        HbrDestructionGainHelper.RestoreCaller(scope.DestructionSkill);
+        scope.OwnsDestructionSkill = true;
+        scope.DestructionActivation = HbrDestructionGainHelper.EnterSkill(scope.DestructionSkill);
     }
 
     internal static void RestoreAttackCaller(AttackScope scope)
     {
+        scope?.DestructionActivation?.RestoreCaller();
         if (scope != null && ReferenceEquals(CurrentAttack.Value, scope))
             CurrentAttack.Value = scope.Previous;
     }
@@ -217,6 +258,8 @@ internal static class HighHitDamageVisualHelper
         if (scope?.Active != true) return;
         scope.Active = false;
         RestoreAttackCaller(scope);
+        scope.DestructionActivation?.Dispose();
+        if (scope.OwnsDestructionSkill) scope.DestructionSkill?.Dispose();
         if (scope.Card?.Active == true && scope.Card.Enabled) return;
         ShowTotals(scope.Totals);
     }
@@ -395,6 +438,7 @@ internal static class HighHitDamageVisualHelper
             DirectBatch = direct,
             Previous = previous,
             Dealer = dealer,
+            DestructionHit = HbrDestructionGainHelper.BeginHit(dealer, card, props),
             IsDirectAttackDamage = attack?.Active == true &&
                 ReferenceEquals(attack.Command.Attacker, dealer) &&
                 ReferenceEquals(attack.Command.ModelSource as CardModel, card) &&
@@ -422,6 +466,7 @@ internal static class HighHitDamageVisualHelper
 
     internal static void RestoreDamageCaller(DamageScope scope)
     {
+        scope?.DestructionHit?.RestoreCaller();
         if (scope != null && ReferenceEquals(CurrentDamage.Value, scope))
             CurrentDamage.Value = scope.Previous;
     }
@@ -438,6 +483,7 @@ internal static class HighHitDamageVisualHelper
         if (scope == null) return;
         scope.Active = false;
         RestoreDamageCaller(scope);
+        scope.DestructionHit?.Dispose();
     }
 
     private static Dictionary<Creature, Total> GetActiveTotals()
@@ -466,12 +512,13 @@ internal static class HighHitDamageVisualHelper
     internal static void RecordHit(IReadOnlyList<DamageResult> results)
     {
         Dictionary<Creature, Total> totals = GetActiveTotals();
-        if (totals == null || results == null) return;
+        if (results == null || totals == null && !HbrDestructionGainHelper.HasActiveHit) return;
         for (int index = 0; index < results.Count; index++)
         {
             Creature receiver = results[index]?.Receiver;
             if (receiver == null) continue;
-            Add(totals, receiver, CardDamageHistoryHelper.GetDamage(results, index));
+            HbrDestructionGainHelper.ObserveHit(receiver);
+            if (totals != null) Add(totals, receiver, CardDamageHistoryHelper.GetDamage(results, index));
         }
     }
 

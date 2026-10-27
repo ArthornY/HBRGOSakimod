@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BaseLib.Utils.Attributes;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Relics;
@@ -17,7 +18,7 @@ public sealed class HbrgoSaki30A : HbrgoSaki, IModCharacterVanillaSelectionPolic
     public override string CustomCharacterSelectBg =>
         "res://scenes/screens/char_select/char_select_bg_hbrgo_saki_30a.tscn";
 
-    public override int StartingHp => 10;
+    public override int StartingHp => HbrBattleStatsHelper.GetInitialPlayerHp(10);
 
     public override IEnumerable<CardModel> StartingDeck => new CardModel[]
     {

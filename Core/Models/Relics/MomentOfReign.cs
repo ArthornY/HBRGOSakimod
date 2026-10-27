@@ -137,12 +137,14 @@ internal readonly record struct PhantomRosterEntry(
 
     internal decimal GetBasePhantomHp(
         decimal originalHp,
-        bool forceBossScaling = false)
+        bool forceBossScaling = false,
+        Player owner = null)
     {
         int divisor = ExperienceValue >= 4 || forceBossScaling
             ? 10
             : 2;
-        return Math.Max(1m, decimal.Floor(originalHp / divisor));
+        return HbrBattleStatsHelper.GetPhantomBaseHp(owner,
+            Math.Max(1m, decimal.Floor(originalHp / divisor)));
     }
 
     internal bool HasEarnedUpgradeEffects =>
@@ -2859,7 +2861,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         }
         decimal baseInitialHp = rosterEntry.GetBasePhantomHp(
             LargeCreatureHealthHelper.GetMaxHp(phantom),
-            monster is RedCrimsonBossMonster);
+            monster is RedCrimsonBossMonster, Owner);
         decimal bonusMaxHp = Math.Min(
             MaximumPhantomHp - baseInitialHp,
             Math.Floor(Math.Max(0m, rosterEntry.BonusMaxHp)));

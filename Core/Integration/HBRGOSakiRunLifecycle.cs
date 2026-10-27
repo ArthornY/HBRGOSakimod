@@ -34,6 +34,12 @@ internal static class HBRGOSakiRunLifecycle
     private static void OnRunStarted(RunStartedEvent evt)
     {
         EnsureRollInfrastructure(evt.RunState, evt.IsMultiplayer);
+        // A shared enemy cannot use HBR health while native teammates retain
+        // STS-scale stats. Their existing multiplayer manual stores this same
+        // fresh-run profile; loading a prior run never enters this path.
+        if (evt.RunState.Players.Any(player => player.Character is HbrgoSaki or HbrgoHotaru))
+            foreach (Player player in evt.RunState.Players)
+                player.GetRelic<ElectronicSoldierManual>()?.InitializeHbrBattleNumerics();
         foreach (Player player in evt.RunState.Players.Where(player => player.Character is HbrgoHotaru))
             player.GetRelic<HotaruElectronicSoldierManual>()?.InitializeStartingHealth();
     }

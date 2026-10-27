@@ -1,0 +1,5 @@
+{
+  "DESTRUCTION_RATE_POWER.title": "Destruction Rate",
+  "DESTRUCTION_RATE_POWER.hbrDescription": "Damage received is multiplied by the current [gold]Destruction Rate[/gold], starting at 100%. An attack that breaks DP or deals HP damage increases it by the enemy's destruction coefficient times the skill's destruction coefficient, divided across the skill's full hit count. The increase is independent of damage dealt. The base total limits are 150% for normal enemies, 300% for elites, and 300% for bosses. Skill effects can increase these limits.\nCurrent: [blue]{CurrentDestruction}%[/blue]. Limit: [blue]{MaximumDestruction}%[/blue].",
+  "DESTRUCTION_RATE_POWER.hbrCompactDescription": "Damage received is multiplied by [gold]Destruction Rate[/gold]. Attacks that break DP or deal HP damage increase it by a fixed skill coefficient divided across the skill's full hit count, independent of damage dealt.\nCurrent: [blue]{CurrentDestruction}%[/blue]. Limit: [blue]{MaximumDestruction}%[/blue]."
+}

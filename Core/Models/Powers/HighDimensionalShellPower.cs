@@ -311,6 +311,9 @@ public class HighDimensionalShellPower : PowerModel
             return Task.CompletedTask;
         if (target == Owner)
         {
+            // Consume this native hit's share even when block/DP prevents HP
+            // loss. The later receipt may claim growth from the same share.
+            HbrDestructionGainHelper.ObserveHit(target);
             _pendingExtraDpDamage.Push(
                 ReptureBowPower.CalculateExtraDpDamage(
                     target,
@@ -458,6 +461,8 @@ public class HighDimensionalShellPower : PowerModel
             return;
         }
 
+        HbrDestructionGainHelper.ObserveHit(target);
+
         if (_pendingExtraDpDamage.Count > 0)
         {
             _pendingExtraDpDamage.Pop();
@@ -468,8 +473,16 @@ public class HighDimensionalShellPower : PowerModel
             return;
         }
 
+        Creature brokenOwner = Owner;
+        bool hbrOrdinaryShell = GetType() == typeof(HighDimensionalShellPower) &&
+            HbrBattleStatsHelper.IsEnabled(brokenOwner);
         _pendingBreak = false;
         await ResolveBreak(choiceContext, 0);
+        // The ordinary DP absorber discards this hit's HP overflow. Its break
+        // still earns a fixed destruction share after the hit, while layered
+        // bosses and other custom shell subclasses keep their own rules.
+        if (hbrOrdinaryShell)
+            brokenOwner.GetPower<DestructionRatePower>()?.AddHbrHitGain(dealer, cardSource, props);
     }
 
     internal virtual async Task BreakImmediately(

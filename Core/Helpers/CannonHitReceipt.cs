@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -15,6 +16,7 @@ internal sealed class CannonHitReceipt
     internal decimal FinalDamage { get; init; }
     internal CardModel CardSource { get; init; }
     internal CardPlay CardPlay { get; init; }
+    internal ValueProp DamageProps { get; init; }
     internal bool IsReaction { get; init; }
     internal bool IsPrimary => !IsReaction;
     internal decimal ActualDamage => DamageAmplificationLimits.AddSaturated(ActualHpDamage, ActualDpDamage);

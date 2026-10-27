@@ -28,11 +28,13 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     private GridContainer _sections;
     private Button _sensesTab;
     private Button _glossaryTab;
+    private Button _battleStatsTab;
     private Control _pageHost;
     private Control _sensesPage;
     private NManualGlossaryPanel _glossaryPage;
+    private NManualBattleStatsPanel _battleStatsPage;
     private HBoxContainer _footer;
-    private enum ManualPage { Senses, CannonUpgrades, Glossary }
+    private enum ManualPage { Senses, CannonUpgrades, BattleStats, Glossary }
     private ManualPage _page;
     private Button _cannonsTab;
     private NManualCannonUpgradesPanel _cannonsPage;
@@ -62,6 +64,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     {
         ManualPage.Glossary => _glossaryPage?.DefaultFocusedControl ?? (Control)_glossaryTab ?? this,
         ManualPage.CannonUpgrades => _cannonsPage?.DefaultFocusedControl ?? (Control)_cannonsTab ?? this,
+        ManualPage.BattleStats => _battleStatsPage?.DefaultFocusedControl ?? (Control)_battleStatsTab ?? this,
         _ => (Control)_closeButton ?? this
     };
 
@@ -111,7 +114,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         _refreshTimer += delta;
         if (_refreshTimer < 0.2 || _manual == null) return;
         _refreshTimer = 0;
-        string state = $"{_manual.SixSensePoints}:{_manual.MemoryGardenUpgradePoints}:{_manual.SixSenseAllocationRevision}:{_manual.IsAllocationPending}|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
+        string state = $"{_manual.SixSensePoints}:{_manual.MemoryGardenUpgradePoints}:{_manual.SixSenseAllocationRevision}:{_manual.IsAllocationPending}|battle:{_manual.HbrBattleProgressData}|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
             attribute => $"{_manual.GetSenseAmount(attribute)}:{_manual.GetEffectiveSenseAmount(attribute)}"));
         if (SupportsCannonUpgrades)
         {
@@ -243,6 +246,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         _sensesTab = MakeSection("六感", ManualPage.Senses);
         _cannonsTab = MakeSection("浮游炮", ManualPage.CannonUpgrades);
         _cannonsTab.Visible = SupportsCannonUpgrades;
+        _battleStatsTab = MakeSection("战斗属性", ManualPage.BattleStats);
         _glossaryTab = MakeSection("词条全解", ManualPage.Glossary);
         _pageHost = new Control { ClipContents = true, MouseFilter = MouseFilterEnum.Pass };
         _body.AddChild(_pageHost);
@@ -335,7 +339,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     {
         if (_body == null || _main == null) return;
         bool stackSections = _body.Size.X < 640;
-        int sectionCount = SupportsCannonUpgrades ? 3 : 2;
+        int sectionCount = SupportsCannonUpgrades ? 4 : 3;
         _sections.Columns = stackSections ? Math.Clamp((int)(_body.Size.X / 128f), 1, sectionCount) : 1;
         _sections.Position = Vector2.Zero;
         if (stackSections)
@@ -389,19 +393,28 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             _pageHost.AddChild(_cannonsPage);
             _cannonsPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         }
+        if (page == ManualPage.BattleStats && _battleStatsPage == null)
+        {
+            _battleStatsPage = new NManualBattleStatsPanel { Name = "ManualBattleStats" };
+            _pageHost.AddChild(_battleStatsPage);
+            _battleStatsPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        }
         _page = page;
         _sensesPage.Visible = page == ManualPage.Senses;
         if (_glossaryPage != null) _glossaryPage.Visible = page == ManualPage.Glossary;
         if (_cannonsPage != null) _cannonsPage.Visible = page == ManualPage.CannonUpgrades;
+        if (_battleStatsPage != null) _battleStatsPage.Visible = page == ManualPage.BattleStats;
         _footer.Visible = page == ManualPage.Senses;
         StyleButton(_sensesTab, page == ManualPage.Senses);
         StyleButton(_cannonsTab, page == ManualPage.CannonUpgrades);
+        StyleButton(_battleStatsTab, page == ManualPage.BattleStats);
         StyleButton(_glossaryTab, page == ManualPage.Glossary);
         // Reuse the same draft and controls while switching reference pages.
         Refresh(_manual);
         LayoutBody();
         if (page == ManualPage.Glossary) _glossaryPage.FocusSearch();
         else if (page == ManualPage.CannonUpgrades) _cannonsPage.DefaultFocusedControl?.GrabFocus();
+        else if (page == ManualPage.BattleStats) _battleStatsPage.DefaultFocusedControl?.GrabFocus();
         else _sensesTab.GrabFocus();
     }
 
@@ -423,6 +436,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             return;
         }
         _cannonsPage?.Refresh(SupportsCannonUpgrades ? _manual.Owner.GetRelic<Millsage>() : null);
+        _battleStatsPage?.Refresh(_manual);
         _draft.Reconcile();
         int total = ElectronicSoldierManual.AllSixSenseAttributes.Sum(_draft.Level);
         int unlocked = ElectronicSoldierManual.AllSixSenseAttributes.Count(sense => _draft.Level(sense) >= ElectronicSoldierManual.SixSenseBonusThreshold);

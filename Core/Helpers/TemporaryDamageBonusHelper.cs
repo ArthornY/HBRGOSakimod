@@ -71,9 +71,10 @@ internal static class TemporaryDamageBonusHelper
         const decimal reference = 100m;
         decimal runningDamage = reference;
         decimal unusedRawDamage = 0m;
+        bool hbrNumerics = HbrBattleStatsHelper.IsEnabled(creature);
         HbrDamageMultiplierAccumulator multipliers = new(creature, 1m,
-            HbrDamageMultiplierPolicy.OutgoingSummary);
-        HbrgoSakiDamageMultiplierHelper.Begin(creature);
+            HbrDamageMultiplierPolicy.OutgoingSummary, hbrNumerics);
+        HbrgoSakiDamageMultiplierHelper.Begin(creature, null, hbrNumerics);
         bool completed = false;
         try
         {
