@@ -27,7 +27,7 @@ public sealed class DragonArrowHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(10m, ValueProp.Move)
+        HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m)
     };
 
     public DragonArrowHbrgoSaki()
@@ -65,6 +65,6 @@ public sealed class DragonArrowHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
     }
 }

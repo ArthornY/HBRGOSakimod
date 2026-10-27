@@ -30,7 +30,7 @@ public sealed class FinalSorrowHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(10m, ValueProp.Move)
+            HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m)
         };
 
     public FinalSorrowHbrgoSaki()
@@ -68,7 +68,7 @@ public sealed class FinalSorrowHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(6m);
+        DynamicVars.Damage.UpgradeDamageByPercent(100m);
     }
 }
 
@@ -404,7 +404,7 @@ public sealed class KillKissHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(12m, ValueProp.Move),
+            HbrSkillVars.Damage(200m, ValueProp.Move),
             new PowerVar<VulnerablePower>(3m),
             new PowerVar<FragilePower>(3m)
         };
@@ -495,7 +495,7 @@ public sealed class DeathToYouHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(10m, ValueProp.Move),
+            HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m),
             new PowerVar<FallingContinuallyPower>(4m)
         };
 
@@ -538,7 +538,7 @@ public sealed class DeathToYouHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(4m);
+        DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
         DynamicVars["FallingContinuallyPower"].UpgradeValueBy(2m);
     }
 }

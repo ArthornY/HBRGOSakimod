@@ -1,4 +1,6 @@
 {
+  "HBRGO_SIX_SENSE.Simplicity.hbrDescription": "{state}效果：打出后，获得{skill}%倍率格挡（当前预计{value}点）。基础倍率为60%×（100+单纯有效等级）%；强化后为60%×（100+1.5×单纯有效等级）%。实际格挡按当前知性计算。削减对应抗性{loss}点。",
+  "HBRGO_SIX_SENSE.Simplicity.hbrMenuDescription": "普通：打出后，获得{normalSkill}%倍率格挡，按已确认知性预计{normalBlock}点。\n强化：获得{enhancedSkill}%倍率格挡，按已确认知性预计{enhancedBlock}点。\n格挡100%以初始防御为基准。非复制牌削减单纯抗性{loss}点；复制牌不削减抗性。",
   "HBRGO_SAKI_MOD_KEYWORD_ROLL.title": "掷骰",
   "HBRGO_SAKI_MOD_KEYWORD_ROLL.compactDescription": "打出后进行[gold]1d100[/gold]，按结果对卡牌的[gold]基础数值[/gold]进行增幅。",
   "HBRGO_SAKI_MOD_KEYWORD_ROLL.cardText": "[gold]掷骰[/gold]。",

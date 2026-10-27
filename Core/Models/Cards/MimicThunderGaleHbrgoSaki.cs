@@ -32,7 +32,7 @@ public sealed class MimicThunderGaleHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(9m, ValueProp.Move),
+            HbrSkillVars.Damage(150m, ValueProp.Move),
             new PowerVar<FragilePower>(2m)
         };
 
@@ -104,6 +104,6 @@ public sealed class MimicThunderGaleHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(4m);
+        DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
     }
 }

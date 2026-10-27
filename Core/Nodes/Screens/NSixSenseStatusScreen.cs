@@ -9,6 +9,7 @@ using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -460,7 +461,8 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         int amount = _draft.Level(_selected);
         _selectionTitle.Text = $"{name}   Lv.{amount}" + (_draft.Added(_selected) > 0 ? $"  (+{_draft.Added(_selected)})" : "");
         _details.Text = BuildBattleGrowthDescription(_selected) + BuildEffectDescription(_selected,
-            _manual.GetEffectiveSenseAmount(_selected, amount)).GetFormattedText();
+            _manual.GetEffectiveSenseAmount(_selected, amount), _manual.Owner,
+            _manual.IsHbrNumericsEnabled).GetFormattedText();
         _radar.Manual = _manual;
         _radar.Draft = _draft;
         _radar.Editable = editable && _page == ManualPage.Senses;
@@ -487,11 +489,21 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             (_draft.Added(attribute) > 0 ? "预览。\n\n" : "。\n\n");
     }
 
-    private static LocString BuildEffectDescription(SixSenseAttribute attribute, decimal level)
+    private static LocString BuildEffectDescription(SixSenseAttribute attribute, decimal level,
+        Player player, bool hbrNumericsEnabled)
     {
-        LocString description = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}.menuDescription");
+        bool skillBlock = hbrNumericsEnabled && attribute == SixSenseAttribute.Simplicity;
+        LocString description = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}." +
+            (skillBlock ? "hbrMenuDescription" : "menuDescription"));
         decimal normal = SixSenseCombatHelper.EffectValue(attribute, level, false);
         decimal enhanced = SixSenseCombatHelper.EffectValue(attribute, level, true);
+        if (skillBlock)
+        {
+            description.Add("normalSkill", HbrSkillPower.BlockPercent(normal).ToString("0.##", CultureInfo.InvariantCulture));
+            description.Add("enhancedSkill", HbrSkillPower.BlockPercent(enhanced).ToString("0.##", CultureInfo.InvariantCulture));
+            description.Add("normalBlock", HbrSkillBlockHelper.ResolveUnpowered(player?.Creature, normal));
+            description.Add("enhancedBlock", HbrSkillBlockHelper.ResolveUnpowered(player?.Creature, enhanced));
+        }
         if (attribute == SixSenseAttribute.Madness)
         {
             normal *= 100m;

@@ -38,13 +38,15 @@ public sealed class RefuseToLeavePower : PowerModel
     public override PowerType Type => PowerType.Buff;
     public override PowerStackType StackType => PowerStackType.Counter;
     public override Color AmountLabelColor => new("F2C15F");
+    public override LocString Description => HbrSkillBlockDescription.ForPower(this,
+        base.Description, "REFUSE_TO_LEAVE_POWER.hbrDescription", IsMutable ? Amount : 0m);
     public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target,
         bool wasRemovalPrevented, float deathAnimLength)
     {
         if (wasRemovalPrevented || !Owner.IsAlive || CombatManager.Instance.IsOverOrEnding ||
             !PhantomHelper.IsOwnedMainPhantom(target, Owner.Player) || !PhantomHelper.CountsAsFinalDefeat(target)) return;
         Flash();
-        await CreatureCmd.GainBlock(Owner, Amount, ValueProp.Unpowered, null);
+        await CreatureCmd.GainBlock(Owner, HbrSkillBlockHelper.ResolveUnpowered(Owner, Amount), ValueProp.Unpowered, null);
         await PowerCmd.Apply<ChargePower>(choiceContext, Owner, 2m, Owner, null);
     }
 }

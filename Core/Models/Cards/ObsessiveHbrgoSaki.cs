@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ public sealed class ObsessiveHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move),
             new PowerVar<FragilePower>(3m),
             new PowerVar<VulnerablePower>(3m)
         };
@@ -69,6 +70,6 @@ public sealed class ObsessiveHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
     }
 }

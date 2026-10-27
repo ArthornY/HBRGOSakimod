@@ -25,10 +25,14 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
     {
         bool positive = Relic?.EndgameSign > 0;
         Creature cannon = IsMutable ? Creature : null;
-        LocString shape = new("monsters", Id.Entry + (positive ? ".positiveShape" : ".negativeShape"));
+        LocString shape = HotaruCannonSkillPowerHelper.Description("monsters", Id.Entry + (positive ? ".positiveShape" : ".negativeShape"), Relic?.Owner);
         shape.Add("Count", Relic?.RetiredCannonCount ?? 0);
         shape.Add("Soul", Relic?.EndgameSoulPercent ?? (positive ? 80 : 50));
+        decimal baseDamage = HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, CurrentDamage);
         shape.Add("BaseDamage", HotaruMyIndulgencePower.ModifyBaseDamage(cannon, CurrentDamage));
+        shape.Add("BaseDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(CurrentDamage));
+        shape.Add("StartDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(baseDamage));
+        shape.Add("EndDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(baseDamage));
         shape.Add("Formula", positive ? "失去炮数!"
             : Relic?.WasCannonRetired(HotaruCannonKind.Happiness) == true ? "3^失去炮数−1" : "2^失去炮数");
         int startRepeat = HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.Start);
@@ -46,7 +50,8 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
             string extraStart = string.Empty;
             if (startRepeat > 0)
             {
-                LocString start = new("monsters", Id.Entry + ".extraStart");
+                LocString start = HotaruCannonSkillPowerHelper.Description("monsters", Id.Entry + ".extraStart", Relic?.Owner);
+                start.Add("StartDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(baseDamage));
                 start.Add("StartDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, CurrentDamage,
                     previewPhase: HotaruCannonPhase.Start));
                 start.Add("StartRepeat", startRepeat);

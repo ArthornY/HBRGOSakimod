@@ -27,7 +27,7 @@ public sealed class EntrustToMeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new BlockVar(0m, ValueProp.Move)
+            HbrSkillVars.Block(0m, ValueProp.Move)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -69,7 +69,7 @@ public sealed class EntrustToMeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(9m);
+        DynamicVars.Block.UpgradeBlockByPercent(180m);
     }
 
     public override bool GainsBlock => IsUpgraded;

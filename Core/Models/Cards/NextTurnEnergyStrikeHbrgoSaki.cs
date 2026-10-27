@@ -28,7 +28,7 @@ public sealed class NextTurnEnergyStrikeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(7m, ValueProp.Move),
+            HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m),
             new EnergyVar(1)
         };
 
@@ -84,6 +84,6 @@ public sealed class NextTurnEnergyStrikeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
     }
 }

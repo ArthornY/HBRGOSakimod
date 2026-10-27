@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -58,7 +59,7 @@ public sealed class HotaruRiftLight : HotaruCannonCard
     public HotaruRiftLight() : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy) { }
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(7m, ValueProp.Move), new CardsVar(1) };
+        new DynamicVar[] { HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m), new CardsVar(1) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<FragilePower>() };
@@ -79,7 +80,7 @@ public sealed class HotaruRiftLight : HotaruCannonCard
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
         DynamicVars.Cards.UpgradeValueBy(1m);
     }
 }
@@ -92,8 +93,8 @@ public sealed class HotaruKnock : HotaruCannonCard
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(14m, ValueProp.Move),
-            new IntVar("BreakDamage", 8m)
+            HbrSkillVars.Damage(700m, ValueProp.Move, divisor: 3m),
+            HbrSkillVars.DamageBonus("BreakDamage", 400m, divisor: 3m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -112,7 +113,7 @@ public sealed class HotaruKnock : HotaruCannonCard
             .Execute(choiceContext);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
 }
 
 [CustomID("HOTARU_REKINDLE")]
@@ -121,7 +122,7 @@ public sealed class HotaruRekindle : HotaruCannonCard
     public HotaruRekindle() : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy) { }
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(6m, ValueProp.Move), new EnergyVar(1) };
+        new DynamicVar[] { HbrSkillVars.Damage(100m, ValueProp.Move), new EnergyVar(1) };
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
@@ -137,7 +138,7 @@ public sealed class HotaruRekindle : HotaruCannonCard
             await PlayerCmd.GainEnergy(DynamicVars.Energy.IntValue, Owner);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 [CustomID("HOTARU_WARM_PALMS")]
@@ -146,7 +147,7 @@ public sealed class HotaruWarmPalms : HotaruCannonCard
     public HotaruWarmPalms() : base(1, CardType.Skill, CardRarity.Common, TargetType.Self) { }
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new BlockVar(6m, ValueProp.Move), new PowerVar<ChargePower>(1m) };
+        new DynamicVar[] { HbrSkillVars.Block(120m, ValueProp.Move), new PowerVar<ChargePower>(1m) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
@@ -164,7 +165,7 @@ public sealed class HotaruWarmPalms : HotaruCannonCard
             DynamicVars["ChargePower"].BaseValue, Owner.Creature, this);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(60m);
 }
 
 [CustomID("HOTARU_COOLING_CYCLE")]

@@ -60,6 +60,12 @@ public sealed class ShakeTheAbyssHbrgoSaki : CardModel
                 cardPlay.Target) / 2m);
         if (damage > 0m)
         {
+            // The phantom intent has already gone through its skill curve.
+            // Use its current damage as this card's base, not as native skill
+            // units that would be expanded by a second curve conversion.
+            using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(Owner)
+                ? HbrAbsoluteBaseDamageContext.Begin(Owner.Creature, this, cardPlay.Target, damage)
+                : null;
             await DamageCmd.Attack(damage)
                 .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
@@ -92,7 +98,7 @@ public sealed class ScorchingImpatienceHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move),
             new PowerVar<ChargePower>(2m)
         };
 
@@ -151,7 +157,7 @@ public sealed class MercyAndCompassionHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new IntVar("DpLoss", 5m),
-            new BlockVar(12m, ValueProp.Move)
+            HbrSkillVars.Block(240m, ValueProp.Move)
         };
 
     public MercyAndCompassionHbrgoSaki()
@@ -181,7 +187,7 @@ public sealed class MercyAndCompassionHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(6m);
+        DynamicVars.Block.UpgradeBlockByPercent(120m);
     }
 }
 
@@ -528,7 +534,7 @@ public sealed class CoordinatedAttackHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move),
             new IntVar("BonusSegments", 0m)
         };
 
@@ -588,7 +594,7 @@ public sealed class SweepHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move)
+            HbrSkillVars.Damage(100m, ValueProp.Move)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>

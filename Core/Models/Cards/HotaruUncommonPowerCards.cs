@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ public sealed class HotaruTrailingSilence : HotaruCannonCard
     public HotaruTrailingSilence() : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(8m, ValueProp.Move), new IntVar("Repeat", 2), new IntVar("CostReduction", 1)
+        HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m), new IntVar("Repeat", 2), new IntVar("CostReduction", 1)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<HotaruTrailingSilencePower>() };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
@@ -42,7 +43,7 @@ public sealed class HotaruTrailingSilence : HotaruCannonCard
         await HotaruTurnLedgerPower.Grant<HotaruTrailingSilencePower>(context, Owner.Creature,
             DynamicVars["CostReduction"].IntValue, 1, this);
     }
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 [CustomID("HOTARU_BREATHING_RHYTHM")]
@@ -51,14 +52,14 @@ public sealed class HotaruBreathingRhythm : HotaruCannonCard
     public HotaruBreathingRhythm() : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new BlockVar(4m, ValueProp.Unpowered), new IntVar("Attacks", 3)
+        HbrSkillVars.Block(80m, ValueProp.Unpowered), new IntVar("Attacks", 3)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<HotaruBreathingRhythmPower>() };
     public override bool GainsBlock => true;
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
         HotaruTurnLedgerPower.Grant<HotaruBreathingRhythmPower>(context, Owner.Creature,
             DynamicVars.Block.IntValue, DynamicVars["Attacks"].IntValue, this);
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(40m);
 }
 
 [CustomID("HOTARU_LUCKY_FAVOR")]
@@ -76,12 +77,12 @@ public sealed class HotaruLuckyFavor : HotaruCannonCard
 public sealed class HotaruStillCovered : HotaruCannonCard
 {
     public HotaruStillCovered() : base(1, CardType.Power, CardRarity.Uncommon, TargetType.Self) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new BlockVar(6m, ValueProp.Unpowered) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.Block(120m, ValueProp.Unpowered) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<HotaruStillCoveredPower>() };
     public override bool GainsBlock => true;
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
         PowerCmd.Apply<HotaruStillCoveredPower>(context, Owner.Creature, DynamicVars.Block.BaseValue, Owner.Creature, this);
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(80m);
 }
 
 [CustomID("HOTARU_THREE_BREATHS")]

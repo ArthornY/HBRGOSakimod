@@ -32,7 +32,7 @@ public sealed class FragileDoubleStrikeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DamageVar[]
         {
-            new DamageVar(10m, ValueProp.Move)
+            HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -98,6 +98,6 @@ public sealed class FragileDoubleStrikeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(4m);
+        DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
     }
 }

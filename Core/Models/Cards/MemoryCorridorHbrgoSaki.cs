@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -22,7 +23,7 @@ public sealed class MemoryCorridorHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new BlockVar(5m, ValueProp.Move),
+            HbrSkillVars.Block(100m, ValueProp.Move),
             new PowerVar<ChargePower>(2m),
             new CardsVar(2)
         };
@@ -67,7 +68,7 @@ public sealed class MemoryCorridorHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(3m);
+        DynamicVars.Block.UpgradeBlockByPercent(60m);
         DynamicVars["ChargePower"].UpgradeValueBy(1m);
         DynamicVars.Cards.UpgradeValueBy(1m);
     }

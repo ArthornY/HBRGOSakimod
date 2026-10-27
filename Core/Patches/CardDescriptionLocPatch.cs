@@ -12,14 +12,20 @@ internal static class CardDescriptionLocPatch
     private static void Postfix(CardModel __instance, ref LocString __result)
     {
         string locKey = GetReplacementLocKey(__instance);
-        if (locKey == null)
+        bool skillPower = HbrSkillCardDescription.IsEnabled(__instance);
+        if (skillPower)
         {
-            return;
+            string skillKey = (locKey ?? __instance.Id.Entry + ".description") + ".hbr";
+            if (new LocString("cards", skillKey).Exists()) locKey = skillKey;
         }
 
-        LocString replacement = new("cards", locKey);
-        replacement.AddVariablesFrom(__result);
-        __result = replacement;
+        if (locKey != null)
+        {
+            LocString replacement = new("cards", locKey);
+            replacement.AddVariablesFrom(__result);
+            __result = replacement;
+        }
+        if (skillPower) HbrSkillCardDescription.AddParameters(__instance, __result);
     }
 
     private static string GetReplacementLocKey(CardModel card)

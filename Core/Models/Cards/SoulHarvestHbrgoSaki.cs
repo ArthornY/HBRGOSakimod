@@ -30,7 +30,7 @@ public sealed class SoulHarvestHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DamageVar[]
         {
-            new DamageVar(6m, ValueProp.Move)
+            HbrSkillVars.Damage(100m, ValueProp.Move)
         };
 
     public SoulHarvestHbrgoSaki()

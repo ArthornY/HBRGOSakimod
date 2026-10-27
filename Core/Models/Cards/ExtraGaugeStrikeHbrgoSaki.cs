@@ -32,7 +32,7 @@ public sealed class ExtraGaugeStrikeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DamageVar[]
         {
-            new DamageVar(6m, ValueProp.Move)
+            HbrSkillVars.Damage(100m, ValueProp.Move)
         };
 
     public ExtraGaugeStrikeHbrgoSaki()
@@ -84,6 +84,6 @@ public sealed class ExtraGaugeStrikeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
     }
 }

@@ -198,7 +198,7 @@ internal static class HotaruRareRollHelper
                         int block = Total(entries, e => e.Value);
                         if (charge > 0) await PowerCmd.Apply<ChargePower>(context, player.Creature, charge, player.Creature, null);
                         if (block > 0 && Valid(play))
-                            await CreatureCmd.GainBlock(player.Creature, block, ValueProp.Unpowered, null);
+                            await CreatureCmd.GainBlock(player.Creature, HbrSkillBlockHelper.ResolveUnpowered(player.Creature, block), ValueProp.Unpowered, null);
                     }
                     else if (reward.CriticalOrdinal == 1)
                     {

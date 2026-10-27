@@ -77,6 +77,9 @@ public sealed class DpSoulStrikeHbrgoSaki : CardModel
             lostDp *
             DynamicVars[_damagePercentVar].BaseValue /
             100m);
+        using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(Owner)
+            ? HbrAbsoluteBaseDamageContext.Begin(Owner.Creature, this, cardPlay.Target, damage)
+            : null;
         await DamageCmd.Attack(damage)
             .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)

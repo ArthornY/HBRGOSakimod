@@ -27,7 +27,7 @@ public sealed class HotaruEchoingWounds : HotaruCannonCard
     public override bool GainsBlock => true;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new IntVar("ResistanceLoss", 2m), new DamageVar(10m, ValueProp.Move), new BlockVar(10m, ValueProp.Move)
+        new IntVar("ResistanceLoss", 2m), HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m), HbrSkillVars.Block(200m, ValueProp.Move)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
@@ -57,8 +57,8 @@ public sealed class HotaruEchoingWounds : HotaruCannonCard
     protected override void OnUpgrade()
     {
         DynamicVars["ResistanceLoss"].UpgradeValueBy(1m);
-        DynamicVars.Damage.UpgradeValueBy(4m);
-        DynamicVars.Block.UpgradeValueBy(4m);
+        DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
+        DynamicVars.Block.UpgradeBlockByPercent(80m);
     }
 }
 
@@ -67,7 +67,7 @@ public sealed class HotaruScarsPolyphony : HotaruCannonCard
 {
     public HotaruScarsPolyphony() : base(1, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(4m, ValueProp.Move), new IntVar("MaxHits", 4m) };
+        new DynamicVar[] { HbrSkillVars.Damage(200m, ValueProp.Move, divisor: 3m), new IntVar("MaxHits", 4m) };
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
@@ -81,7 +81,7 @@ public sealed class HotaruScarsPolyphony : HotaruCannonCard
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2m);
+        DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
         DynamicVars["MaxHits"].UpgradeValueBy(2m);
     }
 }
@@ -123,7 +123,7 @@ public sealed class HotaruSilenceHere : HotaruCannonCard
     public HotaruSilenceHere() : base(3, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(30m, ValueProp.Move), new IntVar("DebuffDamage", 5m), new IntVar("CannonBoost", 50m)
+        HbrSkillVars.Damage(500m, ValueProp.Move), HbrSkillVars.DamageBonus("DebuffDamage", 250m, divisor: 3m), new IntVar("CannonBoost", 50m)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<BreakPower>() };
@@ -143,7 +143,7 @@ public sealed class HotaruSilenceHere : HotaruCannonCard
     protected override void OnUpgrade()
     {
         EnergyCost.UpgradeBy(-1);
-        DynamicVars["DebuffDamage"].UpgradeValueBy(2m);
+        DynamicVars["DebuffDamage"].UpgradeDamageByPercent(100m, divisor: 3m);
     }
 }
 
@@ -152,7 +152,7 @@ public sealed class HotaruMissingOutline : HotaruCannonCard
 {
     public HotaruMissingOutline() : base(1, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(1m, ValueProp.Move), new IntVar("BreakDamage", 3m) };
+        new DynamicVar[] { HbrSkillVars.Damage(50m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("BreakDamage", 50m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
 
@@ -174,7 +174,7 @@ public sealed class HotaruMissingOutline : HotaruCannonCard
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars["BreakDamage"].UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars["BreakDamage"].UpgradeDamageByPercent(100m, divisor: 3m);
 }
 
 [CustomID("HOTARU_WARM_EMPTY_SEAT")]

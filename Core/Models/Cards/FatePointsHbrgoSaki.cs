@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -38,10 +39,10 @@ public sealed class FatePointsHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(1m, ValueProp.Move),
-            new DamageVar(_highRollDamageVar, 14m, ValueProp.Move),
-            new DamageVar(_criticalDamageVar, 77m, ValueProp.Move),
-            new BlockVar(7m, ValueProp.Move),
+            HbrSkillVars.Damage(50m, ValueProp.Move, divisor: 3m),
+            HbrSkillVars.Damage(700m, ValueProp.Move, divisor: 3m, name: _highRollDamageVar),
+            HbrSkillVars.Damage(3850m, ValueProp.Move, divisor: 3m, name: _criticalDamageVar),
+            HbrSkillVars.Block(140m, ValueProp.Move),
             new PowerVar<ChargePower>(1m),
             new PowerVar<FragilePower>(5m),
             new PowerVar<VulnerablePower>(5m),

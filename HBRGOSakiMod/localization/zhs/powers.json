@@ -1,4 +1,10 @@
 {
+  "REFUSE_TO_LEAVE_POWER.hbrDescription": "自己的[gold]幻影[/gold]死亡时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}和2层[gold]充能[/gold]。",
+  "HOTARU_STILL_COVERED_POWER.hbrDescription": "每回合首次通过卡牌使浮游炮获得额外完整行动时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}。",
+  "HOTARU_BREATHING_RHYTHM_POWER.hbrDescription": "本回合接下来{Remaining}次手动打出攻击牌时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}。普通回合与OD回合分别使用各自当前生效的账本。",
+  "HOTARU_BREATH_AFTER_MISS_POWER.hbrDescription": "仅统计每张手动牌的起手骰。\n{BlockRewardsText}",
+  "HOTARU_BREATH_AFTER_MISS_POWER.hbrRewardLine": "{Copies}份效果：每回合前{Limit}次未大成功，各获得{SecondaryValue}层充能和{amountSkill}%倍率格挡{blockPreview}；首次大成功时，抽{Draw}张牌。",
+  "CURL_UP_POWER.hbrDescription": "幻影受到攻击伤害时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}，随后失去此能力。",
   "HOTARU_CANNON_DAMAGE_MULTIPLIER.title": "灵魂之力",
   "HOTARU_CANNON_DAMAGE_MULTIPLIER.description": "此炮的最终伤害倍率。每段伤害最低为[blue]1[/blue]；格挡与免伤正常生效。当前：[blue]{Current}%[/blue]。上限：[blue]{Maximum}%[/blue]。当前升级：[blue]{Level}[/blue]级。\n每次升级，仅此炮的当前灵魂之力与上限各增加[blue]10[/blue]个百分点。小萤掷骰大成功时，随机激发两门不同的浮游炮；每门被选中的炮当前灵魂之力与上限各增加[blue]1[/blue]个百分点。\n每场普通、精英、Boss战斗结束后，当前灵魂之力分别降低[blue]1、2、4[/blue]个百分点，最低[blue]0%[/blue]；在火堆休息时恢复[blue]10[/blue]个百分点，最高为此炮的灵魂之力上限。",
   "HOTARU_DAMAGE_AMPLIFICATION_POWER.title": "伤害增幅",

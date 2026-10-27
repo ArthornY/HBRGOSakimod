@@ -43,15 +43,22 @@ internal static class HotaruCannonUpgrades
 
     internal static string CannonTitle(HotaruCannonKind kind) => Canonical(kind).Title.GetFormattedText();
 
-    internal static string BaseText(HotaruCannonKind kind) =>
-        new LocString("rest_site_ui", $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.base").GetFormattedText();
+    internal static string BaseText(HotaruCannonKind kind, Player owner = null) =>
+        SkillText(kind, $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.base", owner);
 
-    internal static string UpgradeText(HotaruCannonKind kind, int tier) =>
-        new LocString("rest_site_ui", $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.{tier}").GetFormattedText();
+    internal static string UpgradeText(HotaruCannonKind kind, int tier, Player owner = null) =>
+        SkillText(kind, $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.{tier}", owner);
+
+    private static string SkillText(HotaruCannonKind kind, string key, Player owner)
+    {
+        LocString text = HotaruCannonSkillPowerHelper.Description("rest_site_ui", key, owner);
+        HotaruCannonSkillPowerHelper.AddDescriptionVariables(text, kind);
+        return text.GetFormattedText();
+    }
 
     internal static string ObtainedEffects(Millsage relic, HotaruCannonKind kind) =>
         string.Join("\n", Enumerable.Range(1, relic.GetCannonUpgradeLevel(kind)).Select(tier => "• " +
-            HbrManualGlossaryPresentation.FormatDescription(UpgradeText(kind, tier), "hotaru_cannon")));
+            HbrManualGlossaryPresentation.FormatDescription(UpgradeText(kind, tier, relic.Owner), "hotaru_cannon")));
 
     internal static string DamageMultiplierText(int level, int currentPercent)
     {
@@ -61,11 +68,11 @@ internal static class HotaruCannonUpgrades
         return text.GetFormattedText();
     }
 
-    private static string Description(HotaruCannonKind kind, int level, int currentPercent)
+    private static string Description(HotaruCannonKind kind, int level, int currentPercent, Player owner)
     {
-        string basic = DamageMultiplierText(level, currentPercent) + "\n\n" + BaseText(kind);
+        string basic = DamageMultiplierText(level, currentPercent) + "\n\n" + BaseText(kind, owner);
         return level == 0 ? basic : basic + "\n\n" +
-            string.Join("\n", Enumerable.Range(1, level).Select(tier => "• " + UpgradeText(kind, tier)));
+            string.Join("\n", Enumerable.Range(1, level).Select(tier => "• " + UpgradeText(kind, tier, owner)));
     }
 
     internal static IReadOnlyList<HotaruCannonUpgradeChoice> GetChoices(Player player)
@@ -84,10 +91,10 @@ internal static class HotaruCannonUpgrades
             bool complete = level >= Millsage.MaximumCannonUpgradeLevel;
             bool available = unlocked && !complete && manual.MemoryGardenUpgradePoints > 0;
             string status = !unlocked ? Text("locked") : complete ? Text("complete")
-                : manual.MemoryGardenUpgradePoints <= 0 ? Text("noPoints") : UpgradeText(kind, level + 1);
+                : manual.MemoryGardenUpgradePoints <= 0 ? Text("noPoints") : UpgradeText(kind, level + 1, player);
             return new HotaruCannonUpgradeChoice(kind,
                 CannonTitle(kind) + $" · {level}/{Millsage.MaximumCannonUpgradeLevel}", IconPath(kind),
-                Description(kind, level, currentPercent), Description(kind, nextLevel, nextPercent), available, status);
+                Description(kind, level, currentPercent, player), Description(kind, nextLevel, nextPercent, player), available, status);
         }).ToArray();
     }
 

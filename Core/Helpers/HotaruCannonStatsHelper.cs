@@ -127,6 +127,7 @@ internal static class HotaruCannonStatsHelper
                 decimal amount = baseDamage;
                 if (includeContestBonus && cannon.Monster is HotaruContestCannon)
                     amount += SixSenseCombatHelper.TargetResistanceBreakCount(target) *
+                        HotaruCannonSkillPowerHelper.ContestResistanceDamage *
                         ((HotaruCannonModel)cannon.Monster).PhaseMultiplier(HotaruCannonPhase.End);
                 amount = HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, target, amount,
                     ((HotaruCannonModel)cannon.Monster).PhaseMultiplier(previewPhase));
@@ -149,12 +150,12 @@ internal static class HotaruCannonStatsHelper
     }
     internal static Task<bool> Damage(Creature cannon, Creature target, decimal amount,
         PlayerChoiceContext context, CardModel cardSource, CardPlay cardPlay = null, int phaseMultiplier = 1) =>
-        DamageCore(cannon, target, amount, context, cardSource, cardPlay, false, false, phaseMultiplier);
+        DamageCore(cannon, target, amount, context, cardSource, cardPlay, false, false, phaseMultiplier, false);
     internal static async Task ReactionDamage(PlayerChoiceContext context, Creature cannon,
-        Creature target, decimal baseAmount, CardModel cardSource, CardPlay cardPlay = null, bool hpOnly = false) =>
-        await DamageCore(cannon, target, baseAmount, context, cardSource, cardPlay, true, hpOnly, 1);
+        Creature target, decimal baseAmount, CardModel cardSource, CardPlay cardPlay = null, bool hpOnly = false, bool absoluteBase = false) =>
+        await DamageCore(cannon, target, baseAmount, context, cardSource, cardPlay, true, hpOnly, 1, absoluteBase);
     private static async Task<bool> DamageCore(Creature cannon, Creature target, decimal amount,
-        PlayerChoiceContext context, CardModel cardSource, CardPlay cardPlay, bool reaction, bool hpOnly, int phaseMultiplier)
+        PlayerChoiceContext context, CardModel cardSource, CardPlay cardPlay, bool reaction, bool hpOnly, int phaseMultiplier, bool absoluteBase)
     {
         Creature dealer = cannon?.PetOwner?.Creature;
         if (dealer == null || !Millsage.IsOwnedCannon(cannon, cannon.PetOwner) ||
@@ -172,6 +173,8 @@ internal static class HotaruCannonStatsHelper
         try
         {
             if (!reaction) HotaruCannonVigorHelper.MarkPrimaryCommand(cannon);
+            using var absolute = absoluteBase && !hpOnly && HbrBattleStatsHelper.IsEnabled(dealer)
+                ? HbrAbsoluteBaseDamageContext.Begin(dealer, cardSource, target, amount) : null;
             IEnumerable<DamageResult> results = hpOnly
                 ? await HpOnlyDamageContext.Damage(context, target, amount, dealer, cardSource)
                 : await CreatureCommandCompatibility.Damage(context, new[] { target }, amount,

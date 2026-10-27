@@ -27,7 +27,7 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(7m, ValueProp.Move)
+        HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m)
     };
 
     public MagicSwordLuckySevenHbrgoSaki()

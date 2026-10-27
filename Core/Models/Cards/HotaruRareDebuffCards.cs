@@ -44,7 +44,7 @@ public sealed class HotaruEchoesUnfinished : HotaruCannonCard
     protected override bool HasEnergyCostX => true;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(6m, ValueProp.Move), new IntVar("ExtraHits", 1m)
+        HbrSkillVars.Damage(100m, ValueProp.Move), new IntVar("ExtraHits", 1m)
     };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
@@ -55,5 +55,5 @@ public sealed class HotaruEchoesUnfinished : HotaruCannonCard
         await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, play)
             .Targeting(play.Target).WithHitCount(hits).WithHitFx("vfx/vfx_attack_slash").Execute(context);
     }
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
 }

@@ -37,10 +37,10 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(21m, ValueProp.Move),
+        HbrSkillVars.Damage(350m, ValueProp.Move),
         new PowerVar<VulnerablePower>(3m),
         new PowerVar<FragilePower>(3m),
-        new IntVar(DamagePerBowCardVar, 2m),
+        HbrSkillVars.DamageBonus(DamagePerBowCardVar, 100m, divisor: 3m),
         new IntVar(BowCardThresholdVar, 5m),
         new PowerVar<VulnerablePower>(ThresholdVulnerableVar, 3m),
         new PowerVar<FragilePower>(ThresholdFragileVar, 3m),
@@ -147,7 +147,7 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
     {
         DynamicVars["VulnerablePower"].UpgradeValueBy(2m);
         DynamicVars["FragilePower"].UpgradeValueBy(2m);
-        DynamicVars[DamagePerBowCardVar].UpgradeValueBy(1m);
+        DynamicVars[DamagePerBowCardVar].UpgradeDamageByPercent(50m, divisor: 3m);
         DynamicVars[BowCardThresholdVar].UpgradeValueBy(-2m);
         DynamicVars[ThresholdVulnerableVar].UpgradeValueBy(1m);
         DynamicVars[ThresholdFragileVar].UpgradeValueBy(1m);

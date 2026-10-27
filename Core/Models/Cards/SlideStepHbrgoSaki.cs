@@ -21,7 +21,7 @@ public sealed class SlideStepHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(9m, ValueProp.Move),
+            HbrSkillVars.Damage(150m, ValueProp.Move),
             new CardsVar(1)
         };
 
@@ -57,6 +57,6 @@ public sealed class SlideStepHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        base.DynamicVars.Damage.UpgradeValueBy(5m);
+        base.DynamicVars.Damage.UpgradeDamageByPercent(250m, divisor: 3m);
     }
 }

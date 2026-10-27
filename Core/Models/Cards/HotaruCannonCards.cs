@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ public sealed class HotaruEcho : HotaruCannonCard
     public HotaruEcho() : base(1, CardType.Skill, CardRarity.Common, TargetType.Self) { }
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new IntVar("BaseBlockBonus", 0m) };
+        new DynamicVar[] { HbrSkillVars.BlockBonus("BaseBlockBonus", 0m) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.Static(StaticHoverTip.Block) };
@@ -47,7 +48,7 @@ public sealed class HotaruEcho : HotaruCannonCard
         return Task.CompletedTask;
     }
 
-    protected override void OnUpgrade() => DynamicVars["BaseBlockBonus"].UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars["BaseBlockBonus"].UpgradeBlockByPercent(40m);
 }
 
 [CustomID("HOTARU_SALVO")]

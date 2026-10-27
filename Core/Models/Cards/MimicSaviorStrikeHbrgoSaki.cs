@@ -30,7 +30,7 @@ public sealed class MimicSaviorStrikeHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(9m, ValueProp.Move)
+        HbrSkillVars.Damage(150m, ValueProp.Move)
     };
 
     protected override bool IsPlayable =>
@@ -79,7 +79,7 @@ public sealed class MimicSaviorStrikeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(4m);
+        DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
         AddKeyword(CardKeyword.Retain);
     }
 }

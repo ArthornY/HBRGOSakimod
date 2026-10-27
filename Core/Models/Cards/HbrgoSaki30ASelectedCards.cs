@@ -28,7 +28,7 @@ public sealed class PressOnThroughPainHbrgoSaki : CardModel
     protected override bool IsPlayable => PhantomHelper.GetLivingPhantom(Owner) != null;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new HpLossVar(2m), new BlockVar(16m, ValueProp.Move)
+        new HpLossVar(2m), HbrSkillVars.Block(320m, ValueProp.Move)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<PhantomPower>() };
     public PressOnThroughPainHbrgoSaki() : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self) { }
@@ -41,7 +41,7 @@ public sealed class PressOnThroughPainHbrgoSaki : CardModel
         if (!CombatManager.Instance.IsOverOrEnding)
             await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
     }
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(5m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(100m);
 }
 
 public sealed class ChargeInReserveHbrgoSaki : CardModel
@@ -69,7 +69,7 @@ public sealed class PierceTheSilenceHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(9m, ValueProp.Move), new PowerVar<ChargePower>(2m)
+        HbrSkillVars.Damage(150m, ValueProp.Move), new PowerVar<ChargePower>(2m)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     { HoverTipFactory.FromPower<PhantomPower>(), HoverTipFactory.FromPower<ChargePower>() };
@@ -84,7 +84,7 @@ public sealed class PierceTheSilenceHbrgoSaki : CardModel
         if (hasNonAttackIntent && !CombatManager.Instance.IsOverOrEnding)
             await PowerCmd.Apply<ChargePower>(choiceContext, Owner.Creature, DynamicVars["ChargePower"].BaseValue, Owner.Creature, this);
     }
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class BorrowedEdgeHbrgoSaki : CardModel
@@ -93,7 +93,7 @@ public sealed class BorrowedEdgeHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
     protected override bool IsPlayable => PhantomHelper.GetLivingPhantom(Owner) != null;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-    { new DamageVar(5m, ValueProp.Move), new DynamicVar("DpLoss", 6m) };
+    { HbrSkillVars.Damage(250m, ValueProp.Move, divisor: 3m), new DynamicVar("DpLoss", 6m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     { HoverTipFactory.FromPower<PhantomPower>(), HoverTipFactory.FromPower<PhantomHighDimensionalShellPower>() };
     public BorrowedEdgeHbrgoSaki() : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
@@ -107,20 +107,20 @@ public sealed class BorrowedEdgeHbrgoSaki : CardModel
         await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target).WithHitCount(2).WithHitFx("vfx/vfx_attack_slash").Execute(choiceContext);
     }
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class RefuseToLeaveHbrgoSaki : CardModel
 {
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/refuse_to_leave_hbrgo_saki.png");
     public override string BetaPortraitPath => PortraitPath;
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new PowerVar<RefuseToLeavePower>(10m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.BlockPower<RefuseToLeavePower>(200m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     { HoverTipFactory.FromPower<PhantomPower>(), HoverTipFactory.FromPower<ChargePower>() };
     public RefuseToLeaveHbrgoSaki() : base(1, CardType.Power, CardRarity.Uncommon, TargetType.Self) { }
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay) =>
         await PowerCmd.Apply<RefuseToLeavePower>(choiceContext, Owner.Creature, DynamicVars["RefuseToLeavePower"].BaseValue, Owner.Creature, this);
-    protected override void OnUpgrade() => DynamicVars["RefuseToLeavePower"].UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars["RefuseToLeavePower"].UpgradeBlockByPercent(80m);
 }
 
 public sealed class SilentOfferingHbrgoSaki : CardModel
@@ -214,8 +214,8 @@ public sealed class ScarLedgerHbrgoSaki : CardModel
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Retain };
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new CalculationBaseVar(12m), new ExtraDamageVar(5m), new DynamicVar("BonusCap", 50m),
-        new CalculatedDamageVar(ValueProp.Move).WithMultiplier(GetDamageTakenMultiplier)
+        HbrSkillVars.DamageCalculationBase(200m), HbrSkillVars.ExtraDamage(250m, divisor: 3m), HbrSkillVars.DamageBonus("BonusCap", 2500m, divisor: 3m),
+        HbrSkillVars.CalculatedDamage(ValueProp.Move).WithMultiplier(GetDamageTakenMultiplier)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<PhantomPower>() };
     public ScarLedgerHbrgoSaki() : base(2, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
@@ -227,9 +227,9 @@ public sealed class ScarLedgerHbrgoSaki : CardModel
     }
     protected override void OnUpgrade()
     {
-        DynamicVars.CalculationBase.UpgradeValueBy(4m);
-        DynamicVars.ExtraDamage.UpgradeValueBy(3m);
-        DynamicVars["BonusCap"].UpgradeValueBy(30m);
+        DynamicVars.CalculationBase.UpgradeDamageByPercent(200m, divisor: 3m);
+        DynamicVars.ExtraDamage.UpgradeDamageByPercent(50m);
+        DynamicVars["BonusCap"].UpgradeDamageByPercent(500m);
     }
     private static decimal GetDamageTakenMultiplier(CardModel card, Creature target)
     {
@@ -246,8 +246,8 @@ public sealed class BuryYesterdayHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new CalculationBaseVar(12m), new ExtraDamageVar(6m),
-        new CalculatedDamageVar(ValueProp.Move).WithMultiplier(GetHighestPhantomLevel)
+        HbrSkillVars.DamageCalculationBase(200m), HbrSkillVars.ExtraDamage(100m),
+        HbrSkillVars.CalculatedDamage(ValueProp.Move).WithMultiplier(GetHighestPhantomLevel)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<PhantomPower>() };
     public BuryYesterdayHbrgoSaki() : base(2, CardType.Attack, CardRarity.Rare, TargetType.AllEnemies) { }
@@ -258,8 +258,8 @@ public sealed class BuryYesterdayHbrgoSaki : CardModel
     }
     protected override void OnUpgrade()
     {
-        DynamicVars.CalculationBase.UpgradeValueBy(6m);
-        DynamicVars.ExtraDamage.UpgradeValueBy(3m);
+        DynamicVars.CalculationBase.UpgradeDamageByPercent(100m);
+        DynamicVars.ExtraDamage.UpgradeDamageByPercent(50m);
     }
     private static decimal GetHighestPhantomLevel(CardModel card, Creature target)
     {
@@ -289,7 +289,7 @@ public sealed class DefyFateStrikeHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
     protected override bool HasEnergyCostX => true;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-    { new DamageVar(7m, ValueProp.Move), new DynamicVar("PhantomHits", 1m) };
+    { HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m), new DynamicVar("PhantomHits", 1m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<PhantomPower>() };
     public DefyFateStrikeHbrgoSaki() : base(0, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -307,7 +307,7 @@ public sealed class DefyFateStrikeHbrgoSaki : CardModel
     }
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
         DynamicVars["PhantomHits"].UpgradeValueBy(1m);
     }
 }

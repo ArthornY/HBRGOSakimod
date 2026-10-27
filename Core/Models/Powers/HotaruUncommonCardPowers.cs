@@ -86,7 +86,11 @@ public sealed class HotaruConvergingFragmentsPower : HotaruUncommonCardPower
 public sealed class HotaruLuckyFavorPower : HotaruUncommonCardPower { }
 
 [CustomID("HOTARU_STILL_COVERED_POWER")]
-public sealed class HotaruStillCoveredPower : HotaruUncommonCardPower { }
+public sealed class HotaruStillCoveredPower : HotaruUncommonCardPower
+{
+    public override LocString Description => HbrSkillBlockDescription.ForPower(this,
+        base.Description, "HOTARU_STILL_COVERED_POWER.hbrDescription", IsMutable ? Amount : 0m);
+}
 
 [CustomID("HOTARU_THREE_BREATHS_POWER")]
 public sealed class HotaruThreeBreathsPower : HotaruUncommonCardPower { }
@@ -267,4 +271,9 @@ public sealed class HotaruTrailingSilencePower : HotaruTurnLedgerPower
 }
 
 [CustomID("HOTARU_BREATHING_RHYTHM_POWER")]
-public sealed class HotaruBreathingRhythmPower : HotaruTurnLedgerPower { }
+public sealed class HotaruBreathingRhythmPower : HotaruTurnLedgerPower
+{
+    public override LocString Description => HbrSkillBlockDescription.ForPower(this,
+        base.Description, "HOTARU_BREATHING_RHYTHM_POWER.hbrDescription", IsMutable ? ActiveAmount : 0m,
+        referenceUnits: "本次生效格挡原值");
+}

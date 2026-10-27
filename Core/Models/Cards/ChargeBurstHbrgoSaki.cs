@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ public sealed class ChargeBurstHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new IntVar(_damagePerChargeVar, 4m),
+            HbrSkillVars.DamageBonus(_damagePerChargeVar, 200m, divisor: 3m),
             new PowerVar<ChargePower>(1m)
         };
 
@@ -87,6 +88,6 @@ public sealed class ChargeBurstHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars[_damagePerChargeVar].UpgradeValueBy(1m);
+        DynamicVars[_damagePerChargeVar].UpgradeDamageByPercent(50m, divisor: 3m);
     }
 }

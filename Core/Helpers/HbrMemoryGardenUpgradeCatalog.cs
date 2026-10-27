@@ -118,8 +118,12 @@ internal static class HbrMemoryGardenUpgradeCatalog
             suffix += ".30a";
         if (card is MatchaParfaitHbrgoSaki { UsesThirtyAEffects: true } && suffix is "1" or "2")
             suffix += ".30a";
-        LocString description = new("cards", card.Id.Entry + ".upgrade_effect." + suffix);
+        string key = card.Id.Entry + ".upgrade_effect." + suffix;
+        if (HbrSkillCardDescription.IsEnabled(card) && new LocString("cards", key + ".hbr").Exists())
+            key += ".hbr";
+        LocString description = new("cards", key);
         description.Add("energyPrefix", EnergyIconHelper.GetPrefix(card));
+        if (HbrSkillCardDescription.IsEnabled(card)) HbrSkillCardDescription.AddParameters(card, description);
         return description.GetFormattedText();
     }
 

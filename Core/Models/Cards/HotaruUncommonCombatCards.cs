@@ -29,7 +29,7 @@ public sealed class HotaruTripleScars : HotaruCannonCard
     public HotaruTripleScars() : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(5m, ValueProp.Move), new IntVar("DebuffDamage", 3m) };
+        new DynamicVar[] { HbrSkillVars.Damage(250m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("DebuffDamage", 50m) };
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
@@ -44,7 +44,7 @@ public sealed class HotaruTripleScars : HotaruCannonCard
             .WithHitFx("vfx/vfx_attack_slash").Execute(context);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 [CustomID("HOTARU_DAWN_GAP")]
@@ -80,7 +80,7 @@ public sealed class HotaruCountScars : HotaruCannonCard
     public HotaruCountScars() : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(18m, ValueProp.Move), new EnergyVar(1) };
+        new DynamicVar[] { HbrSkillVars.Damage(300m, ValueProp.Move), new EnergyVar(1) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<VulnerablePower>(), HoverTipFactory.FromPower<FragilePower>(),
@@ -111,7 +111,7 @@ public sealed class HotaruCountScars : HotaruCannonCard
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(7m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(350m, divisor: 3m);
 }
 
 [CustomID("HOTARU_HEART_WARMTH")]
@@ -120,7 +120,7 @@ public sealed class HotaruHeartWarmth : HotaruCannonCard
     public HotaruHeartWarmth() : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self) { }
     public override bool GainsBlock => true;
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new PowerVar<ChargePower>(2m), new BlockVar(5m, ValueProp.Move) };
+        new DynamicVar[] { new PowerVar<ChargePower>(2m), HbrSkillVars.Block(100m, ValueProp.Move) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<ChargePower>(), HoverTipFactory.Static(StaticHoverTip.Block)
@@ -134,7 +134,7 @@ public sealed class HotaruHeartWarmth : HotaruCannonCard
             await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, play);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(80m);
 }
 
 [CustomID("HOTARU_HESITATION_GAP")]
@@ -142,7 +142,7 @@ public sealed class HotaruHesitationGap : HotaruCannonCard
 {
     public HotaruHesitationGap() : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(8m, ValueProp.Move), new PowerVar<ChargePower>(1m) };
+        new DynamicVar[] { HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m), new PowerVar<ChargePower>(1m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<ChargePower>(), HoverTipFactory.FromPower<WeakPower>()
@@ -159,7 +159,7 @@ public sealed class HotaruHesitationGap : HotaruCannonCard
             DynamicVars["ChargePower"].BaseValue * (wasWeak ? 2m : 1m), Owner.Creature, this);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
 }
 
 [CustomID("HOTARU_LAST_BREATH")]
@@ -189,7 +189,7 @@ public sealed class HotaruLowEcho : HotaruCannonCard
     public HotaruLowEcho() : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self) { }
     public override bool GainsBlock => true;
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new BlockVar(10m, ValueProp.Move), new IntVar("RollBonus", 40m) };
+        new DynamicVar[] { HbrSkillVars.Block(200m, ValueProp.Move), new IntVar("RollBonus", 40m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.Static(StaticHoverTip.Block), HoverTipFactory.FromPower<HotaruLingeringEchoPower>()
@@ -206,7 +206,7 @@ public sealed class HotaruLowEcho : HotaruCannonCard
                 DynamicVars["RollBonus"].BaseValue, this);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(5m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(100m);
 }
 
 [CustomID("HOTARU_BENEATH_FRACTURE")]
@@ -214,7 +214,7 @@ public sealed class HotaruBeneathFracture : HotaruCannonCard
 {
     public HotaruBeneathFracture() : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(16m, ValueProp.Move), new IntVar("BreakDamage", 10m) };
+        new DynamicVar[] { HbrSkillVars.Damage(800m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("BreakDamage", 500m, divisor: 3m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
 
@@ -228,7 +228,7 @@ public sealed class HotaruBeneathFracture : HotaruCannonCard
             .WithHitFx("vfx/vfx_attack_slash").Execute(context);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(6m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(100m);
 }
 
 [CustomID("HOTARU_BLOODSTAINED_SCREEN")]
@@ -238,7 +238,7 @@ public sealed class HotaruBloodstainedScreen : HotaruCannonCard
     public override bool GainsBlock => true;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new CardsVar(1), new BlockVar(5m, ValueProp.Move), new PowerVar<ChargePower>(1m), new EnergyVar(1)
+        new CardsVar(1), HbrSkillVars.Block(100m, ValueProp.Move), new PowerVar<ChargePower>(1m), new EnergyVar(1)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {

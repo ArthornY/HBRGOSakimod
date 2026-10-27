@@ -56,7 +56,7 @@ public sealed class TogetherAtTheEndHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(12m, ValueProp.Move) };
+        new DynamicVar[] { HbrSkillVars.Damage(200m, ValueProp.Move) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<PhantomPower>() };
@@ -75,7 +75,7 @@ public sealed class TogetherAtTheEndHbrgoSaki : CardModel
             .Execute(choiceContext);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
 }
 
 public sealed class MemoryRefluxHbrgoSaki : CardModel
@@ -114,7 +114,7 @@ public sealed class AwaitingEchoHbrgoSaki : CardModel
     public override bool GainsBlock => true;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new BlockVar(8m, ValueProp.Move), new CardsVar(2) };
+        new DynamicVar[] { HbrSkillVars.Block(160m, ValueProp.Move), new CardsVar(2) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<PhantomPower>() };
@@ -132,7 +132,7 @@ public sealed class AwaitingEchoHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(60m);
 }
 
 public sealed class EmberRecoveryHbrgoSaki : CardModel
@@ -178,8 +178,8 @@ public sealed class EchoSlashHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(6m, ValueProp.Move),
-        new DamageVar("ExtraDamage", 6m, ValueProp.Move)
+        HbrSkillVars.Damage(100m, ValueProp.Move),
+        HbrSkillVars.Damage(100m, ValueProp.Move, name: "ExtraDamage")
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -207,7 +207,7 @@ public sealed class EchoSlashHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class StandAloneHbrgoSaki : CardModel
@@ -218,7 +218,7 @@ public sealed class StandAloneHbrgoSaki : CardModel
     public override bool GainsBlock => true;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new BlockVar(10m, ValueProp.Move), new CardsVar(1) };
+        new DynamicVar[] { HbrSkillVars.Block(200m, ValueProp.Move), new CardsVar(1) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<PhantomPower>() };

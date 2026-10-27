@@ -43,7 +43,7 @@ public sealed class SummerGrassDreamHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(9m, ValueProp.Move)
+        HbrSkillVars.Damage(150m, ValueProp.Move)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips

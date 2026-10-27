@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Integration;
@@ -41,7 +42,7 @@ public sealed class DefendHbrgoSaki : CardModel
 		new IHoverTip[] { HoverTipFactory.Static(StaticHoverTip.Block) };
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
-		new DynamicVar[] { new BlockVar(5m, ValueProp.Move) };
+		new DynamicVar[] { HbrSkillVars.Block(100m, ValueProp.Move) };
 
 	public override bool GainsBlock => true;
 
@@ -60,6 +61,6 @@ public sealed class DefendHbrgoSaki : CardModel
 
 	protected override void OnUpgrade()
 	{
-		DynamicVars.Block.UpgradeValueBy(3m);
+		DynamicVars.Block.UpgradeBlockByPercent(60m);
 	}
 }

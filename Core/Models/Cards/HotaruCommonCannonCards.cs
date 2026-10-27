@@ -21,7 +21,7 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class HotaruResonantFire : HotaruCannonCard
 {
     public HotaruResonantFire() : base(2, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new DamageVar(8m, ValueProp.Move) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m) };
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
@@ -33,7 +33,7 @@ public sealed class HotaruResonantFire : HotaruCannonCard
         await HotaruCommonCannonHelper.SelectAndTrigger(context, this, play);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
 }
 
 [CustomID("HOTARU_HANDOFF")]
@@ -41,7 +41,7 @@ public sealed class HotaruHandoff : HotaruCannonCard
 {
     public HotaruHandoff() : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-        { new DamageVar(8m, ValueProp.Move), new PowerVar<ChargePower>(1m) };
+        { HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m), new PowerVar<ChargePower>(1m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<ChargePower>() };
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
@@ -63,7 +63,7 @@ public sealed class HotaruLeaningOn : HotaruCannonCard
 {
     public HotaruLeaningOn() : base(2, CardType.Skill, CardRarity.Common, HotaruTargetTypes.OwnedCannon) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-        { new BlockVar(8m, ValueProp.Move), new IntVar("ExtraTriggers", 1m) };
+        { HbrSkillVars.Block(160m, ValueProp.Move), new IntVar("ExtraTriggers", 1m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.Static(StaticHoverTip.Block) };
     public override bool GainsBlock => true;
 
@@ -74,7 +74,7 @@ public sealed class HotaruLeaningOn : HotaruCannonCard
             await relic.ChargeFromCard(context, play.Target, DynamicVars["ExtraTriggers"].IntValue, this);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(80m);
 }
 
 [CustomID("HOTARU_BURN_WARMTH")]
@@ -109,7 +109,7 @@ public sealed class HotaruWaitOpportunity : HotaruCannonCard
 {
     public HotaruWaitOpportunity() : base(0, CardType.Skill, CardRarity.Common, TargetType.Self) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-        { new IntVar("ActivationCount", 1m), new BlockVar(0m, ValueProp.Move) };
+        { new IntVar("ActivationCount", 1m), HbrSkillVars.Block(0m, ValueProp.Move) };
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
         { HoverTipFactory.FromPower<HotaruWaitOpportunityPower>(), HoverTipFactory.Static(StaticHoverTip.Block) };
@@ -125,7 +125,7 @@ public sealed class HotaruWaitOpportunity : HotaruCannonCard
             await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, play);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(80m);
 }
 
 [CustomID("HOTARU_SIDE_BY_SIDE")]
@@ -133,7 +133,7 @@ public sealed class HotaruSideBySide : HotaruCannonCard
 {
     public HotaruSideBySide() : base(1, CardType.Skill, CardRarity.Common, TargetType.Self) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-        { new BlockVar(5m, ValueProp.Move), new IntVar("DamagePercent", 10m) };
+        { HbrSkillVars.Block(100m, ValueProp.Move), new IntVar("DamagePercent", 10m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
         { HoverTipFactory.Static(StaticHoverTip.Block), HoverTipFactory.FromPower<HotaruSideBySidePower>() };
     public override bool GainsBlock => true;

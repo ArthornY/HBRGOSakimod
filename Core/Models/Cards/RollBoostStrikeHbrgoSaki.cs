@@ -28,7 +28,7 @@ public sealed class RollBoostStrikeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(7m, ValueProp.Move),
+            HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m),
             new PowerVar<NextRollBonusPower>(10m)
         };
 
@@ -84,7 +84,7 @@ public sealed class RollBoostStrikeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2m);
+        DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
         DynamicVars["NextRollBonusPower"].UpgradeValueBy(10m);
     }
 }

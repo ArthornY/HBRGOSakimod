@@ -22,12 +22,14 @@ internal static class HotaruCannonKinds
 }
 
 // Pure combat state: no Godot objects, RNG, or game commands are persisted.
+// Saved damage/block powers stay in native compatibility units; percentage
+// authoring and text never rescale a loaded ledger.
 public sealed class HotaruCannonState
 {
     public const decimal MaximumStoredValue = 18_446_744_073_709_551_616m;
 
     [JsonInclude] public decimal HappinessDamage { get; private set; }
-    [JsonInclude] public decimal NextHappinessIncrease { get; private set; } = 1m;
+    [JsonInclude] public decimal NextHappinessIncrease { get; private set; } = HotaruCannonSkillPowerHelper.HappinessGrowthStep;
     [JsonInclude] public decimal BaseDamageBonus { get; internal set; }
     [JsonInclude] public decimal BaseBlockBonus { get; internal set; }
     [JsonInclude] public decimal PendingReplyBlock { get; internal set; }
@@ -98,7 +100,7 @@ public sealed class HotaruCannonState
         increase = Math.Min(MaximumStoredValue, DamageAmplificationLimits.MultiplySaturated(increase, Math.Max(0m, multiplier)));
         HappinessDamage = Math.Min(MaximumStoredValue, HappinessDamage + increase);
         // Every repeated complete growth advances its own sequence step.
-        NextHappinessIncrease = Math.Min(MaximumStoredValue, NextHappinessIncrease + 1m);
+        NextHappinessIncrease = Math.Min(MaximumStoredValue, NextHappinessIncrease + HotaruCannonSkillPowerHelper.HappinessGrowthStep);
         return increase;
     }
 

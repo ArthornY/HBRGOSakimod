@@ -35,7 +35,7 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/crush_you_like_a_bug_hbrgo_saki.png");
     public override string BetaPortraitPath => PortraitPath;
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new DamageVar(9m, ValueProp.Move) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.Damage(150m, ValueProp.Move) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips
     {
         get

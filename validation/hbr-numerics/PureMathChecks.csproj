@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Core/Helpers/HbrOriginalNumericFormula.cs" Link="HbrOriginalNumericFormula.cs" />
+    <Compile Include="../../Core/Helpers/HbrSkillPower.cs" Link="HbrSkillPower.cs" />
     <Compile Include="../../Core/Helpers/DamageAmplificationLimits.cs" Link="DamageAmplificationLimits.cs" />
     <None Update="reference-vectors.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

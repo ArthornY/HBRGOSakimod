@@ -67,6 +67,9 @@ public sealed class SelfSacrificeSlashHbrgoSaki : CardModel
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             Owner.Creature.Block / 2m);
+        using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(Owner)
+            ? HbrAbsoluteBaseDamageContext.Begin(Owner.Creature, this, cardPlay.Target, damage)
+            : null;
         await DamageCmd.Attack(damage)
             .FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target)

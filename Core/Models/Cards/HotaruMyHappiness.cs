@@ -50,7 +50,10 @@ public sealed class HotaruMyHappiness : HotaruCannonCard
             HotaruCannonRetirementChoice.Redemption => ".redemptionDescription",
             _ => ".normalDescription"
         };
-        LocString effect = new("cards", LocPrefix + suffix);
+        string key = LocPrefix + suffix;
+        if (HbrSkillCardDescription.IsEnabled(this) && new LocString("cards", key + ".hbr").Exists())
+            key += ".hbr";
+        LocString effect = new("cards", key);
         DynamicVars.AddTo(effect);
         description.Add("HappinessDescription", effect);
     }

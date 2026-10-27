@@ -210,7 +210,7 @@ internal static class HotaruUncommonCardHelper
         }
         if (!CanResolve(player, receipt)) return;
         if (receipt.Block > 0)
-            await CreatureCmd.GainBlock(player.Creature, receipt.Block, ValueProp.Unpowered, null);
+            await CreatureCmd.GainBlock(player.Creature, HbrSkillBlockHelper.ResolveUnpowered(player.Creature, receipt.Block), ValueProp.Unpowered, null);
         if (!CanResolve(player, receipt) || receipt.ThreeBreathsReward <= 0 ||
             player.Creature.GetPower<HotaruThreeBreathsPower>() is not { Amount: > 0 } breaths) return;
         breaths.ShowTriggered();
@@ -272,7 +272,7 @@ internal static class HotaruUncommonCardHelper
             !power.TryClaimTurnKey("first")) return;
         int block = power.Amount;
         power.ShowTriggered();
-        await CreatureCmd.GainBlock(player.Creature, block, ValueProp.Unpowered, null);
+        await CreatureCmd.GainBlock(player.Creature, HbrSkillBlockHelper.ResolveUnpowered(player.Creature, block), ValueProp.Unpowered, null);
     }
 
     internal static async Task OnTurnStart(PlayerChoiceContext context, Player player, object token)

@@ -43,8 +43,8 @@ public sealed class TeleportHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new BlockVar(5m, ValueProp.Move),
-            new CalculationBaseVar(0m),
+            HbrSkillVars.Block(100m, ValueProp.Move),
+            HbrSkillVars.BlockCalculationBase(0m),
             new SwordheartBlockVar().WithMultiplier(GetSwordheartAmount),
             new IntVar(_swordheartPerChargeVar, 2m),
             new PowerVar<ChargePower>(1m),
@@ -146,13 +146,16 @@ public sealed class TeleportHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(2m);
+        DynamicVars.Block.UpgradeBlockByPercent(40m);
         DynamicVars["SwordheartPower"].UpgradeValueBy(1m);
     }
 
-    private sealed class SwordheartBlockVar : CalculatedBlockVar
+    private sealed class SwordheartBlockVar : CalculatedBlockVar, IHbrSkillPowerVar
     {
         internal SwordheartBlockVar() : base(ValueProp.Move) { }
+
+        public HbrSkillPowerKind SkillPowerKind => HbrSkillPowerKind.Block;
+        public decimal SkillPowerPercent => HbrSkillPower.BlockPercent(Calculate(null));
 
         protected override DynamicVar GetExtraVar() =>
             ((CardModel)_owner).DynamicVars.Block;

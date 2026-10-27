@@ -20,7 +20,7 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DamageVar[] { new DamageVar(6m, ValueProp.Move) };
+        new DamageVar[] { HbrSkillVars.Damage(100m, ValueProp.Move) };
 
     protected override bool IsPlayable => CanUseDualSwordsCard();
 
@@ -52,7 +52,7 @@ public sealed class SwallowReversalHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        base.DynamicVars.Damage.UpgradeValueBy(2m);
+        base.DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
     }
 
     private bool CanUseDualSwordsCard()

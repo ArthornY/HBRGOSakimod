@@ -26,9 +26,9 @@ public sealed class ConsecutiveSlashHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(2m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move, divisor: 3m),
             new RepeatVar(_hitCount),
-            new IntVar("ResistanceDamage", 3m)
+            HbrSkillVars.DamageBonus("ResistanceDamage", 50m)
         };
 
     protected override bool IsPlayable => CanUseDualSwordsCard();
@@ -77,7 +77,7 @@ public sealed class ConsecutiveSlashHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(1m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m, divisor: 3m);
     }
 
     private bool CanUseDualSwordsCard()

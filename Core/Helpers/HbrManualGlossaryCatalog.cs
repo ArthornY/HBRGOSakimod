@@ -46,7 +46,8 @@ internal static class HbrManualGlossaryCatalog
             AddEntry(entries, powers, "powers", power.Id.Entry,
                 type.Assembly == typeof(HbrManualGlossaryCatalog).Assembly ? "HBR 能力" : "通用能力",
                 GetPowerIconPath(power), powers.HasEntry(power.Id.Entry + ".description")
-                    ? string.Empty : GetInheritedPowerDescription(powers, type));
+                    ? string.Empty : GetInheritedPowerDescription(powers, type),
+                hbrNumericsEnabled: hbrNumericsEnabled);
         }
 
         HashSet<string> commonKeywords = Enum.GetValues<CardKeyword>()
@@ -126,7 +127,9 @@ internal static class HbrManualGlossaryCatalog
             (prefix == SixSensePrefix || prefix.StartsWith(SixSensePrefix + ".", StringComparison.Ordinal));
         string descriptionKey = sixSense && table.HasEntry(prefix + ".menuDescription")
             ? prefix + ".menuDescription" : prefix + ".description";
-        if (hbrNumericsEnabled && table.HasEntry(prefix + ".hbrDescription"))
+        if (hbrNumericsEnabled && sixSense && table.HasEntry(prefix + ".hbrMenuDescription"))
+            descriptionKey = prefix + ".hbrMenuDescription";
+        else if (hbrNumericsEnabled && table.HasEntry(prefix + ".hbrDescription"))
             descriptionKey = prefix + ".hbrDescription";
         string raw = table.HasEntry(descriptionKey) ? table.GetRawText(descriptionKey) : descriptionFallback;
         if (hbrNumericsEnabled && prefix == SixSensePrefix)

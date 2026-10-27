@@ -21,7 +21,7 @@ public sealed class ResistanceBulwarkHbrgoSaki : CardModel
     public override bool GainsBlock => true;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new BlockVar(3m, ValueProp.Move), new ResistanceBlockCountVar()
+        HbrSkillVars.Block(60m, ValueProp.Move), new ResistanceBlockCountVar()
     };
 
     public ResistanceBulwarkHbrgoSaki() : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self) { }
@@ -35,7 +35,7 @@ public sealed class ResistanceBulwarkHbrgoSaki : CardModel
             await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(40m);
 
     internal static int GetBlockCount(CardModel card)
     {

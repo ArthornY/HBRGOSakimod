@@ -29,7 +29,7 @@ public sealed class ArmorBreakSoulStrikeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(9m, ValueProp.Move),
+            HbrSkillVars.Damage(150m, ValueProp.Move),
             new PowerVar<FragilePower>(0m)
         };
 

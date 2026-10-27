@@ -75,11 +75,11 @@ public sealed partial class Millsage
             if (EndgameSign > 0)
             {
                 for (int factor = 2; factor <= count; factor++) value *= factor;
-                return value;
+                return value * HotaruCannonSkillPowerHelper.HappinessGrowthStep;
             }
             int radix = WasCannonRetired(HotaruCannonKind.Happiness) ? 3 : 2;
             for (int power = 0; power < count; power++) value *= radix;
-            return radix == 3 ? value - 1m : value;
+            return (radix == 3 ? value - 1m : value) * HotaruCannonSkillPowerHelper.HappinessGrowthStep;
         }
     }
 

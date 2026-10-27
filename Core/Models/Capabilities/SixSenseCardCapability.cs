@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -178,9 +179,16 @@ public sealed class SixSenseCardCapability :
         yield return new HoverTip(new LocString("card_keywords", "HBRGO_SIX_SENSE.title"), description);
         foreach (SixSenseAttribute attribute in attributes)
         {
-            LocString effect = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}.description");
+            bool skillBlock = hbrNumerics && attribute == SixSenseAttribute.Simplicity;
+            LocString effect = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}." +
+                (skillBlock ? "hbrDescription" : "description"));
             decimal value = SixSenseCombatHelper.EffectValue(card.Owner, attribute);
-            effect.Add("value", attribute == SixSenseAttribute.Madness ? value * 100m : value);
+            if (skillBlock)
+            {
+                effect.Add("skill", HbrSkillPower.BlockPercent(value).ToString("0.##", CultureInfo.InvariantCulture));
+                effect.Add("value", HbrSkillBlockHelper.ResolveUnpowered(card.Owner?.Creature, value));
+            }
+            else effect.Add("value", attribute == SixSenseAttribute.Madness ? value * 100m : value);
             effect.Add("loss", RollKeywordRules.IsCopiedCard(card) ? 0 : SixSenseCombatHelper.ResistanceLossForPlayer(card.Owner, attribute));
             effect.Add("state", SixSenseCombatHelper.IsEnhanced(card.Owner, attribute) ? "强化" : "普通");
             yield return new HoverTip(new LocString("card_keywords", $"HBRGO_SIX_SENSE.{attribute}.title"), effect);

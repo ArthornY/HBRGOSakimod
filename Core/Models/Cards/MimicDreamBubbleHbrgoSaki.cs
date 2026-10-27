@@ -23,7 +23,7 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(2m, ValueProp.Move),
+        HbrSkillVars.Damage(100m, ValueProp.Move, divisor: 3m),
         new RepeatVar(_hitCount)
     };
 
@@ -84,7 +84,7 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        base.DynamicVars.Damage.UpgradeValueBy(1m);
+        base.DynamicVars.Damage.UpgradeDamageByPercent(50m, divisor: 3m);
     }
 
     private bool CanUseDualSwordsCard()

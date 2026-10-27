@@ -242,7 +242,7 @@ internal static class SixSenseCombatHelper
                         ValueProp.Unpowered, player.Creature, null);
                     break;
                 case SixSenseAttribute.Simplicity:
-                    await CreatureCmd.GainBlock(player.Creature, value, ValueProp.Unpowered, null);
+                    await CreatureCmd.GainBlock(player.Creature, HbrSkillBlockHelper.ResolveUnpowered(player.Creature, value), ValueProp.Unpowered, null);
                     break;
                 case SixSenseAttribute.Talent:
                     if (value > 0m) await PlayerCmd.GainGold(value, player);

@@ -810,7 +810,7 @@ internal static class PhantomHelper
                     previewTarget,
                     segment));
         decimal block = Math.Min(999_999_999m,
-            Math.Max(0m, Math.Floor(total / 2m) + Math.Max(0, bonusBlock)));
+            Math.Max(0m, Math.Floor(total / 2m) + HbrSkillBlockHelper.ResolveUnpowered(phantom, Math.Max(0, bonusBlock))));
         if (block <= 0)
         {
             return;
@@ -1581,13 +1581,13 @@ internal static class PhantomHelper
             int nibbitBlock = GetFusionEffectAmount(
                 effects,
                 PhantomFusionEffectType.Nibbit,
-                3m,
-                1m);
+                HbrSkillPower.BlockUnits(60m),
+                HbrSkillPower.BlockUnits(20m));
             if (nibbitBlock > 0)
             {
                 await CreatureCmd.GainBlock(
                     phantom,
-                    nibbitBlock,
+                    HbrSkillBlockHelper.ResolveUnpowered(phantom, nibbitBlock),
                     ValueProp.Unpowered,
                     null);
             }
@@ -1695,13 +1695,13 @@ internal static class PhantomHelper
             int block = GetFusionEffectAmount(
                 effects,
                 PhantomFusionEffectType.CrossbowRubyRaider,
-                5m,
-                2m);
+                HbrSkillPower.BlockUnits(100m),
+                HbrSkillPower.BlockUnits(40m));
             if (block > 0)
             {
                 await CreatureCmd.GainBlock(
                     phantom,
-                    block,
+                    HbrSkillBlockHelper.ResolveUnpowered(phantom, block),
                     ValueProp.Unpowered,
                     null);
             }
@@ -1756,13 +1756,13 @@ internal static class PhantomHelper
             int seapunkBlock = GetFusionEffectAmount(
                 effects,
                 PhantomFusionEffectType.Seapunk,
-                3m,
-                1m);
+                HbrSkillPower.BlockUnits(60m),
+                HbrSkillPower.BlockUnits(20m));
             if (seapunkBlock > 0)
             {
                 await CreatureCmd.GainBlock(
                     phantom,
-                    seapunkBlock,
+                    HbrSkillBlockHelper.ResolveUnpowered(phantom, seapunkBlock),
                     ValueProp.Unpowered,
                     null);
             }
@@ -1970,13 +1970,13 @@ internal static class PhantomHelper
             int tunnelerBlock = GetFusionEffectAmount(
                 effects,
                 PhantomFusionEffectType.Tunneler,
-                16m,
-                8m);
+                HbrSkillPower.BlockUnits(320m),
+                HbrSkillPower.BlockUnits(160m));
             if (tunnelerBlock > 0)
             {
                 await CreatureCmd.GainBlock(
                     phantom,
-                    tunnelerBlock,
+                    HbrSkillBlockHelper.ResolveUnpowered(phantom, tunnelerBlock),
                     ValueProp.Unpowered,
                     null);
             }

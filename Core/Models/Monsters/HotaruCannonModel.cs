@@ -44,17 +44,23 @@ public abstract class HotaruCannonModel : MonsterModel
     internal virtual decimal CurrentDamage => Kind switch
     {
         HotaruCannonKind.Happiness => State.HappinessDamage,
-        HotaruCannonKind.Contest => 2m * PhaseMultiplier(HotaruCannonPhase.End),
-        HotaruCannonKind.Longing => 3m * PhaseMultiplier(HotaruCannonPhase.End),
-        HotaruCannonKind.Absolution => 2m * PhaseMultiplier(HotaruCannonPhase.End),
+        HotaruCannonKind.Contest => HotaruCannonSkillPowerHelper.ContestEndDamage * PhaseMultiplier(HotaruCannonPhase.End),
+        HotaruCannonKind.Longing => HotaruCannonSkillPowerHelper.LongingEndDamage * PhaseMultiplier(HotaruCannonPhase.End),
+        HotaruCannonKind.Absolution => HotaruCannonSkillPowerHelper.AbsolutionEndDamage * PhaseMultiplier(HotaruCannonPhase.End),
         _ => 0m
     };
 
     internal virtual LocString IntentDescription()
     {
-        LocString text = new("monsters", Id.Entry + ".intentDescription");
+        LocString text = HotaruCannonSkillPowerHelper.Description("monsters", Id.Entry + ".intentDescription", Relic?.Owner);
         string template = text.GetRawText();
         Creature cannon = IsMutable ? Creature : null;
+        HotaruCannonSkillPowerHelper.AddDescriptionVariables(text, Kind,
+            damage: HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, CurrentDamage),
+            growth: State.NextHappinessIncrease * PhaseMultiplier(HotaruCannonPhase.End),
+            block: HotaruCannonSkillPowerHelper.StartBlock(Kind) + HotaruUncommonCannonHelper.BlockBonus(cannon),
+            startDamage: HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, HotaruCannonSkillPowerHelper.AbsolutionStartDamage),
+            endDamage: HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, HotaruCannonSkillPowerHelper.AbsolutionEndDamage));
         // A single template describes only this cannon's actions. Avoid full
         // damage hooks for unused fields while supporting translated templates.
         if (template.Contains("{Damage", StringComparison.Ordinal))
@@ -63,12 +69,12 @@ public abstract class HotaruCannonModel : MonsterModel
             State.NextHappinessIncrease * PhaseMultiplier(HotaruCannonPhase.End)).ToString(CultureInfo.InvariantCulture));
         if (template.Contains("{Block", StringComparison.Ordinal))
             text.Add("Block", CardDamageNumberFormatter.Format(HotaruCannonBlockHelper.Preview(
-                cannon?.PetOwner?.Creature, (Kind == HotaruCannonKind.Coffin ? 4m : 3m) * PhaseMultiplier(HotaruCannonPhase.Start), null, cannon)));
+                cannon?.PetOwner?.Creature, HotaruCannonSkillPowerHelper.StartBlock(Kind) * PhaseMultiplier(HotaruCannonPhase.Start), null, cannon)));
         if (template.Contains("{StartDamage", StringComparison.Ordinal))
-            text.Add("StartDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, PhaseMultiplier(HotaruCannonPhase.Start), previewPhase: HotaruCannonPhase.Start));
+            text.Add("StartDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, HotaruCannonSkillPowerHelper.AbsolutionStartDamage * PhaseMultiplier(HotaruCannonPhase.Start), previewPhase: HotaruCannonPhase.Start));
         text.Add("Repeat", HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.Start));
         if (template.Contains("{EndDamage", StringComparison.Ordinal))
-            text.Add("EndDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, 2m * PhaseMultiplier(HotaruCannonPhase.End)));
+            text.Add("EndDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, HotaruCannonSkillPowerHelper.AbsolutionEndDamage * PhaseMultiplier(HotaruCannonPhase.End)));
         text.Add("ResistanceBonus", PhaseMultiplier(HotaruCannonPhase.End));
         text.Add("EndRepeat", EndHitCount);
         string upgrades = Relic == null ? string.Empty : HotaruCannonUpgrades.ObtainedEffects(Relic, Kind);
@@ -88,11 +94,11 @@ public abstract class HotaruCannonModel : MonsterModel
     {
         List<AbstractIntent> intents = new();
         if (Kind == HotaruCannonKind.Absolution)
-            intents.Add(new CannonMultiAttackIntent(() => PhaseMultiplier(HotaruCannonPhase.Start), 3, IntentDescription));
+            intents.Add(new CannonMultiAttackIntent(() => HotaruCannonSkillPowerHelper.AbsolutionStartDamage * PhaseMultiplier(HotaruCannonPhase.Start), 3, IntentDescription));
         if (Kind != HotaruCannonKind.Coffin)
             intents.Add(new CannonSingleAttackIntent(() => CurrentDamage, IntentDescription, () => EndHitCount));
         if (Kind is HotaruCannonKind.Coffin or HotaruCannonKind.Longing)
-            intents.Add(new CannonDefendIntent(() => (Kind == HotaruCannonKind.Coffin ? 4 : 3) * PhaseMultiplier(HotaruCannonPhase.Start), IntentDescription));
+            intents.Add(new CannonDefendIntent(() => HotaruCannonSkillPowerHelper.StartBlock(Kind) * PhaseMultiplier(HotaruCannonPhase.Start), IntentDescription));
         // Natural phases belong to Millsage. Native pet/monster turns do nothing.
         MoveState idle = new("HOTARU_CANNON_IDLE", _ => Task.CompletedTask, intents.ToArray());
         return ModMonsterMoveStateMachines.SingleMoveLoop(idle);

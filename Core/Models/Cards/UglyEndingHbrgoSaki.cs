@@ -39,7 +39,7 @@ public sealed class UglyEndingHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(9m, ValueProp.Move),
+            HbrSkillVars.Damage(150m, ValueProp.Move),
             new IntVar("PermanentDamageBonus", 3m),
             new IntVar("Experience", 3m)
         };

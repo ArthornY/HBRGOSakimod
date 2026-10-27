@@ -72,7 +72,7 @@ internal static class HotaruCannonDamageUpgradeHelper
             decimal baseDamage = HotaruAbsolutionUpgradeHelper.GetDpDamageBonus(receipt.ActiveDpMaximum);
             if (baseDamage > 0m)
                 await HotaruCannonStatsHelper.ReactionDamage(context, cannon, receipt.Target, baseDamage,
-                    receipt.CardSource, receipt.CardPlay, hpOnly: false);
+                    receipt.CardSource, receipt.CardPlay, hpOnly: false, absoluteBase: true);
         }
     }
 

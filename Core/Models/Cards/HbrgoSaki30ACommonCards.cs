@@ -30,7 +30,7 @@ public sealed class ReturnToMeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(3m, ValueProp.Move)
+            HbrSkillVars.Damage(50m, ValueProp.Move)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -71,7 +71,7 @@ public sealed class ReturnToMeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
     }
 }
 

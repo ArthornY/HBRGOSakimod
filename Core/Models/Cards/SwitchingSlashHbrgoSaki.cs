@@ -25,7 +25,7 @@ public sealed class SwitchingSlashHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DamageVar[]
         {
-            new DamageVar(7m, ValueProp.Move)
+            HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m)
         };
 
     protected override bool IsPlayable => CanUseDualSwordsCard();
@@ -87,7 +87,7 @@ public sealed class SwitchingSlashHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2m);
+        DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
     }
 
     private bool CanUseDualSwordsCard()

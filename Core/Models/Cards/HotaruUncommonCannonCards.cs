@@ -22,11 +22,11 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class HotaruFingertipHabit : HotaruCannonCard
 {
     public HotaruFingertipHabit() : base(2, CardType.Power, CardRarity.Uncommon, TargetType.Self) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("BaseGain", 2m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.CannonGrowthBonus("BaseGain", 100m, divisor: 3m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<HotaruFingertipHabitPower>() };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
         await PowerCmd.Apply<HotaruFingertipHabitPower>(context, Owner.Creature, DynamicVars["BaseGain"].BaseValue, Owner.Creature, this);
-    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeValueBy(1m);
+    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeCannonGrowthByPercent(50m, divisor: 3m);
 }
 
 [CustomID("HOTARU_LIGHT_POINTS")]
@@ -48,7 +48,7 @@ public sealed class HotaruLightPoints : HotaruCannonCard
 public sealed class HotaruAwaitReply : HotaruCannonCard
 {
     public HotaruAwaitReply() : base(1, CardType.Skill, CardRarity.Uncommon, HotaruTargetTypes.OwnedCannon) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new BlockVar(8m, ValueProp.Move), new CardsVar(2) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.Block(160m, ValueProp.Move), new CardsVar(2) };
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     public override bool GainsBlock => true;
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play)
@@ -56,7 +56,7 @@ public sealed class HotaruAwaitReply : HotaruCannonCard
         HotaruUncommonCannonHelper.QueueReply(play.Target, DynamicVars.Block.BaseValue, DynamicVars.Cards.IntValue);
         return Task.CompletedTask;
     }
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(5m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(100m);
 }
 
 [CustomID("HOTARU_WAKING_COMMAND")]
@@ -75,7 +75,7 @@ public sealed class HotaruWakingCommand : HotaruCannonCard
 public sealed class HotaruCrossFracture : HotaruCannonCard
 {
     public HotaruCrossFracture() : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new DamageVar(15m, ValueProp.Move) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.Damage(250m, ValueProp.Move) };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         ArgumentNullException.ThrowIfNull(play.Target);
@@ -84,14 +84,14 @@ public sealed class HotaruCrossFracture : HotaruCannonCard
             .Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
         if (broken) await HotaruCommonCannonHelper.SelectAndTrigger(context, this, play);
     }
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(7m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(350m, divisor: 3m);
 }
 
 [CustomID("HOTARU_ADD_LIGHT")]
 public sealed class HotaruAddLight : HotaruCannonCard
 {
     public HotaruAddLight() : base(1, CardType.Skill, CardRarity.Uncommon, HotaruTargetTypes.OwnedCannon) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("BaseGain", 2m), new IntVar("CriticalGain", 2m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.CannonGrowthBonus("BaseGain", 100m, divisor: 3m), HbrSkillVars.CannonGrowthBonus("CriticalGain", 100m, divisor: 3m) };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         var roll = this.Capability<RollGlossaryCapability>();
@@ -100,19 +100,19 @@ public sealed class HotaruAddLight : HotaruCannonCard
         if (RollKeywordRules.IsCriticalRoll(Owner, roll?.GetCurrentRollDetailsFor(this))) gain += DynamicVars["CriticalGain"].BaseValue;
         await HotaruUncommonCannonHelper.Grow(context, play.Target, gain, this, play);
     }
-    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeValueBy(1m);
+    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeCannonGrowthByPercent(50m, divisor: 3m);
 }
 
 [CustomID("HOTARU_FIRST_BEATS")]
 public sealed class HotaruFirstBeats : HotaruCannonCard
 {
     public HotaruFirstBeats() : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.Self) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("BaseGain", 1m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.CannonGrowthBonus("BaseGain", 50m, divisor: 3m) };
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<HotaruFirstBeatsPower>() };
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
         HotaruFirstBeatsPower.Apply(context, Owner.Creature, DynamicVars["BaseGain"].IntValue, this);
-    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeValueBy(1m);
+    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeCannonGrowthByPercent(50m, divisor: 3m);
 }
 
 [CustomID("HOTARU_TRUST_LIGHT")]

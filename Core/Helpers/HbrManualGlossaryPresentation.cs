@@ -39,6 +39,15 @@ internal static class HbrManualGlossaryPresentation
             if (name == "singleEnergyIcon") return EnergyIcon;
             if (sense is { } attribute)
             {
+                if (attribute == SixSenseAttribute.Simplicity &&
+                    name is "normalSkill" or "enhancedSkill" or "normalBlock" or "enhancedBlock")
+                {
+                    AddNote("L 表示单纯的有效等级；K(I) 表示按角色已确认知性计算的格挡加成系数。");
+                    bool enhanced = name.StartsWith("enhanced", StringComparison.Ordinal);
+                    return name.EndsWith("Skill", StringComparison.Ordinal)
+                        ? SenseFormula(attribute, enhanced, skillPercent: true)
+                        : $"⌊{SenseFormula(attribute, enhanced)}×100×K(I)⌋";
+                }
                 if (name is "normal" or "enhanced")
                 {
                     if (attribute != SixSenseAttribute.Talent) AddNote("L 表示该项六感的等级。");
@@ -48,6 +57,18 @@ internal static class HbrManualGlossaryPresentation
             }
             switch (name)
             {
+                case "amountSkill":
+                    AddNote("B 表示本次生效的格挡原值：能力层数、当前生效账本值，或每份奖励的原值。");
+                    return "（20×B）";
+                case "amountBlock":
+                    AddNote("B 表示本次生效的格挡原值，K(I) 为获得者知性的格挡加成系数。");
+                    return "向下取整（B×100×K(I)）";
+                case "blockPreview":
+                    AddNote("实际格挡为向下取整（B×100×K(I)）；K(I) 根据获得者知性计算。");
+                    return "（按获得者知性结算）";
+                case "BlockRewardsText" when sourceId.EndsWith("HOTARU_BREATH_AFTER_MISS_POWER", StringComparison.Ordinal):
+                    AddNote("每份效果分别保存触发次数、充能、格挡原值与抽牌数；格挡原值 B 对应 20×B% 倍率，实际按知性结算。");
+                    return "每份效果：每回合指定次数内未大成功，获得该份效果的充能和（20×B）%倍率格挡；首次大成功时，抽取该份效果指定的张数。";
                 case "RollBonus" when sourceId.EndsWith("HOTARU_IRIDESCENCE", StringComparison.Ordinal):
                     AddNote("C 表示虹光自身的永久充能计数，初始 1 层，上限 6 层。");
                     return "（30×C）";
@@ -127,9 +148,11 @@ internal static class HbrManualGlossaryPresentation
                 ? sense : null;
     }
 
-    private static string SenseFormula(SixSenseAttribute sense, bool enhanced)
+    private static string SenseFormula(SixSenseAttribute sense, bool enhanced, bool skillPercent = false)
     {
-        decimal scale = sense == SixSenseAttribute.Madness ? 100m : 1m;
+        decimal scale = sense == SixSenseAttribute.Madness ? 100m :
+            skillPercent && sense == SixSenseAttribute.Simplicity
+                ? 100m / HbrSkillPower.LegacyBlockAt100Percent : 1m;
         decimal baseline = SixSenseCombatHelper.EffectValue(sense, 0m, enhanced) * scale;
         decimal perLevel = SixSenseCombatHelper.EffectValue(sense, 1m, enhanced) * scale - baseline;
         if (perLevel == 0m) return Number(baseline);

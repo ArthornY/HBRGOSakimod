@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ public sealed class CoveringFireHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new BlockVar(9m, ValueProp.Move),
+            HbrSkillVars.Block(180m, ValueProp.Move),
             new RepeatVar(2)
         };
 
@@ -67,7 +68,7 @@ public sealed class CoveringFireHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(5m);
+        DynamicVars.Block.UpgradeBlockByPercent(100m);
         DynamicVars.Repeat.UpgradeValueBy(1m);
     }
 }

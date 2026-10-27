@@ -198,7 +198,8 @@ public abstract class HotaruConfiguredRollPower : HotaruRollProgressPower
         }
     }
 
-    protected string FormatRewardLines(string key, int fallbackLimit, int fallbackValue, int fallbackDraw)
+    protected string FormatRewardLines(string key, int fallbackLimit, int fallbackValue, int fallbackDraw,
+        bool skillBlock = false)
     {
         RewardEntry[] entries = IsMutable ? Snapshot() : new[]
         {
@@ -212,6 +213,7 @@ public abstract class HotaruConfiguredRollPower : HotaruRollProgressPower
             line.Add("PrimaryValue", entry.Value);
             line.Add("SecondaryValue", entry.SecondaryValue);
             line.Add("Draw", entry.Draw);
+            if (skillBlock) HbrSkillBlockDescription.AddParameters(line, IsMutable ? Owner : null, entry.Value);
             return line.GetFormattedText();
         }));
     }
@@ -235,6 +237,14 @@ public sealed class HotaruBreathAfterMissPower : HotaruConfiguredRollPower
         get
         {
             LocString text = base.Description;
+            if (HbrSkillBlockDescription.IsEnabled(this))
+            {
+                LocString replacement = new("powers", "HOTARU_BREATH_AFTER_MISS_POWER.hbrDescription");
+                replacement.AddVariablesFrom(text);
+                replacement.Add("BlockRewardsText", FormatRewardLines(
+                    "HOTARU_BREATH_AFTER_MISS_POWER.hbrRewardLine", 2, 4, 1, skillBlock: true));
+                return replacement;
+            }
             text.Add("RewardsText", FormatRewardLines("HOTARU_BREATH_AFTER_MISS_POWER.rewardLine", 2, 4, 1));
             return text;
         }

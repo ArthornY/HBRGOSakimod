@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -22,7 +23,7 @@ public sealed class ExtremeDodgeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new BlockVar(10m, ValueProp.Move),
+            HbrSkillVars.Block(200m, ValueProp.Move),
             new PowerVar<ExtremeDodgeRollPenaltyPower>(2m)
         };
 
@@ -58,6 +59,6 @@ public sealed class ExtremeDodgeHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(5m);
+        DynamicVars.Block.UpgradeBlockByPercent(100m);
     }
 }

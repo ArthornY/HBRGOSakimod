@@ -39,7 +39,7 @@ public sealed class HotaruStepUpward : HotaruCannonCard
 {
     public HotaruStepUpward() : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-        { new DamageVar(8m, ValueProp.Move), new IntVar("ExtraActionDamage", 3) };
+        { HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("ExtraActionDamage", 50m) };
     private decimal ExtraActions => IsMutable ? HotaruRareCannonHelper.ExecutedExtraActions(Owner) : 0m;
     private decimal CurrentDamage => DamageAmplificationLimits.AddSaturated(DynamicVars.Damage.BaseValue,
         DamageAmplificationLimits.MultiplySaturated(ExtraActions, DynamicVars["ExtraActionDamage"].BaseValue));
@@ -48,6 +48,7 @@ public sealed class HotaruStepUpward : HotaruCannonCard
         base.AddExtraArgsToDescription(description);
         description.Add("ExecutedExtraActions", ExtraActions);
         description.Add("CurrentDamage", CurrentDamage);
+        description.Add("CurrentDamageSkill", HbrSkillCardDescription.FormatPercent(HbrSkillPower.DamagePercent(CurrentDamage)));
     }
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
@@ -55,5 +56,5 @@ public sealed class HotaruStepUpward : HotaruCannonCard
         await DamageCmd.Attack(CurrentDamage).FromCardCompat(this, play).Targeting(play.Target)
             .WithHitFx("vfx/vfx_attack_slash").Execute(context);
     }
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(4);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
 }

@@ -34,7 +34,7 @@ public sealed class DestinedArrowHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DamageVar[]
         {
-            new DamageVar(7m, ValueProp.Move)
+            HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m)
         };
 
     public DestinedArrowHbrgoSaki()

@@ -26,7 +26,7 @@ public sealed class SoulImpactHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(10m, ValueProp.Move)
+            HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -58,7 +58,7 @@ public sealed class SoulImpactHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(4m);
+        DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
     }
 }
 
@@ -72,7 +72,7 @@ public sealed class ChargeUpSlashHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move),
             new PowerVar<ChargeUpSlashNextTurnPower>(3m)
         };
 
@@ -110,7 +110,7 @@ public sealed class ChargeUpSlashHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2m);
+        DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
         DynamicVars["ChargeUpSlashNextTurnPower"].UpgradeValueBy(1m);
     }
 }
@@ -129,9 +129,9 @@ public sealed class SacrificialAttackHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new CalculationBaseVar(0m),
-            new ExtraDamageVar(5m),
-            new CalculatedDamageVar(ValueProp.Move)
+            HbrSkillVars.DamageCalculationBase(0m),
+            HbrSkillVars.ExtraDamage(250m, divisor: 3m),
+            HbrSkillVars.CalculatedDamage(ValueProp.Move)
                 .WithMultiplier(GetActivePhantomLevel)
         };
 
@@ -175,7 +175,7 @@ public sealed class SacrificialAttackHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.ExtraDamage.UpgradeValueBy(2m);
+        DynamicVars.ExtraDamage.UpgradeDamageByPercent(100m, divisor: 3m);
     }
 
     private static decimal GetActivePhantomLevel(

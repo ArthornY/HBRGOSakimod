@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ public sealed class HotaruStrike : HotaruStarterCard
     protected override HashSet<CardTag> CanonicalTags => new() { CardTag.Strike };
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(6m, ValueProp.Move) };
+        new DynamicVar[] { HbrSkillVars.Damage(100m, ValueProp.Move) };
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
@@ -46,7 +47,7 @@ public sealed class HotaruStrike : HotaruStarterCard
             .Execute(choiceContext);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class HotaruDefend : HotaruStarterCard
@@ -56,7 +57,7 @@ public sealed class HotaruDefend : HotaruStarterCard
     protected override HashSet<CardTag> CanonicalTags => new() { CardTag.Defend };
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new BlockVar(5m, ValueProp.Move) };
+        new DynamicVar[] { HbrSkillVars.Block(100m, ValueProp.Move) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.Static(StaticHoverTip.Block) };
@@ -66,7 +67,7 @@ public sealed class HotaruDefend : HotaruStarterCard
     protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay) =>
         CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
 
-    protected override void OnUpgrade() => DynamicVars.Block.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Block.UpgradeBlockByPercent(60m);
 }
 
 public sealed class HotaruStimulate : HotaruStarterCard

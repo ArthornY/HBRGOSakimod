@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,8 +52,8 @@ public sealed class HerSongIsMyScreamHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(9m, ValueProp.Move),
-        new BlockVar(7m, ValueProp.Move)
+        HbrSkillVars.Damage(150m, ValueProp.Move),
+        HbrSkillVars.Block(140m, ValueProp.Move)
     };
 
     public override bool GainsBlock => true;
@@ -83,7 +84,7 @@ public sealed class HerSongIsMyScreamHbrgoSaki : CardModel
         base.AddExtraArgsToDescription(description);
         string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel)
             .Where(id => id != 6)
-            .Select(id => new LocString("cards", Id.Entry + ".upgrade_effect." + id).GetFormattedText())
+            .Select(id => HbrMemoryGardenUpgradeCatalog.GetEffectDescription(this, id.ToString()))
             .ToArray();
         description.Add("UpgradeEffects", effects.Length == 0 ? string.Empty : "\n" + string.Join("\n", effects));
     }
@@ -123,11 +124,17 @@ public sealed class HerSongIsMyScreamHbrgoSaki : CardModel
             await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
 
         if (HasUpgradeEffect(0))
-            await DamageCmd.Attack(Owner.Creature.Block)
+        {
+            decimal blockDamage = Owner.Creature.Block;
+            using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(Owner)
+                ? HbrAbsoluteBaseDamageContext.Begin(Owner.Creature, this, cardPlay.Target, blockDamage)
+                : null;
+            await DamageCmd.Attack(blockDamage)
                 .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
+        }
 
         if (HasUpgradeEffect(1))
             await PowerCmd.Apply<DexterityPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);

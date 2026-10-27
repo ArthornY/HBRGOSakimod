@@ -24,7 +24,7 @@ public sealed class ShelterTheAfterimageHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(6m, ValueProp.Move),
+        HbrSkillVars.Damage(100m, ValueProp.Move),
         new DynamicVar("Recovery", 4m)
     };
 
@@ -48,7 +48,7 @@ public sealed class ShelterTheAfterimageHbrgoSaki : CardModel
             PhantomHelper.GetLivingPhantom(Owner), DynamicVars["Recovery"].IntValue, this);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class PainTransmissionHbrgoSaki : CardModel
@@ -60,7 +60,7 @@ public sealed class PainTransmissionHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(12m, ValueProp.Move),
+        HbrSkillVars.Damage(200m, ValueProp.Move),
         new HpLossVar(3m)
     };
 
@@ -86,7 +86,7 @@ public sealed class PainTransmissionHbrgoSaki : CardModel
             .Execute(choiceContext);
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(4m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
 }
 
 public sealed class StandInFrontHbrgoSaki : CardModel
@@ -98,8 +98,8 @@ public sealed class StandInFrontHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(5m, ValueProp.Move),
-        new BlockVar(5m, ValueProp.Move)
+        HbrSkillVars.Damage(250m, ValueProp.Move, divisor: 3m),
+        HbrSkillVars.Block(100m, ValueProp.Move)
     };
 
     public StandInFrontHbrgoSaki()
@@ -117,8 +117,8 @@ public sealed class StandInFrontHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(2m);
-        DynamicVars.Block.UpgradeValueBy(2m);
+        DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
+        DynamicVars.Block.UpgradeBlockByPercent(40m);
     }
 }
 
@@ -130,8 +130,8 @@ public sealed class ActInYourSteadHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(4m, ValueProp.Move),
-        new DynamicVar("BonusDamage", 3m)
+        HbrSkillVars.Damage(200m, ValueProp.Move, divisor: 3m),
+        HbrSkillVars.DamageBonus("BonusDamage", 50m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -159,7 +159,7 @@ public sealed class ActInYourSteadHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
 }
 
 public sealed class ArcSweepHbrgoSaki : CardModel
@@ -169,7 +169,7 @@ public sealed class ArcSweepHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(5m, ValueProp.Move) };
+        new DynamicVar[] { HbrSkillVars.Damage(250m, ValueProp.Move, divisor: 3m) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new[] { HoverTipFactory.FromPower<PhantomNextAttackAllEnemiesPower>() };
@@ -192,7 +192,7 @@ public sealed class ArcSweepHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class LoneAssaultHbrgoSaki : CardModel
@@ -202,7 +202,7 @@ public sealed class LoneAssaultHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new DamageVar(8m, ValueProp.Move) };
+        new DynamicVar[] { HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m) };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[] { HoverTipFactory.FromPower<PhantomPower>() };
@@ -224,7 +224,7 @@ public sealed class LoneAssaultHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }
 
 public sealed class GatherWarmthHbrgoSaki : CardModel
@@ -235,7 +235,7 @@ public sealed class GatherWarmthHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(8m, ValueProp.Move),
+        HbrSkillVars.Damage(400m, ValueProp.Move, divisor: 3m),
         new PowerVar<ChargePower>(3m)
     };
 
@@ -262,5 +262,5 @@ public sealed class GatherWarmthHbrgoSaki : CardModel
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(3m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);
 }

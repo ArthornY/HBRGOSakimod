@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -31,7 +32,7 @@ public sealed class LastStandHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(14m, ValueProp.Move),
+            HbrSkillVars.Damage(700m, ValueProp.Move, divisor: 3m),
             new PowerVar<VulnerablePower>(2m),
             new EnergyVar(1)
         };

@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Commands;
@@ -23,7 +24,7 @@ public sealed class DrinkTeaHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new BlockVar(6m, ValueProp.Move),
+        HbrSkillVars.Block(120m, ValueProp.Move),
         new CardsVar(1)
     };
 
@@ -46,7 +47,7 @@ public sealed class DrinkTeaHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Block.UpgradeValueBy(3m);
+        DynamicVars.Block.UpgradeBlockByPercent(60m);
         DynamicVars.Cards.UpgradeValueBy(1m);
     }
 }

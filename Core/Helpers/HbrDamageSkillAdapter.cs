@@ -7,16 +7,16 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
-// STS cards have no original-game skill rows. These explicit bridge profiles
-// keep their existing base values/upgrade effects while giving the shared HBR
-// formula real stat-dependent power. They are adaptation values, not data
-// claimed to have been extracted from HBR's character/monster catalog.
+// Skill definitions use explicit coefficients. Native DynamicVars and commands
+// retain their compatible units, so upgrades, enchants and old saves cross one
+// conversion boundary here. These profiles are adaptation values, not original
+// HBR character/monster skill data.
 internal static class HbrDamageSkillAdapter
 {
-    internal const decimal OutgoingPowerUnit = 1000m;
+    internal const decimal OutgoingPowerUnit = HbrSkillPower.OutgoingDamageUnit;
     internal const decimal IncomingPowerUnit = 100m;
-    internal const decimal PlayerBlockUnit = 100m;
-    internal const decimal DefaultParameterLimit = 140m;
+    internal const decimal PlayerBlockUnit = HbrSkillPower.PlayerBlockUnit;
+    internal const decimal DefaultParameterLimit = HbrSkillPower.ParameterLimit;
     internal static readonly HbrStatWeights HpWeights = new(2, 1, 0, 0, 0, 0);
     internal static readonly HbrStatWeights DpWeights = new(1, 2, 0, 0, 0, 0);
     internal static readonly HbrStatWeights SingleDefense = new(0, 0, 0, 2, 1, 0);
@@ -27,6 +27,12 @@ internal static class HbrDamageSkillAdapter
     {
         if (legacyPower <= 0m || !props.IsPoweredAttack() ||
             !HbrBattleStatsHelper.TryGetStats(dealer, out HbrBattleStats stats))
+            return legacyPower;
+
+        // Resource-derived attacks already carry a world-space DP/HP/block
+        // amount. They still receive normal attack modifiers, not another skill
+        // coefficient conversion or stat-curve/natural-critical evaluation.
+        if (HbrAbsoluteBaseDamageContext.Matches(target, dealer, cardSource, legacyPower))
             return legacyPower;
 
         bool incoming = EnemyStatScalingHelper.IsEnemy(dealer);
@@ -49,7 +55,7 @@ internal static class HbrDamageSkillAdapter
         HbrStatWeights weights = target?.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m
             ? DpWeights : HpWeights;
         decimal power = HbrOriginalNumericFormula.EvaluateSkillPower(stats, weights,
-            parameter, Curve(legacyPower, OutgoingPowerUnit), critical);
+            parameter, HbrSkillPower.DamageCurveFromUnits(legacyPower), critical);
         return critical ? DamageAmplificationLimits.MultiplySaturated(power,
             HbrOriginalNumericFormula.CriticalMultiplier()) : power;
     }
@@ -80,9 +86,6 @@ internal static class HbrDamageSkillAdapter
         decimal unit = EnemyStatScalingHelper.IsEnemy(target) ? OutgoingPowerUnit : PlayerBlockUnit;
         // Block is a STS resource. The HBR intelligence buff curve supplies its
         // stat-dependent support coefficient without treating Dexterity as DEX.
-        decimal support = HbrOriginalNumericFormula.EvaluateBuffPotency(stats.Intelligence,
-            new HbrSkillPowerCurve(0.8m, 1.2m, 300m));
-        return decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
-            DamageAmplificationLimits.MultiplySaturated(amount, unit), support));
+        return HbrSkillPower.EvaluateBlockFromUnits(amount, stats.Intelligence, unit);
     }
 }

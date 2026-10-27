@@ -8,7 +8,9 @@ From the repository root:
 dotnet run --project validation/hbr-numerics/PureMathChecks.csproj --configuration Release
 ```
 
-The project compiles the real numeric formula and saturation helper by relative path. It runs 38 boundary checks and 480 saved reference vectors, then writes `bin/Release/net9.0/report.json`. Build outputs and the report are ignored by the root `.gitignore`.
+The project compiles the real numeric formula, skill-coefficient profile, and saturation helper by relative path. It runs formula boundary checks, coefficient conversion/equivalence checks, and 480 saved reference vectors, then writes `bin/Release/net9.0/report.json` with both production source hashes. Build outputs and the report are ignored by the root `.gitignore`.
+
+The coefficient profile is an adaptation policy: the old six-point strike is damage 100%, while the old five-point defend is block 100%. The damage profile has power 6000–12000 and parameter limit 140 at 100%. Block 100% has base power 500 before its intelligence support curve. For repeating percentages, configuration passes a percentage/divisor pair, such as `DamageUnits(50, 3)` for one native damage unit. Display percentages are never fed back into combat calculations. Multi-hit coefficients are checked per hit; actual HP/DP ratios and already-resolved resource values are outside this conversion.
 
 The vectors come from the community calculator author's current implementation, not an official HBR formula publication:
 

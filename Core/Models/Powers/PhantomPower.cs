@@ -348,7 +348,7 @@ public sealed class PhantomPower : PowerModel
 
         await CreatureCmd.GainBlock(
             Owner,
-            curlUp.Amount,
+            HbrSkillBlockHelper.ResolveUnpowered(Owner, curlUp.Amount),
             ValueProp.Unpowered,
             null);
         if (Owner.Monster is LouseProgenitor louse)

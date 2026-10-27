@@ -20,7 +20,7 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class HotaruBreathingShelter : HotaruCannonCard
 {
     public HotaruBreathingShelter() : base(2, CardType.Power, CardRarity.Rare, TargetType.Self) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("BlockReward", 12m), new IntVar("ExtraActions", 1m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.BlockBonus("BlockReward", 240m), new IntVar("ExtraActions", 1m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<HotaruBreathingShelterPower>() };
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
         HotaruBreathingShelterPower.Apply(context, Owner.Creature, DynamicVars["BlockReward"].IntValue, DynamicVars["ExtraActions"].IntValue, this);
@@ -31,11 +31,11 @@ public sealed class HotaruBreathingShelter : HotaruCannonCard
 public sealed class HotaruSixSenseRemnants : HotaruCannonCard
 {
     public HotaruSixSenseRemnants() : base(2, CardType.Power, CardRarity.Rare, TargetType.Self) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("BaseGain", 1m), new IntVar("Charge", 1m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.CannonGrowthBonus("BaseGain", 50m, divisor: 3m), new IntVar("Charge", 1m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[] { HoverTipFactory.FromPower<HotaruSixSenseRemnantsPower>(), HoverTipFactory.FromPower<ChargePower>() };
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
         HotaruSixSenseRemnantsPower.Apply(context, Owner.Creature, DynamicVars["BaseGain"].IntValue, DynamicVars["Charge"].IntValue, this);
-    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeValueBy(1m);
+    protected override void OnUpgrade() => DynamicVars["BaseGain"].UpgradeCannonGrowthByPercent(50m, divisor: 3m);
 }
 
 [CustomID("HOTARU_GIVE_YOU_CHANCE")]
@@ -78,7 +78,7 @@ public sealed class HotaruGiveYouWarmth : HotaruCannonCard
 public sealed class HotaruFollowTrajectories : HotaruCannonCard
 {
     public HotaruFollowTrajectories() : base(2, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new DamageVar(16m, ValueProp.Move), new IntVar("EchoDamage", 4m) };
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.Damage(800m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("EchoDamage", 200m, divisor: 3m) };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         ArgumentNullException.ThrowIfNull(play.Target);
@@ -87,7 +87,7 @@ public sealed class HotaruFollowTrajectories : HotaruCannonCard
         for (int i = 0; i < repeats && Millsage.IsEnemy(play.Target, Owner); i++)
             await DamageCmd.Attack(DynamicVars["EchoDamage"].BaseValue).FromCardCompat(this, play).Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
     }
-    protected override void OnUpgrade() { DynamicVars.Damage.UpgradeValueBy(6m); DynamicVars["EchoDamage"].UpgradeValueBy(2m); }
+    protected override void OnUpgrade() { DynamicVars.Damage.UpgradeDamageByPercent(100m); DynamicVars["EchoDamage"].UpgradeDamageByPercent(100m, divisor: 3m); }
 }
 
 [CustomID("HOTARU_ONE_VOICE_ENOUGH")]

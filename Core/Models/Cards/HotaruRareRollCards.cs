@@ -97,7 +97,7 @@ public sealed class HotaruBreathAfterMiss : HotaruCannonCard
     public HotaruBreathAfterMiss() : base(2, CardType.Power, CardRarity.Uncommon, TargetType.Self) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new IntVar("MissLimit", 2), new BlockVar(4m, ValueProp.Unpowered),
+        new IntVar("MissLimit", 2), HbrSkillVars.Block(80m, ValueProp.Unpowered),
         new PowerVar<ChargePower>(1), new CardsVar(1)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[]
@@ -111,7 +111,7 @@ public sealed class HotaruBreathAfterMiss : HotaruCannonCard
     protected override void OnUpgrade()
     {
         DynamicVars["MissLimit"].UpgradeValueBy(1);
-        DynamicVars.Block.UpgradeValueBy(2);
+        DynamicVars.Block.UpgradeBlockByPercent(40m);
     }
 }
 

@@ -199,7 +199,8 @@ public partial class NManualCannonUpgradesPanel : Control
             _icon.Modulate = Colors.White;
             _title.Text = "浮游炮 · 通用规则";
             _status.Text = "倍率、磨损与恢复、升级、活力及五门炮的基础效果";
-            _description.Text = Format(new LocString("rest_site_ui", "HOTARU_CANNON_UPGRADE.manualRules").GetFormattedText());
+            _description.Text = Format(HotaruCannonSkillPowerHelper.Description(
+                "rest_site_ui", "HOTARU_CANNON_UPGRADE.manualRules", _relic?.Owner).GetFormattedText());
             return;
         }
         int level = Level(_selected);
@@ -225,14 +226,14 @@ public partial class NManualCannonUpgradesPanel : Control
             relic?.GetCannonDamagePercent(kind) ?? Millsage.InitialCannonDamagePercent)));
         text.Append("\n\n");
         text.Append("[b]基础效果[/b]\n");
-        text.Append(Format(HotaruCannonUpgrades.BaseText(kind)));
+        text.Append(Format(HotaruCannonUpgrades.BaseText(kind, relic?.Owner)));
         for (int tier = 1; tier <= Millsage.MaximumCannonUpgradeLevel; tier++)
         {
             bool obtained = tier <= level;
             string status = obtained ? "已获得" : unlocked && tier == level + 1 ? "未解锁 · 下一项" : "未解锁";
             string color = obtained ? "#ed72aa" : "#a7afb7";
             text.Append($"\n\n[b][color={color}]第{tier}级 · {status}[/color][/b]\n");
-            text.Append(Format(HotaruCannonUpgrades.UpgradeText(kind, tier)));
+            text.Append(Format(HotaruCannonUpgrades.UpgradeText(kind, tier, relic?.Owner)));
         }
         return text.ToString();
     }

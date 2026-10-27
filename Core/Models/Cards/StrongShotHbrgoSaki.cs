@@ -25,9 +25,9 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(3m, ValueProp.Move),
+        HbrSkillVars.Damage(50m, ValueProp.Move),
         new RepeatVar(_hitCount),
-        new IntVar(_fragileBonusVar, 1m)
+        HbrSkillVars.DamageBonus(_fragileBonusVar, 50m, divisor: 3m)
     };
 
     protected override bool IsPlayable =>
@@ -72,7 +72,7 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        base.DynamicVars.Damage.UpgradeValueBy(1m);
-        DynamicVars[_fragileBonusVar].UpgradeValueBy(1m);
+        base.DynamicVars.Damage.UpgradeDamageByPercent(50m, divisor: 3m);
+        DynamicVars[_fragileBonusVar].UpgradeDamageByPercent(50m, divisor: 3m);
     }
 }

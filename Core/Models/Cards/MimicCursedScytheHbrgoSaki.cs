@@ -25,7 +25,7 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move),
             new PowerVar<WeakPower>(1m),
             new PowerVar<VulnerablePower>(1m)
         };
@@ -79,6 +79,6 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(3m);
+        DynamicVars.Damage.UpgradeDamageByPercent(50m);
     }
 }

@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ public sealed class MimicEvilEyeTidalSlashHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(14m, ValueProp.Move),
+            HbrSkillVars.Damage(700m, ValueProp.Move, divisor: 3m),
             new IntVar(_destructionRatePercentVar, 150m)
         };
 
@@ -72,7 +73,7 @@ public sealed class MimicEvilEyeTidalSlashHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars.Damage.UpgradeValueBy(5m);
+        DynamicVars.Damage.UpgradeDamageByPercent(250m, divisor: 3m);
         DynamicVars[_destructionRatePercentVar].UpgradeValueBy(50m);
     }
 }

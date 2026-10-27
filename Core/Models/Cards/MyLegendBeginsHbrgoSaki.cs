@@ -42,7 +42,7 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(7m, ValueProp.Move), new PowerVar<VigorPower>(5m)
+        HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m), new PowerVar<VigorPower>(5m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips

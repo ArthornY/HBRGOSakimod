@@ -32,7 +32,7 @@ public sealed class PiercingShotHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DamageVar[]
         {
-            new DamageVar(5m, ValueProp.Move)
+            HbrSkillVars.Damage(250m, ValueProp.Move, divisor: 3m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>

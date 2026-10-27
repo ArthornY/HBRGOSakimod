@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ public sealed class ChargeStrikeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new DamageVar(6m, ValueProp.Move),
+            HbrSkillVars.Damage(100m, ValueProp.Move),
             new PowerVar<ChargePower>(1m)
         };
 

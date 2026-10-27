@@ -63,7 +63,7 @@ public sealed partial class Millsage : RelicModel
         if (Owner?.Creature?.CombatState is not { } combatState) return;
         _combat.EndRewardPending = true;
         if (HasCannonUpgrade(HotaruCannonKind.Happiness, 1))
-            StateFor(HotaruCannonKind.Happiness).InitializeHappinessIncrease(3m);
+            StateFor(HotaruCannonKind.Happiness).InitializeHappinessIncrease(HotaruCannonSkillPowerHelper.UpgradedHappinessGrowth);
         MonsterModel[] models =
         {
             ModelDb.Monster<HotaruHappinessCannon>(),
@@ -367,7 +367,7 @@ public sealed partial class Millsage : RelicModel
     {
         HotaruCannonState state = StateFor(HotaruCannonKind.Happiness);
         state.HalveHappinessIncreaseAfterDamage();
-        if (HasCannonUpgrade(HotaruCannonKind.Happiness, 2)) state.AddHappinessIncrease(2m);
+        if (HasCannonUpgrade(HotaruCannonKind.Happiness, 2)) state.AddHappinessIncrease(HotaruCannonSkillPowerHelper.HappinessHitGrowth);
     }
 
     public decimal ModifyDamageAdditive(Creature target, decimal amount, ValueProp props,
@@ -443,16 +443,16 @@ public sealed partial class Millsage : RelicModel
                 {
                     case HotaruCannonKind.Coffin:
                         decimal block = await HotaruCannonBlockHelper.Gain(
-                            Owner.Creature, 4m + baseValueBonus, cardPlay, cannon);
+                            Owner.Creature, HotaruCannonSkillPowerHelper.CoffinStartBlock + baseValueBonus, cardPlay, cannon);
                         if (Owner.Creature.GetPower<HotaruMyCoffinPower>() is { } coffin)
                             await coffin.OnCoffinBlock(context, cannon, block, cardSource, cardPlay);
                         break;
                     case HotaruCannonKind.Longing:
-                        await HotaruCannonBlockHelper.Gain(Owner.Creature, 3m + baseValueBonus, cardPlay, cannon);
+                        await HotaruCannonBlockHelper.Gain(Owner.Creature, HotaruCannonSkillPowerHelper.LongingStartBlock + baseValueBonus, cardPlay, cannon);
                         break;
                     case HotaruCannonKind.Absolution:
                         for (int hit = 0; hit < hitCount && CanAct(); hit++)
-                            await DealPhaseDamage(cannon, fixedTarget, 1m + baseValueBonus, context, cardSource, cardPlay);
+                            await DealPhaseDamage(cannon, fixedTarget, HotaruCannonSkillPowerHelper.AbsolutionStartDamage + baseValueBonus, context, cardSource, cardPlay);
                         break;
                 }
             }
@@ -469,20 +469,20 @@ public sealed partial class Millsage : RelicModel
                             Creature target = fixedTarget ?? RandomEnemy();
                             if (target != null)
                                 await DealDamage(cannon, target,
-                                    2m + SixSenseCombatHelper.TargetResistanceBreakCount(target) + baseValueBonus,
+                                    HotaruCannonSkillPowerHelper.ContestEndDamage + SixSenseCombatHelper.TargetResistanceBreakCount(target) * HotaruCannonSkillPowerHelper.ContestResistanceDamage + baseValueBonus,
                                     context, cardSource, cardPlay);
                         }
                         break;
                     case HotaruCannonKind.Longing:
                         for (int hit = 0; hit < hitCount && CanAct(); hit++)
-                            await DealPhaseDamage(cannon, fixedTarget, 3m + baseValueBonus, context, cardSource, cardPlay);
+                            await DealPhaseDamage(cannon, fixedTarget, HotaruCannonSkillPowerHelper.LongingEndDamage + baseValueBonus, context, cardSource, cardPlay);
                         break;
                     case HotaruCannonKind.Absolution:
                         using (HighHitDamageVisualHelper.BeginDirectDamageBatch(
                             hitCount, Owner.Creature,
                             cardSource, ValueProp.Move))
                             for (int hit = 0; hit < hitCount && CanAct(); hit++)
-                                await DealPhaseDamage(cannon, fixedTarget, 2m + baseValueBonus, context, cardSource, cardPlay);
+                                await DealPhaseDamage(cannon, fixedTarget, HotaruCannonSkillPowerHelper.AbsolutionEndDamage + baseValueBonus, context, cardSource, cardPlay);
                         break;
                 }
             }

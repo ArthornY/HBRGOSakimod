@@ -19,7 +19,7 @@ public sealed class RuinStrikeHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new DamageVar(4m, ValueProp.Move), new ResistanceHitCountVar()
+        HbrSkillVars.Damage(200m, ValueProp.Move, divisor: 3m), new ResistanceHitCountVar()
     };
 
     public RuinStrikeHbrgoSaki() : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
@@ -29,7 +29,7 @@ public sealed class RuinStrikeHbrgoSaki : CardModel
             .Targeting(cardPlay.Target).WithHitCount(GetHitCount(this))
             .WithHitFx("vfx/vfx_attack_slash").Execute(choiceContext);
 
-    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeValueBy(2m);
+    protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
 
     internal static int GetHitCount(CardModel card)
     {
