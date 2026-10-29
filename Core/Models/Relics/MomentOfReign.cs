@@ -11,6 +11,7 @@ using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Nodes.Combat;
 using HBRGOSakiMod.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
@@ -2956,6 +2957,19 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
             .GetCreatureNode(phantom.PetOwner.Creature);
         if (ownerNode != null)
         {
+            if (NSakiCornerCreatureLayout.TryGetBattlefieldTransform(ownerNode,
+                    out Transform2D battlefieldTransform) &&
+                NSakiCornerCreatureLayout.TryGetBattlefieldHitboxSize(ownerNode,
+                    out Vector2 nativeHitboxSize))
+            {
+                // The player's single body is now beside the hand. Summoned
+                // phantoms still use its original battlefield body and width.
+                Vector2 offset = Vector2.Right * nativeHitboxSize.X * 0.5f +
+                    Osty.MinOffset.Lerp(Osty.MaxOffset,
+                        Mathf.Clamp((float)phantom.MaxHp / 150f, 0f, 1f));
+                phantomNode.GlobalPosition = battlefieldTransform * offset;
+                return;
+            }
             phantomNode.Position = ownerNode.Position +
                 NCreature.GetOstyOffsetFromPlayer(phantom);
         }

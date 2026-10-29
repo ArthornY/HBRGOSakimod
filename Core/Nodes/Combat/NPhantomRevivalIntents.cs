@@ -6,6 +6,7 @@ using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Intents;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -59,6 +60,7 @@ public partial class NPhantomRevivalIntents : Control
                 display = new Display { Relic = relic };
                 _displays.Add(player, display);
             }
+            Transform2D ownerCanvas = GetOwnerCanvasTransform(ownerNode);
 
             // Cache the intent's position while the phantom still exists. The
             // dead creature and its native intent are removed by the game.
@@ -67,7 +69,7 @@ public partial class NPhantomRevivalIntents : Control
             if (IsUsable(phantomNode?.IntentContainer))
             {
                 Control container = phantomNode.IntentContainer;
-                display.OffsetFromOwner = ownerNode.GetGlobalTransformWithCanvas().AffineInverse() *
+                display.OffsetFromOwner = ownerCanvas.AffineInverse() *
                     (container.GetGlobalTransformWithCanvas() * (container.Size * 0.5f));
             }
 
@@ -101,13 +103,25 @@ public partial class NPhantomRevivalIntents : Control
                 display.LastTurns = turns.Value;
             }
 
-            Vector2 center = display.OffsetFromOwner is { } offset
-                ? ToLocalCanvas(ownerNode, offset)
-                : ToLocalCanvas(ownerNode.IntentContainer, ownerNode.IntentContainer.Size * 0.5f +
+            Vector2 center;
+            if (display.OffsetFromOwner is { } offset)
+            {
+                center = GetGlobalTransformWithCanvas().AffineInverse() * (ownerCanvas * offset);
+            }
+            else if (NSakiCornerCreatureLayout.IsCornerCreature(ownerNode))
+            {
+                center = GetGlobalTransformWithCanvas().AffineInverse() * (ownerCanvas *
+                    (NPhantomCombatLayout.GetPlayerHopperAnchor(ownerNode) +
+                        NPhantomCombatLayout.HopperIntentCenter));
+            }
+            else
+            {
+                center = ToLocalCanvas(ownerNode.IntentContainer, ownerNode.IntentContainer.Size * 0.5f +
                     new Vector2(Math.Max(180f, ownerNode.Hitbox.Size.X * 0.5f + 150f), 0f));
+            }
             // A loaded battle may already be waiting to revive and have no
             // previous phantom node; the fallback places it beside its summoner.
-            display.Node.Scale = ownerNode.GetGlobalTransformWithCanvas().Scale /
+            display.Node.Scale = ownerCanvas.Scale /
                 GetGlobalTransformWithCanvas().Scale;
             display.Node.Position = center - display.Node.Size * display.Node.Scale * 0.5f;
             display.Node.Visible = true;
@@ -124,6 +138,14 @@ public partial class NPhantomRevivalIntents : Control
 
     private Vector2 ToLocalCanvas(Control control, Vector2 point) =>
         GetGlobalTransformWithCanvas().AffineInverse() * (control.GetGlobalTransformWithCanvas() * point);
+
+    private static Transform2D GetOwnerCanvasTransform(NCreature owner) =>
+        // Keep the cache in the same battlefield space when ModUI toggles,
+        // including a dead phantom waiting above a scene boss's custom floor.
+        LocalContext.IsMe(owner.Entity) && owner.Visuals is NHBRGOSakiCreatureVisuals
+            ? owner.GetGlobalTransformWithCanvas() * owner.GetGlobalTransform().AffineInverse() *
+                NPhantomCombatLayout.GetPlayerAnchorTransform(owner)
+            : owner.GetGlobalTransformWithCanvas();
 
     private static bool IsUsable(Control control) =>
         control != null && GodotObject.IsInstanceValid(control) && control.IsInsideTree();

@@ -19,6 +19,22 @@ internal static class OverclockCombatUiPatch
         ModNodeAttachmentRegistry.EnsureReadyAttachments(__instance);
 
         Player localPlayer = LocalContext.GetMe(state);
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance,
+                HBRGOSakiCombatUiIntegration.SakiCornerStatusHudAttachmentId,
+                out NSakiCornerStatusHud cornerStatusHud))
+        {
+            cornerStatusHud.BindPlayer(localPlayer);
+        }
+
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance,
+                HBRGOSakiCombatUiIntegration.SakiCornerEnergyLayoutAttachmentId,
+                out NSakiCornerEnergyLayout cornerEnergyLayout))
+        {
+            cornerEnergyLayout.BindPlayer(localPlayer);
+        }
+
         Overclock overclock = state.Players
             .Where(player =>
                 player.Creature?.Side == localPlayer?.Creature?.Side)

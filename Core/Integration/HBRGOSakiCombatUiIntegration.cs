@@ -34,6 +34,9 @@ internal static class HBRGOSakiCombatUiIntegration
     internal const string PhantomCombatLayoutAttachmentId = "phantom_combat_layout";
     internal const string PhantomMinionPlacementAttachmentId = "phantom_minion_placement";
     internal const string BattleGaugeResizeInputAttachmentId = "battle_gauge_resize_input";
+    internal const string SakiCornerCreatureLayoutAttachmentId = "saki_corner_creature_layout";
+    internal const string SakiCornerStatusHudAttachmentId = "saki_corner_status_hud";
+    internal const string SakiCornerEnergyLayoutAttachmentId = "saki_corner_energy_layout";
 
     private const string ModId = "HBRGOSakiMod";
 
@@ -42,6 +45,11 @@ internal static class HBRGOSakiCombatUiIntegration
 
     internal static void Register()
     {
+        Registry.RegisterReadyChild<NCombatRoom, NSakiCornerCreatureLayout>(
+            SakiCornerCreatureLayoutAttachmentId,
+            _ => new NSakiCornerCreatureLayout(),
+            CreateOptions(NSakiCornerCreatureLayout.WidgetName, order: 4));
+
         Registry.RegisterReadyChild<NCombatRoom, NHbrBattleGaugeResizeInput>(
             BattleGaugeResizeInputAttachmentId,
             _ => new NHbrBattleGaugeResizeInput(),
@@ -99,6 +107,16 @@ internal static class HBRGOSakiCombatUiIntegration
             CardDamageHistoryWidgetAttachmentId,
             _ => new NCardDamageHistoryWidget(),
             CreateOptions("HbrgoSakiCardDamageHistoryWidget", order: 3));
+
+        Registry.RegisterReadyChild<NCombatUi, NSakiCornerStatusHud>(
+            SakiCornerStatusHudAttachmentId,
+            _ => new NSakiCornerStatusHud(),
+            CreateOptions(NSakiCornerStatusHud.WidgetName, order: 4));
+
+        Registry.RegisterReadyChild<NCombatUi, NSakiCornerEnergyLayout>(
+            SakiCornerEnergyLayoutAttachmentId,
+            _ => new NSakiCornerEnergyLayout(),
+            CreateOptions(NSakiCornerEnergyLayout.WidgetName, order: 5));
 
         Registry.RegisterReadyChild<NHealthBar, NDeflectorProtectionDpBar>(
             DeflectorProtectionDpBarAttachmentId,
