@@ -15,6 +15,11 @@ internal static class PhantomHealthDamageCapHelper
         typeof(HardenedShellPower).GetNestedType("Data", BindingFlags.NonPublic), "damageReceivedThisTurn");
 
     internal static bool TryGetMaximum(PowerModel power, out decimal maximum)
+        => TryGetHealthBasedMaximum(power, out maximum) && maximum > BigCombatNumbers.NativeStatCap;
+
+    // A small fusion cap is already in HP units too. Callers converting native
+    // fixed caps must distinguish its origin, not infer units from its size.
+    internal static bool TryGetHealthBasedMaximum(PowerModel power, out decimal maximum)
     {
         maximum = 0m;
         if (power is not (HardToKillPower or HardenedShellPower) || !power.IsMutable ||
@@ -30,11 +35,11 @@ internal static class PhantomHealthDamageCapHelper
             power is HardToKillPower ? 30m : 60m, power is HardToKillPower ? -5m : -10m);
         maximum = Math.Max(1m, BigCombatNumbers.ClampStat(
             LargeCreatureHealthHelper.GetMaxHp(phantom) * percent / 100m));
-        return maximum > BigCombatNumbers.NativeStatCap;
+        return true;
     }
 
     internal static decimal GetHardenedMaximum(PowerModel power) =>
-        TryGetMaximum(power, out decimal maximum) ? maximum : power.Amount;
+        HbrDamageCapHelper.TryGetMaximum(power, out decimal maximum) ? maximum : power.Amount;
 
     internal static decimal GetReceivedThisTurn(HardenedShellPower power) =>
         InternalData.GetValue(power) is { } data ? (decimal)ReceivedThisTurn.GetValue(data) : 0m;

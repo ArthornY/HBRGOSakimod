@@ -17,7 +17,7 @@ internal static class PhantomHealthHardToKillCapPatch
     private static bool Prefix(HardToKillPower __instance, Creature target, ref decimal __result)
     {
         if (target != __instance.Owner ||
-            !PhantomHealthDamageCapHelper.TryGetMaximum(__instance, out decimal maximum)) return true;
+            !HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum)) return true;
         __result = maximum;
         return false;
     }
@@ -58,7 +58,7 @@ internal static class PhantomHealthHardenedBadgePatch
 {
     private static bool Prefix(HardenedShellPower __instance, ref int __result)
     {
-        if (!PhantomHealthDamageCapHelper.TryGetMaximum(__instance, out decimal maximum)) return true;
+        if (!HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum)) return true;
         __result = (int)Math.Clamp(maximum - PhantomHealthDamageCapHelper.GetReceivedThisTurn(__instance),
             0m, BigCombatNumbers.NativeStatCap);
         return false;
@@ -70,7 +70,31 @@ internal static class PhantomHealthDamageCapDescriptionPatch
 {
     private static void Postfix(PowerModel __instance, LocString description, int? amountOverride)
     {
-        if (amountOverride == null && PhantomHealthDamageCapHelper.TryGetMaximum(__instance, out decimal maximum))
+        if (amountOverride == null && HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum))
             description.Add("Amount", maximum);
+    }
+}
+
+[HarmonyPatch(typeof(PowerModel), nameof(PowerModel.DisplayAmount), MethodType.Getter)]
+internal static class HbrHardToKillBadgePatch
+{
+    private static void Postfix(PowerModel __instance, ref int __result)
+    {
+        if (__instance is HardToKillPower && HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum))
+            __result = (int)Math.Clamp(maximum, 0m, BigCombatNumbers.NativeStatCap);
+    }
+}
+
+[HarmonyPatch(typeof(PowerModel), nameof(PowerModel.Description), MethodType.Getter)]
+internal static class HbrDamageCapDescriptionPatch
+{
+    private static void Postfix(PowerModel __instance, ref LocString __result)
+    {
+        if (!HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum)) return;
+        LocString text = new("powers", __instance is HardToKillPower
+            ? "HBR_FIXED_HARD_TO_KILL.description" : "HBR_FIXED_HARDENED_SHELL.description");
+        text.AddVariablesFrom(__result);
+        text.Add("Amount", maximum);
+        __result = text;
     }
 }

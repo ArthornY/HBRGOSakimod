@@ -1,4 +1,6 @@
 {
+  "HBR_FIXED_HARD_TO_KILL.description": "受到的每次伤害和生命减少效果不会超过[blue]{Amount}[/blue]点。",
+  "HBR_FIXED_HARDENED_SHELL.description": "每回合失去的生命值不会超过[blue]{Amount}[/blue]点。",
   "REFUSE_TO_LEAVE_POWER.hbrDescription": "自己的[gold]幻影[/gold]死亡时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}和2层[gold]充能[/gold]。",
   "HOTARU_STILL_COVERED_POWER.hbrDescription": "每回合首次通过卡牌使浮游炮获得额外完整行动时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}。",
   "HOTARU_BREATHING_RHYTHM_POWER.hbrDescription": "本回合接下来{Remaining}次手动打出攻击牌时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}。普通回合与OD回合分别使用各自当前生效的账本。",
