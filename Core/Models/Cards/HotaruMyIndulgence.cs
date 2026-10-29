@@ -51,7 +51,10 @@ public sealed class HotaruMyIndulgence : HotaruCannonCard
         string key = LocPrefix + suffix;
         if (HbrSkillCardDescription.IsEnabled(this) && new LocString("cards", key + ".hbr").Exists())
             key += ".hbr";
-        description.Add("IndulgenceDescription", new LocString("cards", key));
+        LocString effect = new("cards", key);
+        if (HbrSkillCardDescription.IsEnabled(this))
+            HbrSkillCardDescription.AddParameters(this, effect);
+        description.Add("IndulgenceDescription", effect);
     }
 
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>

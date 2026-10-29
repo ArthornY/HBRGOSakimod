@@ -49,6 +49,7 @@ public sealed class HotaruStepUpward : HotaruCannonCard
         description.Add("ExecutedExtraActions", ExtraActions);
         description.Add("CurrentDamage", CurrentDamage);
         description.Add("CurrentDamageSkill", HbrSkillCardDescription.FormatPercent(HbrSkillPower.DamagePercent(CurrentDamage)));
+        HbrSkillCardDescription.AddDamageParameters(this, description, "CurrentDamage", CurrentDamage);
     }
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {

@@ -55,6 +55,8 @@ public sealed class HotaruMyHappiness : HotaruCannonCard
             key += ".hbr";
         LocString effect = new("cards", key);
         DynamicVars.AddTo(effect);
+        if (HbrSkillCardDescription.IsEnabled(this))
+            HbrSkillCardDescription.AddParameters(this, effect);
         description.Add("HappinessDescription", effect);
     }
 

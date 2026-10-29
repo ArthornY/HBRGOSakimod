@@ -20,6 +20,7 @@
     <Compile Remove="HextechCompat\**\*.cs" />
     <Compile Remove="artwork-work\**\*.cs" />
     <Compile Remove="validation\**\*.cs" />
+    <Compile Remove="output\**\*.cs;outputs\**\*.cs" />
     <EmbeddedResource Include="$(HextechCompatAssemblyPath)">
       <LogicalName>HBRGOSakiMod.HextechCompat.dll</LogicalName>
     </EmbeddedResource>
