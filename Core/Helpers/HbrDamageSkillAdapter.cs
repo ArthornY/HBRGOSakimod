@@ -37,6 +37,7 @@ internal static class HbrDamageSkillAdapter
         {
             if (!HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats defense))
                 return legacyPower;
+            defense = HbrStatPowerHelper.GetIncomingDefense(dealer, defense);
             HbrEnemySkillProfile skill = HbrEnemySkillProfiles.Get(dealer);
             return HbrOriginalNumericFormula.EvaluateIncomingAttackCurve(
                 HbrEnemyProfileHelper.GetEnemyParameter(dealer),
@@ -45,6 +46,7 @@ internal static class HbrDamageSkillAdapter
 
         if (!HbrBattleStatsHelper.TryGetStats(dealer, out HbrBattleStats stats))
             return legacyPower;
+        stats = HbrStatPowerHelper.GetOutgoingAttack(target, dealer, stats, cardSource, props);
         decimal parameter = HbrEnemyProfileHelper.GetEnemyParameter(target);
         bool critical = HbrCriticalDamageContext.IsCritical(target, dealer,
             cardSource, props, stats.Luck, parameter);
@@ -59,10 +61,11 @@ internal static class HbrDamageSkillAdapter
     internal static decimal ConvertFlatDamageBonus(AbstractModel model, Creature dealer,
         decimal amount, bool enabled)
     {
-        // Only known legacy point bonuses are converted. An effect based on
-        // already-resolved damage or actual max HP must not be scaled again.
-        if (!enabled || model is not (MegaCrit.Sts2.Core.Models.Powers.StrengthPower or
-                MegaCrit.Sts2.Core.Models.Powers.VigorPower)) return amount;
+        // Strength now contributes attributes, never a second flat bonus.
+        if (model is MegaCrit.Sts2.Core.Models.Powers.StrengthPower)
+            return HbrBattleStatsHelper.IsEnabled(dealer) ? 0m : amount;
+        // Vigor retains its separate one-shot additive damage behavior.
+        if (!enabled || model is not MegaCrit.Sts2.Core.Models.Powers.VigorPower) return amount;
         return DamageAmplificationLimits.MultiplySaturated(amount,
             EnemyStatScalingHelper.IsEnemy(dealer) ? IncomingPowerUnit : OutgoingPowerUnit);
     }

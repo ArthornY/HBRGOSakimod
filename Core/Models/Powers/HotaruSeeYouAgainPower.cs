@@ -177,6 +177,7 @@ public sealed class HotaruSeeYouAgainPower : PowerModel, ICustomPower
     public override decimal ModifyBlockAdditive(Creature target, decimal block, ValueProp props,
         CardModel cardSource, CardPlay cardPlay)
     {
+        if (HbrBattleStatsHelper.IsEnabled(Owner)) return 0m;
         if (cardSource != null ? cardSource.Owner?.Creature != Owner : target != Owner) return 0m;
         return props.IsPoweredCardOrMonsterMoveBlock() ? HotaruSeeYouAgainHelper.GetExtraDexterity(Owner?.Player) : 0m;
     }

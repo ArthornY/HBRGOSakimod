@@ -75,6 +75,7 @@ internal static class HbrBattleStatsHelper
                     stats.Intelligence + bonus, stats.Vitality + bonus,
                     stats.Spirit + bonus, stats.Luck + bonus);
             }
+            stats = HbrStatPowerHelper.Apply(creature, stats);
             return true;
         }
 

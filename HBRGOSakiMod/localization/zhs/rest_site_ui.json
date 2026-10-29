@@ -2,6 +2,7 @@
   "HOTARU_CANNON_UPGRADE.happiness.base.hbr": "回合结束时增加伤害技能倍率，增长量每回合额外增加{GrowthStepSkillPercent}个百分点。激发向敌人开火后，技能倍率减半；实际造成HP或DP损失后，下次增长量减半，并向下取至100%÷6的整数倍。",
   "HOTARU_CANNON_UPGRADE.happiness.1.hbr": "每场战斗初始技能倍率增长量变为{UpgradedGrowthSkillPercent}个百分点。",
   "HOTARU_CANNON_UPGRADE.happiness.2.hbr": "幸福每次造成实际伤害后，下次增长量在减半取整后，额外增加{HitGrowthSkillPercent}个百分点。",
+  "HOTARU_CANNON_UPGRADE.happiness.3.hbr": "幸福炮计算伤害时，正力量提供的力与器用加成翻倍。",
   "HOTARU_CANNON_UPGRADE.coffin.base.hbr": "回合开始时，使汐见萤获得{BlockSkillPercent}%倍率的基础格挡。",
   "HOTARU_CANNON_UPGRADE.contest.base.hbr": "回合结束时，对随机敌人造成{DamageSkillPercent}%倍率伤害；目标每失去一种六感抗性，技能倍率额外增加{ResistanceSkillPercent}个百分点。造成的破坏率翻倍。",
   "HOTARU_CANNON_UPGRADE.contest.4.hbr": "目标每拥有1层脆弱，胜负的技能倍率额外增加{ResistanceSkillPercent}个百分点。",

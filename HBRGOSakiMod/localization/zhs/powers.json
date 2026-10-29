@@ -1,4 +1,10 @@
 {
+  "HBR_STAT_STRENGTH_ALLY.description": "每层使[gold]力[/gold]与[gold]器用[/gold]各增加[blue]1[/blue]。负层数按相同数值降低属性，属性最低为[blue]0[/blue]。",
+  "HBR_STAT_DEXTERITY_ALLY.description": "每层使[gold]知性[/gold]增加[blue]1[/blue]。负层数按相同数值降低属性，属性最低为[blue]0[/blue]。",
+  "HBR_STAT_STRENGTH_ENEMY.description": "攻击时，每层力量无视目标[blue]{IgnorePerLayer}[/blue]点[gold]体力[/gold]与[gold]精神[/gold]。负层数反向提高本次防御参照；仅本次攻击有效，参照属性最低为[blue]0[/blue]。每层数值在第一至第五幕依次为[blue]1／2／3／4／8[/blue]，之后保持[blue]8[/blue]。",
+  "HBR_STAT_DEXTERITY_ENEMY.description": "受到攻击时，每层敏捷无视攻击者[blue]{IgnorePerLayer}[/blue]点[gold]力[/gold]与[gold]器用[/gold]。负层数反向提高本次攻击参照；仅本次攻击有效，参照属性最低为[blue]0[/blue]。每层数值在第一至第五幕依次为[blue]1／2／3／4／8[/blue]，之后保持[blue]8[/blue]。",
+  "STRENGTH_POWER.hbrDescription": "我方：每层使力与器用各增加1，负层数按相同数值降低属性。\n敌方：攻击时，每层无视目标一定数值的体力与精神；第一至第五幕依次为1／2／3／4／8点，之后保持8点。负层数反向提高防御参照，仅本次攻击有效。\n参照属性最低为0。",
+  "DEXTERITY_POWER.hbrDescription": "我方：每层使知性增加1，负层数按相同数值降低属性。\n敌方：受到攻击时，每层无视攻击者一定数值的力与器用；第一至第五幕依次为1／2／3／4／8点，之后保持8点。负层数反向提高攻击参照，仅本次攻击有效。\n参照属性最低为0。",
   "HBR_FIXED_HARD_TO_KILL.description": "受到的每次伤害和生命减少效果不会超过[blue]{Amount}[/blue]点。",
   "HBR_FIXED_HARDENED_SHELL.description": "每回合失去的生命值不会超过[blue]{Amount}[/blue]点。",
   "REFUSE_TO_LEAVE_POWER.hbrDescription": "自己的[gold]幻影[/gold]死亡时，获得{amountSkill}%倍率[gold]格挡[/gold]{blockPreview}和2层[gold]充能[/gold]。",

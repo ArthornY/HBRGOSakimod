@@ -58,9 +58,9 @@ static partial class Checks
         {
             decimal amount = upgraded.DynamicVars.Damage.BaseValue;
             Equal(Hook.ModifyDamage(RunState, Combat, Enemy, Hero, amount, ValueProp.Move, upgraded,
-                ModifyDamageHookType.All, CardPreviewMode.None, out _), 5785.71m,
+                ModifyDamageHookType.All, CardPreviewMode.None, out _), decimal.Floor(5785.71m),
                 upgraded.GetType().Name + " upgraded preview uses 150 percent with one linear attribute factor");
-            Equal(ActualDamage(Hero, Enemy, amount, card: upgraded), 5785.71m,
+            Equal(ActualDamage(Hero, Enemy, amount, card: upgraded), decimal.Floor(5785.71m),
                 upgraded.GetType().Name + " upgraded actual agrees with native preview without critical scope");
         }
         Creature phantom = Creature(Blank<TestSubject>(), owner: Player); AddPower(phantom, Blank<PhantomPower>());
@@ -72,13 +72,13 @@ static partial class Checks
         {
             Equal(Convert(dealer, Enemy, 6m), 3857.14m,
                 dealer.Monster?.GetType().Name + " shares the same owner-attribute 100 percent base conversion");
-            Equal(Preview(dealer, Enemy, 6m), 3857.14m,
+            Equal(Preview(dealer, Enemy, 6m), decimal.Floor(3857.14m),
                 dealer.Monster?.GetType().Name + " native preview shares one common damage base");
-            Equal(ActualDamage(dealer, Enemy, 6m), 3857.14m,
+            Equal(ActualDamage(dealer, Enemy, 6m), decimal.Floor(3857.14m),
                 dealer.Monster?.GetType().Name + " production actual wrapper shares one common damage base");
         }
         decimal cannonActual = WithCannon(cannon, 6m, () => ActualDamage(Hero, Enemy, 6m));
-        Equal(cannonActual, 1928.57m, "owner-sourced cannon applies its default 50 percent Soul Power exactly once");
+        Equal(cannonActual, decimal.Floor(1928.57m), "owner-sourced cannon applies its default 50 percent Soul Power exactly once then floors");
         int beforePreviewRng = RunState.Rng.Niche.Counter;
         Equal(Number(Helper("HotaruCannonStatsHelper"), "PreviewDamage", cannon, 6m, false, null,
             Enum.Parse(Helper("HotaruCannonPhase"), "End")), decimal.Floor(cannonActual),
@@ -92,7 +92,7 @@ static partial class Checks
         var shell = new HighDimensionalShellPower(); AddPower(Enemy, shell);
         typeof(HighDimensionalShellPower).GetProperty("CurrentDpData", F)!.SetValue(shell, "100");
         Equal(Convert(Hero, Enemy, 6m), 8142.85m, "active DP uses STR one DEX two rather than HP weights");
-        Equal(ActualDamage(phantom, Enemy, 6m), 8142.85m, "phantom actual damage uses the same DP attribute weights");
+        Equal(ActualDamage(phantom, Enemy, 6m), decimal.Floor(8142.85m), "phantom actual damage uses the same DP attribute weights then floors");
         Powers(Enemy).Remove(shell);
         Sense("Madness", 200); Sense("LeadershipCharm", 200); // Both500 against E150 =>2.5x + base1x.
         foreach (Creature dealer in new[] { Hero, phantom, cannon })
@@ -128,7 +128,7 @@ static partial class Checks
         Set(critical, "Sample", 0); int criticalRng = RunState.Rng.Niche.Counter;
         try
         {
-            Equal(Preview(Hero, Enemy, 6m), 3857.14m, "forced actual critical scope does not affect preview");
+            Equal(Preview(Hero, Enemy, 6m), decimal.Floor(3857.14m), "forced actual critical scope does not affect floored preview");
             Equal(ActualDamage(Hero, Enemy, 6m), 9000m,
                 "critical reduces E150 to100 before attributes then multiplies6000 by1.5");
             Equal(ActualDamage(Hero, Enemy, 6m), 9000m, "critical repeat reuses the same deterministic sampled hit");

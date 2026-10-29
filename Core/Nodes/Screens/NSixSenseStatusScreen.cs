@@ -115,6 +115,9 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         _refreshTimer += delta;
         if (_refreshTimer < 0.2 || _manual == null) return;
         _refreshTimer = 0;
+        // Combat buffs do not change saved six-sense progression. Give the
+        // visible stat panel its own small, cached refresh for live attributes.
+        if (_page == ManualPage.BattleStats) _battleStatsPage?.Refresh(_manual);
         string state = $"{_manual.SixSensePoints}:{_manual.MemoryGardenUpgradePoints}:{_manual.SixSenseAllocationRevision}:{_manual.IsAllocationPending}|battle:{_manual.HbrBattleProgressData}|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
             attribute => $"{_manual.GetSenseAmount(attribute)}:{_manual.GetEffectiveSenseAmount(attribute)}"));
         if (SupportsCannonUpgrades)

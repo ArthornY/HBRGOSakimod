@@ -281,6 +281,13 @@ internal static class HbrCombatDamagePipeline
         capturedRawDamage = DamageAmplificationLimits.MultiplySaturated(capturedRawDamage, cannonFinalScale);
         if (isCannonDamage) capturedRawDamage = Math.Max(1m, capturedRawDamage);
         capturedRawDamage = DamageLimitHelper.CapSingleHit(capturedRawDamage);
+        if (hbrNumerics)
+        {
+            // Resolve every multiplier and cap first. The shared output is an
+            // integer for previews, HP/DP spending and per-hit damage receipts.
+            modifiedDamage = decimal.Floor(Math.Max(0m, modifiedDamage));
+            capturedRawDamage = decimal.Floor(Math.Max(0m, capturedRawDamage));
+        }
         ItsMygoIncomingDamageCapture.Capture(target, capturedRawDamage);
         modifiers = appliedModifiers;
         return modifiedDamage;

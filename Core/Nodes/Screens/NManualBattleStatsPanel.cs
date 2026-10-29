@@ -23,6 +23,7 @@ public partial class NManualBattleStatsPanel : Control
     private Label _enemy;
     private Label _growth;
     private string _lastState;
+    private HbrBattleStats _lastStats;
 
     internal Control DefaultFocusedControl => _scroll ?? (Control)this;
 
@@ -49,24 +50,27 @@ public partial class NManualBattleStatsPanel : Control
         Creature enemy = enabled ? manual.Owner?.Creature?.CombatState?.Enemies
             .FirstOrDefault(EnemyStatScalingHelper.IsEnemy) : null;
         decimal? enemyParameter = enemy == null ? null : HbrEnemyProfileHelper.GetEnemyParameter(enemy);
+        HbrBattleStats stats = default;
+        if (enabled && !HbrBattleStatsHelper.TryGetStats(manual.Owner?.Creature, out stats))
+            stats = manual.GetHbrBattleStats();
         string state = $"{manual?.HbrBattleProgressData}|{enemyParameter?.ToString(CultureInfo.InvariantCulture)}";
         if (enabled)
             state += "|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
                 attribute => $"{manual.GetSenseAmount(attribute)}:{manual.GetEffectiveSenseAmount(attribute)}"));
-        if (_lastState == state) return;
+        if (_lastState == state && _lastStats == stats) return;
         _lastState = state;
+        _lastStats = stats;
 
         _statsGrid.Visible = enabled;
         _status.Text = enabled
             ? $"HBR 战斗等级  Lv.{manual.HbrBattleLevel}"
             : "本局未启用 HBR 数值测试";
         _growth.Text = enabled
-            ? $"初始六维基础各 {HbrBattleStatsHelper.InitialStat}；普通战、精英战、Boss 战胜利分别提升 1、2、3 级，每级六维各 +4。\n已确认的六感每级使对应战斗属性 +2，按有效等级结算；未确认的分配不改变此处数值。等级本身不再直接增加掷骰出目，原有六感出牌效果仍保留。\n浮游炮继承本体六维；幻影沿用本体六维，并保留自身等级加成。"
+            ? $"初始六维基础各 {HbrBattleStatsHelper.InitialStat}；普通战、精英战、Boss 战胜利分别提升 1、2、3 级，每级六维各 +4。\n已确认的六感每级使对应战斗属性 +2，按有效等级结算；未确认的分配不改变此处数值。等级本身不再直接增加掷骰出目，原有六感出牌效果仍保留。\n此处显示包含当前力量、敏捷效果的实时属性。浮游炮沿用本体属性及本体增益；幻影继承基础六维，并保留自身等级加成，只计算自身的力量、敏捷。"
             : "旧存档继续使用原有数值，不会在读档或打开手册时自动转换。\n使用此测试版本新开一局，才会启用 HBR 数值系统。";
         _enemy.Visible = enabled;
         if (!enabled) return;
 
-        HbrBattleStats stats = manual.GetHbrBattleStats();
         HbrBattleStats senseBonuses = HbrBattleStatsHelper.GetSixSenseBonuses(manual);
         decimal[] values = [stats.Strength, stats.Dexterity, stats.Intelligence,
             stats.Vitality, stats.Spirit, stats.Luck];
@@ -154,6 +158,9 @@ public partial class NManualBattleStatsPanel : Control
         AddSection(content, "破坏率与格挡",
             "破坏率以 100% 为起点。DP 击破后，按敌方与技能各自的破坏系数增长；增量与本次实际伤害量分别计算。\n" +
             $"我方格挡 100% 对应基础 500，再乘知性÷{HbrSkillPower.BlockReferenceIntelligence}，向下取整。卡牌、幻影、浮游炮及明确的固定技能格挡共用此规则；按实际伤害比例派生的格挡不重复换算。");
+        AddSection(content, "力量与敏捷",
+            "我方每层力量使力与器用各 +1；每层敏捷使知性 +1。负层数按相同数值降低对应属性，属性最低为 0。力量、敏捷不再额外提供固定伤害或格挡。\n" +
+            "敌方每层力量在攻击时无视目标一定数值的体力、精神；每层敏捷在受击时无视攻击者一定数值的力、器用。第一至第五幕每层依次为 1、2、3、4、8 点，第六幕起保持 8 点。负层数反向修正，仅对本次攻击有效；参照属性最低为 0。");
         AddSection(content, "敌方能力与受击",
             "敌人使用独立能力值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
             $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，本幕每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}，每进入下一幕额外 +{HbrEnemyProfileHelper.GainPerAct}；精英再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 再 +{HbrEnemyProfileHelper.BossBonus}。Hopper 同样成长。\n" +

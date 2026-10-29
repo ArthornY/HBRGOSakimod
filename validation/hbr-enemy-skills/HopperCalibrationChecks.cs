@@ -91,7 +91,7 @@ static partial class Checks
             Hopper(roll); int hp = Enemy.MaxHp; decimal dp = Enemy.GetPower<HighDimensionalShellPower>()!.CurrentDp;
             Check(hp == roll * 700 && dp == decimal.Floor(roll / 14m * 3000m), "normal native HP roll maps to 700x HP and independent Hopper DP: " + roll);
             Equal(Parameter(Enemy), 150m, "opening SmallHopper E150 is independent of native HP roll: " + roll);
-            Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 3857.14m, "real shell listener adds no legacy 25% reduction in HBR: " + roll);
+            Equal(ActualDamage(Hero, Enemy, 6m, card: strike), decimal.Floor(3857.14m), "real shell listener adds no legacy 25% reduction before final HBR floor: " + roll);
             Progress(false); Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 4.5m, "legacy mode retains real shell 25% reduction: " + roll); Progress(true);
             var strikes = new List<Hit>();
             while (Enemy.CurrentHp > 0 && strikes.Count < 8) strikes.Add(await HitCard(strike));
@@ -102,14 +102,14 @@ static partial class Checks
                 "later HP hits advance destruction after their own damage: " + roll);
             Hopper(roll);
             Hit bashHit = await HitCard(bash);
-            Check(!Enemy.HasPower<VulnerablePower>() && bashHit.PipelineDamage == 5142.85m && bashHit.HpAfter == hp,
+            Check(!Enemy.HasPower<VulnerablePower>() && bashHit.PipelineDamage == decimal.Floor(5142.85m) && bashHit.HpAfter == hp,
                 "opening Bash deals unvulnerable damage and only breaks DP: " + roll);
             // Native Bash.OnPlay awaits AttackCommand.Execute before applying
             // VulnerablePower. Match that order without replacing its multiplier.
             var vulnerable = new VulnerablePower(); AddPower(Enemy, vulnerable); Set(vulnerable, "_amount", (int)bash.DynamicVars.Vulnerable.BaseValue);
             Hit second = await HitCard(strike); Hit third = await HitCard(strike);
-            Equal(second.PipelineDamage, 3857.14m * 1.02m * 1.5m, "first post-Bash Strike uses native Vulnerable and 102% destruction: " + roll);
-            Equal(third.PipelineDamage, 3857.14m * 1.04m * 1.5m, "second post-Bash Strike uses native Vulnerable and 104% destruction: " + roll);
+            Equal(second.PipelineDamage, decimal.Floor(3857.14m * 1.02m * 1.5m), "first post-Bash Strike floors after native Vulnerable and 102% destruction: " + roll);
+            Equal(third.PipelineDamage, decimal.Floor(3857.14m * 1.04m * 1.5m), "second post-Bash Strike floors after native Vulnerable and 104% destruction: " + roll);
             Check(second.HpAfter > 0 && third.HpAfter == 0, "Bash plus two Strikes kills every normal roll in three cards: " + roll);
             Equal(NativeCost(bash) + NativeCost(strike) * 2m, 4m, "Bash plus two Strikes costs four native energy: " + roll);
             rows.Add(new { nativeHp = roll, hp, dp, strikes, bashThenStrikes = new[] { bashHit, second, third } });
@@ -133,11 +133,11 @@ static partial class Checks
         decimal block = MegaCrit.Sts2.Core.Hooks.Hook.ModifyBlock(Combat, Hero, defend.DynamicVars.Block.BaseValue, ValueProp.Move, defend, null, out _);
         Equal(block, 500m, "native Defend at INT100 yields 500 HBR block"); Hero.GainBlockInternal(block);
         decimal incoming = ActualDamage(Enemy, Hero, 4m);
-        Equal(incoming, 400m * (1m + 50m / 140m), "opening Hopper E150 and explicit body row deal unrounded 542.857 incoming");
+        Equal(incoming, decimal.Floor(400m * (1m + 50m / 140m)), "opening Hopper E150 and explicit body row floor final incoming damage to542");
         decimal absorbed = Hero.DamageBlockInternal(incoming, ValueProp.Move);
         DamageResult defenseResult = Hero.LoseHpInternal(Math.Max(0m, incoming - absorbed), ValueProp.Move);
         Check(Hero.Block == 0 && Hero.CurrentHp == 958 && defenseResult.UnblockedDamage == 42m,
-            "native block-before-HP order truncates 42.857 remainder to 42 HP loss");
+            "final HBR floor542 followed by native block500 leaves42 HP loss");
         CalibrationReport = new { normalRolls = rows, highRoll, defend = new { block, incoming, hpLoss = defenseResult.UnblockedDamage },
             assumptions = "HBR level-one six stats100; 700x native HP; Hopper DP independently calibrated to3000 at native HP14; default100% HP/damage and20% DP config; no crits, upgrades, senses, other modifiers or turn expiry. Bash order matches installed native IL. Counts are cards/energy budget, not same-turn playability. Normal native HP12-16 and difficulty8 maximum HP17 fit the 3-4 card budget; later difficulty DP/attack changes are not covered. Values are mod calibration data, not original HBR Hopper data." };
         CalibrationListeners = false;

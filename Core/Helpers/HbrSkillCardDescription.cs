@@ -135,6 +135,7 @@ internal static class HbrSkillCardDescription
         {
             if (!owned || card.CombatState == null) return HbrSkillPower.DamageBaseFromUnits(units);
             var target = HbrCardDescriptionContext.GetTarget(card);
+            stats = HbrStatPowerHelper.GetOutgoingAttack(target, card.Owner.Creature, stats, card, ValueProp.Move);
             var weights = target?.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m
                 ? HbrDamageSkillAdapter.DpWeights : HbrDamageSkillAdapter.HpWeights;
             return HbrSkillPower.EvaluateDamageFromUnits(units,

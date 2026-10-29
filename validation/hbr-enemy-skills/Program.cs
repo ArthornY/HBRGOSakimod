@@ -234,14 +234,14 @@ static partial class Checks
                 Equal(Parameter(Enemy), row.E, label + " resolves authored E");
                 decimal incoming = row.E - 100m >= 140m ? 2000m : 1000m * (1m + (row.E - 100m) / 140m);
                 Equal(Convert(Enemy, Hero), incoming, label + " converts incoming skill from growing E");
-                Equal(Preview(Enemy, Hero), incoming, label + " native intent Hook uses growing E");
+                Equal(Preview(Enemy, Hero), decimal.Floor(incoming), label + " native intent Hook floors final damage using growing E");
                 await Command(Enemy);
-                Equal(LastActual[^1], incoming, label + " actual command agrees with independently calculated incoming");
+                Equal(LastActual[^1], decimal.Floor(incoming), label + " actual command floors independently calculated incoming");
                 decimal outgoing = row.E - 100m >= 140m ? 1m :
                     decimal.Floor(6000m * (1m + (100m - row.E) / 140m) * 100m) / 100m;
                 Equal(Convert(Hero, Enemy, 6m), outgoing, label + " player attack curve reads target growing E");
-                Equal(Preview(Hero, Enemy, 6m), outgoing, label + " player native preview reads target growing E");
-                Equal(ActualDamage(Hero, Enemy, 6m), outgoing, label + " player actual wrapper reads target growing E");
+                Equal(Preview(Hero, Enemy, 6m), decimal.Floor(outgoing), label + " player native preview floors target-dependent final damage");
+                Equal(ActualDamage(Hero, Enemy, 6m), decimal.Floor(outgoing), label + " player actual wrapper floors target-dependent final damage");
                 decimal potency = row.E < 300m ? 0.8m + 0.4m * row.E / 300m :
                     1.2m * (1m + (row.E - 300m) * 0.0002m);
                 decimal block = decimal.Floor(3000m * potency);
