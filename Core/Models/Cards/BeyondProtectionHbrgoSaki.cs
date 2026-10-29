@@ -23,6 +23,7 @@ public sealed class BeyondProtectionHbrgoSaki : CardModel
         "packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png");
     public override string BetaPortraitPath => PortraitPath;
     protected override IEnumerable<DynamicVar> CanonicalVars => new[] { new CardsVar(0) };
+    public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new[] { HoverTipFactory.FromPower<BeyondProtectionPower>() };
 

@@ -40,11 +40,14 @@ public sealed partial class DeflectorProtection
         TemporaryMaxHpChangeDepth.Value++;
         try
         {
-            // Set leaves the player's current HP unchanged. When redirected,
-            // phantoms also recover the actual maximum HP gained. Suppress the
-            // player's DP refill normally caused by maximum-HP growth.
+            // Heal only this recipient's actual gain. Redirected phantom gains
+            // already heal via GainMaxHp; their summoner's cap stays unchanged.
+            // Keep the ordinary max-HP-driven DP refill suppressed throughout.
             await CreatureCmd.SetMaxHp(Owner.Creature,
                 Math.Min(999_999_999L, (long)previousMaxHp + maxHp));
+            int gainedMaxHp = Math.Max(0, Owner.Creature.MaxHp - previousMaxHp);
+            if (gainedMaxHp > 0)
+                await CreatureCmd.Heal(Owner.Creature, gainedMaxHp);
         }
         finally
         {

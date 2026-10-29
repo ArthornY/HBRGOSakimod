@@ -16,6 +16,8 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class BeyondProtectionPower : PowerModel, ICustomPower
 {
+    private const decimal DamagePercentPerDp = 5m / 1000m;
+
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ConvertedDp { get; private set; }
 
@@ -28,13 +30,12 @@ public sealed class BeyondProtectionPower : PowerModel, ICustomPower
         {
             if (string.IsNullOrEmpty(value)) return;
             _exactDamagePercent = DamageAmplificationLimits.Parse(value);
-            ConvertedDp = (int)Math.Min(int.MaxValue, decimal.Truncate(DamagePercent * 2m));
         }
     }
 
     // The old integer remains readable; gameplay and new saves use an exact
     // percentage bank without changing DP/HP that must later be returned.
-    public decimal DamagePercent => DamageAmplificationLimits.Clamp(_exactDamagePercent ?? ConvertedDp / 2m);
+    public decimal DamagePercent => DamageAmplificationLimits.Clamp(_exactDamagePercent ?? ConvertedDp * DamagePercentPerDp);
 
     public override PowerType Type => PowerType.Buff;
     public override PowerStackType StackType => PowerStackType.Single;
@@ -61,8 +62,9 @@ public sealed class BeyondProtectionPower : PowerModel, ICustomPower
     internal void AddConvertedDp(int removedDp)
     {
         AssertMutable();
-        _exactDamagePercent = DamageAmplificationLimits.Clamp(DamagePercent + Math.Max(0, removedDp) / 2m);
-        ConvertedDp = (int)Math.Min(int.MaxValue, decimal.Truncate(DamagePercent * 2m));
+        int converted = Math.Max(0, removedDp);
+        _exactDamagePercent = DamageAmplificationLimits.Clamp(DamagePercent + converted * DamagePercentPerDp);
+        ConvertedDp = (int)Math.Clamp((long)ConvertedDp + converted, 0, int.MaxValue);
         InvokeDisplayAmountChanged();
         Owner?.InvokePowerModified(this, 0, true);
     }
