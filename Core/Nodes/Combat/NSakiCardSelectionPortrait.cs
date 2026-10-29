@@ -74,7 +74,8 @@ public partial class NSakiCardSelectionPortrait : Control
         FocusMode = FocusModeEnum.None;
         ClipContents = false;
         ZAsRelative = false;
-        ZIndex = -8;
+        // Above battlefield HP/DP, below hand, piles and energy at UI layer 0.
+        ZIndex = -1;
         Visible = false;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _ui = GetParent() as NCombatUi;
