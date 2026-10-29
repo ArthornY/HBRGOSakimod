@@ -90,7 +90,7 @@ static partial class Checks
         {
             Hopper(roll); int hp = Enemy.MaxHp; decimal dp = Enemy.GetPower<HighDimensionalShellPower>()!.CurrentDp;
             Check(hp == roll * 700 && dp == decimal.Floor(roll / 14m * 3000m), "normal native HP roll maps to 700x HP and independent Hopper DP: " + roll);
-            Equal(Parameter(Enemy), 150m, "SmallHopper explicit E stays fixed: " + roll);
+            Equal(Parameter(Enemy), 150m, "opening SmallHopper E150 is independent of native HP roll: " + roll);
             Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 3857.14m, "real shell listener adds no legacy 25% reduction in HBR: " + roll);
             Progress(false); Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 4.5m, "legacy mode retains real shell 25% reduction: " + roll); Progress(true);
             var strikes = new List<Hit>();
@@ -133,7 +133,7 @@ static partial class Checks
         decimal block = MegaCrit.Sts2.Core.Hooks.Hook.ModifyBlock(Combat, Hero, defend.DynamicVars.Block.BaseValue, ValueProp.Move, defend, null, out _);
         Equal(block, 466m, "native Defend at INT100 yields 466 HBR block"); Hero.GainBlockInternal(block);
         decimal incoming = ActualDamage(Enemy, Hero, 4m);
-        Equal(incoming, 400m * (1m + 50m / 140m), "Hopper fixed E150 and explicit body row deal unrounded 542.857 incoming");
+        Equal(incoming, 400m * (1m + 50m / 140m), "opening Hopper E150 and explicit body row deal unrounded 542.857 incoming");
         decimal absorbed = Hero.DamageBlockInternal(incoming, ValueProp.Move);
         DamageResult defenseResult = Hero.LoseHpInternal(Math.Max(0m, incoming - absorbed), ValueProp.Move);
         Check(Hero.Block == 0 && Hero.CurrentHp == 924 && defenseResult.UnblockedDamage == 76m,

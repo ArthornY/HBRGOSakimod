@@ -18,6 +18,22 @@ vitality fallback, including an additional living ally and an unrelated monster
 with the same move name. Endpoint cases check the incoming maximum and 1 floor;
 legacy mode, Unpowered and the STS enemy block support bridge have separate cases.
 
+Enemy growth uses E150 at act index0/local floor1, +60 per act, +6 for
+each additional local floor, and +30 for elite/+50 for boss rooms. Both a
+native SmallHopper and an ordinary actor are checked at explicit early/later
+floor, act, elite and boss points. These cases verify independent incoming,
+outgoing and block formulas through the real native preview Hook and production
+actual-damage wrapper. Native encounter models supply the room classifications;
+native MapCoord, ActFloor and history collections exercise coordinate precedence,
+absent-coordinate/native-ActFloor fallback, floor/act clamps and missing encounter/current
+room fallback. Player six-stat allocations are verified to change the actual
+matching stat while leaving E independent; absent run/combat falls back to150.
+Native coordinate row0 is floor1; row1 is floor2/E156. If Neow occupies row0,
+the first monster at row1 therefore starts at E156. The explicit row0 Hopper
+calibration below remains an opening numeric benchmark, not a forced first-fight
+exception. Total history length does not substitute for native ActFloor, because
+act lengths and multiplayer progression can differ.
+
 Preview calculations enter actual native `Hook.ModifyDamage`, then the
 production `ModifyDamageInternal` replacement and complete common pipeline.
 Actual calculations enter the production StrongestShield wrapper, which marks
@@ -44,7 +60,7 @@ process, real game save/config IO or packaging is performed.
 
 The Hopper calibration reads the installed native unupgraded StrikeIronclad,
 Bash and DefendIronclad variables and costs (6/1, 8/2 plus Vulnerable2, and5/1).
-It uses the actual saved manual's level-one six stats100, fixed Hopper E150,
+It uses the actual saved manual's level-one six stats100, opening Hopper E150,
 and its mod resource profile native14 -> HP9800/DP3000. HP is native HP times700;
 DP independently uses floor(native HP /14 times3000). Every normal native
 HP roll12-16 requires exactly four Strikes; Bash followed by two Strikes kills

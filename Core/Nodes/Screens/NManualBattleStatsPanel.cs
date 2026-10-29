@@ -155,13 +155,14 @@ public partial class NManualBattleStatsPanel : Control
             "主动格挡先将旧基础值 ×100，再按知性计算增益曲线：下端 80%、上端 120%、阈值 300；高于阈值后仍继续成长。按实际伤害比例派生的格挡不重复换算。");
         AddSection(content, "敌方能力与受击",
             "敌人使用独立能力值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
+            $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，本幕每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}，每进入下一幕额外 +{HbrEnemyProfileHelper.GainPerAct}；精英再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 再 +{HbrEnemyProfileHelper.BossBonus}。Hopper 同样成长。\n" +
             "敌方技能按自身配置参照（2 × 体力 + 精神）÷3，或（体力 + 2 × 精神）÷3。参照属性不随实际命中人数或当前 DP 改变。\n" +
             "受击基础威力按敌能力与防御参照的差值插值，最低为 1，达到该技能威力上端后封顶。后续再结算原有增减伤、格挡与 DP。\n" +
             "尖塔敌人沿用当前适配的资源与技能威力参数；尚未逐个替换成 HBR 原作敌技能数据。");
         AddSection(content, "测试量级与来源",
             $"六维、成长速度及与尖塔数值的换算为本模组测试设定。角色初始 HP ×{HbrBattleStatsHelper.PlayerHealthScale}，DP 保留与 HP 的现有比例；固定数值的 HP、DP 增减 ×{HbrResourceValueHelper.FixedResourceScale}。百分比、转阶段回满和按实际伤害派生的资源不重复换算。\n" +
-            "敌人默认 HP ×1000，已有独立配置的敌人按自身基准换算。普通技能威力下端为旧基础伤害 ×1000，上端为下端的 2 倍，阈值为 140。\n" +
-            "小型 Hopper 的能力值为 150；原血量 14 对应 HP 10000、DP 3000，保留原有随机血量、难度与多人倍率。\n" +
+            "敌人默认 HP ×700，柴犬单独 ×1000，DP 使用独立参考值。我方普通攻击技能威力下端为旧基础伤害 ×1000，敌方技能下端为旧基础伤害 ×100；上端均为下端的 2 倍，阈值为 140。\n" +
+            "小型 Hopper 的原血量 14 对应 HP 9800、DP 3000，保留原有随机血量、难度与多人倍率；第一幕第 1 层普通战 E 为 150，此后按地图位置成长。\n" +
             "出伤公式参照 hbr-tool/damage-calculator，受击基础曲线参照カンタータ仮面的公式整理，均为社区研究。尖塔敌人的参数及技能防御权重为本模组适配配置。\n" +
             "卡牌、OD、掷骰与六感玩法继续保留。完整参数与来源见测试分支文档 docs/hbr-numerics-test.md。");
     }

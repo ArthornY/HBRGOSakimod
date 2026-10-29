@@ -21,6 +21,8 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Runs.History;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.ValueProps;
 
 static partial class Checks
@@ -171,6 +173,122 @@ static partial class Checks
         }
         return Array.Empty<DamageResult>();
     }
+    static EncounterModel Encounter(RoomType room)
+    {
+        string name = room switch
+        {
+            RoomType.Elite => "BygoneEffigyElite",
+            RoomType.Boss => "AeonglassBoss",
+            _ => "BowlbugsWeak"
+        };
+        var encounter = (EncounterModel)RuntimeHelpers.GetUninitializedObject(typeof(Creature).Assembly.GetType(
+            "MegaCrit.Sts2.Core.Models.Encounters." + name, true)!);
+        Check(encounter.RoomType == room, "native encounter supplies room classification " + room);
+        return encounter;
+    }
+    static void EnemyMap(int act, int? localFloor, RoomType? room = RoomType.Monster,
+        int totalFloor = 0, RoomType? currentRoom = null, int actFloor = 1)
+    {
+        Set(RunState, "_currentActIndex", act);
+        Set(RunState, "<ActFloor>k__BackingField", actFloor);
+        Set(RunState, "_visitedMapCoords", localFloor.HasValue
+            ? new List<MapCoord> { new(0, localFloor.Value - 1) } : new List<MapCoord>());
+        Set(RunState, "_mapPointHistory", new List<List<MapPointHistoryEntry>>
+            { Enumerable.Repeat<MapPointHistoryEntry>(null!, totalFloor).ToList() });
+        Set(Combat, "_encounter", room.HasValue ? Encounter(room.Value) : null);
+        var rooms = new List<AbstractRoom>();
+        if (currentRoom.HasValue)
+        {
+            var roomCombat = Blank<CombatState>(); Set(roomCombat, "_encounter", Encounter(currentRoom.Value));
+            var nativeRoom = Blank<CombatRoom>(); Set(nativeRoom, "<CombatState>k__BackingField", roomCombat);
+            rooms.Add(nativeRoom);
+        }
+        Set(RunState, "_currentRooms", rooms);
+    }
+    static async Task EnemyGrowthChecks()
+    {
+        Creature original = Enemy;
+        CalibrationConfig(); ResetSenses(); Progress(true);
+        // Expected E values are explicit design points. Incoming and outgoing
+        // curves are independently derived here, then checked through the real
+        // native Hook and production actual-damage wrapper, not just the getter.
+        var cases = new[]
+        {
+            (Act: 0, Floor: 1, Room: RoomType.Monster, E: 150m),
+            (Act: 0, Floor: 2, Room: RoomType.Monster, E: 156m),
+            (Act: 0, Floor: 17, Room: RoomType.Monster, E: 246m),
+            (Act: 1, Floor: 1, Room: RoomType.Monster, E: 210m),
+            (Act: 1, Floor: 10, Room: RoomType.Elite, E: 294m),
+            (Act: 2, Floor: 17, Room: RoomType.Boss, E: 416m),
+            (Act: 0, Floor: 1, Room: RoomType.Elite, E: 180m),
+            (Act: 0, Floor: 1, Room: RoomType.Boss, E: 200m)
+        };
+        foreach (bool hopper in new[] { false, true })
+        {
+            Enemy = Creature(hopper ? Blank<SmallHopper>() : Blank<TestSubject>());
+            Move(Enemy, "ATTACK_MOVE"); Set(Combat, "_enemies", new List<Creature> { Enemy });
+            foreach (var row in cases)
+            {
+                EnemyMap(row.Act, row.Floor, row.Room);
+                string label = $"{(hopper ? "Hopper" : "ordinary actor")} act{row.Act} floor{row.Floor} {row.Room}";
+                Equal(Parameter(Enemy), row.E, label + " resolves authored E");
+                decimal incoming = row.E - 100m >= 140m ? 2000m : 1000m * (1m + (row.E - 100m) / 140m);
+                Equal(Convert(Enemy, Hero), incoming, label + " converts incoming skill from growing E");
+                Equal(Preview(Enemy, Hero), incoming, label + " native intent Hook uses growing E");
+                await Command(Enemy);
+                Equal(LastActual[^1], incoming, label + " actual command agrees with independently calculated incoming");
+                decimal outgoing = row.E - 100m >= 140m ? 1m :
+                    decimal.Floor(6000m * (1m + (100m - row.E) / 140m) * 100m) / 100m;
+                Equal(Convert(Hero, Enemy, 6m), outgoing, label + " player attack curve reads target growing E");
+                Equal(Preview(Hero, Enemy, 6m), outgoing, label + " player native preview reads target growing E");
+                Equal(ActualDamage(Hero, Enemy, 6m), outgoing, label + " player actual wrapper reads target growing E");
+                decimal potency = row.E < 300m ? 0.8m + 0.4m * row.E / 300m :
+                    1.2m * (1m + (row.E - 300m) * 0.0002m);
+                decimal block = decimal.Floor(3000m * potency);
+                Equal(Number(Helper("HbrDamageSkillAdapter"), "ConvertBlock", Enemy, 3m, ValueProp.Move),
+                    block, label + " enemy support bridge uses growing E");
+                Equal(Hook.ModifyBlock(Combat, Enemy, 3m, ValueProp.Move, null, null, out _),
+                    block, label + " native support Hook uses growing E");
+            }
+        }
+        EnemyMap(-2, 1); Equal(Parameter(Enemy), 150m, "negative act index clamps to act zero");
+        EnemyMap(0, 0); Equal(Parameter(Enemy), 150m, "negative coordinate row clamps local floor to one");
+        EnemyMap(1, 2, totalFloor: 100, actFloor: 11);
+        Check(RunState.TotalFloor == 100 && RunState.CurrentMapCoord!.Value.row == 1,
+            "native history total and coordinate intentionally disagree for precedence test");
+        Equal(Parameter(Enemy), 216m, "current map coordinate takes precedence over native ActFloor fallback");
+        EnemyMap(1, null, totalFloor: 35, actFloor: 3);
+        Check(RunState.CurrentMapCoord == null && RunState.TotalFloor == 35 && RunState.ActFloor == 3,
+            "fallback scenario uses real absent coordinate and independent native ActFloor");
+        Equal(Parameter(Enemy), 222m, "missing coordinate uses native ActFloor across variable-length acts");
+        EnemyMap(2, null, totalFloor: 100, actFloor: 0);
+        Equal(Parameter(Enemy), 270m, "native ActFloor fallback clamps local floor to one");
+        EnemyMap(2, null, totalFloor: 5, actFloor: 7);
+        Equal(Parameter(Enemy), 306m, "native ActFloor fallback ignores total history length");
+        EnemyMap(0, null); Equal(Parameter(Enemy), 150m, "empty history and ActFloor1 use opening baseline");
+        EnemyMap(1, 3, room: RoomType.Monster, currentRoom: RoomType.Boss);
+        Equal(Parameter(Enemy), 222m, "combat encounter classification takes precedence over current room");
+        EnemyMap(1, 3, room: null, currentRoom: RoomType.Elite);
+        Equal(Parameter(Enemy), 252m, "missing encounter falls back to native current room classification");
+        EnemyMap(1, 3, room: null);
+        Equal(Parameter(Enemy), 222m, "missing encounter and room default to ordinary bonus");
+        foreach (var pair in new[] { ("Madness", "Strength"), ("LeadershipCharm", "Dexterity"),
+            ("Talent", "Intelligence"), ("Gentleness", "Vitality"), ("MentalStrength", "Spirit"), ("Simplicity", "Luck") })
+        {
+            Sense(pair.Item1, 37); object stats = Stats(Hero, out bool found);
+            Check(found && Stat(stats, pair.Item2) == 174m, pair.Item1 + " really changes corresponding player stat");
+            Equal(Parameter(Enemy), 222m, pair.Item1 + " allocation does not affect growing enemy E");
+            ResetSenses();
+        }
+        Progress(true, 1000); Equal(Parameter(Enemy), 222m, "high player level does not alter growing enemy E"); Progress(true);
+        Set(Combat, "<RunState>k__BackingField", null);
+        Equal(Parameter(Enemy), 150m, "creature without run uses baseline150 even after later Hopper scenario");
+        Set(Combat, "<RunState>k__BackingField", RunState);
+        var detached = Blank<Creature>();
+        Equal(Parameter(detached), 150m, "creature without combat uses baseline150");
+        Enemy = original; Set(Combat, "_enemies", new List<Creature> { Enemy });
+        EnemyMap(0, 1, room: null);
+    }
     public static async Task Run()
     {
         var harmony = new Harmony("hbr.enemy.skills.native.checks");
@@ -194,6 +312,7 @@ static partial class Checks
         Wrapper = Actual.GetMethods(F).Single(m => m.Name == "ModifyDamageWithStrongestShield" && m.GetParameters().Length == (Canonical.GetParameters().Length == 6 ? 10 : 11));
         new Harmony("hbr.enemy.skills.native.terminal").Patch(Canonical, prefix: new HarmonyMethod(
             typeof(Checks).GetMethod(nameof(Terminal), F)!) { priority = Priority.Last, after = [harmony.Id] });
+        await EnemyGrowthChecks();
         object enemyStats = Stats(Enemy, out bool enemyFound);
         Check(!enemyFound && Stat(enemyStats, "Strength") == 0m, "enabled enemy exposes no fabricated six-stat profile");
         object heroStats = Stats(Hero, out bool heroFound);
@@ -206,21 +325,21 @@ static partial class Checks
         Set(phantomPower, "<IsSummonedMinion>k__BackingField", true); Set(phantomPower, "<SummonedMinionLevel>k__BackingField", 7); AddPower(minion, phantomPower);
         object minionStats = Stats(minion, out bool minionFound);
         Check(minionFound && Stat(minionStats, "Strength") == 112m && Stat(minionStats, "Spirit") == 112m, "summoned phantom preserves explicit level bonus");
-        Equal(Parameter(Enemy), 173m, "enemy E comes from independent map profile");
+        Equal(Parameter(Enemy), 150m, "enemy E comes from independent map profile");
         foreach (string name in new[] { "Madness", "LeadershipCharm", "Talent", "Gentleness", "MentalStrength", "Simplicity" })
         {
-            Sense(name, 75); Equal(Parameter(Enemy), 173m, name + " changes cannot alter enemy E");
+            Sense(name, 75); Equal(Parameter(Enemy), 150m, name + " changes cannot alter enemy E");
             Check(!((bool)Helper("HbrBattleStatsHelper").GetMethod("TryGetStats", F)!.Invoke(null, [Enemy, null])!), name + " cannot synthesize enemy stats");
             ResetSenses();
         }
-        Progress(true, 1000); Equal(Parameter(Enemy), 173m, "player level cannot alter enemy E"); Progress(true);
+        Progress(true, 1000); Equal(Parameter(Enemy), 150m, "player level cannot alter enemy E"); Progress(true);
         Sense("Gentleness", 25);
         foreach (string move in new[] { "DISAPPEAR_RAY_MOVE", "WORLDS_END_SUPER_NOVA_1_MOVE", "WORLDS_END_SUPER_NOVA_2_MOVE", "UNKNOWN_MOVE" })
         {
             Move(Enemy, move); bool spirit = move != "UNKNOWN_MOVE";
             Check(Reference(Enemy) == (spirit ? "Spirit" : "Vitality"), move + " keeps explicit skill defense reference");
             decimal defense = spirit ? 350m / 3m : 400m / 3m;
-            decimal expected = 1000m * (1m + (173m - defense) / 140m);
+            decimal expected = 1000m * (1m + (150m - defense) / 140m);
             Equal(Convert(Enemy, Hero), expected, move + " uses normalized fixed defense weights");
             decimal preview = Preview(Enemy, Hero); int rng = RunState.Rng.Niche.Counter;
             await Command(Enemy);
