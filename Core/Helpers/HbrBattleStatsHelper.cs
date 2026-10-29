@@ -12,7 +12,7 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class HbrBattleStatsHelper
 {
     internal const int PlayerHealthScale = 50;
-    internal const decimal InitialStat = 200m;
+    internal const decimal InitialStat = 100m;
     internal const decimal StatGainPerLevel = 4m;
     internal const decimal SenseStatGainPerLevel = 2m;
 

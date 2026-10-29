@@ -35,12 +35,18 @@ internal readonly record struct HbrEnemySkillProfile(
 
 internal static class HbrEnemySkillProfiles
 {
+    // Ordinary four-unit attack: L=400, U=800. At E=150 against defense=100
+    // this deals 542.857... before block, leaving a small hit after Defend.
+    private static readonly HbrEnemySkillProfile SmallHopperAttack =
+        new(HbrEnemyDefenseReference.Vitality, 100m, 200m, 140m);
+
     internal static HbrEnemySkillProfile Get(Creature dealer)
     {
         // Explicit assignments for the mod's ray/beam skills. These are local
         // adaptation choices. Unknown native/third-party skills use the fixed
         // vitality-biased fallback until their own data row is authored.
         string move = dealer?.Monster?.NextMove?.Id;
+        if (dealer?.Monster is SmallHopper && move == "ATTACK_MOVE") return SmallHopperAttack;
         bool spirit = dealer?.Monster switch
         {
             RedCrimsonBossMonster => move is "DISAPPEAR_RAY_MOVE" or

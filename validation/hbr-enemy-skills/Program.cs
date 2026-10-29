@@ -23,7 +23,7 @@ using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
-static class Checks
+static partial class Checks
 {
     const BindingFlags F = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     const decimal Tolerance = 0.00000000000000000001m;
@@ -108,10 +108,10 @@ static class Checks
     static string Reference(Creature creature) => Skill(creature).GetType().GetProperty("DefenseReference", F)!.GetValue(Skill(creature))!.ToString()!;
     static decimal Preview(Creature dealer, Creature target, decimal amount = 10m, ValueProp props = ValueProp.Move) =>
         Hook.ModifyDamage(RunState, Combat, target, dealer, amount, props, null, ModifyDamageHookType.All, CardPreviewMode.None, out _);
-    static decimal ActualDamage(Creature dealer, Creature target, decimal amount = 10m, ValueProp props = ValueProp.Move)
+    static decimal ActualDamage(Creature dealer, Creature target, decimal amount = 10m, ValueProp props = ValueProp.Move, CardModel? card = null)
     {
-        object?[] stable = [RunState, Combat, target, dealer, amount, props, null, ModifyDamageHookType.All, CardPreviewMode.None, null];
-        object?[] beta = [RunState, Combat, target, dealer, amount, props, null, null, ModifyDamageHookType.All, CardPreviewMode.None, null];
+        object?[] stable = [RunState, Combat, target, dealer, amount, props, card, ModifyDamageHookType.All, CardPreviewMode.None, null];
+        object?[] beta = [RunState, Combat, target, dealer, amount, props, card, null, ModifyDamageHookType.All, CardPreviewMode.None, null];
         return (decimal)Wrapper.Invoke(null, Wrapper.GetParameters().Length == 10 ? stable : beta)!;
     }
     static void Patch(Harmony harmony, MethodBase target, string method, int priority = Priority.Normal) =>
@@ -120,7 +120,7 @@ static class Checks
     static bool Listeners(ref IEnumerable<AbstractModel> __result)
     {
         if (FailListeners && ActualFlag) throw new InvalidOperationException("controlled-listener-fault");
-        __result = Array.Empty<AbstractModel>(); return false;
+        __result = CalibrationListeners ? Hero.Powers.Concat(Enemy.Powers).Cast<AbstractModel>().ToArray() : Array.Empty<AbstractModel>(); return false;
     }
     static Task<IEnumerable<DamageResult>> Command(Creature dealer, IEnumerable<Creature>? targets = null)
     {
@@ -197,7 +197,7 @@ static class Checks
         object enemyStats = Stats(Enemy, out bool enemyFound);
         Check(!enemyFound && Stat(enemyStats, "Strength") == 0m, "enabled enemy exposes no fabricated six-stat profile");
         object heroStats = Stats(Hero, out bool heroFound);
-        Check(heroFound && Stat(heroStats, "Strength") == 200m, "real saved manual supplies player stats");
+        Check(heroFound && Stat(heroStats, "Strength") == 100m, "real saved manual supplies level-one player stats of 100");
         Creature cannon = Creature(Blank<HotaruContestCannon>(), owner: Player);
         Check(Stats(cannon, out bool cannonFound).Equals(heroStats) && cannonFound, "cannon inherits exact owner stats");
         Creature phantom = Creature(Blank<TestSubject>(), owner: Player); AddPower(phantom, Blank<PhantomPower>());
@@ -205,7 +205,7 @@ static class Checks
         Creature minion = Creature(Blank<TestSubject>(), owner: Player); var phantomPower = Blank<PhantomPower>();
         Set(phantomPower, "<IsSummonedMinion>k__BackingField", true); Set(phantomPower, "<SummonedMinionLevel>k__BackingField", 7); AddPower(minion, phantomPower);
         object minionStats = Stats(minion, out bool minionFound);
-        Check(minionFound && Stat(minionStats, "Strength") == 212m && Stat(minionStats, "Spirit") == 212m, "summoned phantom preserves explicit level bonus");
+        Check(minionFound && Stat(minionStats, "Strength") == 112m && Stat(minionStats, "Spirit") == 112m, "summoned phantom preserves explicit level bonus");
         Equal(Parameter(Enemy), 173m, "enemy E comes from independent map profile");
         foreach (string name in new[] { "Madness", "LeadershipCharm", "Talent", "Gentleness", "MentalStrength", "Simplicity" })
         {
@@ -219,7 +219,7 @@ static class Checks
         {
             Move(Enemy, move); bool spirit = move != "UNKNOWN_MOVE";
             Check(Reference(Enemy) == (spirit ? "Spirit" : "Vitality"), move + " keeps explicit skill defense reference");
-            decimal defense = spirit ? 650m / 3m : 700m / 3m;
+            decimal defense = spirit ? 350m / 3m : 400m / 3m;
             decimal expected = 1000m * (1m + (173m - defense) / 140m);
             Equal(Convert(Enemy, Hero), expected, move + " uses normalized fixed defense weights");
             decimal preview = Preview(Enemy, Hero); int rng = RunState.Rng.Niche.Counter;
@@ -254,11 +254,14 @@ static class Checks
         catch (Exception error) when (error.ToString().Contains("controlled-listener-fault")) { Check(true, "controlled hook failure propagates from canonical command"); }
         finally { FailListeners = false; }
         Check(Current == null && !ActualFlag, "faulted player command closes critical and actual scopes");
+        await HopperCalibration(harmony);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {
             passed = true, checks = Passed.Count, cases = Passed,
+            hopperCalibration = CalibrationReport,
             modSha256 = System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
-            boundary = "Actual saved manual, native actor models, stat helpers, Hook.ModifyDamage/Block and full production pipeline. Actual calls use production StrongestShield wrapper; canonical Damage terminal HP mutation is replaced with an asynchronous hook driver. Hook listeners are empty controlled leaves. No rendering, full attack/resource execution, real save/config writes or Godot."
+            nativeGameSha256 = System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
+            boundary = "Actual saved manual, native actor/card models, stat helpers, Hook.ModifyDamage/Block and full production pipeline. Actual calls use production StrongestShield wrapper; canonical Damage terminal is replaced with an asynchronous hook driver. Hopper calibration includes live native/mod power listeners, production DP absorption/exact amount patch, native HP/block mutation and production break-hit/destruction receipts. Only shell break attachment/removal/stun is a controlled lifecycle leaf; Bash damage-before-Vulnerable follows the frozen native OnPlay order. No draw/energy payment/turn simulation, rendering, real save/config writes or Godot."
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine("PASS " + Passed.Count + " enemy skill native checks");
     }

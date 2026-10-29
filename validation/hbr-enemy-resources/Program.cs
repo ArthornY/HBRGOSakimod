@@ -10,10 +10,13 @@ using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Runs;
 
 static class Checks
@@ -23,6 +26,7 @@ static class Checks
     static readonly List<string> Passed = [];
     static Type Helper(string name) => Mod.GetType("HBRGOSakiMod.Core.Helpers." + name, true)!;
     static bool Enabled, SuppressEnhancement;
+    static int NativeAscension;
     static T Blank<T>() => (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
     static void Set(object owner, string field, object? value)
     {
@@ -66,6 +70,8 @@ static class Checks
         harmony.Patch(target, prefix: new HarmonyMethod(typeof(Checks).GetMethod(method, F)!));
     static bool EnabledLeaf(ref bool __result) { __result = Enabled; return false; }
     static bool SuppressionLeaf(ref bool __result) { __result = SuppressEnhancement; return false; }
+    static bool AscensionLeaf(AscensionLevel level, int ascensionValue, int fallbackValue, ref int __result)
+    { __result = NativeAscension >= (int)level ? ascensionValue : fallbackValue; return false; }
     static bool TaskLeaf(ref Task __result) { __result = Task.CompletedTask; return false; }
     static bool HealLeaf(Creature creature, decimal amount, ref Task __result)
     { creature.HealInternal(amount); __result = Task.CompletedTask; return false; }
@@ -81,6 +87,8 @@ static class Checks
         Patch(harmony, typeof(StringName).GetConstructor([typeof(string)])!, nameof(Skip));
         Patch(harmony, Helper("HbrBattleStatsHelper").GetMethod("IsEnabled", F, [typeof(Creature)])!, nameof(EnabledLeaf));
         Patch(harmony, Helper("PhantomAscensionHelper").GetMethod("ShouldSuppressEnemyShellEnhancement", F)!, nameof(SuppressionLeaf));
+        Patch(harmony, typeof(AscensionHelper).GetMethod(nameof(AscensionHelper.GetValueIfAscension),
+            [typeof(AscensionLevel), typeof(int), typeof(int)])!, nameof(AscensionLeaf));
         Patch(harmony, typeof(MonsterModel).GetMethod(nameof(MonsterModel.AfterAddedToRoom))!, nameof(TaskLeaf));
         Patch(harmony, typeof(TestSubject).GetMethod(nameof(MonsterModel.AfterAddedToRoom))!, nameof(TaskLeaf));
         Patch(harmony, typeof(CreatureCmd).GetMethod(nameof(CreatureCmd.Heal))!, nameof(HealLeaf));
@@ -130,11 +138,14 @@ static class Checks
         Enabled = true; Config();
         foreach (string identity in new[] { "ally", "pet", "phantom" })
         {
-            Creature creature = Make(side: identity == "ally" ? CombatSide.Player : CombatSide.Enemy);
+            Creature creature = Make(max: 14, current: 14,
+                side: identity == "ally" ? CombatSide.Player : CombatSide.Enemy, monster: Blank<SmallHopper>());
             if (identity == "pet") Set(creature, "_petOwner", Blank<Player>());
             if (identity == "phantom") AddPower(creature, Blank<PhantomPower>());
             Initial(creature);
-            Check(creature.MaxHp == 101 && Replacement(creature, 207m) == 207m && Number(adapter, "GetMaxHpScale", creature) == 1m, identity + " keeps old resource path");
+            Check(creature.MaxHp == 14 && HighDimensionalShellPower.CalculateAmount(creature) == 2m &&
+                Replacement(creature, 207m) == 207m && Number(adapter, "GetMaxHpScale", creature) == 1m,
+                identity + " SmallHopper keeps old HP/DP resource path");
         }
         Creature dead = Make(current: 0); Initial(dead);
         Check(dead.MaxHp == 101000 && dead.CurrentHp == 0, "dead entry preserves zero HP");
@@ -159,7 +170,7 @@ static class Checks
         Check(Number(adapter, "GetDpReferenceMaximum", large) == 18446744073709551616m, "resource boundary reads exact HP beyond native proxy");
         Check(HighDimensionalShellPower.CalculateAmount(large) == 3689348814741910323m, "large DP baseline retains exact existing floor");
         Check(exact.MaxHpData == "18446744073709551616" && exact.CurrentHpData == "12345678901234567890", "reading resource baseline never rewrites saved health");
-        object splitProfile = Activator.CreateInstance(profile, F, null, [1000m, 2000m], CultureInfo.InvariantCulture)!;
+        object splitProfile = Activator.CreateInstance(profile, F, null, [1m, 1000m, 400m], CultureInfo.InvariantCulture)!;
         Check((decimal)profile.GetMethod("GetDpReferenceMaximum", F)!.Invoke(splitProfile, [123456m])! == 246912m, "separate DP profile coefficient can change independently of HP coefficient");
         var boss = Blank<NararaShibaBossMonster>(); Creature narara = Make(max: 80000, monster: boss);
         typeof(NararaShibaBossMonster).GetMethod("InitializeDpLayers", F)!.Invoke(boss, null);
@@ -173,6 +184,7 @@ static class Checks
         _ = HighDimensionalShellPower.CalculateAmount(narara);
         Check(stored.CurrentDpData == "765432109876543210", "fresh resource calculation never rescales existing DP ledger");
         Config();
+        await CheckSmallHopper(adapter, profile);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {
             passed = true, checks = Passed.Count, cases = Passed,
@@ -180,5 +192,101 @@ static class Checks
             boundary = "Actual native Creature entry, production health helper and DP resource calculators. Enablement, monster entry and phantom suppression are controlled leaves; exact HP/DP saved strings are fixture state. No Godot, game save/config writes, engine combat or original per-enemy HBR resource data is used."
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine("PASS " + Passed.Count + " enemy resource native checks");
+    }
+
+    static async Task CheckSmallHopper(Type adapter, Type profile)
+    {
+        Enabled = true; Config();
+        foreach (var row in new[] { (12, 8571, 2571), (13, 9285, 2785), (14, 10000, 3000),
+            (15, 10714, 3214), (16, 11428, 3428), (17, 12142, 3642) })
+        {
+            Creature hopper = Make(max: row.Item1, current: row.Item1, monster: Blank<SmallHopper>());
+            await hopper.AfterAddedToRoom();
+            Check(hopper.MaxHp == row.Item2 && hopper.CurrentHp == row.Item2 &&
+                HighDimensionalShellPower.CalculateAmount(hopper) == row.Item3,
+                $"SmallHopper native {row.Item1} keeps calibrated HP/independent DP {row.Item2}/{row.Item3}");
+            await hopper.AfterAddedToRoom();
+            Check(hopper.MaxHp == row.Item2, $"SmallHopper native {row.Item1} entry remains once-only");
+        }
+        Creature baseline = Make(max: 14, current: 14, monster: Blank<SmallHopper>()); Initial(baseline);
+        object baselineProfile = Call(adapter, "GetProfile", baseline)!;
+        Check((decimal)profile.GetProperty("NativeReferenceHp", F)!.GetValue(baselineProfile)! == 14m &&
+            (decimal)profile.GetProperty("ReferenceMaxHp", F)!.GetValue(baselineProfile)! == 10000m &&
+            (decimal)profile.GetProperty("ReferenceMaxDp", F)!.GetValue(baselineProfile)! == 3000m,
+            "SmallHopper profile stores distinct native reference, HP and DP values");
+        object extraDpProfile = Activator.CreateInstance(profile, F, null, [14m, 10000m, 6000m], CultureInfo.InvariantCulture)!;
+        Check((decimal)profile.GetProperty("NativeMaxHpScale", F)!.GetValue(extraDpProfile)! ==
+                (decimal)profile.GetProperty("NativeMaxHpScale", F)!.GetValue(baselineProfile)! &&
+            (decimal)profile.GetMethod("GetDpReferenceMaximum", F)!.Invoke(extraDpProfile, [10000m])! == 30000m,
+            "changing independent reference DP does not change the HP coefficient");
+        foreach (int difficulty in new[] { 0, 8 })
+        {
+            NativeAscension = difficulty;
+            int minimum = difficulty == 0 ? 12 : 13, maximum = difficulty == 0 ? 16 : 17;
+            var rolls = new HashSet<int>();
+            bool preservesEveryRoll = true;
+            for (uint seed = 0; seed < 32; seed++)
+            {
+                Creature native = Make(monster: Blank<SmallHopper>());
+                native.SetUniqueMonsterHpValue([native], new Rng(seed));
+                rolls.Add(native.MaxHp);
+                int raw = native.MaxHp; Initial(native);
+                preservesEveryRoll &= native.MaxHp == decimal.Floor(raw * 10000m / 14m);
+            }
+            Check(preservesEveryRoll, $"native SmallHopper sampled HP reaches adapter unchanged difficulty={difficulty}");
+            Check(rolls.SetEquals(Enumerable.Range(minimum, maximum - minimum + 1)),
+                $"actual native HP sampler retains the full difficulty={difficulty} range");
+        }
+        NativeAscension = 0;
+        Creature first = Make(monster: Blank<SmallHopper>()), second = Make(monster: Blank<SmallHopper>());
+        first.SetUniqueMonsterHpValue([first], new Rng(77)); second.SetUniqueMonsterHpValue([second], new Rng(77));
+        Check(first.MaxHp == second.MaxHp, "native HP sampler keeps same-seed replay determinism");
+        var existing = new List<Creature>();
+        for (int i = 0; i < 5; i++)
+        {
+            Creature next = Make(monster: Blank<SmallHopper>()); next.SetUniqueMonsterHpValue(existing.Append(next).ToArray(), new Rng((uint)i)); existing.Add(next);
+        }
+        Check(existing.Select(creature => creature.MaxHp).Distinct().Count() == 5, "native HP sampler retains its same-side duplicate avoidance");
+        foreach (int act in new[] { 0, 1, 2 })
+        {
+            foreach (int players in new[] { 1, 2, 4 })
+            {
+                Config(hp: 150, hpGrowth: 50, dp: 40, dpGrowth: 50);
+                Creature multiplayer = Make(max: 14, current: 14, act: act, monster: Blank<SmallHopper>());
+                decimal nativeScaled = Creature.ScaleHpForMultiplayer(14m, null, players, act);
+                multiplayer.ScaleMonsterHpForMultiplayer(null, players, act);
+                decimal nativeMaximum = decimal.Floor(nativeScaled);
+                Check(multiplayer.MaxHp == nativeMaximum, $"native multiplayer HP rounding retained players={players}, act={act}");
+                decimal growth = act == 0 ? 1m : act == 1 ? 1.5m : 2.25m;
+                decimal expectedHp = decimal.Floor(nativeMaximum * 1.5m * growth * (10000m / 14m));
+                await multiplayer.AfterAddedToRoom();
+                Check(multiplayer.MaxHp == expectedHp &&
+                    HighDimensionalShellPower.CalculateAmount(multiplayer) == decimal.Floor(expectedHp * 0.6m * growth),
+                    $"SmallHopper keeps multiplayer, HP/DP configuration and act growth players={players}, act={act}");
+            }
+        }
+        Config();
+        Check(Replacement(baseline, 14m) == 10000m && Replacement(baseline, 14m) == 10000m,
+            "SmallHopper raw replacement source retains calibrated one-pass HP");
+        baseline.SetMaxHpInternal(10100m);
+        Check(HighDimensionalShellPower.CalculateAmount(baseline) == 3030m,
+            "SmallHopper fresh DP continues following dynamic maximum-HP changes");
+        var storedDp = Blank<HighDimensionalShellPower>(); AddPower(baseline, storedDp);
+        typeof(HighDimensionalShellPower).GetProperty(nameof(HighDimensionalShellPower.CurrentDpData), F)!.SetValue(storedDp, "1234");
+        baseline.SetMaxHpInternal(10200m); _ = HighDimensionalShellPower.CalculateAmount(baseline);
+        Check(storedDp.CurrentDpData == "1234", "SmallHopper maximum-HP changes never rescale existing current DP");
+        Creature huge = Make(max: 999999999, monster: Blank<SmallHopper>());
+        var exact = Blank<LargeHealthPower>(); AddPower(huge, exact);
+        exact.MaxHpData = "18446744073709551616"; exact.CurrentHpData = "18446744073709551616";
+        Check(HighDimensionalShellPower.CalculateAmount(huge) == 5534023222112865484m,
+            "SmallHopper large DP avoids premature clamping of its reference intermediate");
+        Config(dp: 1000);
+        Check(HighDimensionalShellPower.CalculateAmount(huge) == 18446744073709551616m,
+            "SmallHopper configured DP saturates only at the final resource cap");
+        Config(); Enabled = false;
+        Creature legacy = Make(max: 14, current: 14, monster: Blank<SmallHopper>()); Initial(legacy);
+        Check(legacy.MaxHp == 14 && HighDimensionalShellPower.CalculateAmount(legacy) == 2m,
+            "disabled SmallHopper profile keeps native HP and old configured shell");
+        Enabled = true;
     }
 }

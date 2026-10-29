@@ -23,7 +23,8 @@ production `ModifyDamageInternal` replacement and complete common pipeline.
 Actual calculations enter the production StrongestShield wrapper, which marks
 the native Hook call as actual, and reach the same pipeline. This checks numeric
 intent/actual agreement for each selected move. Rendering, displayed rounding,
-enemy AI execution and real resource mutation are outside the fixture.
+enemy AI execution are outside the fixture. The Hopper cases below additionally
+exercise native block/HP mutation and the production DP absorption boundary.
 
 The canonical `CreatureCmd.Damage` method has the real production critical
 scope prefix/postfix/finalizer installed. Its terminal HP work is replaced with
@@ -34,8 +35,34 @@ no enemy critical scope/RNG usage, lazy player sampling, sample reuse, nested
 command isolation, and cleanup after a controlled fault inside the actual
 wrapper. The native RNG itself is used; no specific lucky/unlucky roll is assumed.
 
-Global hook-listener enumeration returns an empty collection, and logging and
+Actor/scope regressions use empty controlled hook listeners. Hopper calibration
+uses live shell, destruction and native Vulnerable listeners. Logging and
 Godot StringName construction are controlled leaves. Thus these checks do not
 validate every modifier combination, UI preview context, a complete native
 damage task, replay/save restoration or original per-enemy skill data. No Godot
 process, real game save/config IO or packaging is performed.
+
+The Hopper calibration reads the installed native unupgraded StrikeIronclad,
+Bash and DefendIronclad variables and costs (6/1, 8/2 plus Vulnerable2, and5/1).
+It uses the actual saved manual's level-one six stats100, fixed Hopper E150,
+and its mod resource profile native14 -> HP10000/DP3000. Every normal native
+HP roll12-16 requires exactly four Strikes; Bash followed by two Strikes kills
+in three cards costing four energy. All these cases disable natural criticals.
+With a normal three-energy turn the four-energy sequences span turns (e.g.
+Bash+Strike, then Strike while Vulnerable remains); these are card/energy
+budgets without draw, turn expiry or energy payment simulation. The shell hook executes and its old
+0.75 reduction is ignored only in HBR mode. The production DP absorber discards
+the breaking hit's overflow, then the real receipt adds2 destruction points;
+subsequent damage uses real destruction and native Vulnerable multipliers.
+
+The shell's break attachment/removal/stun is a controlled lifecycle leaf; its
+absorption, exact DP writes, receipts, fixed gain and native HP mutations remain
+production code. Bash damage precedes Vulnerable attachment, matching the native
+OnPlay IL in the installed sts2.dll (A1F9E653F1E28E4076558FEE1E60D218619CB7E057B887C6417F62C62C6D7A52).
+The report records the actual mod and native game DLL hashes. Difficulty8's
+maximum native HP17 is an explicit counterexample to the normal card guarantee.
+Defend100INT grants466 block against542.857... incoming damage. This defender
+has no DP: native DamageBlockInternal resolves block first, and the actual
+native LoseHpInternal truncates the remaining76.857... to76 HP lost. This
+fixture does not attribute that truncation to a CreatureCmd cast. These profile numbers
+are mod design values, not original HBR Hopper data.

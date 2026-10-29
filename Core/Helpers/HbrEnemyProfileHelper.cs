@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Rooms;
 
@@ -13,6 +14,10 @@ internal static class HbrEnemyProfileHelper
 {
     internal static decimal GetEnemyParameter(Creature creature)
     {
+        // Authored opening benchmark, independent of map growth and HP rolls.
+        // A summoned allied copy must continue to use its owner's stats.
+        if (creature?.Monster is SmallHopper && EnemyStatScalingHelper.IsEnemy(creature) &&
+            HbrBattleStatsHelper.IsEnabled(creature)) return 150m;
         if (creature?.CombatState?.RunState is not { } run) return 170m;
         int act = Math.Max(0, run.CurrentActIndex);
         int localFloor = run.CurrentMapCoord is { } coord ? Math.Max(1, coord.row + 1) :

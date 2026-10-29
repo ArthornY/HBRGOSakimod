@@ -1,3 +1,5 @@
+using HBRGOSakiMod.Core.Config;
+using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace HBRGOSakiMod.Core.Helpers;
@@ -6,30 +8,43 @@ namespace HBRGOSakiMod.Core.Helpers;
 // enemy's six attributes or fixed HP/DP data. Native encounter HP selection,
 // multiplayer scaling and phase HP remain the source of the compatible baseline.
 internal readonly record struct HbrEnemyResourceProfile(
-    decimal NativeMaxHpScale,
-    decimal NativeDpScale)
+    decimal NativeReferenceHp,
+    decimal ReferenceMaxHp,
+    decimal ReferenceMaxDp)
 {
+    internal decimal NativeMaxHpScale => ReferenceMaxHp / NativeReferenceHp;
+
     internal decimal GetDpReferenceMaximum(decimal adaptedMaxHp)
     {
-        // The current adapter preserves HP changes affecting the old STS shell
-        // baseline. Separate resource coefficients let a future enemy resource
-        // table replace that source without inventing VIT/SPR-to-HP/DP formulas.
-        // Avoid dividing already-rounded HP on the compatibility path.
-        return NativeDpScale == NativeMaxHpScale
+        // ReferenceMaxDp is an independent resource value at the default shell
+        // setting, not another HP coefficient. Existing shell calculators own
+        // the configurable percentage, act growth and special full-layer rules.
+        decimal defaultRatio = HBRGOSakiConfig.DefaultEnemyHighDimensionalShellPercent / 100m;
+        decimal dpRatio = ReferenceMaxDp / ReferenceMaxHp / defaultRatio;
+        // Preserve the STS rule that phase replacements and later maximum-HP
+        // changes resize fresh DP. Saved/current DP and frozen boss layers are
+        // untouched. Keep the wider intermediate until the final resource clamp.
+        return dpRatio == 1m
             ? adaptedMaxHp
-            : BigCombatNumbers.MultiplyPositive(adaptedMaxHp,
-                NativeDpScale / NativeMaxHpScale);
+            : DamageAmplificationLimits.MultiplySaturated(adaptedMaxHp, dpRatio);
     }
 }
 
 internal static class HbrEnemyResourceAdapter
 {
-    private static readonly HbrEnemyResourceProfile LegacySts = new(1m, 1m);
-    private static readonly HbrEnemyResourceProfile HbrStsCompatibility = new(1000m, 1000m);
+    private static readonly HbrEnemyResourceProfile LegacySts = new(1m, 1m, 0.2m);
+    private static readonly HbrEnemyResourceProfile HbrStsCompatibility = new(1m, 1000m, 200m);
+    // The ordinary native midpoint (12..16) is the calibration reference only.
+    // The actual native roll, difficulty, multiplayer and HP settings still
+    // multiply both resource baselines; this is local encounter design data.
+    private static readonly HbrEnemyResourceProfile SmallHopperOpening = new(14m, 10000m, 3000m);
 
-    internal static HbrEnemyResourceProfile GetProfile(Creature creature) =>
-        EnemyStatScalingHelper.IsEnemy(creature) && HbrBattleStatsHelper.IsEnabled(creature)
-            ? HbrStsCompatibility : LegacySts;
+    internal static HbrEnemyResourceProfile GetProfile(Creature creature)
+    {
+        if (!EnemyStatScalingHelper.IsEnemy(creature) || !HbrBattleStatsHelper.IsEnabled(creature))
+            return LegacySts;
+        return creature.Monster is SmallHopper ? SmallHopperOpening : HbrStsCompatibility;
+    }
 
     internal static decimal GetMaxHpScale(Creature creature) =>
         GetProfile(creature).NativeMaxHpScale;
