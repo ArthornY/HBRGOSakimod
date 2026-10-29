@@ -67,6 +67,8 @@ public partial class NSakiCardSelectionPortrait : Control
     private NCardPlay _activePlay;
     private Callable _onPlayFinished;
     private Callable _onPlayExiting;
+    private readonly SakiSelectionPortraitFade _fade = new();
+    private static double Now => Time.GetTicksUsec() / 1_000_000.0;
 
     public override void _EnterTree()
     {
@@ -76,7 +78,7 @@ public partial class NSakiCardSelectionPortrait : Control
         ZAsRelative = false;
         // Above battlefield HP/DP, below hand, piles and energy at UI layer 0.
         ZIndex = -1;
-        Visible = false;
+        ResetPresentation();
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _ui = GetParent() as NCombatUi;
         RenderingServer.FramePreDraw += RefreshPresentation;
@@ -95,11 +97,12 @@ public partial class NSakiCardSelectionPortrait : Control
         BindHand(null);
         _ui = null;
         _player = null;
-        Visible = false;
+        ResetPresentation();
     }
 
     public void BindPlayer(Player player)
     {
+        if (!ReferenceEquals(_player, player)) ResetPresentation();
         _player = player;
         if (IsInsideTree()) RefreshPresentation();
     }
@@ -180,7 +183,8 @@ public partial class NSakiCardSelectionPortrait : Control
             _hand.ChildEnteredTree -= OnHandChildEntered;
             _hand.TreeExiting -= OnHandExiting;
         }
-        ClearActivePlay();
+        DetachActivePlay();
+        ResetPresentation();
         _hand = hand;
         if (!IsValid(_hand)) return;
         _hand.ChildEnteredTree += OnHandChildEntered;
@@ -206,21 +210,23 @@ public partial class NSakiCardSelectionPortrait : Control
     private void SetActivePlay(NCardPlay play)
     {
         if (ReferenceEquals(_activePlay, play)) return;
-        ClearActivePlay();
+        DetachActivePlay();
         _activePlay = play;
-        _onPlayFinished = Callable.From<bool>(_ => OnPlayEnded(play));
-        _onPlayExiting = Callable.From(() => OnPlayEnded(play));
+        _onPlayFinished = Callable.From<bool>(success => OnPlayEnded(play, success));
+        _onPlayExiting = Callable.From(() => OnPlayEnded(play, false));
         play.Connect(NCardPlay.SignalName.Finished, _onPlayFinished);
         play.Connect(Node.SignalName.TreeExiting, _onPlayExiting);
     }
 
-    private void OnPlayEnded(NCardPlay play)
+    private void OnPlayEnded(NCardPlay play, bool success)
     {
         // A canceled card can leave the tree after its replacement is active.
-        if (ReferenceEquals(_activePlay, play)) ClearActivePlay();
+        if (!ReferenceEquals(_activePlay, play)) return;
+        DetachActivePlay();
+        _fade.Release(Now, success);
     }
 
-    private void ClearActivePlay()
+    private void DetachActivePlay()
     {
         if (IsValid(_activePlay))
         {
@@ -230,6 +236,12 @@ public partial class NSakiCardSelectionPortrait : Control
                 _activePlay.Disconnect(Node.SignalName.TreeExiting, _onPlayExiting);
         }
         _activePlay = null;
+    }
+
+    private void ResetPresentation()
+    {
+        _fade.Reset();
+        Modulate = new Color(1f, 1f, 1f, 0f);
         Visible = false;
     }
 
@@ -237,23 +249,33 @@ public partial class NSakiCardSelectionPortrait : Control
     {
         if (!IsInsideTree() || !IsLive(_ui))
         {
-            Visible = false;
+            ResetPresentation();
             return;
         }
         BindHand(_ui.Hand);
-        if (_activePlay != null && !IsLive(_activePlay)) ClearActivePlay();
+        if (_activePlay != null && !IsLive(_activePlay)) OnPlayEnded(_activePlay, false);
 
         NCombatRoom room = NCombatRoom.Instance;
-        bool show = IsValid(_portrait) && HBRGOSakiConfig.ModUI &&
+        bool canPresent = IsValid(_portrait) && HBRGOSakiConfig.ModUI &&
             _player?.Character is HbrgoSaki && LocalContext.IsMe(_player) &&
             IsLive(room) && ReferenceEquals(room.Ui, _ui) &&
             room.Mode == CombatRoomMode.ActiveCombat &&
             CombatManager.Instance.IsInProgress && !CombatManager.Instance.IsOverOrEnding &&
             _ui.IsVisibleInTree() && ActiveScreenContext.Instance.IsCurrent(room) &&
-            IsLive(_hand) && _hand.CurrentMode == NPlayerHand.Mode.Play &&
-            IsLive(_activePlay) && ReferenceEquals(_activePlay.Player, _player) &&
+            IsLive(_hand) && _hand.CurrentMode == NPlayerHand.Mode.Play;
+        bool selecting = IsLive(_activePlay) && ReferenceEquals(_activePlay.Player, _player) &&
             ReferenceEquals(_activePlay.GetParent(), _hand);
-        if (show) show = RefreshPortraitArt();
+        if (!canPresent || (_activePlay != null && !selecting))
+        {
+            // Combat/screen/hand-mode changes must not leave a delayed portrait
+            // behind, even when its previous card was successfully committed.
+            ResetPresentation();
+            return;
+        }
+        double now = Now;
+        if (selecting) _fade.Select(now);
+        float opacity = _fade.OpacityAt(now);
+        bool show = opacity > 0f && RefreshPortraitArt();
         if (show)
         {
             // Keep the visible cutout flush with the lower-left UI edge. UI
@@ -273,6 +295,8 @@ public partial class NSakiCardSelectionPortrait : Control
                 _scytheExtension.Size = _scytheExtensionTexture.GetSize() * scale;
             }
         }
+        // Both the original pixels and supplemental weapon layer fade together.
+        Modulate = new Color(1f, 1f, 1f, opacity);
         Visible = show;
     }
 
