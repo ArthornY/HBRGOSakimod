@@ -20,30 +20,43 @@ internal readonly record struct HbrEnemyResourceProfile(
         // setting, not another HP coefficient. Existing shell calculators own
         // the configurable percentage, act growth and special full-layer rules.
         decimal defaultRatio = HBRGOSakiConfig.DefaultEnemyHighDimensionalShellPercent / 100m;
-        decimal dpRatio = ReferenceMaxDp / ReferenceMaxHp / defaultRatio;
+        decimal referenceDpBase = ReferenceMaxDp / defaultRatio;
         // Preserve the STS rule that phase replacements and later maximum-HP
         // changes resize fresh DP. Saved/current DP and frozen boss layers are
         // untouched. Keep the wider intermediate until the final resource clamp.
-        return dpRatio == 1m
+        // Multiply before dividing: a rounded repeating ratio (e.g. 1000/700)
+        // can turn an exact 400 DP into 399 at the final floor. The wider
+        // intermediate must not be clamped to the creature resource limit.
+        return referenceDpBase == ReferenceMaxHp
             ? adaptedMaxHp
-            : DamageAmplificationLimits.MultiplySaturated(adaptedMaxHp, dpRatio);
+            : DamageAmplificationLimits.MultiplySaturated(adaptedMaxHp, referenceDpBase) / ReferenceMaxHp;
     }
 }
 
 internal static class HbrEnemyResourceAdapter
 {
+    private const decimal EnemyHpScale = 700m;
     private static readonly HbrEnemyResourceProfile LegacySts = new(1m, 1m, 0.2m);
-    private static readonly HbrEnemyResourceProfile HbrStsCompatibility = new(1m, 1000m, 200m);
     // The ordinary native midpoint (12..16) is the calibration reference only.
     // The actual native roll, difficulty, multiplayer and HP settings still
     // multiply both resource baselines; this is local encounter design data.
-    private static readonly HbrEnemyResourceProfile SmallHopperOpening = new(14m, 10000m, 3000m);
+    private static readonly HbrEnemyResourceProfile SmallHopperOpening = new(14m, 14m * EnemyHpScale, 3000m);
+    // All enemies share the rounded opening calibration, except Narara.
+    // Keep the existing independent compatibility DP reference (200 per
+    // native HP); changing the HP calibration must not retune that resource.
+    private static readonly HbrEnemyResourceProfile HbrStsCompatibility = new(1m, EnemyHpScale, 200m);
+    private static readonly HbrEnemyResourceProfile NararaShiba = new(1m, 1000m, 200m);
 
     internal static HbrEnemyResourceProfile GetProfile(Creature creature)
     {
         if (!EnemyStatScalingHelper.IsEnemy(creature) || !HbrBattleStatsHelper.IsEnabled(creature))
             return LegacySts;
-        return creature.Monster is SmallHopper ? SmallHopperOpening : HbrStsCompatibility;
+        return creature.Monster switch
+        {
+            SmallHopper => SmallHopperOpening,
+            NararaShibaBossMonster => NararaShiba,
+            _ => HbrStsCompatibility
+        };
     }
 
     internal static decimal GetMaxHpScale(Creature creature) =>

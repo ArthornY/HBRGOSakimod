@@ -45,7 +45,8 @@ process, real game save/config IO or packaging is performed.
 The Hopper calibration reads the installed native unupgraded StrikeIronclad,
 Bash and DefendIronclad variables and costs (6/1, 8/2 plus Vulnerable2, and5/1).
 It uses the actual saved manual's level-one six stats100, fixed Hopper E150,
-and its mod resource profile native14 -> HP10000/DP3000. Every normal native
+and its mod resource profile native14 -> HP9800/DP3000. HP is native HP times700;
+DP independently uses floor(native HP /14 times3000). Every normal native
 HP roll12-16 requires exactly four Strikes; Bash followed by two Strikes kills
 in three cards costing four energy. All these cases disable natural criticals.
 With a normal three-energy turn the four-energy sequences span turns (e.g.
@@ -60,7 +61,8 @@ absorption, exact DP writes, receipts, fixed gain and native HP mutations remain
 production code. Bash damage precedes Vulnerable attachment, matching the native
 OnPlay IL in the installed sts2.dll (A1F9E653F1E28E4076558FEE1E60D218619CB7E057B887C6417F62C62C6D7A52).
 The report records the actual mod and native game DLL hashes. Difficulty8's
-maximum native HP17 is an explicit counterexample to the normal card guarantee.
+maximum native HP17 now has11900 HP and3642 DP; four Strikes or Bash plus two
+Strikes also kill that case. Later difficulty DP/attack changes are not covered.
 Defend100INT grants466 block against542.857... incoming damage. This defender
 has no DP: native DamageBlockInternal resolves block first, and the actual
 native LoseHpInternal truncates the remaining76.857... to76 HP lost. This

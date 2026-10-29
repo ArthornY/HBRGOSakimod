@@ -89,7 +89,7 @@ static partial class Checks
         foreach (int roll in Enumerable.Range(12, 5))
         {
             Hopper(roll); int hp = Enemy.MaxHp; decimal dp = Enemy.GetPower<HighDimensionalShellPower>()!.CurrentDp;
-            Check(hp == decimal.Floor(roll * (10000m / 14m)) && dp == decimal.Floor(hp * 0.3m), "normal native HP roll maps to independent Hopper HP/DP: " + roll);
+            Check(hp == roll * 700 && dp == decimal.Floor(roll / 14m * 3000m), "normal native HP roll maps to 700x HP and independent Hopper DP: " + roll);
             Equal(Parameter(Enemy), 150m, "SmallHopper explicit E stays fixed: " + roll);
             Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 3857.14m, "real shell listener adds no legacy 25% reduction in HBR: " + roll);
             Progress(false); Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 4.5m, "legacy mode retains real shell 25% reduction: " + roll); Progress(true);
@@ -115,16 +115,16 @@ static partial class Checks
             rows.Add(new { nativeHp = roll, hp, dp, strikes, bashThenStrikes = new[] { bashHit, second, third } });
         }
         // Native difficulty8 expands the HP roll to13-17; DP enhancement starts
-        // later at10. The highest roll already exceeds both normal card budgets.
+        // later at10. At700x HP, even its highest roll fits both card budgets.
         Set(RunState, "<AscensionLevel>k__BackingField", 8); Hopper(17);
         var hardStrikes = new List<Hit>();
         while (Enemy.CurrentHp > 0 && hardStrikes.Count < 8) hardStrikes.Add(await HitCard(strike));
-        Check(hardStrikes.Count == 5 && hardStrikes[3].HpAfter > 0,
-            "difficulty8 native HP17 is outside the normal four-Strike guarantee");
+        Check(hardStrikes.Count == 4 && hardStrikes[2].HpAfter > 0 && hardStrikes[3].HpAfter == 0,
+            "difficulty8 native HP17 at700x HP takes exactly four Strikes");
         Hopper(17); Hit hardBash = await HitCard(bash);
         var hardVulnerable = new VulnerablePower(); AddPower(Enemy, hardVulnerable); Set(hardVulnerable, "_amount", (int)bash.DynamicVars.Vulnerable.BaseValue);
         Hit hardSecond = await HitCard(strike); Hit hardThird = await HitCard(strike);
-        Check(hardThird.HpAfter > 0, "difficulty8 native HP17 survives Bash plus two Strikes");
+        Check(hardSecond.HpAfter > 0 && hardThird.HpAfter == 0, "difficulty8 native HP17 at700x HP dies to Bash plus two Strikes");
         object highRoll = new { ascension = 8, nativeHp = 17, hp = Enemy.MaxHp, hardStrikes,
             bashThenTwoStrikes = new[] { hardBash, hardSecond, hardThird } };
         Set(RunState, "<AscensionLevel>k__BackingField", 0);
@@ -139,7 +139,7 @@ static partial class Checks
         Check(Hero.Block == 0 && Hero.CurrentHp == 924 && defenseResult.UnblockedDamage == 76m,
             "native block-before-HP order truncates 76.857 remainder to 76 HP loss");
         CalibrationReport = new { normalRolls = rows, highRoll, defend = new { block, incoming, hpLoss = defenseResult.UnblockedDamage },
-            assumptions = "HBR level-one six stats100; normal difficulty; default100% HP/damage and20% DP config; no crits, upgrades, senses, other modifiers or turn expiry. Bash order matches installed native IL. Counts are cards/energy budget, not same-turn playability. Native high-difficulty HP13-17 and difficulty DP/attack changes are outside the 3-4 card guarantee. Values are mod calibration data, not original HBR Hopper data." };
+            assumptions = "HBR level-one six stats100; 700x native HP; Hopper DP independently calibrated to3000 at native HP14; default100% HP/damage and20% DP config; no crits, upgrades, senses, other modifiers or turn expiry. Bash order matches installed native IL. Counts are cards/energy budget, not same-turn playability. Normal native HP12-16 and difficulty8 maximum HP17 fit the 3-4 card budget; later difficulty DP/attack changes are not covered. Values are mod calibration data, not original HBR Hopper data." };
         CalibrationListeners = false;
     }
 }
