@@ -210,7 +210,7 @@ static partial class Checks
         Creature original = Enemy;
         CalibrationConfig(); ResetSenses(); Progress(true);
         // Expected E values are explicit design points. Incoming and outgoing
-        // curves are independently derived here, then checked through the real
+        // values are independently derived here, then checked through the real
         // native Hook and production actual-damage wrapper, not just the getter.
         var cases = new[]
         {
@@ -356,7 +356,7 @@ static partial class Checks
         Set(RunState, "_currentActIndex", 0); Sense("Gentleness", 1000); Sense("MentalStrength", 1000);
         Equal(Convert(Enemy, Hero), 1m, "incoming enemy curve preserves one-point floor"); ResetSenses();
         Equal(Convert(Enemy, Hero, props: ValueProp.Unpowered), 10m, "Unpowered incoming keeps legacy amount");
-        decimal support = Number(Helper("HbrSkillPower"), "EvaluateBlockFromUnits", 3m, Parameter(Enemy), 1000m);
+        decimal support = Number(Helper("HbrSkillPower"), "EvaluateEnemyBlockFromUnits", 3m, Parameter(Enemy), 1000m);
         Equal(Number(Helper("HbrDamageSkillAdapter"), "ConvertBlock", Enemy, 3m, ValueProp.Move), support, "enemy block uses explicit E support baseline");
         Equal(Hook.ModifyBlock(Combat, Enemy, 3m, ValueProp.Move, null, null, out _), support, "enemy block native Hook uses same E baseline");
         Progress(false);
@@ -373,6 +373,7 @@ static partial class Checks
         catch (Exception error) when (error.ToString().Contains("controlled-listener-fault")) { Check(true, "controlled hook failure propagates from canonical command"); }
         finally { FailListeners = false; }
         Check(Current == null && !ActualFlag, "faulted player command closes critical and actual scopes");
+        SingleMultiplierChecks();
         await HopperCalibration(harmony);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {
@@ -380,7 +381,7 @@ static partial class Checks
             hopperCalibration = CalibrationReport,
             modSha256 = System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeGameSha256 = System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
-            boundary = "Actual saved manual, native actor/card models, stat helpers, Hook.ModifyDamage/Block and full production pipeline. Actual calls use production StrongestShield wrapper; canonical Damage terminal is replaced with an asynchronous hook driver. Hopper calibration includes live native/mod power listeners, production DP absorption/exact amount patch, native HP/block mutation and production break-hit/destruction receipts. Only shell break attachment/removal/stun is a controlled lifecycle leaf; Bash damage-before-Vulnerable follows the frozen native OnPlay order. No draw/energy payment/turn simulation, rendering, real save/config writes or Godot."
+            boundary = "Actual saved manual, native actor/card models and OnUpgrade mutations, stat helpers, Hook.ModifyDamage/Block and full production pipeline. Actual calls use production StrongestShield wrapper; canonical Damage terminal is replaced with an asynchronous hook driver. Single-coefficient actor checks use real Millsage state, a constructed intent through production cannon Begin/Close, real cannon preview, fixed replay sample through production critical scope, and controlled resolved-gain/absolute-base scopes. These do not execute complete card plays, cannon phases or asynchronous block commands. Hopper calibration includes live native/mod power listeners, production DP absorption/exact amount patch, native HP/block mutation and production break-hit/destruction receipts. Only shell break attachment/removal/stun is a controlled lifecycle leaf; Bash damage-before-Vulnerable follows the frozen native OnPlay order. No draw/energy payment/turn simulation, rendering, real save/config writes or Godot."
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine("PASS " + Passed.Count + " enemy skill native checks");
     }

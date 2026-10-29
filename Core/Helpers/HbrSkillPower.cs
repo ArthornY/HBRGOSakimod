@@ -15,8 +15,9 @@ internal static class HbrSkillPower
     internal const decimal LegacyBlockAt100Percent = 5m;
     internal const decimal OutgoingDamageUnit = 1000m;
     internal const decimal PlayerBlockUnit = 100m;
-    internal const decimal ParameterLimit = 140m;
-    internal static readonly HbrSkillPowerCurve BlockPotencyCurve = new(0.8m, 1.2m, 300m);
+    internal const decimal AttackAttributeScale = 140m;
+    internal const decimal BlockReferenceIntelligence = 100m;
+    private static readonly HbrSkillPowerCurve EnemyBlockPotencyCurve = new(0.8m, 1.2m, 300m);
 
     // Keep a repeating percentage as a pair: e.g. 50% / 3 is exactly one native
     // damage unit, whereas a previously rounded 16.666...% cannot round-trip.
@@ -35,13 +36,27 @@ internal static class HbrSkillPower
     internal static decimal BlockPercent(decimal nativeUnits) =>
         DivideSaturated(nativeUnits, LegacyBlockAt100Percent / 100m);
 
-    internal static HbrSkillPowerCurve DamageCurveFromUnits(decimal nativeUnits,
-        decimal unitScale = OutgoingDamageUnit)
-    {
-        decimal minimum = DamageAmplificationLimits.MultiplySaturated(
+    internal static decimal DamageBaseFromUnits(decimal nativeUnits,
+        decimal unitScale = OutgoingDamageUnit) =>
+        DamageAmplificationLimits.MultiplySaturated(
             Math.Max(0m, nativeUnits), Math.Max(0m, unitScale));
-        return new(minimum,
-            DamageAmplificationLimits.MultiplySaturated(minimum, 2m), ParameterLimit);
+
+    // The STS adaptation has one skill coefficient, not minimum/maximum power
+    // endpoints. Attribute advantage keeps growing linearly past 140 points.
+    // Natural criticals lower E here; their final multiplier belongs to the
+    // shared damage adapter so it is applied exactly once.
+    internal static decimal EvaluateDamageFromUnits(decimal nativeUnits,
+        decimal parameter, decimal enemyParameter, bool critical = false)
+    {
+        if (nativeUnits <= 0m) return 0m;
+        decimal defense = Math.Max(0m, enemyParameter);
+        if (critical)
+            defense = Math.Max(0m, defense - HbrOriginalNumericFormula.CriticalParameterReduction);
+        decimal difference = Math.Max(0m, parameter) - defense;
+        decimal factor = Math.Max(0m, 1m + difference / AttackAttributeScale);
+        decimal power = DamageAmplificationLimits.MultiplySaturated(
+            DamageBaseFromUnits(nativeUnits), factor);
+        return HbrOriginalNumericFormula.FloorHundredths(Math.Max(1m, power));
     }
 
     internal static decimal BlockBaseFromUnits(decimal nativeUnits,
@@ -50,10 +65,18 @@ internal static class HbrSkillPower
             Math.Max(0m, nativeUnits), Math.Max(0m, unitScale));
 
     internal static decimal EvaluateBlockFromUnits(decimal nativeUnits, decimal intelligence,
-        decimal unitScale = PlayerBlockUnit)
+        decimal unitScale = PlayerBlockUnit) =>
+        decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
+            BlockBaseFromUnits(nativeUnits, unitScale),
+            Math.Max(0m, intelligence) / BlockReferenceIntelligence));
+
+    // Enemy support retains its separate existing adaptation. It does not use
+    // the player/phantom/cannon intelligence coefficient above.
+    internal static decimal EvaluateEnemyBlockFromUnits(decimal nativeUnits, decimal parameter,
+        decimal unitScale = OutgoingDamageUnit)
     {
         decimal support = HbrOriginalNumericFormula.EvaluateBuffPotency(
-            intelligence, BlockPotencyCurve);
+            parameter, EnemyBlockPotencyCurve);
         return decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
             BlockBaseFromUnits(nativeUnits, unitScale), support));
     }

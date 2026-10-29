@@ -131,13 +131,13 @@ static partial class Checks
         Hopper(14); Powers(Hero).Clear(); Set(Hero, "_currentHp", 1000); Set(Hero, "_maxHp", 1000);
         Check(Hero.Block == 0, "Defend calibration starts without existing block");
         decimal block = MegaCrit.Sts2.Core.Hooks.Hook.ModifyBlock(Combat, Hero, defend.DynamicVars.Block.BaseValue, ValueProp.Move, defend, null, out _);
-        Equal(block, 466m, "native Defend at INT100 yields 466 HBR block"); Hero.GainBlockInternal(block);
+        Equal(block, 500m, "native Defend at INT100 yields 500 HBR block"); Hero.GainBlockInternal(block);
         decimal incoming = ActualDamage(Enemy, Hero, 4m);
         Equal(incoming, 400m * (1m + 50m / 140m), "opening Hopper E150 and explicit body row deal unrounded 542.857 incoming");
         decimal absorbed = Hero.DamageBlockInternal(incoming, ValueProp.Move);
         DamageResult defenseResult = Hero.LoseHpInternal(Math.Max(0m, incoming - absorbed), ValueProp.Move);
-        Check(Hero.Block == 0 && Hero.CurrentHp == 924 && defenseResult.UnblockedDamage == 76m,
-            "native block-before-HP order truncates 76.857 remainder to 76 HP loss");
+        Check(Hero.Block == 0 && Hero.CurrentHp == 958 && defenseResult.UnblockedDamage == 42m,
+            "native block-before-HP order truncates 42.857 remainder to 42 HP loss");
         CalibrationReport = new { normalRolls = rows, highRoll, defend = new { block, incoming, hpLoss = defenseResult.UnblockedDamage },
             assumptions = "HBR level-one six stats100; 700x native HP; Hopper DP independently calibrated to3000 at native HP14; default100% HP/damage and20% DP config; no crits, upgrades, senses, other modifiers or turn expiry. Bash order matches installed native IL. Counts are cards/energy budget, not same-turn playability. Normal native HP12-16 and difficulty8 maximum HP17 fit the 3-4 card budget; later difficulty DP/attack changes are not covered. Values are mod calibration data, not original HBR Hopper data." };
         CalibrationListeners = false;

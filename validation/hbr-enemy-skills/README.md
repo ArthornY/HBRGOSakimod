@@ -79,8 +79,36 @@ OnPlay IL in the installed sts2.dll (A1F9E653F1E28E4076558FEE1E60D218619CB7E057B
 The report records the actual mod and native game DLL hashes. Difficulty8's
 maximum native HP17 now has11900 HP and3642 DP; four Strikes or Bash plus two
 Strikes also kill that case. Later difficulty DP/attack changes are not covered.
-Defend100INT grants466 block against542.857... incoming damage. This defender
+Defend100INT grants500 block against542.857... incoming damage. This defender
 has no DP: native DamageBlockInternal resolves block first, and the actual
-native LoseHpInternal truncates the remaining76.857... to76 HP lost. This
+native LoseHpInternal truncates the remaining42.857... to42 HP lost. This
 fixture does not attribute that truncation to a CreatureCmd cast. These profile numbers
 are mod design values, not original HBR Hopper data.
+
+The single-coefficient cases execute the real native StrikeIronclad and mod
+StrikeHbrgoSaki `OnUpgrade` mutations. Raw6 becomes9 (the existing100% becomes150%),
+then native preview and the production actual wrapper both produce5785.71 at
+attribute100/E150. Equal-stat hero, main phantom and cannon actors share3857.14
+for raw6. With STR400/DEX100, HP reference300 gives12428.57 while active DP uses
+reference200 and gives8142.85. STR500/DEX500 gives21000 beyond the old endpoint,
+so these cases distinguish the new linear rule from the old overflow curve.
+
+A real Millsage state supplies the cannon's default50% Soul Power. The fixture
+constructs a matching pending intent and enters the production `Begin`/`Close`
+command scope around the actual hook: the owner-sourced result1928.57 confirms
+that Soul Power applies once. Real cannon `PreviewDamage` returns its display
+floor1928 without consuming RNG. A production critical scope is given a fixed
+replay sample0; preview stays3857.14, while actual damage first lowers E150 to100
+and then applies1.5, giving9000, or4500 with one cannon Soul factor. These are
+native-model/hook and production-scope checks, not complete card-play or cannon
+phase execution.
+
+Hero, phantom and cannon actors' native block hooks are checked at INT100/200
+(raw5 gives500/1000), with Unpowered amounts unchanged. Fixed resource recovery
+still gives500 for raw5 at INT200. A controlled resolved-gain scope verifies
+that actual-damage-derived cannon block skips the coefficient/stat bridge, and
+the production absolute-base context likewise preserves a resolved250 attack.
+These scope fixtures intentionally isolate the unit-conversion boundary; they
+do not simulate the asynchronous block command or all later cannon modifiers.
+Enemy support block retains its separate0.8..1.2/T300 bridge, and disabled mode
+retains raw6 attack/raw5 block.

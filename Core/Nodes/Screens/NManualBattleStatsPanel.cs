@@ -144,7 +144,8 @@ public partial class NManualBattleStatsPanel : Control
         content.AddChild(_enemy);
         AddSection(content, "技能威力",
             "对 DP：参照属性 A =（2 × 器用 + 力）÷ 3。\n对 HP：参照属性 A =（2 × 力 + 器用）÷ 3。\n力与器用参与攻击；知性参与格挡的倍率换算。\n" +
-            "以 A − 敌能力参数计算基础威力：低于敌能力时递减，相等时达到威力下端，差值达到技能阈值时达到上端。\n超过阈值仍会继续成长：每超出 1 点，增加威力上端的 0.25%。");
+            $"伤害 100% 对应基础威力 6000，其他技能倍率同比换算。属性系数 = max（0，1 +（A − 敌能力）÷{HbrSkillPower.AttackAttributeScale}）。\n" +
+            "基础威力乘属性系数，正倍率最低 1，截断到小数点后 2 位；属性优势持续线性增长，不再配置技能威力上下端。");
         AddSection(content, "增减益与暴击",
             "基础威力 × 攻击增益区 × 防御减益区 × DP／HP 特攻 × 物理与元素相性 × 破坏率 × 其他倍率。\n" +
             "原作参考：同类普通增益取最高两层相加；攻击与元素攻击、心眼、场地等合入攻击区，防御下降与脆弱合入减益区。现有卡牌效果仍保留各自的持续和消耗规则。\n" +
@@ -152,7 +153,7 @@ public partial class NManualBattleStatsPanel : Control
             "暴击先按敌能力 −50 重新计算威力，敌能力最低为 0；随后乘（1.5 + 暴伤增益）。暴击判定独立于现有掷骰大成功。");
         AddSection(content, "破坏率与格挡",
             "破坏率以 100% 为起点。DP 击破后，按敌方与技能各自的破坏系数增长；增量与本次实际伤害量分别计算。\n" +
-            "主动格挡先将旧基础值 ×100，再按知性计算增益曲线：下端 80%、上端 120%、阈值 300；高于阈值后仍继续成长。按实际伤害比例派生的格挡不重复换算。");
+            $"我方格挡 100% 对应基础 500，再乘知性÷{HbrSkillPower.BlockReferenceIntelligence}，向下取整。卡牌、幻影、浮游炮及明确的固定技能格挡共用此规则；按实际伤害比例派生的格挡不重复换算。");
         AddSection(content, "敌方能力与受击",
             "敌人使用独立能力值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
             $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，本幕每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}，每进入下一幕额外 +{HbrEnemyProfileHelper.GainPerAct}；精英再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 再 +{HbrEnemyProfileHelper.BossBonus}。Hopper 同样成长。\n" +
@@ -161,9 +162,9 @@ public partial class NManualBattleStatsPanel : Control
             "尖塔敌人沿用当前适配的资源与技能威力参数；尚未逐个替换成 HBR 原作敌技能数据。");
         AddSection(content, "测试量级与来源",
             $"六维、成长速度及与尖塔数值的换算为本模组测试设定。角色初始 HP ×{HbrBattleStatsHelper.PlayerHealthScale}，DP 保留与 HP 的现有比例；固定数值的 HP、DP 增减 ×{HbrResourceValueHelper.FixedResourceScale}。百分比、转阶段回满和按实际伤害派生的资源不重复换算。\n" +
-            "敌人默认 HP ×700，柴犬单独 ×1000，DP 使用独立参考值。我方普通攻击技能威力下端为旧基础伤害 ×1000，敌方技能下端为旧基础伤害 ×100；上端均为下端的 2 倍，阈值为 140。\n" +
+            "敌人默认 HP ×700，柴犬单独 ×1000，DP 使用独立参考值。我方伤害技能使用单一倍率，100% 基础威力为 6000；敌方攻击仍使用旧基础伤害 ×100／×200 的独立受击曲线，阈值为 140。\n" +
             "小型 Hopper 的原血量 14 对应 HP 9800、DP 3000，保留原有随机血量、难度与多人倍率；第一幕第 1 层普通战 E 为 150，此后按地图位置成长。\n" +
-            "出伤公式参照 hbr-tool/damage-calculator，受击基础曲线参照カンタータ仮面的公式整理，均为社区研究。尖塔敌人的参数及技能防御权重为本模组适配配置。\n" +
+            "增减益分区及原作研究参照 hbr-tool/damage-calculator，受击基础曲线参照カンタータ仮面的公式整理，均为社区研究。我方单倍率线性公式、尖塔敌人参数及技能防御权重为本模组适配配置。\n" +
             "卡牌、OD、掷骰与六感玩法继续保留。完整参数与来源见测试分支文档 docs/hbr-numerics-test.md。");
     }
 

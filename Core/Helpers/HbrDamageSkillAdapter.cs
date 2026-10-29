@@ -50,8 +50,8 @@ internal static class HbrDamageSkillAdapter
             cardSource, props, stats.Luck, parameter);
         HbrStatWeights weights = target?.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m
             ? DpWeights : HpWeights;
-        decimal power = HbrOriginalNumericFormula.EvaluateSkillPower(stats, weights,
-            parameter, HbrSkillPower.DamageCurveFromUnits(legacyPower), critical);
+        decimal power = HbrSkillPower.EvaluateDamageFromUnits(legacyPower,
+            HbrOriginalNumericFormula.EvaluateWeightedStat(stats, weights), parameter, critical);
         return critical ? DamageAmplificationLimits.MultiplySaturated(power,
             HbrOriginalNumericFormula.CriticalMultiplier()) : power;
     }
@@ -76,13 +76,13 @@ internal static class HbrDamageSkillAdapter
             // Block is a STS-only resource. Retain its explicit support bridge,
             // using E as an adaptation parameter without inventing enemy INT.
             return HbrBattleStatsHelper.IsEnabled(target)
-                ? HbrSkillPower.EvaluateBlockFromUnits(amount,
+                ? HbrSkillPower.EvaluateEnemyBlockFromUnits(amount,
                     HbrEnemyProfileHelper.GetEnemyParameter(target), OutgoingPowerUnit)
                 : amount;
         }
         if (!HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats stats)) return amount;
-        // Block is a STS resource. The HBR intelligence buff curve supplies its
-        // stat-dependent support coefficient without treating Dexterity as DEX.
+        // The same single intelligence coefficient serves player cards,
+        // phantoms and cannon grants. Already resolved gains bypass it above.
         return HbrSkillPower.EvaluateBlockFromUnits(amount, stats.Intelligence, PlayerBlockUnit);
     }
 }
