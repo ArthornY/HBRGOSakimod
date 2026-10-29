@@ -156,7 +156,7 @@ public partial class NPhantomMinionPlacement : Node
         if (!IsUsable(placement.Node) || !IsUsable(placement.OwnerNode)) return;
         // A hand-edited config must not produce infinities under camera scaling.
         Vector2 relative = placement.RelativePosition.Clamp(-32768f, 32768f);
-        placement.Node.GlobalPosition = GetOwnerTransform(placement.OwnerNode) * relative;
+        placement.Node.GlobalPosition = placement.OwnerNode.GetGlobalTransform() * relative;
         ClampIntoViewport(placement.Node);
     }
 
@@ -169,7 +169,7 @@ public partial class NPhantomMinionPlacement : Node
         _hasDragged = false;
         _pointerDown = GetViewport().GetMousePosition();
         _grabOffset = parent.GetGlobalTransformWithCanvas().AffineInverse() * _pointerDown - placement.Node.Position;
-        _dragOrigin = ToOwnerRelative(GetOwnerTransform(placement.OwnerNode), placement.Node.GlobalPosition);
+        _dragOrigin = ToOwnerRelative(placement.OwnerNode.GetGlobalTransform(), placement.Node.GlobalPosition);
         _dragZIndex = placement.Node.ZIndex;
         placement.Node.Hitbox.AcceptEvent();
     }
@@ -233,7 +233,7 @@ public partial class NPhantomMinionPlacement : Node
             placement.Node.ZIndex = _dragZIndex;
             if (save && _hasDragged)
             {
-                placement.RelativePosition = ToOwnerRelative(GetOwnerTransform(placement.OwnerNode),
+                placement.RelativePosition = ToOwnerRelative(placement.OwnerNode.GetGlobalTransform(),
                     placement.Node.GlobalPosition);
                 PhantomMinionPositionStore.Save(placement.ModelId, placement.Ordinal, placement.RelativePosition);
                 // Rebuild controller/keyboard target navigation for the new visual order.
@@ -241,7 +241,7 @@ public partial class NPhantomMinionPlacement : Node
             }
             else if (_hasDragged)
             {
-                placement.Node.GlobalPosition = GetOwnerTransform(placement.OwnerNode) * _dragOrigin;
+                placement.Node.GlobalPosition = placement.OwnerNode.GetGlobalTransform() * _dragOrigin;
             }
         }
         _hasDragged = false;
@@ -293,10 +293,4 @@ public partial class NPhantomMinionPlacement : Node
 
     private static bool IsUsable(Node node) =>
         node != null && GodotObject.IsInstanceValid(node) && node.IsInsideTree();
-
-    // Saved summon positions refer to the battlefield owner, even while the
-    // local player's artwork is docked beside the hand.
-    private static Transform2D GetOwnerTransform(NCreature owner) =>
-        NSakiCornerCreatureLayout.TryGetBattlefieldTransform(owner, out Transform2D transform)
-            ? transform : owner.GetGlobalTransform();
 }

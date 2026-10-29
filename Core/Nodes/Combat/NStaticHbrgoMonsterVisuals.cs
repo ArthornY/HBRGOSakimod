@@ -605,24 +605,6 @@ public partial class NStaticHbrgoMonsterVisuals : NCreatureVisuals
                 continue;
             }
 
-            if (NSakiCornerCreatureLayout.IsCornerCreature(playerNode))
-            {
-                // The local artwork stays in the UI corner. Keep a virtual
-                // battlefield owner on the boss's floor for its existing pets.
-                if (NSakiCornerCreatureLayout.TryGetBattlefieldVisualRect(
-                        playerNode, out Rect2 battlefieldRect))
-                {
-                    Vector2 petFloorOffset = Vector2.Down * (floorY - battlefieldRect.End.Y);
-                    foreach (NCreature petNode in room.CreatureNodes)
-                    {
-                        if (petNode.Entity.PetOwner?.Creature == playerNode.Entity)
-                            petNode.GlobalPosition += petFloorOffset;
-                    }
-                    NSakiCornerCreatureLayout.ApplyBattlefieldOffset(playerNode, petFloorOffset);
-                }
-                continue;
-            }
-
             Rect2 boundsRect = GetDisplayedVisualRect(playerNode);
             Vector2 layoutOffset = Vector2.Down *
                 (floorY - boundsRect.End.Y);
