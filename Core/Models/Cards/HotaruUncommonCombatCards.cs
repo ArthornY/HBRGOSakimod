@@ -96,17 +96,25 @@ public sealed class HotaruCountScars : HotaruCannonCard
 
         // Removing a whole power is a fixed payment, unaffected by card-number
         // bonuses. Each successfully removed kind pays its own energy reward.
-        PowerModel[] powers =
+        PowerModel[][] powersByKind =
         {
-            play.Target.GetPower<VulnerablePower>(), play.Target.GetPower<FragilePower>(),
-            play.Target.GetPower<WeakPower>()
+            new PowerModel[] { play.Target.GetPower<VulnerablePower>() },
+            HbrBattleStatsHelper.IsEnabled(play.Target)
+                ? play.Target.GetPowerInstances<FragilePower>().Cast<PowerModel>().ToArray()
+                : new PowerModel[] { play.Target.GetPower<FragilePower>() },
+            new PowerModel[] { play.Target.GetPower<WeakPower>() }
         };
-        foreach (PowerModel power in powers)
+        foreach (PowerModel[] powers in powersByKind)
         {
-            if (!play.Target.IsAlive || !HotaruCommonUtilityCardHelper.CanContinue(this)) return;
-            if (power == null || !play.Target.Powers.Contains(power)) continue;
-            await PowerCmd.Remove(power);
-            if (!play.Target.Powers.Contains(power) && HotaruCommonUtilityCardHelper.CanContinue(this))
+            bool removedKind = false;
+            foreach (PowerModel power in powers)
+            {
+                if (!play.Target.IsAlive || !HotaruCommonUtilityCardHelper.CanContinue(this)) return;
+                if (power == null || !play.Target.Powers.Contains(power)) continue;
+                await PowerCmd.Remove(power);
+                removedKind |= !play.Target.Powers.Contains(power);
+            }
+            if (removedKind && HotaruCommonUtilityCardHelper.CanContinue(this))
                 await PlayerCmd.GainEnergy(DynamicVars.Energy.IntValue, Owner);
         }
     }

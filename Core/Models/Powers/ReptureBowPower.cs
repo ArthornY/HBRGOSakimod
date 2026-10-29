@@ -366,6 +366,8 @@ public sealed class ReptureBowPower : PowerModel
 
         long total = targets.Sum(creature =>
         {
+            if (typeof(TPower) == typeof(FragilePower))
+                return (long)HbrFragilePowerHelper.GetModifierAmount(creature);
             TPower power = creature.GetPower<TPower>();
             return power == null
                 ? 0L

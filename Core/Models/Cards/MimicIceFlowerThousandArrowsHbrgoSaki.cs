@@ -98,16 +98,22 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
                 DynamicVars["VulnerablePower"].BaseValue),
             Owner.Creature,
             this);
+        bool meetsThreshold = bowCardCount >= DynamicVars[BowCardThresholdVar].BaseValue;
+        bool hbr = HbrBattleStatsHelper.IsEnabled(Owner);
+        // One grant uses one modifier coefficient: 3 + 3 means B(6), not
+        // two independent B(3) grants. Legacy retains its original two grants.
+        decimal fragile = DynamicVars["FragilePower"].BaseValue +
+            (hbr && meetsThreshold ? DynamicVars[ThresholdFragileVar].BaseValue : 0m);
         await PowerCmd.Apply<FragilePower>(
             choiceContext,
             targets,
             ModeTransitionHelper.GetAdjustedEffectAmount(
                 this,
-                DynamicVars["FragilePower"].BaseValue),
+                fragile),
             Owner.Creature,
             this);
 
-        if (bowCardCount < DynamicVars[BowCardThresholdVar].BaseValue)
+        if (!meetsThreshold)
         {
             return;
         }
@@ -120,14 +126,15 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
                 DynamicVars[ThresholdVulnerableVar].BaseValue),
             Owner.Creature,
             this);
-        await PowerCmd.Apply<FragilePower>(
-            choiceContext,
-            targets,
-            ModeTransitionHelper.GetAdjustedEffectAmount(
-                this,
-                DynamicVars[ThresholdFragileVar].BaseValue),
-            Owner.Creature,
-            this);
+        if (!hbr)
+            await PowerCmd.Apply<FragilePower>(
+                choiceContext,
+                targets,
+                ModeTransitionHelper.GetAdjustedEffectAmount(
+                    this,
+                    DynamicVars[ThresholdFragileVar].BaseValue),
+                Owner.Creature,
+                this);
 
         decimal weak = DynamicVars[ThresholdWeakVar].BaseValue;
         if (weak > 0m)

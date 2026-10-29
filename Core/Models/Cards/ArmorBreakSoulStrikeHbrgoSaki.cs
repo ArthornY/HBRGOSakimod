@@ -79,7 +79,7 @@ public sealed class ArmorBreakSoulStrikeHbrgoSaki : CardModel
         }
 
         int fragile =
-            cardPlay.Target.GetPower<FragilePower>()?.Amount ?? 0;
+            HbrFragilePowerHelper.GetModifierAmount(cardPlay.Target);
         await DamageCmd.Attack(
                 ModeTransitionHelper.GetAdjustedEffectAmount(
                     this,

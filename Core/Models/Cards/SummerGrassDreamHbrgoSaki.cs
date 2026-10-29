@@ -89,7 +89,10 @@ public sealed class SummerGrassDreamHbrgoSaki : CardModel
         description.Add("DreamTarget", HasUpgradeEffect(2) ? "所有敌人" : "目标");
         description.Add("DreamHits", HasUpgradeEffect(3)
             ? (HasUpgradeEffect(2) ? "X+2" : "X") : GetHitCount(0).ToString());
-        description.Add("HammerEffect", HasUpgradeEffect(2) ? "\n给予所有敌人2层[gold]脆弱[/gold]。" : string.Empty);
+        description.Add("HammerEffect", !HasUpgradeEffect(2) ? string.Empty :
+            HbrSkillCardDescription.IsEnabled(this)
+                ? $"\n给予所有敌人{HbrFragileCardDescription.Format(this, 2m)}%的[gold]脆弱[/gold]（2回合）。"
+                : "\n给予所有敌人2层[gold]脆弱[/gold]。");
         // Native cost and the main sentence already show the cost/target/hit upgrades.
         string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel)
             .Where(id => id is 1 or 4 or 5 or 6)

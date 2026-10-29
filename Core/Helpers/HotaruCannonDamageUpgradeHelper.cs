@@ -25,7 +25,7 @@ internal static class HotaruCannonDamageUpgradeHelper
         if (Has(cannon, HotaruCannonKind.Contest, 4))
         {
             amount = DamageAmplificationLimits.AddSaturated(amount,
-                Math.Max(0, target?.GetPowerAmount<FragilePower>() ?? 0) * Math.Clamp(phaseMultiplier, 1, 2));
+                (decimal)Math.Max(0, HbrFragilePowerHelper.GetModifierAmount(target)) * Math.Clamp(phaseMultiplier, 1, 2));
         }
         return HotaruMyIndulgencePower.ModifyBaseDamage(cannon, amount);
     }

@@ -26,6 +26,7 @@ internal static class HbrSkillCardDescription
     {
         if (description == null) return;
         HbrFixedResourceDescriptionHelper.AddParameters(card, description);
+        HbrFragileCardDescription.AddParameters(card, description);
         foreach (DynamicVar variable in card.DynamicVars.Values)
         {
             if (variable is not IHbrSkillPowerVar skill) continue;

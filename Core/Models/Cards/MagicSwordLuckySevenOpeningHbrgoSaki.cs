@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -83,6 +84,14 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
     {
         AssertMutable();
         _consumedSwordheartAmount = Math.Max(0, amount);
+    }
+
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        if (HbrSkillCardDescription.IsEnabled(this))
+            description.Add("ConsumedSwordheartFragilePercent",
+                HbrFragileCardDescription.Format(this, _consumedSwordheartAmount));
     }
 
     protected override async Task OnPlay(

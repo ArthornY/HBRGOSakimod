@@ -164,6 +164,8 @@
   "HANGING_SHOT_POWER.description": "下回合开始时，受到等同于层数的伤害。对DP造成的伤害增加25%，随后移除。",
   "FRAGILE_POWER.title": "脆弱",
   "FRAGILE_POWER.description": "处于[gold]Break[/gold]状态时，受到的伤害变为150%。回合结束时，层数减少1。",
+  "FRAGILE_POWER.hbrDescription": "处于[gold]Break[/gold]状态时，本份[gold]脆弱[/gold]使受到的伤害增加{FragilePercent}%。脆弱强度：{ModifierCount}。剩余{Turns}回合，回合结束时减少1。最多并存2份，效果相加；满额时，新效果不低于较弱的一份才会替换它并重置为2回合，同强度时优先替换剩余时间较短的一份。",
+  "FRAGILE_POWER.hbrReferenceDescription": "处于[gold]Break[/gold]状态时，受到的伤害增加。每份[gold]脆弱[/gold]独立持续2回合，最多并存2份，效果相加。基础效果为30%×1.25^(修改器层数−1)，再按施加者的[gold]知性[/gold]、[gold]运[/gold]与敌能力值计算。满额时，新效果不低于较弱的一份才会替换它并重置持续时间；同强度时优先替换剩余时间较短的一份。",
   "SING_TOGETHER_POWER.title": "一同歌唱、一同奏响",
   "SING_TOGETHER_POWER.description": "立刻且每回合开始时获得1层计数，最多3层。计数达到3层时，移除[gold]预备[/gold]，获得1层[gold]高歌[/gold]并将卡牌[gold]高歌[/gold]放入手牌。",
   "PREPARATION_POWER.title": "预备",

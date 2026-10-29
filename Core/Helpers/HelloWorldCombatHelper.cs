@@ -45,7 +45,7 @@ internal static class HelloWorldCombatHelper
         foreach (Creature enemy in enemies.Where(enemy => enemy.IsAlive).ToArray())
         {
             int capIncrease = CalculateCapIncrease(enemy.HasPower<BreakPower>(),
-                enemy.GetPowerAmount<FragilePower>(), card.HasUpgradeEffect(0), card.HasUpgradeEffect(3));
+                HbrFragilePowerHelper.GetModifierAmount(enemy), card.HasUpgradeEffect(0), card.HasUpgradeEffect(3));
             if (capIncrease > 0)
                 await PowerCmd.Apply<DestructionRateCapIncreasePower>(context, enemy,
                     capIncrease, owner, card);
