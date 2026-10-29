@@ -1,6 +1,6 @@
 {
   "DP_POTION_HBRGO_SAKI.title": "DP药水",
-  "DP_POTION_HBRGO_SAKI.description": "恢复{Dp}点DP。",
+  "DP_POTION_HBRGO_SAKI.description": "恢复{ResourceDp}点DP。",
   "FRAGILE_POTION_HBRGO_SAKI.title": "脆弱药水",
   "FRAGILE_POTION_HBRGO_SAKI.description": "给予一名敌人{FragilePower}层[gold]脆弱[/gold]。",
   "FRAGILE_POTION_HBRGO_SAKI.selectionScreenPrompt": "选择一名敌人给予脆弱。",

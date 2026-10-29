@@ -882,8 +882,8 @@ public partial class NPhantomRosterScreen : Control, IOverlayScreen
             $"{previewEntry.DamageReductionPercent:0.##}%\n" +
             $"召唤者出目 +{_targetEntry.Value.SummonerRollBonus:0.##} → " +
             $"+{previewEntry.SummonerRollBonus:0.##}\n" +
-            $"额外生命 {_targetEntry.Value.BonusMaxHp:0.##} → " +
-            $"{previewEntry.BonusMaxHp:0.##}\n" +
+            $"额外生命 {_targetEntry.Value.GetBonusMaxHp(_relic.Owner):0.##} → " +
+            $"{previewEntry.GetBonusMaxHp(_relic.Owner):0.##}\n" +
             inheritanceText + effectLimitText;
         _confirmButton.Disabled = false;
     }
@@ -1046,7 +1046,7 @@ public partial class NPhantomRosterScreen : Control, IOverlayScreen
             string description =
                 PhantomFusionEffectHelper.GetEffectDescription(
                     unrestrictedPreview.FusionEffectData,
-                    type);
+                    type, _relic.Owner?.Creature);
             bool isSelected = _selectedEffectTypes.Contains(type);
             Button option = CreateButton(
                 GetEffectSelectionOptionText(
@@ -1466,7 +1466,7 @@ public partial class NPhantomRosterScreen : Control, IOverlayScreen
         return bar;
     }
 
-    private static string GetFusionEffectText(
+    private string GetFusionEffectText(
         PhantomRosterEntry entry)
     {
         List<string> effects = new();
@@ -1477,18 +1477,18 @@ public partial class NPhantomRosterScreen : Control, IOverlayScreen
             entry.InheritedLevelSummonerRollBonus > 0m)
         {
             effects.Add(
-                "升级效果：每升1级，伤害增幅+10%、伤害减免+5%、最大生命值+5、" +
+                $"升级效果：每升1级，伤害增幅+10%、伤害减免+5%、最大生命值+{HbrResourceValueHelper.Fixed(_relic.Owner?.Creature, PhantomRosterEntry.LevelBonusMaxHp):0.##}、" +
                 $"在场时召唤者掷骰出目+{PhantomRosterEntry.LevelSummonerRollBonus:0.##}。伤害减免合计上限50%。");
         }
 
         effects.AddRange(
             PhantomFusionEffectHelper.GetDescriptionLines(
-                entry.FusionEffectData));
+                entry.FusionEffectData, _relic.Owner?.Creature));
 
         return string.Join('\n', effects);
     }
 
-    private static string GetFusionMaterialEffectText(
+    private string GetFusionMaterialEffectText(
         PhantomRosterEntry target,
         PhantomRosterEntry preview)
     {
@@ -1509,8 +1509,8 @@ public partial class NPhantomRosterScreen : Control, IOverlayScreen
         AddPositiveDifference(
             inheritedStats,
             "最大生命值",
-            preview.EarnedLevelBonusMaxHp,
-            target.EarnedLevelBonusMaxHp);
+            HbrResourceValueHelper.Fixed(_relic.Owner?.Creature, preview.EarnedLevelBonusMaxHp),
+            HbrResourceValueHelper.Fixed(_relic.Owner?.Creature, target.EarnedLevelBonusMaxHp));
         AddPositiveDifference(
             inheritedStats,
             "召唤者掷骰出目",
@@ -1526,11 +1526,11 @@ public partial class NPhantomRosterScreen : Control, IOverlayScreen
 
         HashSet<string> currentEffects =
             PhantomFusionEffectHelper.GetDescriptionLines(
-                    target.FusionEffectData)
+                    target.FusionEffectData, _relic.Owner?.Creature)
                 .ToHashSet(StringComparer.Ordinal);
         effects.AddRange(
             PhantomFusionEffectHelper.GetDescriptionLines(
-                    preview.FusionEffectData)
+                    preview.FusionEffectData, _relic.Owner?.Creature)
                 .Where(effect => !currentEffects.Contains(effect)));
 
         if (effects.Count == 0)

@@ -45,7 +45,7 @@ public sealed class ShelterTheAfterimageHbrgoSaki : CardModel
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
         await PhantomHelper.RestoreDp(choiceContext,
-            PhantomHelper.GetLivingPhantom(Owner), DynamicVars["Recovery"].IntValue, this);
+            PhantomHelper.GetLivingPhantom(Owner), HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["Recovery"].BaseValue), this);
     }
 
     protected override void OnUpgrade() => DynamicVars.Damage.UpgradeDamageByPercent(50m);

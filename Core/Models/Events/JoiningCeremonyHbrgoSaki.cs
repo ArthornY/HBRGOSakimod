@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BaseLib.Utils.Attributes;
@@ -7,6 +8,8 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
@@ -77,18 +80,24 @@ public sealed class JoiningCeremonyHbrgoSaki : ModEventTemplate
             PageDescription("EHE_CHUMI"),
             new EventOption[]
             {
-                new(
-                    this,
-                    CompleteEheChumi,
-                    ModOptionKey("EHE_CHUMI", "TAKE_REWARD"))
+                CreateDpRewardOption()
             });
         return Task.CompletedTask;
+    }
+
+    private EventOption CreateDpRewardOption()
+    {
+        string key = ModOptionKey("EHE_CHUMI", "TAKE_REWARD");
+        LocString title = L10NLookup(key + ".title");
+        title.Add("ResourceDpGain", HbrResourceValueHelper.FixedInt(Owner?.Creature, 10m));
+        return new EventOption(this, CompleteEheChumi, title,
+            L10NLookup(key + ".description"), key, Array.Empty<IHoverTip>());
     }
 
     private async Task CompleteEheChumi()
     {
         await IncreaseSense(SixSenseAttribute.Madness, 1);
-        Owner.GetRelic<DeflectorProtection>()?.GainMaxDp(10);
+        Owner.GetRelic<DeflectorProtection>()?.GainMaxDp(HbrResourceValueHelper.FixedInt(Owner.Creature, 10m));
         SetEventFinished(PageDescription("EHE_CHUMI"));
     }
 

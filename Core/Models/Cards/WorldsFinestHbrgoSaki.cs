@@ -72,7 +72,7 @@ public sealed class WorldsFinestHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
-        await WorldsFinestCombatHelper.RestoreDp(context, this, DynamicVars["Recovery"].BaseValue);
+        await WorldsFinestCombatHelper.RestoreDp(context, this, HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["Recovery"].BaseValue));
         if (HasUpgradeEffect(6))
             await PowerCmd.Apply<MindsEyePower>(context, Owner.Creature,
                 DynamicVars["MindsEyePower"].BaseValue, Owner.Creature, this);

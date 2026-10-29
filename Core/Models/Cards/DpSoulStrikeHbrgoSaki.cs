@@ -64,7 +64,7 @@ public sealed class DpSoulStrikeHbrgoSaki : CardModel
         DeflectorProtection protection =
             Owner.GetRelic<DeflectorProtection>();
         int lostDp = protection?.LoseDp(
-            (int)DynamicVars[_dpLossVar].BaseValue) ?? 0;
+            HbrResourceValueHelper.FixedInt(Owner.Creature, DynamicVars[_dpLossVar].BaseValue)) ?? 0;
         if (protection != null)
         {
             await protection.ResolveMentalStrengthDpLossRewards(

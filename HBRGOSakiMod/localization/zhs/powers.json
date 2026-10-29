@@ -136,7 +136,7 @@
   "NORMAL_STATE_POWER.description": "造成的伤害变为50%。回合开始时，恢复最大DP的5%。获得的格挡变为75%。切换形态时，本次打出的形态牌效果不会减半。",
   "REPTURE_BOW_POWER.title": "Repture-弓",
   "REPTURE_BOW_POWER.compactDescription": "[gold]攻击牌[/gold]的伤害对[gold]敌方全体[/gold]生效。\n根据目标数增加造成的伤害。\n造成的[gold]破坏率[/gold]增加。\n根据牌组中[gold]弓形态牌[/gold]的数量，增加造成的伤害和破坏率。",
-  "REPTURE_BOW_POWER.description": "[gold]攻击牌[/gold]的伤害对[gold]敌方全体[/gold]生效。\n若本身就是全体，造成的伤害[gold]最终[/gold]×125%。\n若只剩一个目标，造成的伤害[gold]最终[/gold]×125%。\n攻击命中DP时，额外造成1次1点[gold]DP伤害[/gold]。\n造成的[gold]破坏率[/gold]+50%。\n牌组中[gold]每有一张[/gold][gold]弓形态牌[/gold]，造成的伤害与[gold]破坏率[/gold]+5%。\n切换及切出本形态时，本次打出的形态牌效果[gold]不会减半[/gold]。\n拥有[gold]魔剑模式[/gold]、[gold]绯刀流[/gold]时，不再以牌组中[gold]弓形态牌[/gold]的数量造成额外伤害和[gold]破坏率[/gold]。\n与[gold]Repture-双剑[/gold]和[gold]Rapture-镰刀[/gold]互斥。",
+  "REPTURE_BOW_POWER.description": "[gold]攻击牌[/gold]的伤害对[gold]敌方全体[/gold]生效。\n若本身就是全体，造成的伤害[gold]最终[/gold]×125%。\n若只剩一个目标，造成的伤害[gold]最终[/gold]×125%。\n攻击命中DP时，额外造成1次{ResourceFollowup}点[gold]DP伤害[/gold]。\n造成的[gold]破坏率[/gold]+50%。\n牌组中[gold]每有一张[/gold][gold]弓形态牌[/gold]，造成的伤害与[gold]破坏率[/gold]+5%。\n切换及切出本形态时，本次打出的形态牌效果[gold]不会减半[/gold]。\n拥有[gold]魔剑模式[/gold]、[gold]绯刀流[/gold]时，不再以牌组中[gold]弓形态牌[/gold]的数量造成额外伤害和[gold]破坏率[/gold]。\n与[gold]Repture-双剑[/gold]和[gold]Rapture-镰刀[/gold]互斥。",
   "SNIPER_MODE_POWER.title": "狙击模式",
   "SNIPER_MODE_POWER.description": "拥有[gold]Repture-弓[/gold]时，攻击原本对多个目标造成的总伤害改由主目标承担；目标数不为1时，总伤害变为75%。",
   "SYNERGY_POWER.title": "相生",
@@ -176,7 +176,7 @@
   "TRAINING_TIME_POWER.title": "训练时间",
   "TRAINING_TIME_POWER.description": "下回合开始时，获得等同于层数的力量与敏捷，随后移除。",
   "FATE_POWER.title": "命定",
-  "FATE_POWER.description": "[gold]掷骰[/gold]失效。每回合额外抽等同于层数的牌；每次出牌使主目标失去层数×3点最大生命值。",
+  "FATE_POWER.description": "[gold]掷骰[/gold]失效。每回合额外抽等同于层数的牌；每次出牌使主目标失去层数×{ResourceLossPerStack}点最大生命值。",
   "NEXT_CRITICAL_SUCCESS_POWER.title": "必定大成功",
   "NEXT_CRITICAL_SUCCESS_POWER.description": "下一次[gold]掷骰[/gold]必为[gold]大成功[/gold]，随后消耗1层。",
   "SHADOW_DANCE_EXTRA_TURN_POWER.title": "今夜一同于影色中起舞",
@@ -346,7 +346,7 @@
   "IN_MY_NAME_POWER.title": "以我之名",
   "IN_MY_NAME_POWER.description": "每回合自己的[gold]幻影[/gold]首次行动后，你和它各获得{Amount}点[gold]力量[/gold]。",
   "UNBROKEN_REMNANT_POWER.title": "碎而不散",
-  "UNBROKEN_REMNANT_POWER.description": "本场战斗自己的[gold]幻影[/gold]的DP首次被击破时，为其恢复{Amount}点DP，并使其获得{StrengthGain}点[gold]力量[/gold]。每场战斗仅触发一次。",
+  "UNBROKEN_REMNANT_POWER.description": "本场战斗自己的[gold]幻影[/gold]的DP首次被击破时，为其恢复{ResourceAmount}点DP，并使其获得{StrengthGain}点[gold]力量[/gold]。每场战斗仅触发一次。",
   "ENDURING_AFTERIMAGE_POWER.title": "残影永续",
   "ENDURING_AFTERIMAGE_POWER.description": "回合结束时，若自己的[gold]幻影[/gold]当前意图不包含攻击，复制当前意图{Amount}次。",
   "DEVOUR_REMAINING_LIFE_POWER.title": "噬尽余生",
@@ -559,5 +559,8 @@
   "HOTARU_THIRD_KNOCK_POWER.title": "第三声叩响",
   "HOTARU_THIRD_KNOCK_POWER.description": "每回合首次手动打出攻击、技能、能力三种类型的牌后，随机激发浮游炮共{Amount}次。",
   "HOTARU_UNTIL_DAWN_POWER.title": "留到天亮",
-  "HOTARU_UNTIL_DAWN_POWER.description": "下回合开始时，获得{EnergyIcons}。"
+  "HOTARU_UNTIL_DAWN_POWER.description": "下回合开始时，获得{EnergyIcons}。",
+  "REPTURE_BOW_POWER.hbrDescription": "[gold]攻击牌[/gold]的伤害对[gold]敌方全体[/gold]生效。\n若本身就是全体，造成的伤害[gold]最终[/gold]×125%。\n若只剩一个目标，造成的伤害[gold]最终[/gold]×125%。\n攻击命中DP时，额外造成1次100点[gold]DP伤害[/gold]。\n造成的[gold]破坏率[/gold]+50%。\n牌组中[gold]每有一张[/gold][gold]弓形态牌[/gold]，造成的伤害与[gold]破坏率[/gold]+5%。\n切换及切出本形态时，本次打出的形态牌效果[gold]不会减半[/gold]。\n拥有[gold]魔剑模式[/gold]、[gold]绯刀流[/gold]时，不再以牌组中[gold]弓形态牌[/gold]的数量造成额外伤害和[gold]破坏率[/gold]。\n与[gold]Repture-双剑[/gold]和[gold]Rapture-镰刀[/gold]互斥。",
+  "FATE_POWER.hbrDescription": "[gold]掷骰[/gold]失效。每回合额外抽等同于层数的牌；每次出牌使主目标失去层数×300点最大生命值。",
+  "UNBROKEN_REMNANT_POWER.hbrDescription": "本场战斗自己的[gold]幻影[/gold]的DP首次被击破时，为其恢复（层数×100）点DP，并使其获得{StrengthGain}点[gold]力量[/gold]。每场战斗仅触发一次。"
 }

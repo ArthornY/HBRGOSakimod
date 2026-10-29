@@ -156,7 +156,7 @@ public sealed class PhantomChoiceHbrgoSaki : CardModel
         decimal summonedMaxHp = entry.GetBasePhantomHp(monster.MaxInitialHp, owner: Owner);
         decimal appliedBonusHp = System.Math.Min(
             BigCombatNumbers.MaximumCreatureStat - summonedMaxHp,
-            decimal.Floor(System.Math.Max(0m, entry.BonusMaxHp)));
+            entry.GetBonusMaxHp(Owner));
         decimal finalMinHp = summonedMinHp + appliedBonusHp;
         decimal finalMaxHp = summonedMaxHp + appliedBonusHp;
         if (Owner?.GetRelic<MomentOfReign>() is { } reign)
@@ -181,7 +181,7 @@ public sealed class PhantomChoiceHbrgoSaki : CardModel
         decimal shellMax = HighDimensionalShellPower
             .CalculatePlayerAmount(finalMaxHp);
         decimal extraMaxDp = BigCombatNumbers.ClampStat(
-            entry.ExtraMaxDp);
+            entry.GetExtraMaxDp(Owner));
         shellMin = BigCombatNumbers.ClampStat(shellMin + extraMaxDp);
         shellMax = BigCombatNumbers.ClampStat(shellMax + extraMaxDp);
         string shell = shellMin == shellMax
@@ -219,13 +219,13 @@ public sealed class PhantomChoiceHbrgoSaki : CardModel
             effects.Add(
                 $"升级与继承：伤害增幅+{FormatNumber(entry.EarnedLevelDamageBonusPercent)}%，" +
                 $"伤害减免+{FormatNumber(entry.EarnedLevelDamageReductionPercent)}%，" +
-                $"最大生命值+{FormatNumber(entry.EarnedLevelBonusMaxHp)}，" +
+                $"最大生命值+{FormatNumber(HbrResourceValueHelper.Fixed(Owner?.Creature, entry.EarnedLevelBonusMaxHp))}，" +
                 $"召唤者掷骰出目+{FormatNumber(entry.SummonerRollBonus)}。伤害减免上限50%。");
         }
 
         effects.AddRange(
             PhantomFusionEffectHelper.GetDescriptionLines(
-                PhantomFusionEffectData));
+                PhantomFusionEffectData, Owner?.Creature));
         if (effects.Count == 0)
         {
             return string.Empty;

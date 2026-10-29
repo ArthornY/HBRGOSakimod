@@ -103,7 +103,7 @@ public sealed class BorrowedEdgeHbrgoSaki : CardModel
         if (phantom == null) return;
         var shell = phantom.GetPower<PhantomHighDimensionalShellPower>();
         if (shell?.CurrentDp > 0m)
-            await PowerCmd.ModifyAmount(choiceContext, shell, -Math.Min(shell.CurrentDp, DynamicVars["DpLoss"].BaseValue), Owner.Creature, this);
+            await PowerCmd.ModifyAmount(choiceContext, shell, -Math.Min(shell.CurrentDp, HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["DpLoss"].BaseValue)), Owner.Creature, this);
         await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, cardPlay)
             .Targeting(cardPlay.Target).WithHitCount(2).WithHitFx("vfx/vfx_attack_slash").Execute(choiceContext);
     }
@@ -200,7 +200,7 @@ public sealed class BorrowLifeTogetherHbrgoSaki : CardModel
         if (phantom == null) return;
         // This is the player's HP cost, not damage that can be redirected to the phantom or DP.
         await CreatureCmd.SetCurrentHp(Owner.Creature,
-            Math.Max(0m, Owner.Creature.CurrentHp - DynamicVars.HpLoss.BaseValue));
+            Math.Max(0m, Owner.Creature.CurrentHp - HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars.HpLoss.BaseValue)));
         if (!phantom.IsAlive || !Owner.Creature.IsAlive || CombatManager.Instance.IsOverOrEnding) return;
         await PhantomHelper.RestoreDp(choiceContext, phantom, PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom), this);
     }

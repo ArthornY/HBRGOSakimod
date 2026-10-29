@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
@@ -8,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Localization;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
@@ -18,6 +20,19 @@ public sealed class FatePower : PowerModel
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Counter;
+
+    public override LocString Description
+    {
+        get
+        {
+            LocString text = base.Description;
+            text.Add("ResourceLossPerStack", IsMutable
+                ? HbrResourceValueHelper.Fixed(Owner, MaxHpLossPerDraw)
+                : MaxHpLossPerDraw * HbrResourceValueHelper.FixedResourceScale);
+            return text;
+        }
+    }
+
 
     public override Color AmountLabelColor => new("F8D36A");
 
@@ -57,7 +72,7 @@ public sealed class FatePower : PowerModel
         await CreatureCmd.LoseMaxHp(
             choiceContext,
             target,
-            Amount * MaxHpLossPerDraw,
+            HbrResourceValueHelper.Fixed(Owner, Amount * MaxHpLossPerDraw),
             isFromCard: false);
     }
 }

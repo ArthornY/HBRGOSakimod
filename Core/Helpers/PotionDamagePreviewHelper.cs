@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Patches.Combat;
+using HBRGOSakiMod.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -46,6 +47,15 @@ internal static class PotionDamagePreviewHelper
         LocString description,
         Creature target = null)
     {
+        // This potion has no damage preview; its authored fixed DP value still
+        // needs the same live/canonical resource display as its use command.
+        if (description != null && potion is DpPotionHbrgoSaki)
+        {
+            decimal raw = potion.DynamicVars["Dp"].BaseValue;
+            description.Add("ResourceDp", potion.IsMutable && potion.Owner != null
+                ? HbrResourceValueHelper.Fixed(potion.Owner.Creature, raw)
+                : raw * HbrResourceValueHelper.FixedResourceScale);
+        }
         if (description == null || !CanPreview(potion))
         {
             return;

@@ -107,7 +107,7 @@ internal static class PhantomHelper
 
         // HP costs bypass damage mitigation and damage triggers, but retain HP/death hooks.
         return CreatureCmd.SetCurrentHp(phantom,
-            Math.Max(0m, LargeCreatureHealthHelper.GetCurrentHp(phantom) - amount));
+            Math.Max(0m, LargeCreatureHealthHelper.GetCurrentHp(phantom) - HbrResourceValueHelper.Fixed(phantom, amount)));
     }
 
     internal static async Task RestoreDp(
@@ -1751,7 +1751,7 @@ internal static class PhantomHelper
                 3m,
                 1m);
             phantom.GetPower<PhantomHighDimensionalShellPower>()?
-                .Restore(dp);
+                .Restore(HbrResourceValueHelper.Fixed(phantom, dp));
 
             int seapunkBlock = GetFusionEffectAmount(
                 effects,
@@ -2085,7 +2085,7 @@ internal static class PhantomHelper
             CountsAsFinalDefeat(target) &&
             maxHpPerKill > 0)
         {
-            await CreatureCmd.GainMaxHp(phantom, maxHpPerKill);
+            await CreatureCmd.GainMaxHp(phantom, HbrResourceValueHelper.Fixed(phantom, maxHpPerKill));
         }
     }
 
@@ -2567,7 +2567,8 @@ internal static class PhantomHelper
             : LargeCreatureHealthHelper.GetMaxHp(minion);
         decimal baseHp = HbrBattleStatsHelper.GetPhantomBaseHp(owner,
             Math.Max(1m, decimal.Floor(originalHp / 2m)));
-        decimal bonusHp = Math.Max(0, normalizedLevel - 1) * PhantomRosterEntry.LevelBonusMaxHp;
+        decimal bonusHp = HbrResourceValueHelper.Fixed(owner?.Creature,
+            Math.Max(0, normalizedLevel - 1) * PhantomRosterEntry.LevelBonusMaxHp);
         decimal maxHp = BigCombatNumbers.ClampStat(baseHp + bonusHp);
         minion.SetMaxHpInternal(maxHp);
         minion.SetCurrentHpInternal(maxHp);

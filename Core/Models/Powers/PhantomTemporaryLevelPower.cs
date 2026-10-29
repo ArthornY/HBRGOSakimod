@@ -66,7 +66,8 @@ public sealed class PhantomTemporaryLevelPower : PowerModel
 
         decimal baseMaxHp = Math.Max(1m, LargeCreatureHealthHelper.GetMaxHp(Owner) - ExactAppliedBonusMaxHp);
         decimal bonus = Math.Min(Math.Max(0m, MaximumCreatureHp - baseMaxHp),
-            GetAdditionalLevels(GetBaseLevel()) * PhantomRosterEntry.LevelBonusMaxHp);
+            HbrResourceValueHelper.Fixed(Owner,
+                GetAdditionalLevels(GetBaseLevel()) * PhantomRosterEntry.LevelBonusMaxHp));
         decimal delta = bonus - ExactAppliedBonusMaxHp;
         // Both initial application and stack changes can notify us; apply only the difference.
         ExactAppliedBonusMaxHp = bonus;

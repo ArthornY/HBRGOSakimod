@@ -494,7 +494,8 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     {
         bool skillBlock = hbrNumericsEnabled && attribute == SixSenseAttribute.Simplicity;
         LocString description = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}." +
-            (skillBlock ? "hbrMenuDescription" : "menuDescription"));
+            (hbrNumericsEnabled && attribute is SixSenseAttribute.Simplicity or SixSenseAttribute.Madness
+                ? "hbrMenuDescription" : "menuDescription"));
         decimal normal = SixSenseCombatHelper.EffectValue(attribute, level, false);
         decimal enhanced = SixSenseCombatHelper.EffectValue(attribute, level, true);
         if (skillBlock)

@@ -88,7 +88,7 @@ internal static class HbrgoSakiCharacterSelectVariantSelector
     {
         if (character is HbrgoHotaru &&
             AccessTools.Field(typeof(NCharacterSelectScreen), "_hp")?.GetValue(screen) is MegaLabel hp)
-            hp.SetTextAutoSize($"{HbrgoHotaru.InitialCurrentHp}/{character.StartingHp}");
+            hp.SetTextAutoSize($"{HbrgoHotaru.InitialScaledCurrentHp}/{character.StartingHp}");
 
         if (!States.TryGetValue(screen, out SelectorState state))
         {

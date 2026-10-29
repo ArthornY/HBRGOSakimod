@@ -3,23 +3,25 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
-// Limited bridge for explicitly fixed recovery values. These curve endpoints
-// are test profile choices, not data for a named skill in the original game.
-// Never use for percent HP, phase resets, or recovery derived from actual damage.
+// Only explicitly fixed HP/DP amounts cross this boundary. Percentage effects,
+// damage already resolved by the skill pipeline, phase resets, transfers and
+// serialized resource ledgers are already in combat units.
 internal static class HbrResourceValueHelper
 {
-    private static readonly HbrSkillPowerCurve FixedRecoveryCurve = new(0.8m, 1.2m, 300m);
+    internal const decimal FixedResourceScale = 100m;
 
-    internal static decimal ConvertFixedRecovery(Creature source, decimal amount)
+    internal static decimal Fixed(Creature source, decimal amount)
     {
-        if (!HbrBattleStatsHelper.TryGetStats(source, out HbrBattleStats stats)) return amount;
-        if (amount <= 0m) return 0m;
-        decimal potency = HbrOriginalNumericFormula.EvaluateBuffPotency(stats.Intelligence,
-            FixedRecoveryCurve);
-        decimal multiplier = BigCombatNumbers.MultiplyPositive(HbrBattleStatsHelper.PlayerHealthScale, potency);
-        decimal recovery = BigCombatNumbers.MultiplyPositive(amount, multiplier);
-        // Remove interpolation residue at exact integral boundaries before the
-        // engine commits whole HP/DP. Saturation happens before multiplication.
-        return BigCombatNumbers.ClampStat(decimal.Round(recovery, 8, MidpointRounding.ToEven));
+        if (!HbrBattleStatsHelper.IsEnabled(source)) return amount;
+        decimal bounded = Math.Clamp(amount, -BigCombatNumbers.MaximumCreatureStat,
+            BigCombatNumbers.MaximumCreatureStat);
+        decimal scaled = BigCombatNumbers.MultiplyPositive(Math.Abs(bounded), FixedResourceScale);
+        return bounded < 0m ? -scaled : scaled;
     }
+
+    // DP's native integer ledgers have a smaller limit than exact HP resources.
+    internal static int FixedInt(Creature source, decimal amount) =>
+        (int)Math.Clamp(Fixed(source, amount), int.MinValue, int.MaxValue);
+
+    internal static decimal ConvertFixedRecovery(Creature source, decimal amount) => Fixed(source, amount);
 }

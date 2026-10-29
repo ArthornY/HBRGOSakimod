@@ -63,13 +63,13 @@ public sealed class OverworkHbrgoSaki : CardModel
             protection?.MaxDp > 0;
         if (Owner.Character is HbrgoSaki30A)
         {
-            if ((Owner.GetRelic<MomentOfReign>()?.LosePhantomMaxDp(3) ?? 0) == 0)
-                await CreatureCmd.LoseMaxHp(choiceContext, Owner.Creature, 3, true);
+            if ((Owner.GetRelic<MomentOfReign>()?.LosePhantomMaxDp(HbrResourceValueHelper.Fixed(Owner.Creature, 3m)) ?? 0) == 0)
+                await CreatureCmd.LoseMaxHp(choiceContext, Owner.Creature, HbrResourceValueHelper.Fixed(Owner.Creature, 3m), true);
         }
         else if (losesPlayerDp)
-            protection.LoseMaxDp(1);
+            protection.LoseMaxDp(HbrResourceValueHelper.FixedInt(Owner.Creature, 1m));
         else
-            await CreatureCmd.LoseMaxHp(choiceContext, Owner.Creature, 1, true);
+            await CreatureCmd.LoseMaxHp(choiceContext, Owner.Creature, HbrResourceValueHelper.Fixed(Owner.Creature, 1m), true);
         // A currently free card stays free without storing negative debt for a
         // later turn. This also respects an external effect making it free.
         if (EnergyCost.GetWithModifiers(CostModifiers.All) > 0)

@@ -181,7 +181,8 @@ public sealed class SixSenseCardCapability :
         {
             bool skillBlock = hbrNumerics && attribute == SixSenseAttribute.Simplicity;
             LocString effect = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}." +
-                (skillBlock ? "hbrDescription" : "description"));
+                (hbrNumerics && attribute is SixSenseAttribute.Simplicity or SixSenseAttribute.Madness
+                    ? "hbrDescription" : "description"));
             decimal value = SixSenseCombatHelper.EffectValue(card.Owner, attribute);
             if (skillBlock)
             {

@@ -23,6 +23,8 @@ public sealed class HbrgoHotaru : CustomCharacterModel, IModCharacterVanillaSele
 {
     internal const int InitialCurrentHp = 1;
     internal const int InitialMaxHp = 30;
+    internal static int InitialScaledCurrentHp =>
+        HbrBattleStatsHelper.GetInitialPlayerHp(InitialCurrentHp);
     public override string CustomVisualPath => "res://scenes/creature_visuals/hbrgo_hotaru.tscn";
     public override string CustomTrailPath => "res://scenes/vfx/card_trail_hbrgo_saki.tscn";
     public override string CustomIconTexturePath => "res://images/characters/hbrgo_hotaru/hotaru_icon.png";
@@ -63,7 +65,7 @@ public sealed class HbrgoHotaru : CustomCharacterModel, IModCharacterVanillaSele
     protected override CharacterModel UnlocksAfterRunAs => null;
 
     // Native CharacterModel uses StartingHp as the initial maximum as well.
-    // The existing new-run initialization applies InitialCurrentHp separately.
+    // The existing new-run initialization applies InitialScaledCurrentHp separately.
     public override int StartingHp => HbrBattleStatsHelper.GetInitialPlayerHp(InitialMaxHp);
     public override int StartingGold => 99;
     public override CardPoolModel CardPool => ModelDb.CardPool<HbrgoHotaruCardPool>();

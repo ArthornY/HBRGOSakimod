@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -59,7 +60,7 @@ public sealed class BindingRedemptionHbrgoSaki : CardModel
         if (cardPlay.Target.PetOwner == Owner &&
             cardPlay.Target.HasPower<PhantomPower>())
         {
-            decimal remaining = DynamicVars["Recovery"].IntValue;
+            decimal remaining = HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["Recovery"].BaseValue);
             HighDimensionalShellPower shell =
                 cardPlay.Target.GetPower<HighDimensionalShellPower>();
             if (shell != null)

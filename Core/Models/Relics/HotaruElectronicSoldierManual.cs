@@ -39,7 +39,7 @@ public sealed class HotaruElectronicSoldierManual : ElectronicSoldierManual
         if (StartingHealthInitialized || Owner?.Character is not HbrgoHotaru) return;
         StartingHealthInitialized = true;
         _awaitingOpeningAncient = true;
-        Owner.Creature.SetCurrentHpInternal(HbrgoHotaru.InitialCurrentHp);
+        Owner.Creature.SetCurrentHpInternal(HbrgoHotaru.InitialScaledCurrentHp);
     }
 
     internal void CompleteStartingHealthAfterAncient(AncientEventModel ancient)
@@ -53,7 +53,7 @@ public sealed class HotaruElectronicSoldierManual : ElectronicSoldierManual
         // Neow sets HP to zero and heals it to maximum after run setup. Finish
         // this fresh run's initial HP only after that awaited opening completes.
         _awaitingOpeningAncient = false;
-        Owner.Creature.SetCurrentHpInternal(HbrgoHotaru.InitialCurrentHp);
+        Owner.Creature.SetCurrentHpInternal(HbrgoHotaru.InitialScaledCurrentHp);
     }
 
     protected override void AfterCloned()

@@ -20,7 +20,7 @@ public sealed partial class DeflectorProtection : IModRelicVisibility
     {
         if (!IsMutable || Owner?.Character is not HbrgoHotaru || room == null ||
             !room.CombatState.Players.Contains(Owner)) return;
-        int amount = HotaruCombatWearHelper.GetAmount(room);
+        int amount = HbrResourceValueHelper.FixedInt(Owner.Creature, HotaruCombatWearHelper.GetAmount(room));
         if (amount <= 0) return;
         string key = MemoryGardenUpgradePointsHelper.GetRoomKey(Owner.RunState, room);
         if (string.IsNullOrEmpty(key) || LastHotaruCombatWearRoom == key) return;

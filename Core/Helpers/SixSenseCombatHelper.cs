@@ -197,7 +197,7 @@ internal static class SixSenseCombatHelper
     {
         if (count <= 0) return;
         SixSenseCombatPower state = player.Creature.GetPower<SixSenseCombatPower>() ??
-            await PowerCmd.Apply<SixSenseCombatPower>(context, player.Creature, 1m, player.Creature, null);
+            await PowerCmd.Apply<SixSenseCombatPower>(context, player.Creature, HbrResourceValueHelper.Fixed(player.Creature, 1m), player.Creature, null);
         state?.RegisterResistanceBreaks(count);
         if (player.Creature.GetPower<HastePower>() is { } haste)
             await haste.OnResistancesBroken(context, cardSource, count);
@@ -238,7 +238,7 @@ internal static class SixSenseCombatHelper
             switch (attribute)
             {
                 case SixSenseAttribute.Madness:
-                    await CreatureCommandCompatibility.Damage(context, player.Creature, 1m,
+                    await CreatureCommandCompatibility.Damage(context, player.Creature, HbrResourceValueHelper.Fixed(player.Creature, 1m),
                         ValueProp.Unpowered, player.Creature, null);
                     break;
                 case SixSenseAttribute.Simplicity:
@@ -251,7 +251,7 @@ internal static class SixSenseCombatHelper
                     if (value > 0m)
                     {
                         SixSenseCombatPower state = player.Creature.GetPower<SixSenseCombatPower>() ??
-                            await PowerCmd.Apply<SixSenseCombatPower>(context, player.Creature, 1m, player.Creature, null);
+                            await PowerCmd.Apply<SixSenseCombatPower>(context, player.Creature, HbrResourceValueHelper.Fixed(player.Creature, 1m), player.Creature, null);
                         state?.AddEffect(attribute, value);
                         if (state != null) await state.SyncEffectPowers(context);
                     }

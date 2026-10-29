@@ -20,6 +20,7 @@ internal static class HbrSkillCardDescription
     internal static void AddParameters(CardModel card, LocString description)
     {
         if (description == null) return;
+        HbrFixedResourceDescriptionHelper.AddParameters(card, description);
         bool combatPreview = card.IsMutable && card.Owner != null && card.CombatState != null &&
             (card.Pile?.Type is PileType.Hand or PileType.Play ||
              card.UpgradePreviewType == CardUpgradePreviewType.Combat);

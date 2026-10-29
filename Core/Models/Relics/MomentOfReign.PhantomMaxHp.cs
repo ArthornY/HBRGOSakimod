@@ -168,7 +168,7 @@ public partial class MomentOfReign
     private void StorePhantomBaseMaxHp(Creature phantom)
     {
         if (ReferenceEquals(UpdatingPhantomMaxHp.Value, phantom)) return;
-        decimal bonus = BigCombatNumbers.ClampStat(GetActiveRosterEntry()?.BonusMaxHp ?? 0m);
+        decimal bonus = GetActiveRosterEntry()?.GetBonusMaxHp(Owner) ?? 0m;
         SetPhantomBaseMaxHp(ActiveRosterEntryId, GetUnadjustedActiveMaxHp(phantom) - bonus);
     }
 
@@ -195,7 +195,7 @@ public partial class MomentOfReign
                     Owner, Math.Max(1, (monster?.MaxInitialHp ?? 2) / 2));
         }
         return Math.Clamp((decimal)baseHp +
-            decimal.Floor(Math.Max(0m, entry?.BonusMaxHp ?? 0m)), 1m, MaximumPhantomHp);
+            (entry?.GetBonusMaxHp(Owner) ?? 0m), 1m, MaximumPhantomHp);
     }
 
     private void RestoreStoredHpFromRosterGrowth(IReadOnlyList<PhantomRosterEntry> previousEntries,

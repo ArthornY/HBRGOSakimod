@@ -11,7 +11,7 @@ namespace HBRGOSakiMod.Core.Helpers;
 // Test-branch bridge values, not the original game's character stat profiles.
 internal static class HbrBattleStatsHelper
 {
-    internal const int PlayerHealthScale = 50;
+    internal const int PlayerHealthScale = 100;
     internal const decimal InitialStat = 100m;
     internal const decimal StatGainPerLevel = 4m;
     internal const decimal SenseStatGainPerLevel = 2m;

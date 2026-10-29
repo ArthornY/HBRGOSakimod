@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using HBRGOSakiMod.Core.Models.Monsters;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Monsters;
 
@@ -239,10 +240,11 @@ internal static class PhantomFusionEffectHelper
 
     internal static string GetEffectDescription(
         string effectData,
-        PhantomFusionEffectType type)
+        PhantomFusionEffectType type,
+        Creature resourceOwner = null)
     {
         string isolated = KeepOnlyEffects(effectData, new[] { type });
-        return GetDescriptionLines(isolated).FirstOrDefault() ??
+        return GetDescriptionLines(isolated, resourceOwner).FirstOrDefault() ??
             type.ToString();
     }
 
@@ -377,11 +379,13 @@ internal static class PhantomFusionEffectHelper
     }
 
     internal static IReadOnlyList<string> GetDescriptionLines(
-        string effectData)
+        string effectData,
+        Creature resourceOwner = null)
     {
         Dictionary<PhantomFusionEffectType, EffectState> effects =
             Parse(effectData);
         List<string> descriptions = new();
+        string Resource(decimal value) => Format(HbrResourceValueHelper.Fixed(resourceOwner, value));
 
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.Flyconid, 2m, 1m,
             value => $"每第3次攻击意图额外给予{Format(value)}层易伤。");
@@ -408,11 +412,11 @@ internal static class PhantomFusionEffectHelper
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.SlitheringStrangler, 5m, 2m,
             value => $"第1次行动后，给予敌方全体{Format(value)}层紧缠。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.LeafSlimeS, 2m, 1m,
-            value => $"最大生命值+{Format(value)}。");
+            value => $"最大生命值+{Resource(value)}。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.LeafSlimeM, 3m, 2m,
-            value => $"最大生命值+{Format(value)}。");
-        AddTwigDescription(descriptions, effects, PhantomFusionEffectType.TwigSlimeS);
-        AddTwigDescription(descriptions, effects, PhantomFusionEffectType.TwigSlimeM);
+            value => $"最大生命值+{Resource(value)}。");
+        AddTwigDescription(descriptions, effects, PhantomFusionEffectType.TwigSlimeS, resourceOwner);
+        AddTwigDescription(descriptions, effects, PhantomFusionEffectType.TwigSlimeM, resourceOwner);
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.ShrinkerBeetle, 2m, 1m,
             value => $"第2次行动后，额外给予敌方全体{Format(value)}层虚弱。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.VineShambler, 2m, 2m,
@@ -436,14 +440,14 @@ internal static class PhantomFusionEffectHelper
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.GoldHopper, 5m, 3m,
             value => $"战斗结束后，额外获得{Format(value)}金币。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.HealHopper, 3m, 1m,
-            value => $"强化意图额外回复{Format(value)}点偏导护盾。");
+            value => $"强化意图额外回复{Resource(value)}点偏导护盾。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.SmallHopper, 1m, 1m,
-            value => $"最大偏导护盾+{Format(value)}。");
+            value => $"最大偏导护盾+{Resource(value)}。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.AbyssKnocker, 5m, 3m,
             value => $"每第3次攻击意图，额外造成{Format(value)}点伤害。");
-        AddClayKnockerDescription(descriptions, effects);
-        AddKnockerDescription(descriptions, effects);
-        AddTezukaDescription(descriptions, effects);
+        AddClayKnockerDescription(descriptions, effects, resourceOwner);
+        AddKnockerDescription(descriptions, effects, resourceOwner);
+        AddTezukaDescription(descriptions, effects, resourceOwner);
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.Toadpole, 4m, 2m,
             value => $"被召唤时，获得{Format(value)}层荆棘。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.DampCultist, 3m, 1m,
@@ -532,7 +536,7 @@ internal static class PhantomFusionEffectHelper
             value => $"每第3次攻击意图的每段攻击额外给予{Format(value)}层中毒。");
         AddOvicopterDescription(descriptions, effects);
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.DecimillipedeSegment, 6m, 3m,
-            value => $"最大生命值+{Format(value)}。");
+            value => $"最大生命值+{Resource(value)}。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.Entomancer, 1m, 1m,
             value => $"每次受到攻击时，使攻击者下回合力量-{Format(value)}。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.InfestedPrism, 2m, 1m,
@@ -569,12 +573,12 @@ internal static class PhantomFusionEffectHelper
             value => $"被召唤时，获得{Format(value)}层覆甲。");
         AddDualAmountDescription(descriptions, effects, PhantomFusionEffectType.SlimedBerserker,
             8m, 0m, 15m, 8m,
-            (hp, damage) => $"最大生命值+{Format(hp)}，伤害增幅+{Format(damage)}%。");
+            (hp, damage) => $"最大生命值+{Resource(hp)}，伤害增幅+{Format(damage)}%。");
         AddDualAmountDescription(descriptions, effects, PhantomFusionEffectType.TheLost,
             4m, 1m, 2m, 1m,
             (playerLoss, strength) => $"被召唤时，玩家力量-{Format(playerLoss)}，自身获得{Format(strength)}点力量。");
         AddForgottenDescription(descriptions, effects);
-        AddScrollOfBitingDescription(descriptions, effects);
+        AddScrollOfBitingDescription(descriptions, effects, resourceOwner);
         AddFabricatorDescription(descriptions, effects);
         AddDualAmountDescription(descriptions, effects, PhantomFusionEffectType.MechaKnight,
             3m, 0m, 0m, 10m,
@@ -1130,14 +1134,15 @@ internal static class PhantomFusionEffectHelper
     private static void AddTwigDescription(
         ICollection<string> descriptions,
         IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects,
-        PhantomFusionEffectType type)
+        PhantomFusionEffectType type,
+        Creature resourceOwner)
     {
         decimal hp = GetSecondaryEffect(effects, type, 1m, 0m);
         decimal damage = GetEffect(effects, type, 2m, 1m);
         if (hp > 0m || damage > 0m)
         {
             descriptions.Add(
-                $"{GetEffectTitle(type)}：最大生命值+{Format(hp)}，伤害增幅+{Format(damage)}%。");
+                $"{GetEffectTitle(type)}：最大生命值+{Format(HbrResourceValueHelper.Fixed(resourceOwner, hp))}，伤害增幅+{Format(damage)}%。");
         }
     }
 
@@ -1185,7 +1190,8 @@ internal static class PhantomFusionEffectHelper
 
     private static void AddClayKnockerDescription(
         ICollection<string> descriptions,
-        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects)
+        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects,
+        Creature resourceOwner)
     {
         decimal damage = GetEffect(
             effects,
@@ -1200,13 +1206,14 @@ internal static class PhantomFusionEffectHelper
         if (damage > 0m || dp > 0m)
         {
             descriptions.Add(
-                $"ClayKnocker：伤害增幅+{Format(damage)}%，最大偏导护盾+{Format(dp)}。");
+                $"ClayKnocker：伤害增幅+{Format(damage)}%，最大偏导护盾+{Format(HbrResourceValueHelper.Fixed(resourceOwner, dp))}。");
         }
     }
 
     private static void AddKnockerDescription(
         ICollection<string> descriptions,
-        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects)
+        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects,
+        Creature resourceOwner)
     {
         decimal damage = GetEffect(
             effects,
@@ -1221,13 +1228,14 @@ internal static class PhantomFusionEffectHelper
         if (damage > 0m || dp > 0m)
         {
             descriptions.Add(
-                $"Knocker：伤害增幅+{Format(damage)}%，最大偏导护盾+{Format(dp)}。");
+                $"Knocker：伤害增幅+{Format(damage)}%，最大偏导护盾+{Format(HbrResourceValueHelper.Fixed(resourceOwner, dp))}。");
         }
     }
 
     private static void AddTezukaDescription(
         ICollection<string> descriptions,
-        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects)
+        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects,
+        Creature resourceOwner)
     {
         int strength = ToInt(GetSecondaryEffect(
             effects,
@@ -1244,7 +1252,7 @@ internal static class PhantomFusionEffectHelper
             string description = $"偏导护盾归零后，获得{strength}点力量";
             if (dp > 0m)
             {
-                description += $"；最大偏导护盾+{Format(dp)}";
+                description += $"；最大偏导护盾+{Format(HbrResourceValueHelper.Fixed(resourceOwner, dp))}";
             }
 
             descriptions.Add("手冢咲：" + description + "。");
@@ -1348,7 +1356,8 @@ internal static class PhantomFusionEffectHelper
 
     private static void AddScrollOfBitingDescription(
         ICollection<string> descriptions,
-        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects)
+        IReadOnlyDictionary<PhantomFusionEffectType, EffectState> effects,
+        Creature resourceOwner)
     {
         decimal hpPerKill = GetEffect(
             effects,
@@ -1363,11 +1372,11 @@ internal static class PhantomFusionEffectHelper
         if (hpPerKill > 0m || extra > 0m)
         {
             string description =
-                $"每次斩杀时，最大生命值+{Format(hpPerKill)}";
+                $"每次斩杀时，最大生命值+{Format(HbrResourceValueHelper.Fixed(resourceOwner, hpPerKill))}";
             if (extra > 0m)
             {
                 description +=
-                    $"；立即获得{Format(extra)}点最大生命值和{Format(extra * 3m)}%伤害增幅";
+                    $"；立即获得{Format(HbrResourceValueHelper.Fixed(resourceOwner, extra))}点最大生命值和{Format(extra * 3m)}%伤害增幅";
             }
 
             descriptions.Add("咬人卷轴：" + description + "。");

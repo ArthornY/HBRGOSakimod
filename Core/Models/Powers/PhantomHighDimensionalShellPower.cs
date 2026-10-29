@@ -25,7 +25,8 @@ public sealed class PhantomHighDimensionalShellPower :
     private static decimal CalculateMaximumAmount(Creature creature)
     {
         decimal baseAmount = CalculatePlayerAmount(LargeCreatureHealthHelper.GetMaxHp(creature));
-        decimal bonus = BigCombatNumbers.ClampStat(PhantomHelper.GetExtraMaximumDp(creature));
+        decimal bonus = BigCombatNumbers.ClampStat(HbrResourceValueHelper.Fixed(creature,
+            PhantomHelper.GetExtraMaximumDp(creature)));
         return PhantomHelper.ApplyMaximumDpLoss(creature,
             BigCombatNumbers.ClampStat(baseAmount + bonus));
     }

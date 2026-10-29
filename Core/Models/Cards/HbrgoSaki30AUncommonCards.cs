@@ -171,7 +171,7 @@ public sealed class MercyAndCompassionHbrgoSaki : CardModel
     {
         DeflectorProtection protection =
             Owner.GetRelic<DeflectorProtection>();
-        protection?.LoseDp(DynamicVars["DpLoss"].IntValue);
+        protection?.LoseDp(HbrResourceValueHelper.FixedInt(Owner.Creature, DynamicVars["DpLoss"].BaseValue));
         if (protection != null)
         {
             await protection.ResolveMentalStrengthDpLossRewards(

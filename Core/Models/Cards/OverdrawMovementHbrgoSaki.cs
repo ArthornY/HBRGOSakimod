@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Relics;
@@ -42,7 +43,7 @@ public sealed class OverdrawMovementHbrgoSaki : CardModel
         DeflectorProtection protection =
             Owner.GetRelic<DeflectorProtection>();
         protection?.LoseDp(
-            (int)DynamicVars[_dpLossVar].BaseValue);
+            HbrResourceValueHelper.FixedInt(Owner.Creature, DynamicVars[_dpLossVar].BaseValue));
         if (protection != null)
         {
             await protection.ResolveMentalStrengthDpLossRewards(

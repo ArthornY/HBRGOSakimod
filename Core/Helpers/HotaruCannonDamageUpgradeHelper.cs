@@ -62,8 +62,8 @@ internal static class HotaruCannonDamageUpgradeHelper
             await PowerCmd.Apply<FragilePower>(context, receipt.Target, 1m, receipt.Dealer, receipt.CardSource);
         if (receipt.IsPrimary && receipt.ActualDpDamage > 0m && Has(cannon, HotaruCannonKind.Contest, 2) &&
             Millsage.IsEnemy(receipt.Target, cannon.PetOwner))
-            await HotaruCannonStatsHelper.ReactionDamage(context, cannon, receipt.Target, 1m,
-                receipt.CardSource, receipt.CardPlay, hpOnly: true);
+            await HotaruCannonStatsHelper.ReactionDamage(context, cannon, receipt.Target, HbrResourceValueHelper.Fixed(cannon, 1m),
+                receipt.CardSource, receipt.CardPlay, hpOnly: true, absoluteBase: true);
         if (receipt.IsPrimary && receipt.ActualDpDamage > 0m && Has(cannon, HotaruCannonKind.Contest, 5) &&
             Millsage.IsEnemy(receipt.Target, cannon.PetOwner))
         {

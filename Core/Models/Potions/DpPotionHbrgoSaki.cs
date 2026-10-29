@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Relics;
@@ -38,7 +39,7 @@ public sealed class DpPotionHbrgoSaki : ModPotionTemplate
         Creature target)
     {
         Owner.GetRelic<DeflectorProtection>()?.RestoreDp(
-            (int)DynamicVars[DpVar].BaseValue);
+            HbrResourceValueHelper.FixedInt(Owner.Creature, DynamicVars[DpVar].BaseValue));
         return Task.CompletedTask;
     }
 }

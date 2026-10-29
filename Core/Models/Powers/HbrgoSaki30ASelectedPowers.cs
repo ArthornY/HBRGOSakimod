@@ -143,6 +143,7 @@ public sealed class UnbrokenRemnantPower : PowerModel
         {
             var description = base.Description;
             description.Add("StrengthGain", StrengthGain);
+            description.Add("ResourceAmount", HbrResourceValueHelper.Fixed(Owner, Amount));
             return description;
         }
     }
@@ -159,10 +160,10 @@ public sealed class UnbrokenRemnantPower : PowerModel
         Flash();
         var shell = phantom.GetPower<PhantomHighDimensionalShellPower>();
         if (shell != null)
-            shell.Restore(Amount);
+            shell.Restore(HbrResourceValueHelper.Fixed(Owner, Amount));
         else
             await PowerCmd.Apply<PhantomHighDimensionalShellPower>(choiceContext, phantom,
-                Math.Min(Amount, PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom)), Owner, null);
+                Math.Min(HbrResourceValueHelper.Fixed(Owner, Amount), PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom)), Owner, null);
         await PowerCmd.Apply<StrengthPower>(choiceContext, phantom, StrengthGain, Owner, null);
     }
     protected override void AfterCloned()

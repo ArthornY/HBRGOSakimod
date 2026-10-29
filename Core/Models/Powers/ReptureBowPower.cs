@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -283,6 +284,18 @@ public sealed class ReptureBowPower : PowerModel
         return multiplier;
     }
 
+    public override LocString Description
+    {
+        get
+        {
+            LocString text = base.Description;
+            text.Add("ResourceFollowup", IsMutable
+                ? HbrResourceValueHelper.Fixed(Owner, 1m)
+                : HbrResourceValueHelper.FixedResourceScale);
+            return text;
+        }
+    }
+
     internal static decimal CalculateExtraDpDamage(
         Creature target,
         ValueProp props,
@@ -305,6 +318,10 @@ public sealed class ReptureBowPower : PowerModel
                 target,
                 dealer
             });
+        decimal fixedDamage = HbrResourceValueHelper.Fixed(dealer, 1m);
+        using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(dealer)
+            ? HbrAbsoluteBaseDamageContext.Begin(dealer, cardSource, target, fixedDamage)
+            : null;
         using (HighDimensionalShellPower.SuppressDamageReduction())
         {
             return HookCompatibility.ModifyDamage(
@@ -312,7 +329,7 @@ public sealed class ReptureBowPower : PowerModel
                 combatState,
                 target,
                 dealer,
-                1m,
+                fixedDamage,
                 props,
                 cardSource,
                 ModifyDamageHookType.All,

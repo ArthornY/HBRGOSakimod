@@ -34,7 +34,12 @@ public sealed class SaviorGrandEntrancePower : PowerModel, ICustomPower
         {
             LocString description = base.Description;
             string[] effects = UpgradeEffects.Where(id => id != 2)
-                .Select(id => new LocString("cards", "SAVIOR_GRAND_ENTRANCE_HBRGO_SAKI.upgrade_effect." + id).GetFormattedText()).ToArray();
+                .Select(id =>
+                {
+                    string key = "SAVIOR_GRAND_ENTRANCE_HBRGO_SAKI.upgrade_effect." + id;
+                    if (HbrBattleStatsHelper.IsEnabled(Owner) && new LocString("cards", key + ".hbr").Exists()) key += ".hbr";
+                    return new LocString("cards", key).GetFormattedText();
+                }).ToArray();
             description.Add("UpgradeEffects", effects.Length == 0 ? string.Empty : "\n" + string.Join("\n", effects));
             return description;
         }

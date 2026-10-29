@@ -56,7 +56,7 @@ public sealed class SelfSacrificeSlashHbrgoSaki : CardModel
         DeflectorProtection protection =
             Owner.GetRelic<DeflectorProtection>();
         protection?.LoseDp(
-            (int)DynamicVars[_dpLossVar].BaseValue);
+            HbrResourceValueHelper.FixedInt(Owner.Creature, DynamicVars[_dpLossVar].BaseValue));
         if (protection != null)
         {
             await protection.ResolveMentalStrengthDpLossRewards(

@@ -137,7 +137,7 @@
   "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.NOODLES.options.TAKE_REWARD.title": "疯狂+1，获得一次卡牌奖励",
   "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.NOODLES.options.TAKE_REWARD.description": "接受这段突如其来的记忆。",
   "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.description": "“别说了！”\n\n你的脑海中突然出现了这样一道怒吼，她不属于你，应该也不属于跟你使用一具身体的“妹妹”。",
-  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.options.TAKE_REWARD.title": "疯狂+1，DP上限+10",
+  "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.options.TAKE_REWARD.title": "疯狂+1，DP上限+{ResourceDpGain}",
   "HBRGO_SAKI_MOD_EVENT_JOINING_CEREMONY_HBRGO_SAKI.pages.EHE_CHUMI.options.TAKE_REWARD.description": "接受这道不属于你的怒吼。",
   "HBRGO_SAKI_MOD_EVENT_DOOR_AJAR_HBRGO_SAKI.title": "门缝之内",
   "HBRGO_SAKI_MOD_EVENT_DOOR_AJAR_HBRGO_SAKI.pages.INITIAL.description": "你击败了拦在前往塔顶的路前的最后一个阻碍。当你准备向前时，你看到了一扇虚掩着的门。",

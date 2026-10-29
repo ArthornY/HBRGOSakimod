@@ -144,7 +144,7 @@ public sealed partial class DeflectorProtection : RelicModel
             return Task.CompletedTask;
         }
 
-        if (Owner.Character is HbrgoHotaru) GainMaxDp(10);
+        if (Owner.Character is HbrgoHotaru) GainMaxDp(HbrResourceValueHelper.FixedInt(Owner.Creature, 10m));
         RestoreDpFromHealAmount(HealRestSiteOption.GetHealAmount(player));
 
         return Task.CompletedTask;
@@ -166,6 +166,7 @@ public sealed partial class DeflectorProtection : RelicModel
         }
 
         extraText.Add("DP", GetRestSiteDpRestore(player));
+        extraText.Add("MaxDpGain", HbrResourceValueHelper.FixedInt(player.Creature, 10m));
         return currentExtraText.Concat(new[] { extraText }).ToArray();
     }
 
@@ -608,7 +609,7 @@ public sealed partial class DeflectorProtection : RelicModel
         int maxDpAfterRest = MaxDp;
         if (player.Character is HbrgoHotaru)
         {
-            var gain = GetMaxDpGainPlan(10);
+            var gain = GetMaxDpGainPlan(HbrResourceValueHelper.FixedInt(player.Creature, 10m));
             int baseAfterGain = CancerMaxDp > 0
                 ? gain.StoredMaximum : GetNormalBaseMaxDp(player.Creature.MaxHp, gain.StoredMaximum);
             maxDpAfterRest = Math.Max(0, baseAfterGain - gain.Loss);

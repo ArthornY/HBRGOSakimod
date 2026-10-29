@@ -300,6 +300,7 @@ public abstract class HbrStoryEvent : ModEventTemplate
             CardCmd.Upgrade(selected);
         }
         if (rewards.HealFull) await CreatureCmd.Heal(Owner.Creature, Owner.Creature.MaxHp);
-        if (rewards.MaxDp > 0) Owner.GetRelic<DeflectorProtection>()?.GainMaxDp(rewards.MaxDp);
+        if (rewards.MaxDp > 0) Owner.GetRelic<DeflectorProtection>()?.GainMaxDp(
+            HbrResourceValueHelper.FixedInt(Owner.Creature, rewards.MaxDp));
     }
 }

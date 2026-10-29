@@ -135,6 +135,14 @@ internal readonly record struct PhantomRosterEntry(
     internal decimal ExtraMaxDp =>
         PhantomFusionEffectHelper.GetExtraMaxDp(FusionEffectData);
 
+    // Roster/fusion metadata stays in original units across clones and saves.
+    // Only readers that apply or display actual HP/DP resolve the fixed scale.
+    internal decimal GetBonusMaxHp(Player owner) =>
+        BigCombatNumbers.ClampStat(HbrResourceValueHelper.Fixed(owner?.Creature, BonusMaxHp));
+
+    internal decimal GetExtraMaxDp(Player owner) =>
+        BigCombatNumbers.ClampStat(HbrResourceValueHelper.Fixed(owner?.Creature, ExtraMaxDp));
+
     internal decimal GetBasePhantomHp(
         decimal originalHp,
         bool forceBossScaling = false,
@@ -1308,7 +1316,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         return Math.Max(
             0,
             PhantomFusionEffectHelper.ToInt(
-                current.BonusMaxHp - downgraded.BonusMaxHp));
+                current.GetBonusMaxHp(Owner) - downgraded.GetBonusMaxHp(Owner)));
     }
 
     internal IReadOnlyList<PhantomRosterEntry> GetPreviouslyObtainedPhantomChoices()
@@ -1610,8 +1618,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
             ? 0
             : PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom);
         decimal gainedMaxHp = Math.Max(0m,
-            BigCombatNumbers.ClampStat(upgraded.BonusMaxHp) -
-            BigCombatNumbers.ClampStat(target.BonusMaxHp));
+            upgraded.GetBonusMaxHp(Owner) - target.GetBonusMaxHp(Owner));
 
         entries[activeIndex] = upgraded;
         entries.RemoveAt(materialIndex);
@@ -1732,8 +1739,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
             ? 0
             : PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom);
         decimal gainedMaxHp = Math.Max(0m,
-            BigCombatNumbers.ClampStat(upgraded.BonusMaxHp) -
-            BigCombatNumbers.ClampStat(target.BonusMaxHp));
+            upgraded.GetBonusMaxHp(Owner) - target.GetBonusMaxHp(Owner));
 
         entries[activeIndex] = upgraded;
         if (usesFullInheritance)
@@ -1834,7 +1840,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         string incomingDescription =
             PhantomFusionEffectHelper.GetEffectDescription(
                 candidateEffectData,
-                incomingType);
+                incomingType, Owner?.Creature);
         List<PhantomFusionEffectChoiceHbrgoSaki> choices = new();
         PhantomFusionEffectChoiceHbrgoSaki skip = Owner.Creature
             .CombatState
@@ -1850,7 +1856,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
                 retainedType,
                 PhantomFusionEffectHelper.GetEffectDescription(
                     candidateEffectData,
-                    retainedType),
+                    retainedType, Owner?.Creature),
                 incomingDescription);
             choices.Add(choice);
         }
@@ -1873,7 +1879,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
                     type,
                     PhantomFusionEffectHelper.GetEffectDescription(
                         candidateEffectData,
-                        type));
+                        type, Owner?.Creature));
                 return choice;
             })
             .ToList();
@@ -2864,7 +2870,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
             monster is RedCrimsonBossMonster, Owner);
         decimal bonusMaxHp = Math.Min(
             MaximumPhantomHp - baseInitialHp,
-            Math.Floor(Math.Max(0m, rosterEntry.BonusMaxHp)));
+            rosterEntry.GetBonusMaxHp(Owner));
         decimal unadjustedInitialHp = baseInitialHp + bonusMaxHp;
         decimal initialHp = GetAdjustedPhantomMaxHp(unadjustedInitialHp);
         ExactActivePhantomMaxHpAdjustment = initialHp - unadjustedInitialHp;
