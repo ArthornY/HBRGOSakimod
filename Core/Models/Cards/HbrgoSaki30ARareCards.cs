@@ -443,7 +443,7 @@ public sealed class KillKissHbrgoSaki : CardModel
             .Execute(choiceContext);
         if (target.IsAlive)
         {
-            await PowerCmd.Apply<VulnerablePower>(
+            await HbrPercentDebuffApplication.ApplyDefenseDown(
                 choiceContext,
                 target,
                 DynamicVars["VulnerablePower"].BaseValue,

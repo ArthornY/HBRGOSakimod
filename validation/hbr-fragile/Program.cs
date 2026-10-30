@@ -14,6 +14,7 @@ using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -84,8 +85,15 @@ static class Checks
         Mode(true); Act(0);
     }
     static void Act(int index) => Set(RunState, "_currentActIndex", index);
+    static decimal NativeDamage(Creature target, Creature dealer, decimal raw, ValueProp props,
+        CardModel? card, ModifyDamageHookType hookType)
+    {
+        Type compatibility=Mod.GetType("HBRGOSakiMod.Core.Compatibility.HookCompatibility",true)!;
+        object?[] args=[RunState,Combat,target,dealer,raw,props,card,hookType,CardPreviewMode.None,null,null];
+        return (decimal)compatibility.GetMethod("ModifyDamage",F)!.Invoke(null,args)!;
+    }
     static decimal Preview(Creature target, Creature dealer, decimal raw = 6m, ValueProp props = ValueProp.Move, CardModel? card = null) =>
-        Hook.ModifyDamage(RunState, Combat, target, dealer, raw, props, card, ModifyDamageHookType.All, CardPreviewMode.None, out _);
+        NativeDamage(target,dealer,raw,props,card,ModifyDamageHookType.All);
     static decimal Actual(Creature target,Creature dealer,decimal raw=6m,ValueProp props=ValueProp.Move)
     {
         Type wrapper=Mod.GetType("HBRGOSakiMod.Core.Patches.Combat.StrongestShieldDamagePatch",true)!;
@@ -98,14 +106,22 @@ static class Checks
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerType Type=>MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff;
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerStackType StackType=>MegaCrit.Sts2.Core.Entities.Powers.PowerStackType.Counter;
         internal decimal Factor;
+#if HBR_BETA_NATIVE
+        public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card,CardPlay? play)=>
+#else
         public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card)=>
+#endif
             dealer==Owner?Factor:1m;
     }
     sealed class FractionalCap : PowerModel
     {
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerType Type=>MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff;
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerStackType StackType=>MegaCrit.Sts2.Core.Entities.Powers.PowerStackType.Counter;
+#if HBR_BETA_NATIVE
+        public override decimal ModifyDamageCap(Creature? target,ValueProp props,Creature? dealer,CardModel? card,CardPlay? play)=>
+#else
         public override decimal ModifyDamageCap(Creature? target,ValueProp props,Creature? dealer,CardModel? card)=>
+#endif
             target==Owner?29.95m:decimal.MaxValue;
     }
     static T TestPower<T>(Creature owner) where T:PowerModel
@@ -136,10 +152,24 @@ static class Checks
             Set(RunState, field, Activator.CreateInstance(Field(typeof(RunState), field).FieldType));
         Combat = Blank<CombatState>(); Set(Combat, "<RunState>k__BackingField", RunState);
         Player = Blank<Player>(); Set(Player, "_runState", RunState); Hero = Actor(player: Player); Set(Player, "<Creature>k__BackingField", Hero);
+        Set(Player,"<Character>k__BackingField",Blank<HBRGOSakiMod.Core.Models.Characters.HbrgoSaki>());
         Manual = Blank<ElectronicSoldierManual>(); Set(Manual, "<IsMutable>k__BackingField", true); Set(Manual, "_owner", Player);
         Set(Player, "_relics", new List<RelicModel> { Manual }); Set(RunState, "_players", new List<Player> { Player });
         Enemy = Actor(Blank<SmallHopper>()); Set(Combat, "_allies", new List<Creature> { Hero }); Set(Combat, "_enemies", new List<Creature> { Enemy });
+#if HBR_BETA_NATIVE
+        Type turnType=typeof(CombatManager).Assembly.GetType("MegaCrit.Sts2.Core.Combat.CombatTurnState",true)!;
+        object turn=RuntimeHelpers.GetUninitializedObject(turnType);
+        Set(turn,"_cts",new CancellationTokenSource());Set(turn,"<State>k__BackingField",Combat);Set(turn,"<IsInProgress>k__BackingField",true);
+        Set(turn,"<PlayersTakingExtraTurn>k__BackingField",new List<Player>());
+        Set(turn,"<ReadyLock>k__BackingField",Activator.CreateInstance(typeof(System.Threading.Lock)));
+        Set(turn,"<PlayersReadyToEndTurn>k__BackingField",new HashSet<Player>());
+        Set(turn,"<PlayersReadyToBeginEnemyTurn>k__BackingField",new HashSet<Player>());
+        Set(CombatManager.Instance,"_turnState",turn);
+        object tracker=typeof(CombatManager).GetProperty("StateTracker",F)!.GetValue(CombatManager.Instance)!;
+        Set(tracker,"_state",Combat);
+#else
         Set(CombatManager.Instance,"_state",Combat); Set(CombatManager.Instance,"<IsInProgress>k__BackingField",true);
+#endif
         foreach (var row in new[] { ("_enemyDamagePercent", 100), ("_enemyDamageGrowthPerActPercent", 0) })
             typeof(HBRGOSakiConfig).GetField(row.Item1, F)!.SetValue(null, row.Item2);
         // Install the real production power boundaries as well as the full
@@ -178,6 +208,22 @@ static class Checks
     }
     static decimal Expected(int raw,decimal intelligence,decimal luck,decimal enemy) =>
         ExpectedBase(raw)*(1m+Math.Max(0m,(intelligence+luck*2m)/3m-enemy)*.001m);
+    static void NativePowerSignatureCases()
+    {
+        static bool Matches(Type type,string name,params Type[] parameters)=>
+            type.GetMethod(name,BindingFlags.Public|BindingFlags.Instance|BindingFlags.Static,null,parameters,null)!=null;
+        Type context=typeof(MegaCrit.Sts2.Core.GameActions.Multiplayer.PlayerChoiceContext),power=typeof(PowerModel),
+            creature=typeof(Creature),card=typeof(CardModel),number=typeof(decimal),combat=typeof(ICombatState);
+        Check(Matches(typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),"Apply",context,power,creature,number,creature,card,typeof(bool)),"runtime preserves exact seven-argument non-generic Fragile Apply boundary");
+        Check(Matches(typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),"ModifyAmount",context,power,number,creature,card,typeof(bool)),"runtime preserves exact six-argument Fragile copy boundary");
+        Check(Matches(typeof(MegaCrit.Sts2.Core.Commands.PowerCmd),"FindExistingInstanceForStacking",power,creature,creature),"runtime preserves independent-instance lookup signature");
+        Check(Matches(typeof(PowerModel),"BeforeApplied",creature,number,creature,card)&&Matches(typeof(PowerModel),"AfterApplied",creature,card)&&Matches(typeof(PowerModel),"ApplyInternal",creature,number,typeof(bool)),"runtime preserves all native direct Fragile lifecycle signatures");
+        Check(Matches(typeof(Hook),"BeforePowerAmountChanged",combat,power,number,creature,creature,card)&&Matches(typeof(Hook),"AfterPowerAmountChanged",combat,context,power,number,creature,card),"runtime preserves before and after power change hook signatures");
+        Type modifiers=typeof(IEnumerable<AbstractModel>).MakeByRefType();
+        Check(Matches(typeof(Hook),"ModifyPowerAmountGiven",combat,power,creature,number,creature,card,modifiers)&&Matches(typeof(Hook),"ModifyPowerAmountReceived",combat,power,creature,number,creature,modifiers),"runtime preserves giver and Artifact receiver hook signatures");
+        Type history=typeof(CombatManager).GetProperty("History",F)!.PropertyType;
+        Check(Matches(history,"PowerReceived",combat,power,number,creature),"runtime preserves exact native PowerReceived history signature");
+    }
     static void FormulaCases()
     {
         foreach(int raw in new[]{0,1,2,3,6,12})
@@ -266,7 +312,12 @@ static class Checks
     {
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerType Type=>MegaCrit.Sts2.Core.Entities.Powers.PowerType.Debuff;
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerStackType StackType=>MegaCrit.Sts2.Core.Entities.Powers.PowerStackType.Counter;
-        public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card)=>target==Owner?1.4m:1;
+#if HBR_BETA_NATIVE
+        public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card,CardPlay? play)=>
+#else
+        public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card)=>
+#endif
+            target==Owner?1.4m:1;
     }
     static void PipelineCases()
     {
@@ -322,18 +373,18 @@ static class Checks
     {
         Reset();var first=Apply(2,Hero)!;var second=Apply(3,Hero)!;Power<BreakPower>(Enemy,1);
         var scars=Power<HotaruUnfadingScarsPower>(Hero,1);typeof(HotaruUnfadingScarsPower).GetProperty("EffectPercent",F)!.SetValue(scars,12);
-        Equal(Multiplier(first),1.495m,"existing Scars enhances first instance once");Equal(Multiplier(second),1.58875m,"existing Scars enhances second instance once");
+        Equal(Multiplier(first),1.42m,"existing Scars multiplies first instance effect once");Equal(Multiplier(second),1.525m,"existing Scars multiplies second instance effect once");
         Turn(first,CombatSide.Enemy,new[]{Enemy});Turn(second,CombatSide.Enemy,new[]{Enemy});
         Check(first.Amount==2&&second.Amount==2,"real native duration route respects existing Scars decay protection per instance");
-        Equal(Preview(Enemy,Hero),decimal.Floor(Outgoing(100,100,150)*(1+.375m+.46875m+.24m)),"Scars and both instance offsets contribute exactly once");
+        Equal(Preview(Enemy,Hero),decimal.Floor(Outgoing(100,100,150)*(1+(.375m+.46875m)*1.12m)),"Scars and both instance offsets contribute exactly once");
         Reset();var artifact=Power<ArtifactPower>(Enemy,1);Apply(6,Hero);
         Check(Active().Length==0,"real Artifact blocks new Fragile application");
         Check(artifact.Amount==0&&!Powers(Enemy).Contains(artifact),"real received hook consumes Artifact exactly once");
         Reset();var incoming=Apply(2,Enemy,Hero)!;
-        Check(incoming.Amount==2&&incoming.SkipNextDurationTick,"native enemy-to-player first-tick protection retained");
-        Turn(incoming,CombatSide.Player,new[]{Hero});Check(incoming.Amount==2&&!incoming.SkipNextDurationTick,"first player tick consumes skip marker rather than duration");
-        Turn(incoming,CombatSide.Player,new[]{Hero});Check(incoming.Amount==1,"next player turn consumes one duration");
-        Turn(incoming,CombatSide.Player,new[]{Hero});Check(Active(Hero).Length==0,"player instance expires independently after second duration tick");Reset();
+        Check(incoming.Amount==2&&!incoming.SkipNextDurationTick,"HBR player duration starts at two without legacy enemy-end skip");
+        incoming.SkipNextDurationTick=true;
+        Turn(incoming,CombatSide.Player,new[]{Hero});Check(incoming.Amount==1&&!incoming.SkipNextDurationTick,"first owner end clears legacy skip and consumes one duration");
+        Turn(incoming,CombatSide.Player,new[]{Hero});Check(Active(Hero).Length==0,"player instance expires independently at the second actual owner end");Reset();
     }
     static void LegacyCases()
     {
@@ -366,6 +417,70 @@ static class Checks
         Equal(Number("HbrFragilePowerHelper","GetModifierAmount",(object?)null),0,"absent target has zero compatibility count");
         Mode(false);Apply(7,Hero);Equal(Number("HbrFragilePowerHelper","GetModifierAmount",Enemy),7,"legacy synergy count retains raw duration7");
         Reset();
+    }
+    static T OwnedCard<T>() where T:CardModel,new()
+    {
+        var card=new T();Set(card,"<IsMutable>k__BackingField",true);Set(card,"_owner",Player);
+        card.UpgradePreviewType=CardUpgradePreviewType.Combat;return card;
+    }
+    static void Play(CardModel card,Creature? target=null)
+    {
+        var play=new CardPlay{Card=card,Target=target,ResultPile=PileType.Discard,
+#if HBR_BETA_NATIVE
+            Player=Player,
+#endif
+            Resources=new ResourceInfo{EnergySpent=card.EnergyCost.Canonical,EnergyValue=card.EnergyCost.Canonical,StarsSpent=0,StarValue=0},
+            IsAutoPlay=false,PlayIndex=0,PlayCount=1};
+        ((Task)card.GetType().GetMethod("OnPlay",F)!.Invoke(card,new object?[]{null,play})!).GetAwaiter().GetResult();
+    }
+    static void Transform(FragilePower power,bool duration=true,CardModel? source=null)
+        =>((Task)Call("HbrFragileApplication","DoubleExisting",null,power,Percent(power),power.Amount,
+            Hero,source,duration,true)!).GetAwaiter().GetResult();
+    static bool SkipTransformAttack(AttackCommand __instance,ref Task<AttackCommand> __result)
+    {__result=Task.FromResult(__instance);return false;}
+    static void DoubleExistingCases()
+    {
+        Reset();var first=Apply(2,Enemy)!;var second=Apply(3,Hero)!;Tick(first);
+        var originalApplier=first.Applier;var card=OwnedCard<DoublePowersHbrgoSaki>();Play(card);
+        Check(Active().Length==2&&Powers(Enemy).Contains(first)&&Powers(Enemy).Contains(second),"actual Double preserves both existing Fragile slots and identities");
+        Check(first.Amount==2&&second.Amount==4,"actual Double doubles each independent remaining duration rather than resetting to two");
+        Equal(Percent(first),75m,"actual Double doubles first37point5 effect to75");
+        Equal(Percent(second),93.75m,"actual Double doubles second46point875 effect to93point75");
+        Check(first.HbrModifierCount==2&&second.HbrModifierCount==3&&ReferenceEquals(first.Applier,originalApplier),"actual Double preserves authored modifier strengths and original applier");
+        Equal(Number("HbrFragilePowerHelper","GetModifierAmount",Enemy),5,"Double never reinterprets new durations as authored modifier strength");
+        Turn(first,CombatSide.Enemy,new[]{Enemy});Turn(second,CombatSide.Enemy,new[]{Enemy});
+        Check(first.Amount==1&&second.Amount==3,"transformed four-turn instance ticks to three without legacy two-turn reclamp");
+        Play(card);Check(first.Amount==2&&second.Amount==6&&Active().Length==2,"repeat Double extends existing remaining durations without occupying more slots");
+        Equal(Percent(first),150,"repeat Double retains exact doubled first effect");Equal(Percent(second),187.5m,"repeat Double retains exact doubled second effect");
+        Reset();Sense("Talent",75);Sense("Simplicity",75);first=Apply(3,Hero)!;Sense("Talent",0);Sense("Simplicity",0);
+        Transform(first,false);Equal(Percent(first),103.125m,"effect-only transform doubles original high-stat snapshot without recalculating low current attributes");
+        Check(first.Amount==2&&first.HbrModifierCount==3,"effect-only transform preserves remaining duration and authored strength");
+        Reset();first=Apply(2,Hero)!;Tick(first);var artifact=Power<ArtifactPower>(Enemy,1);string[] unchanged=SnapshotSave(first);
+        Transform(first);Check(first.Amount==1&&unchanged.SequenceEqual(SnapshotSave(first)),"Artifact rejects Double atomically without percent or duration change");
+        Check(artifact.Amount==0&&!Powers(Enemy).Contains(artifact),"Double preserves actual native Artifact receiving and consumption hooks");
+        Reset();first=Apply(3,Hero)!;artifact=Power<ArtifactPower>(Enemy,1);Transform(first,false);
+        Check(first.Amount==2&&Percent(first)==46.875m&&!Powers(Enemy).Contains(artifact),"Artifact also blocks effect-only transform without changing duration");
+        Reset();first=Apply(2,Hero)!;Tick(first);typeof(FragilePower).GetProperty("HbrEffectData",F)!.SetValue(first,decimal.MaxValue.ToString(CultureInfo.InvariantCulture));
+        Transform(first);Equal(Percent(first),decimal.MaxValue,"huge transformed percentage saturates rather than overflowing");
+        Reset();Mode(false);first=Apply(2,Hero)!;Play(OwnedCard<DoublePowersHbrgoSaki>());
+        Check(first.Amount==4&&Active().Length==1,"legacy Double preserves native single-instance amount doubling");
+        Power<BreakPower>(Enemy,1);Equal(Multiplier(first),1.5m,"legacy Double retains original fixed Fragile effect");Reset();
+
+        var h=new Harmony("hbr.fragile.real.weakness.transform");
+        h.Patch(AccessTools.Method(typeof(AttackCommand),"Execute"),prefix:new HarmonyMethod(typeof(Checks).GetMethod(nameof(SkipTransformAttack),F)!));
+        try
+        {
+            first=Apply(2,Hero)!;second=Apply(3,Hero)!;Tick(first);var other=Actor(Blank<SmallHopper>());
+            Set(Combat,"_enemies",new List<Creature>{Enemy,other});var untouched=Apply(6,Hero,other)!;
+            Play(OwnedCard<FragileDoubleStrikeHbrgoSaki>(),Enemy);
+            Check(Active().Length==2&&Powers(Enemy).Contains(first)&&Powers(Enemy).Contains(second),"actual Weakness Strike transforms each target instance without a new application");
+            Equal(Percent(first),75,"actual Weakness Strike doubles first target effect");Equal(Percent(second),93.75m,"actual Weakness Strike doubles second target effect");
+            Check(first.Amount==1&&second.Amount==2&&first.HbrModifierCount==2&&second.HbrModifierCount==3,"actual Weakness Strike preserves each independent duration and authored strength");
+            Equal(Percent(untouched),91.552734375m,"actual Weakness Strike never aggregates or modifies other enemies' Fragile");
+            Check(untouched.Amount==2,"other enemy duration is unchanged by Weakness Strike");
+            Reset();Play(OwnedCard<FragileDoubleStrikeHbrgoSaki>(),Enemy);Check(Active().Length==0,"Weakness Strike cannot invent a Fragile instance on a clean target");
+        }
+        finally{h.UnpatchAll(h.Id);Set(Combat,"_enemies",new List<Creature>{Enemy});Reset();}
     }
     static void OldSaveCases()
     {
@@ -417,6 +532,10 @@ static class Checks
                 Check(targets.Contains(boss),"real Begin CaptureTargets records active boss from real SixSense capability and resistance");
                 Check((bool)Call("NararaNullificationHelper","IsCardNullified",boss,card)!,"actual active scope nullifies its captured card target");
                 var artifact=Power<ArtifactPower>(boss,1);
+                Transform(weak,true,card);
+                Check(weak.Amount==2&&Percent(weak)==37.5m&&artifact.Amount==1,"real Narara scope blocks existing-effect Double before either value changes or Artifact is consumed");
+                Transform(strong,false,card);
+                Check(strong.Amount==2&&Percent(strong)==46.875m&&artifact.Amount==1,"real Narara scope also blocks effect-only transform");
                 Apply(6,Hero,boss,card);
                 Check(Active(boss).Length==2&&Powers(boss).Contains(weak)&&Powers(boss).Contains(strong),"blocked strong application leaves both previous instances intact");
                 Check(weak.Amount==2&&strong.Amount==2&&artifact.Amount==1,"nullification blocks before durations reset or Artifact is consumed");
@@ -494,13 +613,14 @@ static class Checks
     public static Task Run()
     {
         bool ok=false;string? error=null;
-        try{Setup();FormulaCases();InstanceCases();SourceCases();PipelineCases();SaveCases();ScarsAndBlockedCases();LegacyCases();CopyAndCompatibilityCases();OldSaveCases();DescriptionCases();NararaScopeCases();AutoPlayScopeCases();ok=true;}
+        try{Setup();NativePowerSignatureCases();FormulaCases();InstanceCases();SourceCases();PipelineCases();SaveCases();ScarsAndBlockedCases();LegacyCases();CopyAndCompatibilityCases();DoubleExistingCases();ScarsChecks.Run();OldSaveCases();DescriptionCases();NararaScopeCases();CapAndDoomChecks.Run();AutoPlayScopeCases();ok=true;}
         catch(Exception failure){error=failure.ToString();Console.Error.WriteLine(failure);}
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"report.json"),JsonSerializer.Serialize(new{
             ok,checks=Passed.Count,passed=Passed,error,
             modSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
             localizationSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../HBRGOSakiMod/localization/zhs/powers.json"))))),
+            runtimeProfile=System.Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE")??"stable",
             boundary="Exact candidate managed fixture: real native PowerCmd generic/non-generic Apply, independent duration/tick/remove, Artifact received hooks, production Fragile application boundaries, full native Hook and actual StrongestShield wrapper/raw ledger, real attributes and native LocManager/LocTable/SmartFormat. Real Narara Begin/Close scopes use an attached SixSense capability and active resistance. Actual autoplay Suppress scopes test wait call counts and native silence/Removed events; Cmd.CustomScaledWait is a controlled counted leaf only during those cases. StringName/logging and hook enumeration are isolated leaves. Property roundtrip covers stored effect, not full save-file loading. No game process, rendered UI, package or upload."
         },new JsonSerializerOptions{WriteIndented=true}));
         Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" HBR fragile checks");if(!ok)throw new Exception("HBR fragile checks failed; inspect report.json");return Task.CompletedTask;

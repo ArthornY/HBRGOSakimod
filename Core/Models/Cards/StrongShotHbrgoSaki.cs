@@ -6,8 +6,10 @@ using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -18,6 +20,20 @@ public sealed class StrongShotHbrgoSaki : CardModel
 {
     private const int _hitCount = 3;
     private const string _fragileBonusVar = "FragileBonus";
+
+    internal decimal FragileBonusPermille => DynamicVars[_fragileBonusVar].BaseValue * 6m;
+
+    internal decimal GetDamageUnits()
+    {
+        decimal highestPercent = IsMutable && Owner != null && CombatState != null
+            ? CombatState.GetOpponentsOf(Owner.Creature)
+                .Where(target => target.IsHittable)
+                .Select(HbrFragilePowerHelper.GetTotalEffectivePercent).DefaultIfEmpty(0m).Max()
+            : 0m;
+        decimal bonus = DamageAmplificationLimits.MultiplySaturated(highestPercent,
+            HbrSkillPower.LegacyDamageAt100Percent * FragileBonusPermille / 1000m);
+        return DamageAmplificationLimits.AddSaturated(DynamicVars.Damage.BaseValue, bonus);
+    }
 
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/strong_shot_hbrgo_saki.png");
 
@@ -38,6 +54,12 @@ public sealed class StrongShotHbrgoSaki : CardModel
     {
     }
 
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        description.Add("FragileBonusPermille", HbrSkillCardDescription.FormatPercent(FragileBonusPermille));
+    }
+
     public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType)
     {
         return card != this ||
@@ -46,28 +68,24 @@ public sealed class StrongShotHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        int highestFragile = base.CombatState
-            .GetOpponentsOf(Owner.Creature)
-            .Where(target => target.IsHittable)
-            .Select(target =>
-                ReptureBowPower.GetEnemyPowerAmount<FragilePower>(
-                    Owner.Creature,
-                    target))
-            .DefaultIfEmpty(0)
-            .Max();
-        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
-            this,
-            base.DynamicVars.Damage.BaseValue +
-            highestFragile *
-            DynamicVars[_fragileBonusVar].BaseValue);
-        for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
+        decimal units;
+        if (HbrBattleStatsHelper.IsEnabled(Owner.Creature)) units = GetDamageUnits();
+        else
         {
-            await DamageCmd.Attack(damage)
-                .FromCardCompat(this, cardPlay)
-                .TargetingAllOpponents(base.CombatState)
-                .WithHitFx("vfx/vfx_attack_slash")
-                .Execute(choiceContext);
+            int highestFragile = CombatState.GetOpponentsOf(Owner.Creature)
+                .Where(target => target.IsHittable)
+                .Select(target => ReptureBowPower.GetEnemyPowerAmount<FragilePower>(Owner.Creature, target))
+                .DefaultIfEmpty(0).Max();
+            units = DynamicVars.Damage.BaseValue + highestFragile * DynamicVars[_fragileBonusVar].BaseValue;
         }
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(this, units);
+        if (_hitCount <= 0 || CombatManager.Instance.IsOverOrEnding) return;
+        await DamageCmd.Attack(damage)
+            .FromCardCompat(this, cardPlay)
+            .TargetingAllOpponents(base.CombatState)
+            .WithHitCount(_hitCount)
+            .WithHitFx("vfx/vfx_attack_slash")
+            .Execute(choiceContext);
     }
 
     protected override void OnUpgrade()

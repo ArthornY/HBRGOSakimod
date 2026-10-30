@@ -64,7 +64,7 @@ public sealed class HotaruDawnGap : HotaruCannonCard
     {
         ArgumentNullException.ThrowIfNull(play.Target);
         bool wasBroken = play.Target.HasPower<BreakPower>();
-        await PowerCmd.Apply<VulnerablePower>(context, play.Target,
+        await HbrPercentDebuffApplication.ApplyDefenseDown(context, play.Target,
             DynamicVars["VulnerablePower"].BaseValue, Owner.Creature, this);
         if (wasBroken && play.Target.IsAlive)
             await PowerCmd.Apply<FragilePower>(context, play.Target,
@@ -98,11 +98,15 @@ public sealed class HotaruCountScars : HotaruCannonCard
         // bonuses. Each successfully removed kind pays its own energy reward.
         PowerModel[][] powersByKind =
         {
-            new PowerModel[] { play.Target.GetPower<VulnerablePower>() },
+            HbrBattleStatsHelper.IsEnabled(play.Target)
+                ? play.Target.GetPowerInstances<HbrDefenseDownPower>().Cast<PowerModel>().ToArray()
+                : new PowerModel[] { play.Target.GetPower<VulnerablePower>() },
             HbrBattleStatsHelper.IsEnabled(play.Target)
                 ? play.Target.GetPowerInstances<FragilePower>().Cast<PowerModel>().ToArray()
                 : new PowerModel[] { play.Target.GetPower<FragilePower>() },
-            new PowerModel[] { play.Target.GetPower<WeakPower>() }
+            HbrBattleStatsHelper.IsEnabled(play.Target)
+                ? play.Target.GetPowerInstances<HbrAttackDownPower>().Cast<PowerModel>().ToArray()
+                : new PowerModel[] { play.Target.GetPower<WeakPower>() }
         };
         foreach (PowerModel[] powers in powersByKind)
         {
@@ -159,7 +163,7 @@ public sealed class HotaruHesitationGap : HotaruCannonCard
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         ArgumentNullException.ThrowIfNull(play.Target);
-        bool wasWeak = play.Target.HasPower<WeakPower>();
+        bool wasWeak = HotaruContestVulnerabilityHelper.HasAttackDown(play.Target);
         await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, play)
             .Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
         if (!HotaruCommonUtilityCardHelper.CanContinue(this)) return;

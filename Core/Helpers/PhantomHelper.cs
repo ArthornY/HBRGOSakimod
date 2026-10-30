@@ -419,23 +419,27 @@ internal static class PhantomHelper
 
         if (wasAttack)
         {
-            IReadOnlyList<decimal> segments = BuildAttackSegments(
-                phantom,
-                attackIntents,
-                additionalAttackSegments);
-            int poisonPerSegment = 0;
-            if (phantomPower?.IsSummonedMinion == false &&
-                (phantomPower.AttackIntentsPerformed + 1) % 3 == 0)
-            {
-                poisonPerSegment = GetFusionEffectAmount(
-                    GetFusionEffectData(phantom),
-                    PhantomFusionEffectType.Myte,
-                    3m,
-                    1m);
-            }
-
+            PhantomAttackToBlockPower attackToBlock =
+                phantom.GetPower<PhantomAttackToBlockPower>();
+            using var comboAttack = attackToBlock == null ? HbrComboHelper.BeginAttack(phantom) : null;
             try
             {
+                IReadOnlyList<decimal> segments = BuildAttackSegments(
+                    phantom,
+                    attackIntents,
+                    additionalAttackSegments,
+                    applyCombo: attackToBlock == null);
+                int poisonPerSegment = 0;
+                if (phantomPower?.IsSummonedMinion == false &&
+                    (phantomPower.AttackIntentsPerformed + 1) % 3 == 0)
+                {
+                    poisonPerSegment = GetFusionEffectAmount(
+                        GetFusionEffectData(phantom),
+                        PhantomFusionEffectType.Myte,
+                        3m,
+                        1m);
+                }
+
                 PhantomSelfDestructHelper.BeforeAttack(phantom, move);
                 await PhantomThornsHelper.BeforeAttack(phantom, move);
                 PhantomDebuffIntentHelper.BeforeAttack(phantom, move);
@@ -454,8 +458,6 @@ internal static class PhantomHelper
                 }
 
                 IReadOnlyList<Creature> attackedTargets = Array.Empty<Creature>();
-                PhantomAttackToBlockPower attackToBlock =
-                    phantom.GetPower<PhantomAttackToBlockPower>();
                 if (attackToBlock != null)
                 {
                     await PerformAttackIntentAsBlock(
@@ -530,7 +532,15 @@ internal static class PhantomHelper
             }
             finally
             {
-                await ConsumeNextAttackSegmentPowers(phantom);
+                try { await ConsumeNextAttackSegmentPowers(phantom); }
+                finally
+                {
+                    if (comboAttack != null)
+                    {
+                        try { await comboAttack.Complete(new ThrowingPlayerChoiceContext()); }
+                        finally { comboAttack.Dispose(); }
+                    }
+                }
             }
 
             await PhantomSelfDestructHelper.AfterAttack(phantom, move);
@@ -689,8 +699,11 @@ internal static class PhantomHelper
                                 ValueProp.Move,
                                 phantom,
                                 null);
-                        dealtUnblockedDamage |= areaResults.Any(result =>
-                            result.UnblockedDamage > 0);
+                        foreach (DamageResult result in areaResults)
+                        {
+                            HbrComboHelper.MarkHit(phantom);
+                            dealtUnblockedDamage |= result.UnblockedDamage > 0;
+                        }
 
                         if (poisonPerSegment > 0 && currentTarget.IsAlive)
                         {
@@ -723,8 +736,11 @@ internal static class PhantomHelper
                     ValueProp.Move,
                     phantom,
                     null);
-                dealtUnblockedDamage |= results.Any(result =>
-                    result.UnblockedDamage > 0);
+                foreach (DamageResult result in results)
+                {
+                    HbrComboHelper.MarkHit(phantom);
+                    dealtUnblockedDamage |= result.UnblockedDamage > 0;
+                }
 
                 if (poisonPerSegment > 0 && target.IsAlive)
                 {
@@ -826,7 +842,8 @@ internal static class PhantomHelper
     private static IReadOnlyList<decimal> BuildAttackSegments(
         Creature phantom,
         IReadOnlyList<AttackIntent> attackIntents,
-        int additionalAttackSegments = 0)
+        int additionalAttackSegments = 0,
+        bool applyCombo = true)
     {
         const int maximumSegments = 1000;
         List<decimal> segments = new();
@@ -941,7 +958,11 @@ internal static class PhantomHelper
 
         PhantomNextAttackDoublePower doubling =
             phantom.GetPower<PhantomNextAttackDoublePower>();
-        return doubling?.TransformSegments(segments) ?? segments;
+        bool combo = applyCombo && !phantom.HasPower<PhantomAttackToBlockPower>();
+        IReadOnlyList<decimal> transformed = combo
+            ? HbrComboHelper.TransformSegments(phantom, segments, doublesOnly: false) : segments;
+        transformed = doubling?.TransformSegments(transformed) ?? transformed;
+        return combo ? HbrComboHelper.TransformSegments(phantom, transformed, doublesOnly: true) : transformed;
     }
 
     private static async Task ResolveKillKissFusions(Creature phantom)
@@ -1604,7 +1625,7 @@ internal static class PhantomHelper
                     GetLivingOpponents(phantom));
                 if (target != null && vulnerable > 0)
                 {
-                    await PowerCmd.Apply<VulnerablePower>(
+                    await HbrPercentDebuffApplication.ApplyDefenseDown(
                         new ThrowingPlayerChoiceContext(),
                         target,
                         vulnerable,
@@ -1629,7 +1650,7 @@ internal static class PhantomHelper
                     1m);
                 if (hauntedWeak > 0)
                 {
-                    await PowerCmd.Apply<WeakPower>(
+                    await HbrPercentDebuffApplication.ApplyAttackDown(
                         new ThrowingPlayerChoiceContext(),
                         GetLivingOpponents(phantom),
                         hauntedWeak,
@@ -1670,7 +1691,7 @@ internal static class PhantomHelper
                     GetLivingOpponents(phantom));
                 if (silkTarget != null && silkWeak > 0)
                 {
-                    await PowerCmd.Apply<WeakPower>(
+                    await HbrPercentDebuffApplication.ApplyAttackDown(
                         new ThrowingPlayerChoiceContext(),
                         silkTarget,
                         silkWeak,
@@ -1823,7 +1844,7 @@ internal static class PhantomHelper
                 1m);
             if (weak > 0)
             {
-                await PowerCmd.Apply<WeakPower>(
+                await HbrPercentDebuffApplication.ApplyAttackDown(
                     new ThrowingPlayerChoiceContext(),
                     GetLivingOpponents(phantom),
                     weak,
@@ -1855,7 +1876,7 @@ internal static class PhantomHelper
         {
             IReadOnlyList<Creature> opponents =
                 GetLivingOpponents(phantom);
-            await PowerCmd.Apply<WeakPower>(
+            await HbrPercentDebuffApplication.ApplyAttackDown(
                 new ThrowingPlayerChoiceContext(),
                 opponents,
                 1m,
@@ -2165,7 +2186,7 @@ internal static class PhantomHelper
             0m);
         if (vulnerable > 0)
         {
-            await PowerCmd.Apply<VulnerablePower>(
+            await HbrPercentDebuffApplication.ApplyDefenseDown(
                 new ThrowingPlayerChoiceContext(),
                 opponents,
                 vulnerable,

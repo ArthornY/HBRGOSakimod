@@ -45,8 +45,7 @@ internal static class HbrFragileCardDescription
             value = HbrFragilePowerHelper.EvaluatePercent(applied, stats.Intelligence, stats.Luck,
                 HbrEnemyProfileHelper.GetEnemyParameter(target));
             if (decimal.Truncate(applied) > 0m)
-                value = DamageAmplificationLimits.AddSaturated(value,
-                    HotaruUnfadingScarsPower.AdditionalEffect(target) * 100m);
+                value = HotaruUnfadingScarsPower.EnhanceEffect(target, value);
         }
         string number = value.ToString("0.#", CultureInfo.InvariantCulture);
         return upgraded || value > basis ? $"[green]{number}[/green]" :

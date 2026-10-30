@@ -671,6 +671,8 @@ public partial class NDeflectorProtectionDpBar : Control
             top = Math.Min(top, Math.Min(-58f,
                 GetGaugeOffset(creature, Vector2.One).Y -
                 RedCrimsonLevelSeparation - RedCrimsonLevelOutline));
+        if (NHbrEnemyStatusValueCaption.ShouldDisplay(creature))
+            top = Math.Min(top, NHbrEnemyStatusValueCaption.GetTopOffset(creature));
         return top;
     }
 

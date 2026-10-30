@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -56,7 +57,7 @@ public sealed class DoubleArmorBreakHbrgoSaki : CardModel
             this);
         if (hadFragile)
         {
-            await PowerCmd.Apply<VulnerablePower>(
+            await HbrPercentDebuffApplication.ApplyDefenseDown(
                 choiceContext,
                 cardPlay.Target,
                 DynamicVars["VulnerablePower"].BaseValue,

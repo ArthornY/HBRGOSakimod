@@ -52,14 +52,13 @@ public sealed class BladeDanceHbrgoSaki : CardModel
             return;
         }
 
-        for (int i = 0; i < hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
-        {
-            await DamageCmd.Attack(damage)
-                .FromCardCompat(this, cardPlay)
-                .Targeting(cardPlay.Target)
-                .WithHitFx("vfx/vfx_attack_slash")
-                .Execute(choiceContext);
-        }
+        if (CombatManager.Instance.IsOverOrEnding) return;
+        await DamageCmd.Attack(damage)
+            .FromCardCompat(this, cardPlay)
+            .Targeting(cardPlay.Target)
+            .WithHitCount(hitCount)
+            .WithHitFx("vfx/vfx_attack_slash")
+            .Execute(choiceContext);
     }
 
     protected override void OnUpgrade()

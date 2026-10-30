@@ -32,9 +32,13 @@ internal static class HighHitDamageAttackScopePatch
     }
 
     private static Exception Finalizer(Exception __exception,
-        HighHitDamageVisualHelper.AttackScope __state)
+        HighHitDamageVisualHelper.AttackScope __state, AttackCommand __instance)
     {
-        if (__exception != null) HighHitDamageVisualHelper.CloseAttack(__state);
+        if (__exception != null)
+        {
+            HbrComboHelper.CancelAttack(__instance);
+            HighHitDamageVisualHelper.CloseAttack(__state);
+        }
         else HighHitDamageVisualHelper.RestoreAttackCaller(__state);
         return __exception;
     }

@@ -31,7 +31,12 @@ public abstract class HotaruCannonModel : MonsterModel
     public override bool ShouldShowInCompendium => false;
     protected override string VisualsPath => SceneHelper.GetScenePath("creature_visuals/hotaru_cannon_" + SceneName);
 
-    public override decimal ModifyDamageCap(Creature target, ValueProp props, Creature dealer, CardModel cardSource) =>
+    // The native virtual hook gained CardPlay on beta. Keep this entry point
+    // nonvirtual and let the shared damage bridge call the same immunity rule.
+    public decimal ModifyDamageCap(Creature target, ValueProp props, Creature dealer, CardModel cardSource) =>
+        GetCannonDamageCap(target);
+
+    internal decimal GetCannonDamageCap(Creature target) =>
         IsMutable && target == Creature ? 0m : decimal.MaxValue;
 
     public override bool ShouldDie(Creature creature) => !IsMutable || creature != Creature;

@@ -68,11 +68,12 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
     {
         CardPlayCompatibility.SetResultPile(cardPlay, PileType.None);
         int hitCount = GetHitCount();
-        for (int i = 0; i < hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
+        if (hitCount > 0 && !CombatManager.Instance.IsOverOrEnding)
         {
             await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
                 .FromCardCompat(this, cardPlay)
                 .TargetingRandomOpponents(base.CombatState)
+                .WithHitCount(hitCount)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
         }

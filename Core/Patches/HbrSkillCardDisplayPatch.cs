@@ -21,7 +21,8 @@ internal static class HbrSkillCardDisplayPatch
     {
         __state = null;
         var card = __instance.Model;
-        if (!HbrSkillCardDescription.IsEnabled(card)) return;
+        if (!HbrSkillCardDescription.IsEnabled(card) &&
+            !HbrPercentDebuffCardDescription.IsEnabled(card)) return;
         bool detail = false;
         for (Node node = __instance.GetParent(); node != null; node = node.GetParent())
         {

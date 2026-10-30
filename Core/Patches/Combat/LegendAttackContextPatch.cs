@@ -92,13 +92,19 @@ internal static class LegendAttackContextSupport
             List<Segment> expanded = new(state.Segments);
             foreach (MyLegendNextAttackBasePower power in state.Command.Attacker.Powers
                          .OfType<MyLegendNextAttackBasePower>()
-                         .OrderBy(power => power is MyLegendNextAttackDoublePower ? 1 : 0))
+                         .OrderBy(power => power.DoublesHitCount)
+                         .ThenBy(power => power is HbrComboPower ? 1 : 0))
             {
                 int applications = power.GetReservedApplications(state.Command);
-                int desired = power.TransformHitCount(expanded.Count, applications);
-                Segment[] source = power is MyLegendNextAttackDoublePower
-                    ? expanded.ToArray() : new[] { expanded[^1] };
-                for (int index = 0; expanded.Count < desired; index++)
+                if (applications <= 0) continue;
+                Segment[] eligible = power is HbrComboPower
+                    ? expanded.Where(segment => !segment.Props.HasFlag(ValueProp.Unpowered)).ToArray()
+                    : expanded.ToArray();
+                if (eligible.Length == 0) continue;
+                int extra = power.TransformHitCount(eligible.Length, applications) - eligible.Length;
+                Segment[] source = power.DoublesHitCount
+                    ? eligible : new[] { eligible[^1] };
+                for (int index = 0; index < extra; index++)
                     expanded.Add(source[index % source.Length]);
             }
 

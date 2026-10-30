@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "name": "HBR Misfortune icon",
+  "importedPath": "res://images/powers/hbr_calamity_power.png",
+  "sha256": "894b5abad95973330490f8779fd7612d3b726e7f9bfe7c1c3960175f5b8595c0",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconMisfortune.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-1381401446182210848",
+    "spritePathId": "2548066126009873120",
+    "textureFormat": "BC7",
+    "textureFormatId": 25,
+    "mipCount": 1,
+    "sourceCabSha256": "0265727bac9518b06cec14b25d9dff0afa31a2654b8bb6dae2bcfea2454e207b",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_-1381401446182210848_IconMisfortune.png",
+    "resourceIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/resource-index.sqlite",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl",
+    "manifest": "D:/stsmod/HeavenBurnsRedEditor/extracted/unity/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/manifest.json",
+    "sourceBundleAsRecorded": "E:/game/HeavenBurnsRed/HeavenBurnsRed Game/AssetBundleCache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/__data"
+  },
+  "identityEvidence": {
+    "checkedUtc": "2026-10-30T10:43:51.2034247Z",
+    "dataSource": "https://master.hbr.quest/v1/special_statuses.json",
+    "specialStatusId": 244000058,
+    "label": "SpecialStatus.Misfortune",
+    "type": "Misfortune",
+    "dataIcon": "IconMisfortune.webp",
+    "dataCategory": "Debuff",
+    "distinction": "SpecialStatus.Disaster (id244000195) has the different IconDisaster.webp icon. This import follows Misfortune explicitly, not a visual guess.",
+    "frozenEnumSource": "https://github.com/hbr-tool/damage-calculator/blob/ead9f319d18fb47e749718adac0d4384b785c0bc/src/data/buffKind.js",
+    "frozenEnumName": "厄",
+    "frozenEnumIcon": "IconMisfortune"
+  },
+  "usage": {
+    "small": "res://images/powers/hbr_calamity_power.png",
+    "big": "res://images/powers/hbr_calamity_power.png",
+    "note": "The indexed original has one64x64Texture2D and its Sprite. Both mod icon roles reuse the original; no separate larger native image was found in the local resource index."
+  },
+  "limits": "Asset identity and original image provenance only; no claim that the new mod Calamity formula exactly reproduces original HBR mechanics. No Godot importer, package or game run was performed."
+}

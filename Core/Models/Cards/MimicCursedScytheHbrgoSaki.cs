@@ -62,13 +62,13 @@ public sealed class MimicCursedScytheHbrgoSaki : CardModel
 
         if (cardPlay.Target.IsAlive)
         {
-            await PowerCmd.Apply<WeakPower>(
+            await HbrPercentDebuffApplication.ApplyAttackDown(
                 choiceContext,
                 cardPlay.Target,
                 DynamicVars["WeakPower"].BaseValue,
                 Owner.Creature,
                 this);
-            await PowerCmd.Apply<VulnerablePower>(
+            await HbrPercentDebuffApplication.ApplyDefenseDown(
                 choiceContext,
                 cardPlay.Target,
                 DynamicVars["VulnerablePower"].BaseValue,

@@ -43,16 +43,26 @@ internal static class HotaruCannonUpgrades
 
     internal static string CannonTitle(HotaruCannonKind kind) => Canonical(kind).Title.GetFormattedText();
 
-    internal static string BaseText(HotaruCannonKind kind, Player owner = null) =>
-        SkillText(kind, $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.base", owner);
+    internal static string BaseText(HotaruCannonKind kind, Player owner = null, int? soulPercent = null) =>
+        SkillText(kind, $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.base", owner, soulPercent);
 
     internal static string UpgradeText(HotaruCannonKind kind, int tier, Player owner = null) =>
         SkillText(kind, $"HOTARU_CANNON_UPGRADE.{kind.ToString().ToLowerInvariant()}.{tier}", owner);
 
-    private static string SkillText(HotaruCannonKind kind, string key, Player owner)
+    private static string SkillText(HotaruCannonKind kind, string key, Player owner, int? soulPercent = null)
     {
         LocString text = HotaruCannonSkillPowerHelper.Description("rest_site_ui", key, owner);
         HotaruCannonSkillPowerHelper.AddDescriptionVariables(text, kind);
+        HotaruCannonSkillPowerHelper.AddMenuEffectVariables(text, kind, owner, soulPercent);
+        return text.GetFormattedText();
+    }
+
+    internal static string ManualRules(Player owner)
+    {
+        LocString text = HotaruCannonSkillPowerHelper.Description(
+            "rest_site_ui", "HOTARU_CANNON_UPGRADE.manualRules", owner);
+        foreach (HotaruCannonKind kind in HotaruCannonKinds.Original)
+            text.Add(kind + "BaseText", BaseText(kind, owner));
         return text.GetFormattedText();
     }
 
@@ -70,7 +80,7 @@ internal static class HotaruCannonUpgrades
 
     private static string Description(HotaruCannonKind kind, int level, int currentPercent, Player owner)
     {
-        string basic = DamageMultiplierText(level, currentPercent) + "\n\n" + BaseText(kind, owner);
+        string basic = DamageMultiplierText(level, currentPercent) + "\n\n" + BaseText(kind, owner, currentPercent);
         return level == 0 ? basic : basic + "\n\n" +
             string.Join("\n", Enumerable.Range(1, level).Select(tier => "• " + UpgradeText(kind, tier, owner)));
     }

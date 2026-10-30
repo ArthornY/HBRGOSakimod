@@ -39,7 +39,7 @@ public sealed class HotaruBreathingShelterPower : HotaruUncommonCardPower
     internal Task OnTurnStart(PlayerChoiceContext context)
     {
         if (!HotaruCommonCannonHelper.CanAct(Owner?.Player) ||
-            !Owner.CombatState.Enemies.Any(e => Millsage.IsEnemy(e, Owner.Player) && e.GetPowerAmount<WeakPower>() > 0) ||
+            !Owner.CombatState.Enemies.Any(e => Millsage.IsEnemy(e, Owner.Player) && HotaruContestVulnerabilityHelper.HasAttackDown(e)) ||
             !TryClaimTurnKey("weak-start")) return Task.CompletedTask;
         var cannons = HotaruCommonCannonHelper.GetCannons(Owner.Player);
         if (cannons.Length > 0)
@@ -50,7 +50,7 @@ public sealed class HotaruBreathingShelterPower : HotaruUncommonCardPower
         ValueProp props, Creature dealer, CardModel source)
     {
         if (target != Owner || amount <= 0m || !props.IsPoweredAttack() ||
-            !Millsage.IsEnemy(dealer, Owner?.Player) || dealer.GetPowerAmount<WeakPower>() <= 0 ||
+            !Millsage.IsEnemy(dealer, Owner?.Player) || !HotaruContestVulnerabilityHelper.HasAttackDown(dealer) ||
             !TryClaimTurnKey("weak-block")) return;
         await CreatureCmd.GainBlock(Owner, BlockReward, ValueProp.Move, null);
     }

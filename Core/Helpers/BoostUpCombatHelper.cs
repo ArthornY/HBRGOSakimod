@@ -37,7 +37,7 @@ internal static class BoostUpCombatHelper
         }
 
         if (card.HasUpgradeEffect(2) && remainingHandCount > 5)
-            await PowerCmd.Apply<PhantomDamageInheritancePower>(context, owner, 50m, owner, card);
+            await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, owner, 50m, owner, card);
 
         if (card.HasUpgradeEffect(4))
             await PowerCmd.Apply<BoostUpExtraTurnPower>(context, owner, 1m, owner, card);

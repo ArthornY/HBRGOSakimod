@@ -27,8 +27,8 @@ static partial class Checks
         CardModel ice = Card(typeof(MimicIceFlowerThousandArrowsHbrgoSaki));
         text = Render(ice, false);
         Check(text.Contains("46.9%的脆弱（2回合）"), "Ice modifier3 rounds display46point9percent");
-        Check(text.Contains("达到5张时") && text.Contains("额外给予3层易伤") && text.Contains("脆弱变为91.6%（2回合）"),
-            "Ice threshold5 displays one B6 grant91point6percent and preserves extra Vulnerable3");
+        Check(text.Contains("达到5张时") && text.Contains("额外给予23.4%的防御力下降（2回合）") && text.Contains("脆弱变为91.6%（2回合）"),
+            "Ice threshold5 displays one B6 Fragile grant91point6percent and independent raw3 defense-down23point4percent");
         Check(ice.DynamicVars["FragilePower"].BaseValue == 3m && ice.DynamicVars["ThresholdFragilePower"].BaseValue == 3m,
             "Ice formatting keeps both original modifier counters3 unmodified");
         CardModel clone = (CardModel)ice.ClonePreservingMutability(); Upgrade(clone);
@@ -61,6 +61,41 @@ static partial class Checks
             text = Render(Card(type), false);
             Check(text.Contains(expected) && text.Contains("（2回合）"), type.Name + " actual HBR template formats percentage" + expected + " and2turn duration");
         }
+        CardModel doubling = Card(typeof(DoublePowersHbrgoSaki));
+        text = Render(doubling, false);
+        Check(text.Contains("每份攻击力下降、防御力下降与脆弱效果数值及剩余持续时间翻倍") && !text.Contains("复制一份"),
+            "DoublePowers HBR card explains effect and remaining duration doubling without copying");
+        Upgrade(doubling);
+        Check(Render(doubling, false).Contains("每份攻击力下降、防御力下降与脆弱效果数值及剩余持续时间翻倍"),
+            "upgraded DoublePowers retains effect and duration behavior");
+        Check(Render(Card(typeof(HotaruReplayPain)), false).Contains("按原效果各复制一份（2回合）"),
+            "ReplayPain retains independent snapshot copying");
+        Check(Render(Card(typeof(FragileDoubleStrikeHbrgoSaki)), false).Contains("效果数值翻倍，持续时间不变"),
+            "FragileDoubleStrike explains in-place effect doubling without duration refresh");
+        foreach (Type type in new[] { typeof(PiercingShotHbrgoSaki), typeof(StrongShotHbrgoSaki) })
+        {
+            CardModel attack = Card(type);
+            text = Render(attack, false);
+            Check(text.Contains("基础伤害倍率增加6‰") && text.Contains("1%"),
+                type.Name + " explains6permille perFragilepercentagepoint");
+            Upgrade(attack);
+            Check(Render(attack, false).Contains("基础伤害倍率增加12‰"),
+                type.Name + " retains doubled12permille upgraded Fragile bonus");
+        }
+        CardModel unfading = Card(typeof(HotaruUnfadingScars));
+        Check(!Render(unfading, false).Contains("乘算"), "unupgraded UnfadingScars has no effect amplification");
+        Upgrade(unfading);
+        text = Render(unfading, false);
+        Check(text.Contains("最终效果各提高25%（乘算）") && !text.Contains("个百分点"),
+            "upgraded UnfadingScars describes final25percent multiplicative enhancement");
+        CardModel fullBody = Card(typeof(MimicFullBodyShotHbrgoSaki));
+        text = Render(fullBody, false);
+        Check(text.Contains("每满10%脆弱") && text.Contains("额外给予1%破坏率") &&
+            text.Contains("脆弱百分比数值×100×破坏率"),
+            "FullBody describes percentage threshold and confirmed hundred-point damage scale");
+        Upgrade(fullBody);
+        Check(Render(fullBody, false).Contains("每满5%脆弱"),
+            "upgraded FullBody converts every5percentagepoints into1percent destruction");
         Mode(false);
         Check(Render(ice, false).Contains("3层脆弱") && !Render(ice, false).Contains("91.6%"),
             "disabled HBR mode preserves original layer-based Ice text");
@@ -103,8 +138,14 @@ static partial class Checks
         typeof(HotaruUnfadingScarsPower).GetProperty("EffectPercent", F)!.SetValue(scars, 25);
         var powers = (List<PowerModel>)Field(typeof(Creature), "_powers").GetValue(Hero)!;
         powers.Add(scars);
-        Check(Render(direct, false, target: Enemy).Contains("71.9%的脆弱"),
-            "one selected-target fragile grant adds existing Scars25percentagepoints exactly once");
+        Check(Render(direct, false, target: Enemy).Contains("58.6%的脆弱"),
+            "selected-target Scars multiplies resolved46point875 effect by1point25 exactly once");
+        typeof(ElectronicSoldierManual).GetProperty("Talent", F)!.SetValue(Manual, 100);
+        typeof(ElectronicSoldierManual).GetProperty("Simplicity", F)!.SetValue(Manual, 100);
+        Check(Render(direct, false, target: Enemy).Contains("67.4%的脆弱"),
+            "Scars multiplies final target attribute result53point90625 by1point25");
+        typeof(ElectronicSoldierManual).GetProperty("Talent", F)!.SetValue(Manual, 0);
+        typeof(ElectronicSoldierManual).GetProperty("Simplicity", F)!.SetValue(Manual, 0);
         thunder.DynamicVars["FragilePower"].UpgradeValueBy(-1m);
         Check(Render(thunder, false, target: Enemy).Contains("0%的脆弱"),
             "raw1 halved to0point5 creates no Fragile grant and therefore no Scars bonus");
@@ -131,9 +172,10 @@ static partial class Checks
             m.GetParameters().Length == 7 && m.GetParameters()[1].ParameterType == typeof(PowerModel));
         harmony.Patch(apply, prefix: new HarmonyMethod(typeof(Checks).GetMethod(nameof(CapturePower), F)!));
         var content = (Dictionary<ModelId, AbstractModel>)typeof(ModelDb).GetField("_contentById", F)!.GetValue(null)!;
-        foreach (Type type in new[] { typeof(FragilePower), typeof(MegaCrit.Sts2.Core.Models.Powers.VulnerablePower),
-            typeof(MegaCrit.Sts2.Core.Models.Powers.WeakPower) })
+        foreach (Type type in new[] { typeof(FragilePower), typeof(HbrDefenseDownPower), typeof(HbrAttackDownPower),
+            typeof(MegaCrit.Sts2.Core.Models.Powers.VulnerablePower), typeof(MegaCrit.Sts2.Core.Models.Powers.WeakPower) })
         {
+            if (content.Values.Any(model => model.GetType() == type)) continue;
             AbstractModel canonical = (AbstractModel)Activator.CreateInstance(type)!; content[canonical.Id] = canonical;
         }
         var bow = Blank<ReptureBowPower>();
@@ -158,8 +200,11 @@ static partial class Checks
                 await (Task)Call(ice.GetType(), "OnPlay", ice, new ThrowingPlayerChoiceContext(), play)!;
                 decimal[] fragile = AppliedPowers.Where(p => p.Power == typeof(FragilePower)).Select(p => p.Amount).ToArray();
                 Check(fragile.SequenceEqual(expected), $"actual Ice OnPlay HBR={enabled} upgraded={upgraded} bows={bowCount} grants raw[{string.Join(',', expected)}] once per intended grant");
-                Check(AppliedPowers.Count(p => p.Power == typeof(MegaCrit.Sts2.Core.Models.Powers.VulnerablePower)) ==
-                    (bowCount >= (upgraded ? 3 : 5) ? 2 : 1), "actual Ice OnPlay preserves separate base and threshold Vulnerable grants");
+                Type defenseType = enabled ? typeof(HbrDefenseDownPower) : typeof(MegaCrit.Sts2.Core.Models.Powers.VulnerablePower);
+                Check(AppliedPowers.Count(p => p.Power == defenseType) ==
+                    (bowCount >= (upgraded ? 3 : 5) ? 2 : 1), "actual Ice OnPlay preserves separate base and threshold grants with the mode-appropriate defense-down model");
+                Check(AppliedPowers.All(p => p.Power != (enabled ? typeof(MegaCrit.Sts2.Core.Models.Powers.VulnerablePower) : typeof(HbrDefenseDownPower))),
+                    "actual Ice OnPlay keeps independent HBR defense down separate from native Vulnerable");
             }
         }
         finally { Mode(true); powers.Remove(bow); harmony.UnpatchAll(harmony.Id); }
@@ -168,7 +213,21 @@ static partial class Checks
     public static async Task RunFragileCards()
     {
         bool ok = false; string? error = null;
-        try { Install(); Localization(); World(); FragilePercentCases(); FragileTargetCases(); await IceRealPlayCases(); ok = true; }
+        try
+        {
+            Install(); Localization(); World();
+            // ModelDb is fully populated in-game; this minimal managed world
+            // provides both independent HBR and unchanged native definitions.
+            var content = (Dictionary<ModelId, AbstractModel>)typeof(ModelDb).GetField("_contentById", F)!.GetValue(null)!;
+            foreach (Type type in new[] { typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower),
+                typeof(MegaCrit.Sts2.Core.Models.Powers.WeakPower), typeof(MegaCrit.Sts2.Core.Models.Powers.VulnerablePower) })
+            {
+                if (content.Values.Any(model => model.GetType() == type)) continue;
+                AbstractModel canonical = (AbstractModel)Activator.CreateInstance(type)!;
+                content[canonical.Id] = canonical;
+            }
+            FragilePercentCases(); FragileTargetCases(); await IceRealPlayCases(); ok = true;
+        }
         catch (Exception exception) { error = exception.ToString(); Console.Error.WriteLine(error); }
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {

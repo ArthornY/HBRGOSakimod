@@ -39,7 +39,7 @@ public sealed class HotaruDetonation : HotaruCannonCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target);
-        await PowerCmd.Apply<VulnerablePower>(choiceContext, cardPlay.Target,
+        await HbrPercentDebuffApplication.ApplyDefenseDown(choiceContext, cardPlay.Target,
             DynamicVars["VulnerablePower"].BaseValue, Owner.Creature, this);
         if (cardPlay.Target.IsAlive)
             await PowerCmd.Apply<FragilePower>(choiceContext, cardPlay.Target,

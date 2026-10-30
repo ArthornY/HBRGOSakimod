@@ -160,7 +160,7 @@ internal static class HotaruUncommonCannonHelper
                 if (!HotaruCommonCannonHelper.CanAct(player)) return;
                 if (!Millsage.IsEnemy(target, player)) continue;
                 if (scope.LightVulnerable > 0)
-                    await PowerCmd.Apply<MegaCrit.Sts2.Core.Models.Powers.VulnerablePower>(context,
+                    await HbrPercentDebuffApplication.ApplyDefenseDown(context,
                         target, scope.LightVulnerable, scope.Cannon, null);
                 if (scope.LightFragile > 0 && Millsage.IsEnemy(target, player))
                     await PowerCmd.Apply<FragilePower>(context, target, scope.LightFragile, scope.Cannon, null);

@@ -90,8 +90,12 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
     {
         base.AddExtraArgsToDescription(description);
         if (HbrSkillCardDescription.IsEnabled(this))
+        {
             description.Add("ConsumedSwordheartFragilePercent",
                 HbrFragileCardDescription.Format(this, _consumedSwordheartAmount));
+            description.Add("ConsumedSwordheartVulnerablePercent",
+                HbrPercentDebuffCardDescription.Format(this, ModelDb.Power<VulnerablePower>(), _consumedSwordheartAmount));
+        }
     }
 
     protected override async Task OnPlay(
@@ -118,7 +122,7 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
             if (cardPlay.Target.IsAlive &&
                 !CombatManager.Instance.IsOverOrEnding)
             {
-                await PowerCmd.Apply<VulnerablePower>(
+                await HbrPercentDebuffApplication.ApplyDefenseDown(
                     choiceContext,
                     cardPlay.Target,
                     amount,

@@ -13,6 +13,8 @@ namespace HBRGOSakiMod.Core.Helpers;
 // coefficient would make HBR-scale HP damage fill destruction in a single hit.
 internal static class HbrDestructionGainHelper
 {
+    internal const decimal DefaultSkillCoefficient = 3m;
+
     private static readonly AsyncLocal<SkillScope> Current = new();
     private static readonly AsyncLocal<HitScope> CurrentHit = new();
 
@@ -50,7 +52,7 @@ internal static class HbrDestructionGainHelper
         {
             if (!_shares.TryGetValue(target, out Share share))
             {
-                share = new Share { Coefficient = _skill?.NextShare(target) ?? 1m };
+                share = new Share { Coefficient = _skill?.NextShare(target) ?? DefaultSkillCoefficient };
                 _shares.Add(target, share);
             }
             return share;
@@ -141,7 +143,7 @@ internal static class HbrDestructionGainHelper
     }
 
     internal static SkillScope BeginSkill(Creature dealer, CardModel card,
-        decimal totalHits, decimal skillCoefficient = 1m)
+        decimal totalHits, decimal skillCoefficient = DefaultSkillCoefficient)
     {
         SkillScope scope = new(dealer, card, totalHits, skillCoefficient);
         Current.Value = scope;
@@ -184,7 +186,7 @@ internal static class HbrDestructionGainHelper
         {
             SkillScope scope = Current.Value;
             skill = scope?.Active == true && ReferenceEquals(scope.Dealer, dealer) &&
-                ReferenceEquals(scope.Card, card) ? scope.NextShare(target) : 1m;
+                ReferenceEquals(scope.Card, card) ? scope.NextShare(target) : DefaultSkillCoefficient;
         }
         decimal coefficient = GetEnemyCoefficient(target);
         return HbrOriginalNumericFormula.DestructionGain(coefficient, skill);

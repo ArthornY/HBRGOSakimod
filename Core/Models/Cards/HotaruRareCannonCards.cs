@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BaseLib.Utils.Attributes;
 using HBRGOSakiMod.Core.Helpers;
@@ -83,9 +84,24 @@ public sealed class HotaruFollowTrajectories : HotaruCannonCard
     {
         ArgumentNullException.ThrowIfNull(play.Target);
         int repeats = Math.Min(6, HotaruRareCannonHelper.ActionCount(Owner));
-        await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, play).Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
-        for (int i = 0; i < repeats && Millsage.IsEnemy(play.Target, Owner); i++)
-            await DamageCmd.Attack(DynamicVars["EchoDamage"].BaseValue).FromCardCompat(this, play).Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
+        using var comboAttack = HbrComboHelper.BeginCardAttack(this);
+        try
+        {
+            IReadOnlyList<decimal> segments = new[] { DynamicVars.Damage.BaseValue }
+                .Concat(Enumerable.Repeat(DynamicVars["EchoDamage"].BaseValue, Math.Max(0, repeats))).ToArray();
+            if (comboAttack != null) segments = HbrComboHelper.TransformSegments(Owner.Creature, segments);
+            foreach (decimal damage in segments)
+            {
+                if (!Millsage.IsEnemy(play.Target, Owner)) break;
+                var attack = await DamageCmd.Attack(damage).FromCardCompat(this, play)
+                    .Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
+                comboAttack?.Record(attack);
+            }
+        }
+        finally
+        {
+            if (comboAttack != null) await comboAttack.Complete(context);
+        }
     }
     protected override void OnUpgrade() { DynamicVars.Damage.UpgradeDamageByPercent(100m); DynamicVars["EchoDamage"].UpgradeDamageByPercent(100m, divisor: 3m); }
 }

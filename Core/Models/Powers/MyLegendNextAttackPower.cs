@@ -22,8 +22,19 @@ public abstract class MyLegendNextAttackBasePower : PowerModel, ICustomPower
 
     internal AttackCommand ReservedAttack => _reservedAttack;
 
+    internal virtual int ApplicationsPerAttack => Math.Max(0, Amount);
+    internal virtual bool DoublesHitCount => false;
+    internal virtual bool RequiresActualHit => false;
+
     internal int GetReservedApplications(AttackCommand attack) =>
         ReferenceEquals(_reservedAttack, attack) ? _reservedAmount : 0;
+
+    internal void ReleaseReservation(AttackCommand attack)
+    {
+        if (!ReferenceEquals(_reservedAttack, attack)) return;
+        _reservedAttack = null;
+        _reservedAmount = 0;
+    }
 
     public override PowerType Type => PowerType.Buff;
     public override PowerStackType StackType => PowerStackType.Counter;
@@ -34,20 +45,26 @@ public abstract class MyLegendNextAttackBasePower : PowerModel, ICustomPower
 
     public override Task BeforeAttack(AttackCommand command)
     {
+        ReserveForAttack(command);
+        return Task.CompletedTask;
+    }
+
+    internal void ReserveForAttack(AttackCommand command)
+    {
         if (_reservedAttack == null && IsOwnerAttack(command) && Amount > 0)
         {
             _reservedAttack = command;
-            _reservedAmount = Amount;
+            _reservedAmount = ApplicationsPerAttack;
         }
-
-        return Task.CompletedTask;
     }
 
     public override int ModifyAttackHitCount(AttackCommand attack, int hitCount)
     {
         if (!IsOwnerAttack(attack) ||
             (_reservedAttack != null && !ReferenceEquals(_reservedAttack, attack)) ||
-            !ReferenceEquals(Owner.Powers.OfType<MyLegendNextAttackBasePower>().FirstOrDefault(), this))
+            !ReferenceEquals(Owner.Powers.OfType<MyLegendNextAttackBasePower>()
+                .FirstOrDefault(power => power.IsOwnerAttack(attack) &&
+                    (power._reservedAttack == null || ReferenceEquals(power._reservedAttack, attack))), this))
         {
             return hitCount;
         }
@@ -56,9 +73,11 @@ public abstract class MyLegendNextAttackBasePower : PowerModel, ICustomPower
         // regardless of which type of buff was granted first.
         foreach (MyLegendNextAttackBasePower power in Owner.Powers
                      .OfType<MyLegendNextAttackBasePower>()
-                     .OrderBy(power => power is MyLegendNextAttackDoublePower ? 1 : 0))
+                     .Where(power => power.IsOwnerAttack(attack))
+                     .OrderBy(power => power.DoublesHitCount)
+                     .ThenBy(power => power is HbrComboPower ? 1 : 0))
         {
-            int applications = power._reservedAttack == null ? power.Amount :
+            int applications = power._reservedAttack == null ? power.ApplicationsPerAttack :
                 ReferenceEquals(power._reservedAttack, attack) ? power._reservedAmount : 0;
             hitCount = power.TransformHitCount(hitCount, applications);
         }
@@ -66,14 +85,16 @@ public abstract class MyLegendNextAttackBasePower : PowerModel, ICustomPower
         return hitCount;
     }
 
-    public override async Task AfterAttack(PlayerChoiceContext choiceContext, AttackCommand command)
+    public override Task AfterAttack(PlayerChoiceContext choiceContext, AttackCommand command) =>
+        CompleteReservation(choiceContext, command, command.Results.Any(results => results.Count > 0));
+
+    internal async Task CompleteReservation(PlayerChoiceContext choiceContext, AttackCommand command, bool hadHit)
     {
         if (!ReferenceEquals(command, _reservedAttack)) return;
 
         int consumed = _reservedAmount;
-        _reservedAttack = null;
-        _reservedAmount = 0;
-        if (consumed <= 0 || !Owner.Powers.Contains(this)) return;
+        ReleaseReservation(command);
+        if (consumed <= 0 || RequiresActualHit && !hadHit || !Owner.Powers.Contains(this)) return;
 
         Flash();
         await PowerCmd.ModifyAmount(choiceContext, this, -consumed, null, null);
@@ -81,7 +102,7 @@ public abstract class MyLegendNextAttackBasePower : PowerModel, ICustomPower
 
     internal abstract int TransformHitCount(int hitCount, int applications);
 
-    private bool IsOwnerAttack(AttackCommand command) =>
+    protected virtual bool IsOwnerAttack(AttackCommand command) =>
         command?.Attacker == Owner && command.DamageProps.HasFlag(ValueProp.Move);
 
     protected override void AfterCloned()
@@ -104,6 +125,8 @@ public sealed class MyLegendNextAttackPower : MyLegendNextAttackBasePower
 
 public sealed class MyLegendNextAttackDoublePower : MyLegendNextAttackBasePower
 {
+    internal override bool DoublesHitCount => true;
+
     public override string CustomPackedIconPath =>
         "res://images/atlases/power_atlas.sprites/phantom_next_attack_double_power.tres";
 

@@ -104,6 +104,7 @@ internal static class HotaruCannonStatsHelper
         if (targets.Length == 0 || dealer?.CombatState?.RunState == null)
         {
             decimal amount = HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, baseDamage);
+            if (HbrBattleStatsHelper.IsEnabled(cannon)) amount = HbrSkillPower.DamageBaseFromUnits(amount);
             decimal fallback = Math.Max(1m, decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
                 Math.Max(0m, amount), GetCannonDamageMultiplier(cannon))));
             return (fallback, fallback);
@@ -179,7 +180,13 @@ internal static class HotaruCannonStatsHelper
                 ? await HpOnlyDamageContext.Damage(context, target, amount, dealer, cardSource)
                 : await CreatureCommandCompatibility.Damage(context, new[] { target }, amount,
                     ValueProp.Move, dealer, cardSource, cardPlay);
-            return intent.DpSpent > 0m || results.Any(result => result.UnblockedDamage > 0);
+            bool dealtDamage = intent.DpSpent > 0m;
+            foreach (DamageResult result in results)
+            {
+                if (!reaction) HbrComboHelper.MarkHit(cannon);
+                dealtDamage |= result.UnblockedDamage > 0;
+            }
+            return dealtDamage;
         }
         finally
         {

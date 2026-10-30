@@ -690,6 +690,13 @@ public sealed class SkullFeather :
         decimal amount)
         where TPower : PowerModel, new()
     {
+        if (typeof(TPower) == typeof(WeakPower))
+            return HbrPercentDebuffApplication.ApplyAttackDown(
+                new ThrowingPlayerChoiceContext(),
+                targets.Where(target => target.IsAlive).ToArray(),
+                amount,
+                Creature,
+                null);
         return PowerCmd.Apply<TPower>(
             new ThrowingPlayerChoiceContext(),
             targets.Where(target => target.IsAlive).ToArray(),

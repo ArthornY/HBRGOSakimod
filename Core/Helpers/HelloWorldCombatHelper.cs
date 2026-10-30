@@ -61,7 +61,7 @@ internal static class HelloWorldCombatHelper
                 await CreatureCommandCompatibility.LoseBlock(context, owner, startingBlock, owner);
                 int lostBlock = Math.Max(0, startingBlock - owner.Block);
                 if (lostBlock > 0)
-                    await PowerCmd.Apply<PhantomDamageInheritancePower>(context, owner, lostBlock, owner, card);
+                    await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, owner, lostBlock, owner, card);
             }
         }
 

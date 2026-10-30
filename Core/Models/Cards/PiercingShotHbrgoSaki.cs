@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -19,6 +20,16 @@ public sealed class PiercingShotHbrgoSaki : CardModel
 {
     private int DamagePerFragile =>
         IsUpgraded || DeckVersion?.IsUpgraded == true ? 2 : 1;
+
+    internal decimal FragileBonusPermille => 6m * DamagePerFragile;
+
+    internal decimal GetDamageUnits(Creature target)
+    {
+        decimal percent = HbrFragilePowerHelper.GetTotalEffectivePercent(target);
+        decimal bonus = DamageAmplificationLimits.MultiplySaturated(percent,
+            HbrSkillPower.LegacyDamageAt100Percent * FragileBonusPermille / 1000m);
+        return DamageAmplificationLimits.AddSaturated(DynamicVars.Damage.BaseValue, bonus);
+    }
 
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/piercing_shot_hbrgo_saki.png");
@@ -50,6 +61,12 @@ public sealed class PiercingShotHbrgoSaki : CardModel
     {
     }
 
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        description.Add("FragileBonusPermille", HbrSkillCardDescription.FormatPercent(FragileBonusPermille));
+    }
+
     public override bool ShouldPlay(
         CardModel card,
         AutoPlayType autoPlayType)
@@ -67,23 +84,31 @@ public sealed class PiercingShotHbrgoSaki : CardModel
             .GetOpponentsOf(Owner.Creature)
             .Where(target => target.IsHittable)
             .ToArray();
-        foreach (Creature target in targets)
+        using var comboAttack = HbrComboHelper.BeginCardAttack(this);
+        int hitCount = comboAttack?.HitCount(1) ?? 1;
+        try
         {
-            int fragile =
-                ReptureBowPower.GetEnemyPowerAmount<FragilePower>(
-                    Owner.Creature,
-                    target);
-            decimal damage =
-                DynamicVars.Damage.BaseValue +
-                fragile * DamagePerFragile;
-            await DamageCmd.Attack(
-                    ModeTransitionHelper.GetAdjustedEffectAmount(
-                        this,
-                        damage))
-                .FromCardCompat(this, cardPlay)
-                .Targeting(target)
-                .WithHitFx("vfx/vfx_attack_slash")
-                .Execute(choiceContext);
+            foreach (Creature target in targets)
+            {
+                decimal damage = HbrBattleStatsHelper.IsEnabled(Owner.Creature)
+                    ? GetDamageUnits(target)
+                    : DynamicVars.Damage.BaseValue +
+                        ReptureBowPower.GetEnemyPowerAmount<FragilePower>(Owner.Creature, target) * DamagePerFragile;
+                var attack = await DamageCmd.Attack(
+                        ModeTransitionHelper.GetAdjustedEffectAmount(
+                            this,
+                            damage))
+                    .FromCardCompat(this, cardPlay)
+                    .Targeting(target)
+                    .WithHitCount(hitCount)
+                    .WithHitFx("vfx/vfx_attack_slash")
+                    .Execute(choiceContext);
+                if (attack.Results.Any(results => results.Count > 0)) comboAttack?.MarkHit();
+            }
+        }
+        finally
+        {
+            if (comboAttack != null) await comboAttack.Complete(choiceContext);
         }
     }
 

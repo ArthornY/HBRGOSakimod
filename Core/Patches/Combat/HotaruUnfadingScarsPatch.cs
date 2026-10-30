@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -24,19 +25,23 @@ internal static class HotaruUnfadingScarsDurationPatch
 [HarmonyPatch(typeof(WeakPower), nameof(WeakPower.ModifyDamageMultiplicative))]
 internal static class HotaruUnfadingScarsWeakPatch
 {
+    [HarmonyPriority(Priority.Last)]
     private static void Postfix(WeakPower __instance, Creature dealer, ValueProp props, ref decimal __result)
     {
-        if (dealer == __instance.Owner && props.IsPoweredAttack())
-            __result = Math.Max(0m, __result - HotaruUnfadingScarsPower.AdditionalEffect(__instance.Owner));
+        if (!HbrBattleStatsHelper.IsEnabled(__instance.Owner) && dealer == __instance.Owner && props.IsPoweredAttack() && __result < 1m)
+            __result = Math.Max(0m, 1m - HotaruUnfadingScarsPower.EnhanceEffect(
+                __instance.Owner, 1m - __result));
     }
 }
 
 [HarmonyPatch(typeof(VulnerablePower), nameof(VulnerablePower.ModifyDamageMultiplicative))]
 internal static class HotaruUnfadingScarsVulnerablePatch
 {
+    [HarmonyPriority(Priority.Last)]
     private static void Postfix(VulnerablePower __instance, Creature target, ValueProp props, ref decimal __result)
     {
-        if (target == __instance.Owner && props.IsPoweredAttack())
-            __result += HotaruUnfadingScarsPower.AdditionalEffect(__instance.Owner);
+        if (!HbrBattleStatsHelper.IsEnabled(__instance.Owner) && target == __instance.Owner && props.IsPoweredAttack() && __result > 1m)
+            __result = DamageAmplificationLimits.AddSaturated(1m,
+                HotaruUnfadingScarsPower.EnhanceEffect(__instance.Owner, __result - 1m));
     }
 }

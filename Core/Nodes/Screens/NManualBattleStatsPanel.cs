@@ -87,8 +87,8 @@ public partial class NManualBattleStatsPanel : Control
                 $"有效等级 {manual.GetEffectiveSenseAmount(senses[i]).ToString("0.##", CultureInfo.InvariantCulture)} × {HbrBattleStatsHelper.SenseStatGainPerLevel}";
         }
         _enemy.Text = enemyParameter.HasValue
-            ? $"当前战斗敌能力参数：{enemyParameter.Value.ToString("0.##", CultureInfo.InvariantCulture)}。技能参照属性与此参数的差值决定基础威力。"
-            : "进入战斗后，此处会显示用于技能威力计算的敌能力参数。";
+            ? $"当前敌方状态值：{enemyParameter.Value.ToString("0.##", CultureInfo.InvariantCulture)}。技能参照属性与状态值的差值决定基础威力。"
+            : "进入战斗后，此处会显示用于技能威力计算的敌方状态值。";
     }
 
     private void BuildUi()
@@ -148,24 +148,24 @@ public partial class NManualBattleStatsPanel : Control
         content.AddChild(_enemy);
         AddSection(content, "技能威力",
             "对 DP：参照属性 A =（2 × 器用 + 力）÷ 3。\n对 HP：参照属性 A =（2 × 力 + 器用）÷ 3。\n力与器用参与攻击；知性参与格挡的倍率换算。\n" +
-            $"伤害 100% 对应基础威力 6000，其他技能倍率同比换算。属性系数 = max（0，1 +（A − 敌能力）÷{HbrSkillPower.AttackAttributeScale}）。\n" +
+            $"伤害 100% 对应基础威力 6000，其他技能倍率同比换算。属性系数 = max（0，1 +（A − 状态值）÷{HbrSkillPower.AttackAttributeScale}）。\n" +
             "基础威力乘属性系数，正倍率最低 1，截断到小数点后 2 位；属性优势持续线性增长，不再配置技能威力上下端。");
         AddSection(content, "增减益与暴击",
             "基础威力 × 攻击增益区 × 防御减益区 × DP／HP 特攻 × 物理与元素相性 × 破坏率 × 其他倍率。\n" +
             "原作参考：同类普通增益取最高两层相加；攻击与元素攻击、心眼、场地等合入攻击区，防御下降与脆弱合入减益区。现有卡牌效果仍保留各自的持续和消耗规则。\n" +
-            "自然暴击率 = 1.5% + max（0，运 − 敌能力）× 0.04%，自然部分最高 15%；暴击率增益另加。\n" +
-            "暴击先按敌能力 −50 重新计算威力，敌能力最低为 0；随后乘（1.5 + 暴伤增益）。暴击判定独立于现有掷骰大成功。");
+            "自然暴击率 = 1.5% + max（0，运 − 状态值）× 0.04%，自然部分最高 15%；暴击率增益另加。\n" +
+            "暴击先按状态值 −50 重新计算威力，状态值最低为 0；随后乘（1.5 + 暴伤增益）。暴击判定独立于现有掷骰大成功。");
         AddSection(content, "破坏率与格挡",
             "破坏率以 100% 为起点。DP 击破后，按敌方与技能各自的破坏系数增长；增量与本次实际伤害量分别计算。\n" +
             $"我方格挡 100% 对应基础 500，再乘知性÷{HbrSkillPower.BlockReferenceIntelligence}，向下取整。卡牌、幻影、浮游炮及明确的固定技能格挡共用此规则；按实际伤害比例派生的格挡不重复换算。");
         AddSection(content, "力量与敏捷",
             "我方每层力量使力与器用各 +1；每层敏捷使知性 +1。负层数按相同数值降低对应属性，属性最低为 0。力量、敏捷不再额外提供固定伤害或格挡。\n" +
             "敌方每层力量在攻击时无视目标一定数值的体力、精神；每层敏捷在受击时无视攻击者一定数值的力、器用。第一至第五幕每层依次为 1、2、3、4、8 点，第六幕起保持 8 点。负层数反向修正，仅对本次攻击有效；参照属性最低为 0。");
-        AddSection(content, "敌方能力与受击",
-            "敌人使用独立能力值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
+        AddSection(content, "敌方状态值与受击",
+            "敌人使用独立状态值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
             $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，本幕每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}，每进入下一幕额外 +{HbrEnemyProfileHelper.GainPerAct}；精英再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 再 +{HbrEnemyProfileHelper.BossBonus}。Hopper 同样成长。\n" +
             "敌方技能按自身配置参照（2 × 体力 + 精神）÷3，或（体力 + 2 × 精神）÷3。参照属性不随实际命中人数或当前 DP 改变。\n" +
-            "受击基础威力按敌能力与防御参照的差值插值，最低为 1，达到该技能威力上端后封顶。后续再结算原有增减伤、格挡与 DP。\n" +
+            "受击基础威力按状态值与防御参照的差值插值，最低为 1，达到该技能威力上端后封顶。后续再结算原有增减伤、格挡与 DP。\n" +
             "尖塔敌人沿用当前适配的资源与技能威力参数；尚未逐个替换成 HBR 原作敌技能数据。");
         AddSection(content, "测试量级与来源",
             $"六维、成长速度及与尖塔数值的换算为本模组测试设定。角色初始 HP ×{HbrBattleStatsHelper.PlayerHealthScale}，DP 保留与 HP 的现有比例；固定数值的 HP、DP 增减 ×{HbrResourceValueHelper.FixedResourceScale}。百分比、转阶段回满和按实际伤害派生的资源不重复换算。\n" +

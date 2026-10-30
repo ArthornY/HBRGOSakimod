@@ -8,8 +8,15 @@ INT/LUCK/E calculation, weapon switching and unchanged legacy descriptions.
 The actual Ice `OnPlay` executes with isolated attack and power-application
 leaves: below-threshold raw3, threshold raw6, upgraded raw9, and legacy separate
 raw3/raw3 requests are captured before the independent production power fixture
-checks their lifecycle. Scars adds once per grant, including zero-grant and
-fractional raw-input normalization boundaries.
+checks their lifecycle. Scars multiplies the final resolved effect once,
+including zero-grant and fractional raw-input normalization boundaries.
+Ice's extra defense debuff uses the independent HBR model and 15% basis
+(raw three displays 23.4%); legacy mode retains native Vulnerable. The actual
+application capture asserts that those models stay separate.
+Descriptions also cover DoublePowers effect/duration doubling, Weakness Strike
+effect-only doubling, Piercing/Strong Shot's 6/12-permille coefficient bonuses,
+and FullBody's 10/5-percentage-point destruction thresholds and confirmed
+hundred-point damage scale.
 
 Run from the repository root after a source-only candidate build:
 

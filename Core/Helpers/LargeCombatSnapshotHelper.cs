@@ -249,8 +249,8 @@ internal static class LargeCombatSnapshotHelper
             case PhantomPower phantom:
                 Add(nameof(PhantomPower.CombatDamageBonusPercent), phantom.CombatDamageBonusPercent);
                 break;
-            case PhantomDamageInheritancePower inheritance:
-                Add(nameof(PhantomDamageInheritancePower.DamagePercent), inheritance.DamagePercent);
+            case HotaruDamageAmplificationPower amplification:
+                Add(nameof(HotaruDamageAmplificationPower.DamagePercent), amplification.DamagePercent);
                 break;
             case BoostUpFormDamagePower forms:
                 Add(nameof(BoostUpFormDamagePower.ExactBowPercent), forms.ExactBowPercent);

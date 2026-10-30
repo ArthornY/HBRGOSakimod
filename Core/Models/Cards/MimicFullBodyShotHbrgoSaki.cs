@@ -18,6 +18,8 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
 {
     private const string _destructionRateMultiplierVar =
         "DestructionRateMultiplier";
+    private const string _fragileDestructionThresholdVar =
+        "FragileDestructionThreshold";
 
     public override string PortraitPath =>
         ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/mimic_full_body_shot_hbrgo_saki.png");
@@ -30,7 +32,8 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
         new PowerVar<FragilePower>(3m),
-        new IntVar(_destructionRateMultiplierVar, 1m)
+        new IntVar(_destructionRateMultiplierVar, 1m),
+        new IntVar(_fragileDestructionThresholdVar, 10m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
@@ -64,6 +67,12 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
                 DynamicVars["FragilePower"].BaseValue),
             Owner.Creature,
             this);
+
+        if (HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+        {
+            await ResolveHbrBreakEffect(choiceContext, cardPlay);
+            return;
+        }
 
         if (!ReptureBowPower.AnyEnemyHasPower<BreakPower>(
                 Owner.Creature,
@@ -127,9 +136,44 @@ public sealed class MimicFullBodyShotHbrgoSaki : CardModel
             .Execute(choiceContext);
     }
 
+    private async Task ResolveHbrBreakEffect(
+        PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        // The rune may make bow queries see another enemy's Break. This card's
+        // percentage conversion belongs to the chosen enemy alone.
+        if (!cardPlay.Target.HasPower<BreakPower>() || CombatManager.Instance.IsOverOrEnding)
+            return;
+
+        decimal fragile = HbrFragilePowerHelper.GetTotalEffectivePercent(cardPlay.Target);
+        if (fragile <= 0m) return;
+
+        if (!cardPlay.Target.HasPower<DestructionRatePower>())
+            await PowerCmd.Apply<DestructionRatePower>(choiceContext, cardPlay.Target,
+                DestructionRatePower.BaselineAmount, Owner.Creature, this);
+
+        decimal gain = ModeTransitionHelper.GetAdjustedEffectAmount(this,
+            decimal.Floor(fragile / DynamicVars[_fragileDestructionThresholdVar].BaseValue));
+        if (gain > 0m)
+            await PowerCmd.Apply<DestructionRatePower>(choiceContext, cardPlay.Target,
+                gain, Owner.Creature, this);
+
+        // One percentage point supplies 100 combat damage units. The normal
+        // skill bridge uses 1000 units per raw point, so pass 0.1 here. The
+        // shared pipeline supplies the actual current destruction multiplier
+        // once, along with attributes, dice, Fragile and other normal effects.
+        decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(this, fragile * .1m);
+        if (damage <= 0m || CombatManager.Instance.IsOverOrEnding) return;
+        await DamageCmd.Attack(damage)
+            .FromCardCompat(this, cardPlay)
+            .Targeting(cardPlay.Target)
+            .WithHitFx("vfx/vfx_attack_slash")
+            .Execute(choiceContext);
+    }
+
     protected override void OnUpgrade()
     {
         DynamicVars["FragilePower"].UpgradeValueBy(3m);
         DynamicVars[_destructionRateMultiplierVar].UpgradeValueBy(1m);
+        DynamicVars[_fragileDestructionThresholdVar].UpgradeValueBy(-5m);
     }
 }

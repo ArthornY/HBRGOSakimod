@@ -90,16 +90,12 @@ public sealed class UglyEndingHbrgoSaki : CardModel
         relic?.AddMinionSacrificeGrowth(rosterEntryId, killed,
             DynamicVars["PermanentDamageBonus"].BaseValue,
             DynamicVars["Experience"].IntValue);
-        for (int i = 0; i < killed; i++)
+        if (killed > 0 && !CombatManager.Instance.IsOverOrEnding && CombatState.HittableEnemies.Any())
         {
-            if (CombatManager.Instance.IsOverOrEnding || !CombatState.HittableEnemies.Any())
-            {
-                break;
-            }
-
             await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
                 .FromCardCompat(this, cardPlay)
                 .TargetingAllOpponents(CombatState)
+                .WithHitCount(killed)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
         }

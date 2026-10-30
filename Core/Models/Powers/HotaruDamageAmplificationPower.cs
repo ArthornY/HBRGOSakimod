@@ -11,7 +11,7 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class HotaruDamageAmplificationPower : PowerModel, ICustomPower, IExactDamagePercentPower
+public class HotaruDamageAmplificationPower : PowerModel, ICustomPower, IExactDamagePercentPower
 {
     private ExactDamagePercentState _percent = new();
     public decimal DamagePercent => _percent.GetPercent(Amount);
@@ -21,7 +21,7 @@ public sealed class HotaruDamageAmplificationPower : PowerModel, ICustomPower, I
     public string AmplificationPercentData
     {
         get => _percent.SavedData;
-        private set => _percent.LoadSavedData(this, value);
+        protected set => _percent.LoadSavedData(this, value);
     }
 
     internal sealed class NativePercentWrite : ExactDamagePercentState.NativePercentWrite

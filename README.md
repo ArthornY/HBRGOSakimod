@@ -12,6 +12,8 @@
 
 运行依赖的最低版本和模组版本以根目录的 [HBRGOSakiMod.json](HBRGOSakiMod.json) 为准。声音资源由独立的 SoundPack 项目提供。
 
+开发中的 stable v0.107.1 / public-beta v0.111.0 适配、依赖配置和验证范围见 [跨版本兼容说明](docs/beta-compatibility.md)；这部分修改尚未发布。
+
 **ModUI** 默认开启，可在游戏的模组配置菜单或 RitsuLib 配置菜单中调整。开启后使用模组的 HP/DP、能力、遗物与药水布局。
 
 如需手动安装，将同一次发布的 `HBRGOSakiMod.json`、`HBRGOSakiMod.dll` 和 `HBRGOSakiMod.pck` 放入游戏的 `mods/HBRGOSakiMod/` 目录。PDB 用于调试，不是运行必需文件。不要混用不同版本的文件。
@@ -60,6 +62,8 @@ dotnet build .\HBRGOSakiMod.csproj --no-restore -c Release -p:SkipModOutputCopy=
 ## 打包与分支
 
 `main` 用于已验证的版本。日常修改在各任务的 worktree 中进行，通过验证后再集成；已有 `test` 分支继续保留，使用前先检查它与主线的差异。
+
+当前数值测试版的集成分支为 `test-hbr-numerics`，本机源码目录为 `D:/stsmod/worktrees/HBRGOSakiMod-hbr-numerics-test/`，交付目录为其中的 `build/`。其他临时 worktree 的测试版改动需先整合到这里，再从此目录打包；只保存在临时 worktree 中的修改不会自动进入测试包。
 
 打包使用 Godot 的 `Windows Desktop` 导出预设，将 C# 程序集、PCK 与根目录的模组清单写入本地 `build/`。常规交付为 JSON、DLL、PCK 和用于调试的 PDB，默认不生成 ZIP。
 

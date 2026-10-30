@@ -90,7 +90,7 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
             return;
         }
 
-        await PowerCmd.Apply<VulnerablePower>(
+        await HbrPercentDebuffApplication.ApplyDefenseDown(
             choiceContext,
             targets,
             ModeTransitionHelper.GetAdjustedEffectAmount(
@@ -118,7 +118,7 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
             return;
         }
 
-        await PowerCmd.Apply<VulnerablePower>(
+        await HbrPercentDebuffApplication.ApplyDefenseDown(
             choiceContext,
             targets,
             ModeTransitionHelper.GetAdjustedEffectAmount(
@@ -139,7 +139,7 @@ public sealed class MimicIceFlowerThousandArrowsHbrgoSaki : CardModel
         decimal weak = DynamicVars[ThresholdWeakVar].BaseValue;
         if (weak > 0m)
         {
-            await PowerCmd.Apply<WeakPower>(
+            await HbrPercentDebuffApplication.ApplyAttackDown(
                 choiceContext,
                 targets,
                 ModeTransitionHelper.GetAdjustedEffectAmount(

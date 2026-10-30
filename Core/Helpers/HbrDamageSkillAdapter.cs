@@ -32,6 +32,12 @@ internal static class HbrDamageSkillAdapter
         if (HbrAbsoluteBaseDamageContext.Matches(target, dealer, cardSource, legacyPower))
             return legacyPower;
 
+        // Ghost's Focused Breakthrough scales its skill coefficient, before
+        // the shared attribute curve. Precalculated and absolute-base hits
+        // bypass this conversion boundary, so they cannot receive it twice.
+        if (dealer.GetPower<GhostStatePower>() is { } ghost)
+            legacyPower = DamageAmplificationLimits.AddSaturated(legacyPower, ghost.GetBonusUnits(target, props));
+
         bool incoming = EnemyStatScalingHelper.IsEnemy(dealer);
         if (incoming)
         {
@@ -83,7 +89,8 @@ internal static class HbrDamageSkillAdapter
                     HbrEnemyProfileHelper.GetEnemyParameter(target), OutgoingPowerUnit)
                 : amount;
         }
-        if (!HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats stats)) return amount;
+        Creature statSource = HotaruCannonBlockHelper.GetStatSource(target);
+        if (!HbrBattleStatsHelper.TryGetStats(statSource, out HbrBattleStats stats)) return amount;
         // The same single intelligence coefficient serves player cards,
         // phantoms and cannon grants. Already resolved gains bypass it above.
         return HbrSkillPower.EvaluateBlockFromUnits(amount, stats.Intelligence, PlayerBlockUnit);

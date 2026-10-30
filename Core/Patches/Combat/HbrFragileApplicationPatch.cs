@@ -14,10 +14,12 @@ internal static class HbrFragileStackingPatch
 {
     private static bool Prefix(PowerModel basePower, Creature target, ref PowerModel __result)
     {
-        if (basePower is not FragilePower) return true;
+        if (!HbrPercentDebuffHelper.Supports(basePower)) return true;
         // Canonical lookup precedes owner assignment; the actual recipient
         // selects independent HBR instances versus legacy single-instance ticks.
-        __result = HbrBattleStatsHelper.IsEnabled(target) ? null : target.GetPower<FragilePower>();
+        if (HbrBattleStatsHelper.IsEnabled(target)) __result = null;
+        else if (basePower is FragilePower) __result = target.GetPower<FragilePower>();
+        else return true;
         return false;
     }
 }
@@ -31,8 +33,8 @@ internal static class HbrFragileApplyPatch
         Creature target, decimal amount, Creature applier, CardModel cardSource, bool silent,
         ref Task __result)
     {
-        if (power is not FragilePower fragile || !HbrBattleStatsHelper.IsEnabled(target)) return true;
-        __result = HbrFragileApplication.Apply(choiceContext, fragile, target,
+        if (!HbrPercentDebuffHelper.Supports(power) || !HbrBattleStatsHelper.IsEnabled(target)) return true;
+        __result = HbrPercentDebuffApplication.Apply(choiceContext, power, target,
             amount, applier, cardSource, silent);
         return false;
     }
@@ -44,9 +46,9 @@ internal static class HbrFragileCopyPatch
     private static bool Prefix(PlayerChoiceContext choiceContext, PowerModel power,
         decimal offset, Creature applier, CardModel cardSource, bool silent, ref Task<int> __result)
     {
-        if (power is not FragilePower fragile || offset <= 0m ||
+        if (!HbrPercentDebuffHelper.Supports(power) || offset <= 0m ||
             !HbrBattleStatsHelper.IsEnabled(power.Owner)) return true;
-        __result = HbrFragileApplication.Copy(choiceContext, fragile, applier, cardSource, silent);
+        __result = HbrPercentDebuffApplication.Copy(choiceContext, power, applier, cardSource, silent);
         return false;
     }
 }

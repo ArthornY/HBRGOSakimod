@@ -4,6 +4,7 @@ using System.Reflection;
 using HarmonyLib;
 using Godot;
 using HBRGOSakiMod.Core.Config;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
@@ -442,7 +443,7 @@ public partial class NVerticalPotionLayout : Node
             HolderState state = _holderStates[holder];
             RefreshPopups(state);
             foreach (NPotionPopup popup in state.Popups)
-                if (Usable(popup) && !popup.IsMarkedForRemoval) DockPopup(popup, holder);
+                if (Usable(popup) && !PotionPopupCompatibility.IsMarkedForRemoval(popup)) DockPopup(popup, holder);
         }
         if (_navigationDirty && !_holderStructureDirty) UpdateNavigation(anchor);
     }

@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Modifiers;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -63,7 +64,11 @@ static partial class Checks
         {
             ["powers"] = new LocTable("powers", PowerText, null!),
             ["modifiers"] = new LocTable("modifiers", ModifierText, null!),
-            ["rest_site_ui"] = new LocTable("rest_site_ui", CookText, null!)
+            ["rest_site_ui"] = new LocTable("rest_site_ui", CookText, null!),
+            // Minimal fixture exercises native SmartFormat with the same
+            // canonical starting-relic variable used by character selection.
+            ["canonical_checks"] = new LocTable("canonical_checks",
+                new Dictionary<string, string> { ["heal"] = "Heal {Heal} HP." }, null!)
         });
     }
     static LocString PowerDescription(PowerModel power, string key, int? amount = null)
@@ -75,6 +80,10 @@ static partial class Checks
     static async Task DescriptionChecks(Harmony h)
     {
         NativeLocalization();
+        var startingRelicText = new LocString("canonical_checks", "heal");
+        startingRelicText.Add(Blank<BurningBlood>().DynamicVars.Heal);
+        Check(startingRelicText.GetFormattedText() == "Heal 6 HP.",
+            "native LocManager and SmartFormat format canonical starting-relic Heal without a player");
         Type energy = typeof(PowerModel).Assembly.GetType("MegaCrit.Sts2.Core.Helpers.EnergyIconHelper", true)!;
         foreach (MethodInfo method in energy.GetMethods(F).Where(m => m.Name == "GetPrefix")) Patch(h, method, nameof(PrefixString));
         Patch(h, AccessTools.Method(typeof(PowerCmd), nameof(PowerCmd.Decrement)), nameof(CaptureEnergy));
@@ -83,6 +92,13 @@ static partial class Checks
             "HbrNativeFixedModifierDescriptionPatch", "HbrNativeFixedModifierTextPatch" })
             Check(h.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat." + name, true)!).Patch().Count > 0,
                 "actual native fixed description patch installs " + name);
+
+        foreach (PowerModel template in new PowerModel[] { Blank<RegenPower>(), Blank<PaperCutsPower>() })
+        {
+            string key = template is RegenPower ? "REGEN_POWER.smartDescription" : "PAPER_CUTS_POWER.smartDescription";
+            Check(!template.IsMutable && PowerDescription(template, key, 5).GetFormattedText().Contains("[blue]5[/blue]"),
+                template.GetType().Name + " canonical hover description keeps native amount without reading Owner");
+        }
 
         RegenPower regen = Power<RegenPower>(5);
         LocString regenText = PowerDescription(regen, "REGEN_POWER.smartDescription");

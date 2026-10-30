@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -74,6 +75,20 @@ public sealed class FragileDoubleStrikeHbrgoSaki : CardModel
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
+
+        if (!cardPlay.Target.IsAlive || CombatManager.Instance.IsOverOrEnding)
+            return;
+        if (HbrBattleStatsHelper.IsEnabled(cardPlay.Target))
+        {
+            var existing = cardPlay.Target.Powers.OfType<FragilePower>()
+                .Where(power => power.Amount > 0)
+                .Select(power => (Power: power, Percent: power.HbrEffectPercent))
+                .ToArray();
+            foreach (var (power, percent) in existing)
+                await HbrFragileApplication.DoubleExisting(choiceContext, power,
+                    percent, 0, Owner.Creature, this, doubleDuration: false);
+            return;
+        }
 
         int fragileAmount =
             ReptureBowPower.GetEnemyPowerAmount<FragilePower>(

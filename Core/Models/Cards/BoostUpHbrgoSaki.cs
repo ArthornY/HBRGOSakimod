@@ -50,7 +50,7 @@ public sealed class BoostUpHbrgoSaki : CardModel
                 yield return HoverTipFactory.FromPower<BoostUpFormDamagePower>();
             if (HasUpgradeEffect(2) ||
                 UsesThirtyAEffects && (HasUpgradeEffect(0) || HasUpgradeEffect(5)))
-                yield return HoverTipFactory.FromPower<PhantomDamageInheritancePower>();
+                yield return HoverTipFactory.FromPower<HotaruDamageAmplificationPower>();
             if (HasUpgradeEffect(4))
                 yield return HoverTipFactory.FromPower<BoostUpExtraTurnPower>();
         }

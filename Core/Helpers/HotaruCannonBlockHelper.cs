@@ -36,22 +36,42 @@ internal static class HotaruCannonBlockHelper
     private static readonly AsyncLocal<Intent> Pending = new();
     private static readonly AsyncLocal<GainScope> Current = new();
     private static readonly AsyncLocal<int> PreviewDepth = new();
+    private static readonly AsyncLocal<Creature> PreviewCannon = new();
     internal static bool IsBlockPreview => PreviewDepth.Value > 0;
+
+    internal static Creature GetStatSource(Creature owner)
+    {
+        Creature cannon = IsBlockPreview ? PreviewCannon.Value :
+            Current.Value is { Active: true, Enabled: true } scope && scope.Owner == owner
+                ? scope.Cannon : null;
+        return cannon?.PetOwner?.Creature == owner ? cannon : owner;
+    }
 
     internal static decimal Preview(Creature owner, decimal baseAmount, CardPlay sourcePlay = null, Creature cannon = null)
     {
         baseAmount = DamageAmplificationLimits.AddSaturated(baseAmount, HotaruUncommonCannonHelper.BlockBonus(cannon));
-        if (owner?.CombatState == null) return FinalValue(baseAmount, cannon, false);
+        if (owner?.CombatState == null)
+        {
+            if (HbrBattleStatsHelper.TryGetStats(cannon ?? owner, out HbrBattleStats stats))
+                baseAmount = HbrSkillPower.EvaluateBlockFromUnits(baseAmount, stats.Intelligence);
+            return FinalValue(baseAmount, cannon, false);
+        }
         // Preview observes the same live owner powers, card enchantment and
         // already resolved card Roll as the command; it never resolves a roll.
         int previous = PreviewDepth.Value;
+        Creature previousCannon = PreviewCannon.Value;
         PreviewDepth.Value = previous + 1;
+        PreviewCannon.Value = cannon;
         try
         {
             return FinalValue(Hook.ModifyBlock(owner.CombatState, owner, baseAmount,
                 ValueProp.Move, sourcePlay?.Card, sourcePlay, out _), cannon, false);
         }
-        finally { PreviewDepth.Value = previous; }
+        finally
+        {
+            PreviewDepth.Value = previous;
+            PreviewCannon.Value = previousCannon;
+        }
     }
 
     internal static async Task<decimal> Gain(Creature owner, decimal baseAmount, CardPlay sourcePlay = null,

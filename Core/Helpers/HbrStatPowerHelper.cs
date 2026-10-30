@@ -1,5 +1,6 @@
 using System;
 using HBRGOSakiMod.Core.Models.Monsters;
+using CalamityPower = HBRGOSakiMod.Core.Models.Powers.HbrCalamityPower;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -12,18 +13,30 @@ namespace HBRGOSakiMod.Core.Helpers;
 internal static class HbrStatPowerHelper
 {
     internal static HbrBattleStats Apply(Creature creature, HbrBattleStats stats)
+        => ApplyWithAdditionalStrength(creature, stats, 0m);
+
+    internal static HbrBattleStats ApplyWithAdditionalStrength(Creature creature,
+        HbrBattleStats stats, decimal additionalStrength)
     {
         if (!HbrBattleStatsHelper.IsEnabled(creature) || EnemyStatScalingHelper.IsEnemy(creature)) return stats;
         Creature source = creature?.Monster is HotaruCannonModel
             ? creature.PetOwner?.Creature ?? creature : creature;
-        decimal strength = source?.GetPowerAmount<StrengthPower>() ?? 0;
+        decimal strength = (source?.GetPowerAmount<StrengthPower>() ?? 0) + additionalStrength;
         decimal dexterity = (source?.GetPowerAmount<DexterityPower>() ?? 0) +
             HotaruSeeYouAgainHelper.GetExtraDexterity(source?.Player);
+        decimal calamity = Math.Max(0, creature?.GetPowerAmount<CalamityPower>() ?? 0);
+        // Cannons inherit their summoner's live attributes. A debuff applied to
+        // the cannon itself is local; phantoms retain their independent buffs.
+        if (source != creature)
+            calamity += Math.Max(0, source?.GetPowerAmount<CalamityPower>() ?? 0);
         return stats with
         {
-            Strength = Adjust(stats.Strength, strength),
-            Dexterity = Adjust(stats.Dexterity, strength),
-            Intelligence = Adjust(stats.Intelligence, dexterity)
+            Strength = Adjust(stats.Strength, strength - calamity),
+            Dexterity = Adjust(stats.Dexterity, strength - calamity),
+            Intelligence = Adjust(stats.Intelligence, dexterity - calamity),
+            Vitality = Adjust(stats.Vitality, -calamity),
+            Spirit = Adjust(stats.Spirit, -calamity),
+            Luck = Adjust(stats.Luck, -calamity)
         };
     }
 
@@ -53,11 +66,30 @@ internal static class HbrStatPowerHelper
     {
         // Happiness retains its upgrade: a second copy of positive Strength's
         // attribute bonus applies to this cannon's attack only.
-        if (HotaruCannonStatsHelper.TryGetCurrentCannon(target, dealer, card, props, out Creature cannon) &&
-            HotaruCannonDamageUpgradeHelper.Has(cannon, HotaruCannonKind.Happiness, 3))
+        if (HotaruCannonStatsHelper.TryGetCurrentCannon(target, dealer, card, props, out Creature cannon))
         {
-            decimal extra = Math.Max(0, dealer?.GetPowerAmount<StrengthPower>() ?? 0);
-            attack = attack with { Strength = Adjust(attack.Strength, extra), Dexterity = Adjust(attack.Dexterity, extra) };
+            if (HotaruCannonDamageUpgradeHelper.Has(cannon, HotaruCannonKind.Happiness, 3))
+            {
+                decimal extra = Math.Max(0, dealer?.GetPowerAmount<StrengthPower>() ?? 0);
+                // Recompute from the raw profile so a reduction that already
+                // reached zero cannot be lost before the extra Strength.
+                if (extra > 0m && HbrBattleStatsHelper.TryGetStatsWithAdditionalStrength(
+                        dealer, extra, out HbrBattleStats upgraded))
+                    attack = attack with { Strength = upgraded.Strength, Dexterity = upgraded.Dexterity };
+            }
+            // Cannon attacks use the summoner as dealer. The dealer's own
+            // reduction is already present; apply the firing cannon's local
+            // reduction once, without changing another cannon's attributes.
+            decimal calamity = Math.Max(0, cannon.GetPowerAmount<CalamityPower>());
+            attack = attack with
+            {
+                Strength = Adjust(attack.Strength, -calamity),
+                Dexterity = Adjust(attack.Dexterity, -calamity),
+                Intelligence = Adjust(attack.Intelligence, -calamity),
+                Vitality = Adjust(attack.Vitality, -calamity),
+                Spirit = Adjust(attack.Spirit, -calamity),
+                Luck = Adjust(attack.Luck, -calamity)
+            };
         }
         if (!EnemyStatScalingHelper.IsEnemy(target) || !HbrBattleStatsHelper.IsEnabled(target)) return attack;
         int layers = target.GetPowerAmount<DexterityPower>();

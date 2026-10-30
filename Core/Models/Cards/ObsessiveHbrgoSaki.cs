@@ -62,7 +62,7 @@ public sealed class ObsessiveHbrgoSaki : CardModel
                 DynamicVars["FragilePower"].BaseValue,
                 Owner.Creature,
                 this);
-            await PowerCmd.Apply<VulnerablePower>(choiceContext,
+            await HbrPercentDebuffApplication.ApplyDefenseDown(choiceContext,
                 cardPlay.Target, DynamicVars["VulnerablePower"].BaseValue,
                 Owner.Creature, this);
         }

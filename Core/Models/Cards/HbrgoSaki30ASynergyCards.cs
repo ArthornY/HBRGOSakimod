@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,7 +7,9 @@ using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -190,20 +193,42 @@ public sealed class EchoSlashHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        bool followUp = Owner.GetRelic<MomentOfReign>()?
-            .WasAttackedByPhantomThisTurn(cardPlay.Target) == true;
-        await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
-            .FromCardCompat(this, cardPlay)
-            .Targeting(cardPlay.Target)
-            .WithHitFx("vfx/vfx_attack_slash")
-            .Execute(choiceContext);
-        if (followUp && cardPlay.Target?.IsAlive == true)
+        using var comboAttack = HbrComboHelper.BeginCardAttack(this);
+        List<Func<Task<AttackCommand>>> attacks = comboAttack == null ? null : new(2);
+        try
         {
-            await DamageCmd.Attack(DynamicVars["ExtraDamage"].BaseValue)
+            bool followUp = Owner.GetRelic<MomentOfReign>()?
+                .WasAttackedByPhantomThisTurn(cardPlay.Target) == true;
+            decimal primaryDamage = DynamicVars.Damage.BaseValue;
+            Task<AttackCommand> PrimaryAttack() => DamageCmd.Attack(primaryDamage)
                 .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
+            attacks?.Add(PrimaryAttack);
+            AttackCommand primary = await PrimaryAttack();
+            comboAttack?.Record(primary);
+
+            if (followUp && cardPlay.Target?.IsAlive == true)
+            {
+                decimal extraDamage = DynamicVars["ExtraDamage"].BaseValue;
+                Task<AttackCommand> FollowUpAttack() => DamageCmd.Attack(extraDamage)
+                    .FromCardCompat(this, cardPlay)
+                    .Targeting(cardPlay.Target)
+                    .WithHitFx("vfx/vfx_attack_slash")
+                    .Execute(choiceContext);
+                attacks?.Add(FollowUpAttack);
+                AttackCommand followUpAttack = await FollowUpAttack();
+                comboAttack?.Record(followUpAttack);
+            }
+
+            if (comboAttack != null)
+                await comboAttack.ReplayExtra(attacks, () =>
+                    !CombatManager.Instance.IsOverOrEnding && cardPlay.Target?.IsAlive == true);
+        }
+        finally
+        {
+            if (comboAttack != null) await comboAttack.Complete(choiceContext);
         }
     }
 

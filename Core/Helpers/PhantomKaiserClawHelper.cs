@@ -61,7 +61,7 @@ internal static class PhantomKaiserClawHelper
         {
             Creature[] livingTargets = targets.Where(target => target.IsAlive).ToArray();
             var context = new ThrowingPlayerChoiceContext();
-            await PowerCmd.Apply<WeakPower>(context, livingTargets, 2m, phantom, null);
+            await HbrPercentDebuffApplication.ApplyAttackDown(context, livingTargets, 2m, phantom, null);
             await PowerCmd.Apply<FrailPower>(context, livingTargets, 2m, phantom, null);
         }
         else if (move.Id == "GUARDED_STRIKE_MOVE")

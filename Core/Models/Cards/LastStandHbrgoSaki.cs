@@ -62,7 +62,7 @@ public sealed class LastStandHbrgoSaki : CardModel
             .Targeting(cardPlay.Target)
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
-        await PowerCmd.Apply<VulnerablePower>(
+        await HbrPercentDebuffApplication.ApplyDefenseDown(
             choiceContext,
             Owner.Creature,
             DynamicVars["VulnerablePower"].BaseValue,

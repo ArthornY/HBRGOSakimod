@@ -287,7 +287,8 @@ internal static class LargeCreaturePlowThresholdPatch
         LargeCreatureNativeHalfHealthPatch.ReplaceCurrent(instructions, nameof(LargeCreatureHealthHelper.GetCurrentForPlowComparison));
 }
 
-[HarmonyPatch(typeof(DoomPower), nameof(DoomPower.IsOwnerDoomed))]
+// Beta made the same predicate private; Harmony resolves either visibility.
+[HarmonyPatch(typeof(DoomPower), "IsOwnerDoomed")]
 internal static class LargeCreatureDoomThresholdPatch
 {
     private static bool Prefix(DoomPower __instance, ref bool __result)

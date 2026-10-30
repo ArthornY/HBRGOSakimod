@@ -56,16 +56,26 @@ public sealed class ConsecutiveSlashHbrgoSaki : CardModel
         ArgumentNullException.ThrowIfNull(
             cardPlay.Target,
             nameof(cardPlay.Target));
-        for (int hit = 0;
-             hit < _hitCount && !CombatManager.Instance.IsOverOrEnding;
-             hit++)
+        using var comboAttack = HbrComboHelper.BeginCardAttack(this);
+        int hitCount = comboAttack?.HitCount(_hitCount) ?? _hitCount;
+        try
         {
-            decimal damage = GetDamageForTarget(cardPlay.Target);
-            await DamageCmd.Attack(damage)
-                .FromCardCompat(this, cardPlay)
-                .Targeting(cardPlay.Target)
-                .WithHitFx("vfx/vfx_attack_slash")
-                .Execute(choiceContext);
+            for (int hit = 0;
+                 hit < hitCount && !CombatManager.Instance.IsOverOrEnding;
+                 hit++)
+            {
+                decimal damage = GetDamageForTarget(cardPlay.Target);
+                var attack = await DamageCmd.Attack(damage)
+                    .FromCardCompat(this, cardPlay)
+                    .Targeting(cardPlay.Target)
+                    .WithHitFx("vfx/vfx_attack_slash")
+                    .Execute(choiceContext);
+                comboAttack?.Record(attack);
+            }
+        }
+        finally
+        {
+            if (comboAttack != null) await comboAttack.Complete(choiceContext);
         }
     }
 

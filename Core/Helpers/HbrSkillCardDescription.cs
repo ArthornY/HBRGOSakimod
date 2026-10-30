@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Patches.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Hooks;
@@ -27,26 +28,37 @@ internal static class HbrSkillCardDescription
         if (description == null) return;
         HbrFixedResourceDescriptionHelper.AddParameters(card, description);
         HbrFragileCardDescription.AddParameters(card, description);
+        HbrPercentDebuffCardDescription.AddParameters(card, description);
         foreach (DynamicVar variable in card.DynamicVars.Values)
         {
             if (variable is not IHbrSkillPowerVar skill) continue;
-            description.Add(variable.Name + "Skill", FormatPercent(skill.SkillPowerPercent));
-            description.Add(variable.Name + "SkillDetail", Detail(card, skill.SkillPowerPercent));
             decimal units = variable is CalculatedVar calculated
                 ? calculated.Calculate(HbrCardDescriptionContext.GetTarget(card)) : variable.BaseValue;
+            bool fragileDamage = variable is DamageVar && variable.Name == "Damage" &&
+                !HbrCardDescriptionContext.IsUnpowered(card) &&
+                card is PiercingShotHbrgoSaki or StrongShotHbrgoSaki;
+            if (fragileDamage)
+                units = card is PiercingShotHbrgoSaki piercing
+                    ? piercing.GetDamageUnits(HbrCardDescriptionContext.GetTarget(card))
+                    : ((StrongShotHbrgoSaki)card).GetDamageUnits();
+            decimal percent = fragileDamage ? HbrSkillPower.DamagePercent(units) : skill.SkillPowerPercent;
+            description.Add(variable.Name + "Skill", FormatPercent(percent));
+            description.Add(variable.Name + "SkillDetail", Detail(card, percent));
             bool block = skill.SkillPowerKind == HbrSkillPowerKind.Block;
             decimal basisUnits = variable is CalculatedVar ? units : variable.EnchantedValue;
             decimal basis = (IsEffectVar(variable) || IsDeferredBlock(variable)) &&
                 !HbrCardDescriptionContext.IsUnpowered(card)
                 ? BaseAmount(card, basisUnits, block) : UnitBaseAmount(units, block);
-            decimal value = DisplayAmount(card, variable, units, block);
+            decimal value = fragileDamage && CanCalculate(card)
+                ? CalculateLive(card, units, ((DamageVar)variable).Props, false)
+                : DisplayAmount(card, variable, units, block);
             description.Add(variable.Name + "Display", Number(value, basis, variable.WasJustUpgraded));
             if (skill.SkillPowerKind == HbrSkillPowerKind.DamageAndBlock)
             {
-                decimal percent = HbrSkillPower.BlockPercent(variable.BaseValue);
+                decimal blockPercent = HbrSkillPower.BlockPercent(variable.BaseValue);
                 description.Add(variable.Name + "BlockSkill",
-                    FormatPercent(percent));
-                description.Add(variable.Name + "BlockSkillDetail", Detail(card, percent));
+                    FormatPercent(blockPercent));
+                description.Add(variable.Name + "BlockSkillDetail", Detail(card, blockPercent));
                 description.Add(variable.Name + "BlockDisplay", Number(
                     HbrSkillPower.BlockBaseFromUnits(units), HbrSkillPower.BlockBaseFromUnits(units),
                     variable.WasJustUpgraded));

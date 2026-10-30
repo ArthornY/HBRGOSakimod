@@ -26,6 +26,7 @@ internal static class HbrHealthBarSkin
         internal TextureRect PlayerBackdrop;
         internal TextureRect EnemyBackdrop;
         internal NHbrDestructionRateCaption DestructionRate;
+        internal NHbrEnemyStatusValueCaption EnemyStatusValue;
         internal float Thickness = -1f;
     }
 
@@ -128,13 +129,21 @@ internal static class HbrHealthBarSkin
             ZIndex = 2
         };
         container.AddChild(destructionRate);
+        var enemyStatusValue = new NHbrEnemyStatusValueCaption
+        {
+            Name = "HbrEnemyStatusValue",
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            ZIndex = 2,
+            Visible = false
+        };
+        container.AddChild(enemyStatusValue);
         Skins.Add(bar, new Skin
         {
             Background = background, ForegroundContainer = foregroundContainer,
             Fill = foreground, Label = label,
             Frame = frame, BlockOutline = blockOutline, FillMaterial = fillMaterial,
             PlayerBackdrop = playerBackdrop, EnemyBackdrop = enemyBackdrop,
-            DestructionRate = destructionRate
+            DestructionRate = destructionRate, EnemyStatusValue = enemyStatusValue
         });
         bar.AddChildSafely(new NHbrBattleGaugeFrameOverlap
         {
@@ -147,6 +156,7 @@ internal static class HbrHealthBarSkin
     {
         if (!Skins.TryGetValue(bar, out Skin skin)) return;
         SyncForegroundLayout(bar.HpBarContainer, skin.ForegroundContainer);
+        skin.EnemyStatusValue.SetCreature(creature);
         if (creature == null) return;
         float thickness = HbrBattleGaugeSizing.GetThickness(creature);
         if (!Mathf.IsEqualApprox(skin.Thickness, thickness))

@@ -16,9 +16,11 @@ applications total 60%, while one strength-two application has a 37.5% base.
 
 Coverage includes source ownership and snapshots for the hero, phantom and
 cannon; enemy, missing-source and card-owner fallbacks; independent effect and
-duration; native first-tick protection; existing Unfading Scars; per-instance
+duration; expiry at the second actual owner turn end; existing Unfading Scars; per-instance
 saved-property roundtrip and real native clone isolation; positive native amount
-changes copying the exact effect; compatibility strength counts; old-save
+changes copying the exact effect; real DoublePowers effect/duration doubling
+and Weakness Strike effect-only doubling in the existing slots, including
+Artifact/Narara rejection and unchanged provenance; compatibility strength counts; old-save
 lifecycle migration; additive target debuffs; unchanged repeated previews;
 shared actual/preview damage; final flooring and caps; and native localization
 formatting with one decimal place for display. Disabled HBR mode retains its
@@ -50,3 +52,73 @@ hook-listener enumeration are isolated leaves; TestMode skips animation waits.
 cases; it is not replaced for the rest of the fixture.
 Property roundtrip tests saved values rather than a full native save-file load.
 This does not start the game, render UI, package or upload.
+
+Scars cases install the actual native Weak/Vulnerable postfixes. HBR mode keeps
+native Weak/Vulnerable effects and natural duration decay unchanged, while a 25%
+enhancement changes 30% Fragile to 37.5% and protects Fragile duration. Native
+Vulnerable multiplies independently with the additive Fragile bucket. Legacy
+mode retains final effect multiplication after PaperKrane/PaperPhrog, Debilitate
+and Cruelty, pooled upgraded copies and natural-decay protection: 50% Vulnerable
+becomes 62.5%, and 25% Weak reduction becomes 31.25%.
+
+## Cached beta runtime regression
+
+The PowerCmd application and modification signatures, all direct Fragile
+lifecycle callbacks, giver/receiver hooks, and `CombatHistory.PowerReceived`
+are asserted explicitly. Their signatures match stable 0.107.1 and the cached
+public-beta 0.111.0 snapshot, so Fragile needs no additional production adapter.
+The same stable-compiled mod DLL must be used for both runtime runs.
+
+The fixture itself can be built against either native DLL. Beta adds a required
+`CardPlay.Player`, a separate `CombatTurnState` / `CombatStateTracker`, and a
+lock around the extra-turn participant snapshot. The beta setup initializes
+those actual structures; it does not replace combat-ending or duration logic.
+The fixture's three custom native damage hooks use the appropriate five/six
+parameter override for the selected runtime. Existing production
+`HookCompatibility` and `DamageModifierCompatibility` dispatch real native
+hooks, including the real Scars Harmony postfixes.
+
+```powershell
+dotnet build validation/hbr-fragile/Checks.csproj -c Release `
+  -p:ModAssemblyPath='<same stable-compiled mod DLL>' `
+  -p:NativeAssemblyPath='<isolated beta sts2.dll>' `
+  -p:NativeRitsuAssemblyPath='<cached beta STS2-RitsuLib.dll>' `
+  -p:BetaNativeChecks=true
+
+$env:HBR_NATIVE_PROFILE='cached-beta-0.111.0'
+dotnet validation/hbr-fragile/bin/Release/net9.0/Checks.dll `
+  '<same stable-compiled mod DLL>' '<candidate SHA256>' '<beta dependency directory>' `
+  'C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll'
+```
+
+For stable, omit `BetaNativeChecks` and the two native assembly overrides. Save
+`report.json` separately after each run; the next run replaces that file.
+
+The frozen beta 0.111.0 source SHA256 is
+`0861BFA1DF347538D932F22D580E75420F08082792EB914E53B4882764ACDBE9`.
+Managed execution uses the known telemetry-isolated test copy SHA256
+`0C0C1CC3DD3FFF8E2D10BDE4FDA76A5E7743402047B518B4B188A7ED8B65BFAA`.
+Its module initializer's five-byte call to `SentryAutoInit.Init` at file offset
+585 is replaced by five nops; the following return and every other PE byte are
+identical. This excludes telemetry initialization only and does not alter any
+PowerCmd, Hook, damage, Artifact, save, duration, or history method. Source and
+copy hashes, exact changed offsets, and original/replacement IL are verified in
+`outputs/fragile-beta-runtime/boundary.json`; original dependencies stay intact.
+The parent runtime audit separately confirms this frozen 0.111.0 is the current
+public-beta target. The same candidate also runs with the prepared
+`stable-latest` and `beta-latest` dependency profiles: BaseLib 3.4.7 and Ritsu
+0.6.10's facade plus Runtime / Shared / Ui / Settings assemblies. Keep compile
+references at the matching original monolithic Ritsu API; runtime resolution
+uses the prepared profile directory and follows the actual type forwarders.
+These results do not establish compatibility with future beta updates or a
+complete live multiplayer session.
+
+The same fixture also covers the changed damage-cap bridge and Doom predicate:
+actual cannon self-immunity enters the complete native damage hook; a real
+Narara SixSense card scope keeps its zero cap across resistance changes without
+leaking to unrelated sources or recipients. The actual production Doom Harmony
+patch resolves the stable public and beta private predicate. Both direct native
+predicate calls and `DoomPower.GetDoomedCreatures` read a saved five-billion HP
+ledger while the visible native HP proxy is one, then verify exact threshold
+edges and ordinary-creature fallback. These tests evaluate the real predicate
+and public filter; they do not execute Doom's kill animation or death command.

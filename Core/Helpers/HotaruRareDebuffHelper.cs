@@ -47,7 +47,7 @@ internal static class HotaruRareDebuffHelper
     {
         if (!HotaruCommonCannonHelper.CanAct(player) || power?.Owner == null || power.Amount <= 0 || amount <= 0m ||
             !Millsage.IsEnemy(power.Owner, player) ||
-            power is not (VulnerablePower or WeakPower or FragilePower) ||
+            !IsLinkedDebuff(power) ||
             (applier != player.Creature && applier?.PetOwner != player && source?.Owner != player)) return;
         if (!AppliedThisTurn(player).Add(power.GetType()) ||
             player.Creature.GetPower<HotaruIncompleteChordPower>() is not { Amount: > 0 } chord ||
@@ -58,9 +58,14 @@ internal static class HotaruRareDebuffHelper
             await CombatPreviewRefreshHelper.RefreshCreatureIntent(cannon);
     }
 
+    internal static bool IsLinkedDebuff(PowerModel power) => power is FragilePower ||
+        (HbrBattleStatsHelper.IsEnabled(power?.Owner)
+            ? power is HbrDefenseDownPower or HbrAttackDownPower
+            : power is VulnerablePower or WeakPower);
+
     internal static bool HasTripleDebuff(Creature target) => target != null &&
-        (target.GetPower<VulnerablePower>()?.Amount ?? 0) > 0 &&
-        (target.GetPower<WeakPower>()?.Amount ?? 0) > 0 &&
+        HotaruContestVulnerabilityHelper.HasDefenseDown(target) &&
+        HotaruContestVulnerabilityHelper.HasAttackDown(target) &&
         (target.GetPower<FragilePower>()?.Amount ?? 0) > 0;
 
     internal static decimal GetDamageBonus(Creature dealer, Creature target)

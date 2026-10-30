@@ -57,6 +57,10 @@ internal static class HbrBattleStatsHelper
     }
 
     internal static bool TryGetStats(Creature creature, out HbrBattleStats stats)
+        => TryGetStatsWithAdditionalStrength(creature, 0m, out stats);
+
+    internal static bool TryGetStatsWithAdditionalStrength(Creature creature,
+        decimal additionalStrength, out HbrBattleStats stats)
     {
         stats = default;
         if (!IsEnabled(creature)) return false;
@@ -75,7 +79,7 @@ internal static class HbrBattleStatsHelper
                     stats.Intelligence + bonus, stats.Vitality + bonus,
                     stats.Spirit + bonus, stats.Luck + bonus);
             }
-            stats = HbrStatPowerHelper.Apply(creature, stats);
+            stats = HbrStatPowerHelper.ApplyWithAdditionalStrength(creature, stats, additionalStrength);
             return true;
         }
 

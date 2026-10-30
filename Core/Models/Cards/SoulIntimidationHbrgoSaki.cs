@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -50,7 +51,7 @@ public sealed class SoulIntimidationHbrgoSaki : CardModel
         ArgumentNullException.ThrowIfNull(
             cardPlay.Target,
             nameof(cardPlay.Target));
-        await PowerCmd.Apply<WeakPower>(
+        await HbrPercentDebuffApplication.ApplyAttackDown(
             choiceContext,
             cardPlay.Target,
             DynamicVars["WeakPower"].BaseValue,

@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -170,7 +171,7 @@ public sealed class TezukaSaki : HbrgoStaticMonster
         }
         else
         {
-            await PowerCmd.Apply<VulnerablePower>(
+            await HbrPercentDebuffApplication.ApplyDefenseDown(
                 new ThrowingPlayerChoiceContext(),
                 targets,
                 2,

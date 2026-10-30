@@ -35,7 +35,7 @@ public sealed class TranscendSelfHbrgoSaki : CardModel
         new IHoverTip[]
         {
             HoverTipFactory.FromPower<PhantomPower>(),
-            HoverTipFactory.FromPower<PhantomDamageInheritancePower>(),
+            HoverTipFactory.FromPower<HotaruDamageAmplificationPower>(),
             HoverTipFactory.FromPower<StrengthPower>()
         };
 
@@ -60,7 +60,7 @@ public sealed class TranscendSelfHbrgoSaki : CardModel
             PhantomHelper.GetDamageBonusPercent(phantom)));
         if (damageBonus > 0)
         {
-            await PowerCmd.Apply<PhantomDamageInheritancePower>(
+            await PowerCmd.Apply<HotaruDamageAmplificationPower>(
                 choiceContext,
                 Owner.Creature,
                 damageBonus,

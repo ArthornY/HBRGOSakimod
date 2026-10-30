@@ -46,15 +46,24 @@ public sealed class DoublePowersHbrgoSaki : CardModel
                 power is not ShieldLockPower)
             .Select(power => (Power: power, Amount: power is IExactDamagePercentPower exact
                     ? exact.PercentState.GetPercent(power.Amount) : (decimal)power.Amount,
-                DuplicateCounters: PowerDuplicationBookkeepingHelper.SnapshotCounters(power)))
+                DuplicateCounters: PowerDuplicationBookkeepingHelper.SnapshotCounters(power),
+                DebuffPercent: HbrPercentDebuffHelper.IsEnabled(power)
+                    ? (decimal?)HbrPercentDebuffHelper.GetEffectPercent(power) : null))
             .ToArray();
-        foreach (var (power, amount, duplicateCounters) in powers)
+        foreach (var (power, amount, duplicateCounters, debuffPercent) in powers)
         {
             // Refund/expiry bookkeeping must also double when a permanent and
             // temporary stat cancel out, leaving no visible stat power.
             duplicateCounters?.Invoke();
             if (amount == 0)
                 continue;
+
+            if (debuffPercent.HasValue)
+            {
+                await HbrPercentDebuffApplication.DoubleExisting(choiceContext, power,
+                    debuffPercent.Value, (int)amount, Owner.Creature, this);
+                continue;
+            }
 
             // The matching total stat is doubled separately from this snapshot.
             using TemporaryStatDuplicationScope scope =

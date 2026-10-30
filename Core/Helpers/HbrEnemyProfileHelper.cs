@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Rooms;
 
@@ -18,6 +19,15 @@ internal static class HbrEnemyProfileHelper
     internal const decimal BossBonus = 50m;
 
     internal static decimal GetEnemyParameter(Creature creature)
+    {
+        decimal baseline = GetBaseEnemyParameter(creature);
+        if (!EnemyStatScalingHelper.IsEnemy(creature) || !HbrBattleStatsHelper.IsEnabled(creature))
+            return baseline;
+        return Math.Max(0m, baseline - Math.Max(0, creature.GetPowerAmount<HbrCalamityPower>()));
+    }
+
+    // Progression remains independent of temporary debuffs and resource pools.
+    internal static decimal GetBaseEnemyParameter(Creature creature)
     {
         // Every enemy, including Hopper, shares map growth. The first normal
         // room starts at the authored opening benchmark, without a floor bonus.

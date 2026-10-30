@@ -25,7 +25,7 @@ internal static class NararaShibaCombatStartupPatch
         // Beta already drains the unpaused queue before installing starting
         // powers. Stable can otherwise wait forever on its own paused queue.
         MethodInfo startup = AccessTools.DeclaredMethod(
-            typeof(CombatManager), nameof(CombatManager.StartCombatInternal), Type.EmptyTypes);
+            typeof(CombatManager), "StartCombatInternal", Type.EmptyTypes);
         if (startup == null || startup.IsStatic || startup.ReturnType != typeof(Task))
             throw new MissingMethodException(typeof(CombatManager).FullName, "Task StartCombatInternal()");
 

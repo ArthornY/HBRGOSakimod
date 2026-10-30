@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "name": "HBR DefenseDown icon",
+  "importedPath": "res://images/powers/hbr_defense_down_power.png",
+  "sha256": "53db86932618cfc3971e09aa6cb8b300fee3e2bbfde08bd629228ff8ab202042",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconBuffDefense.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-7485474821332022595",
+    "spritePathId": "8842726621101738685",
+    "textureFormat": "BC7",
+    "textureFormatId": 25,
+    "mipCount": 1,
+    "sourceCabSha256": "0265727bac9518b06cec14b25d9dff0afa31a2654b8bb6dae2bcfea2454e207b",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_-7485474821332022595_IconBuffDefense.png",
+    "resourceIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/resource-index.sqlite",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl",
+    "manifest": "D:/stsmod/HeavenBurnsRedEditor/extracted/unity/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/manifest.json",
+    "sourceBundleAsRecorded": "E:/game/HeavenBurnsRed/HeavenBurnsRed Game/AssetBundleCache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/__data"
+  },
+  "identityEvidence": {
+    "checkedUtc": "2026-10-30T13:31:43.731522+00:00",
+    "dataSource": "https://master.hbr.quest/v1/special_statuses.json",
+    "dataSourceSha256": "12f4a0ab3f4586abc550fdaa358828b1bee7b5f8217558acebf6ca96f63cdc6d",
+    "specialStatusId": 244000003,
+    "label": "SpecialStatus.DefenseDown",
+    "type": "DefenseDown",
+    "dataIcon": "IconBuffDefense.webp",
+    "dataCategory": "Debuff",
+    "sourceStatus": {
+      "id": 244000003,
+      "label": "SpecialStatus.DefenseDown",
+      "type": "DefenseDown",
+      "icon": "IconBuffDefense.webp",
+      "positive_type": "Debuff",
+      "category": "Debuff",
+      "limit_category": "DefenseDown",
+      "remove_buff": false,
+      "remove_debuff": true,
+      "debuff_guard": true,
+      "icon_element": true,
+      "show_icon_from_passive": false,
+      "show_debuff_label": true,
+      "forced_one": false
+    },
+    "note": "The original game shares this base artwork with the corresponding buff. AttackDown/DefenseDown are identified explicitly by their special-status records; their debuff label is rendered separately by the game. This imports the exact original base texture without synthesizing a badge or arrow."
+  },
+  "usage": {
+    "small": "res://images/powers/hbr_defense_down_power.png",
+    "big": "res://images/powers/hbr_defense_down_power.png",
+    "note": "The indexed original has one 64x64 Texture2D and its Sprite. Both icon roles reuse the original image."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

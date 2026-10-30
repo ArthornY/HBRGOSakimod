@@ -105,7 +105,7 @@ public sealed class NararaNullificationPower : PowerModel, ICustomPower
         return Task.CompletedTask;
     }
 
-    public override decimal ModifyDamageCap(Creature target, ValueProp props, Creature dealer, CardModel cardSource) =>
+    public decimal ModifyDamageCap(Creature target, ValueProp props, Creature dealer, CardModel cardSource) =>
         GetNullificationDamageCap(target, cardSource);
 
     // Give the compatibility bridge its own nonvirtual entry point. Calling an

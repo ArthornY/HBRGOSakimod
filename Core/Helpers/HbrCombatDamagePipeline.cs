@@ -156,7 +156,11 @@ internal static class HbrCombatDamagePipeline
                         dealer,
                         cardSource,
                         cardPlay);
-                    if (model is MegaCrit.Sts2.Core.Models.Powers.VulnerablePower &&
+                    // HBR defense down snapshots Sea Breeze's base bonus on
+                    // application. Original Vulnerable retains its own effect;
+                    // the old Sea Breeze interaction applies only in legacy mode.
+                    if (model is MegaCrit.Sts2.Core.Models.Powers.VulnerablePower vulnerable &&
+                        !HbrBattleStatsHelper.IsEnabled(target) &&
                         SaviorGrandEntranceCombatHelper.HasEnemyUpgradeEffect(target, 5))
                         multiplier = 1m + (multiplier - 1m) * 2m;
                     multipliers.Add(model, multiplier, ref modifiedDamage, ref rawDamage);

@@ -198,9 +198,8 @@ public partial class NManualCannonUpgradesPanel : Control
             _icon.Texture = PreloadManager.Cache.GetTexture2D("res://images/relics/millsage.webp");
             _icon.Modulate = Colors.White;
             _title.Text = "浮游炮 · 通用规则";
-            _status.Text = "倍率、磨损与恢复、升级、活力及五门炮的基础效果";
-            _description.Text = Format(HotaruCannonSkillPowerHelper.Description(
-                "rest_site_ui", "HOTARU_CANNON_UPGRADE.manualRules", _relic?.Owner).GetFormattedText());
+            _status.Text = "灵魂之力、磨损与恢复、升级、活力及五门炮的基础效果";
+            _description.Text = Format(HotaruCannonUpgrades.ManualRules(_relic?.Owner));
             return;
         }
         int level = Level(_selected);

@@ -214,6 +214,7 @@ public sealed partial class Millsage : RelicModel
     private async Task RunTurnStart(PlayerChoiceContext context, object overclockToken)
     {
         if (!TryBeginTurnPhase(HotaruCannonPhase.Start, overclockToken)) return;
+        using var automaticCannons = HotaruAutomaticCannonContext.Begin(Owner, HotaruCannonPhase.Start);
         using var turnPhase = HotaruUncommonCannonHelper.BeginTurnPhase();
         HotaruFirstManualCardHelper.ResetTurn(Owner, overclockToken);
         await HotaruRareCannonHelper.OnTurnStart(context, Owner, overclockToken);
@@ -234,6 +235,7 @@ public sealed partial class Millsage : RelicModel
     private async Task RunTurnEnd(PlayerChoiceContext context, object overclockToken)
     {
         if (!TryBeginTurnPhase(HotaruCannonPhase.End, overclockToken)) return;
+        using var automaticCannons = HotaruAutomaticCannonContext.Begin(Owner, HotaruCannonPhase.End);
         using var turnPhase = HotaruUncommonCannonHelper.BeginTurnPhase();
         using var vigorBatch = HotaruCannonVigorHelper.BeginBatch(this,
             new[] { HotaruCannonKind.Contest, HotaruCannonKind.Longing, HotaruCannonKind.Absolution, HotaruCannonKind.Endgame }
@@ -321,7 +323,6 @@ public sealed partial class Millsage : RelicModel
         if (!CanAct() || cannon == null || !IsEnemy(target, Owner)) return;
         HotaruCannonState state = StateFor(HotaruCannonKind.Happiness);
         bool all = HasCannonUpgrade(HotaruCannonKind.Happiness, 7);
-        int hits = HotaruCannonVigorHelper.GetPlannedHitCount(this, HotaruCannonKind.Happiness, HotaruCannonPhase.End);
         using var vigorBatch = reuseVigorBatch ? null : HotaruCannonVigorHelper.BeginBatch(this,
             new[] { (Cannon: cannon, Phase: HotaruCannonPhase.End) });
         int actionCount = state.TakeActionCount();
@@ -336,11 +337,15 @@ public sealed partial class Millsage : RelicModel
             HotaruUncommonCannonHelper.MarkExecuted(cannon);
             if (growBeforeDamage) await GrowHappiness(choiceContext, cannon, 0m, cardSource, cardPlay);
             decimal damage = state.HappinessDamage;
+            int baseHits = HotaruCannonVigorHelper.GetPlannedHitCount(this, HotaruCannonKind.Happiness,
+                HotaruCannonPhase.End, includeCombo: false);
+            using var comboAttack = baseHits > 0 ? HbrComboHelper.BeginAttack(cannon) : null;
+            int hits = comboAttack?.HitCount(baseHits) ?? baseHits;
             var vigorAttack = HotaruCannonVigorHelper.BeginAttack(cannon, HotaruCannonPhase.End);
-            using var destructionSkill = HbrBattleStatsHelper.IsEnabled(Owner) && hits > 0
-                ? HbrDestructionGainHelper.BeginSkill(Owner.Creature, cardSource, hits) : null;
             try
             {
+                using var destructionSkill = HbrBattleStatsHelper.IsEnabled(Owner) && hits > 0
+                    ? HbrDestructionGainHelper.BeginSkill(Owner.Creature, cardSource, hits) : null;
                 for (int hit = 0; hit < hits && CanAct(); hit++)
                 {
                     Creature[] targets = all ? Owner.Creature.CombatState.Enemies.Where(enemy => IsEnemy(enemy, Owner)).ToArray()
@@ -352,7 +357,18 @@ public sealed partial class Millsage : RelicModel
                     }
                 }
             }
-            finally { await vigorAttack.Complete(choiceContext); }
+            finally
+            {
+                try { await vigorAttack.Complete(choiceContext); }
+                finally
+                {
+                    if (comboAttack != null)
+                    {
+                        try { await comboAttack.Complete(choiceContext); }
+                        finally { comboAttack.Dispose(); }
+                    }
+                }
+            }
             await NotifyCannonActionsCompleted(choiceContext, new[] { cannon });
             await HotaruUncommonCannonHelper.AfterAction(choiceContext, uncommon);
             state.HalveHappinessDamage();
@@ -427,11 +443,14 @@ public sealed partial class Millsage : RelicModel
         HotaruUncommonCannonHelper.MarkExecuted(cannon);
         HotaruCannonState state = StateFor(kind);
         var vigorAttack = actionVigor ?? HotaruCannonVigorHelper.BeginAttack(cannon, phase);
-        int hitCount = HotaruCannonVigorHelper.GetPlannedHitCount(this, kind, phase);
-        using var destructionSkill = HbrBattleStatsHelper.IsEnabled(Owner) && hitCount > 0
-            ? HbrDestructionGainHelper.BeginSkill(Owner.Creature, cardSource, hitCount) : null;
+        int baseHits = kind == HotaruCannonKind.Happiness ? 0 :
+            HotaruCannonVigorHelper.GetPlannedHitCount(this, kind, phase, includeCombo: false);
+        using var comboAttack = baseHits > 0 ? HbrComboHelper.BeginAttack(cannon) : null;
+        int hitCount = comboAttack?.HitCount(baseHits) ?? baseHits;
         try
         {
+            using var destructionSkill = HbrBattleStatsHelper.IsEnabled(Owner) && hitCount > 0
+                ? HbrDestructionGainHelper.BeginSkill(Owner.Creature, cardSource, hitCount) : null;
             if (kind == HotaruCannonKind.Endgame)
             {
                 for (int hit = 0; hit < hitCount && CanAct(); hit++)
@@ -489,7 +508,18 @@ public sealed partial class Millsage : RelicModel
         }
         finally
         {
-            if (completeVigor) await vigorAttack.Complete(context);
+            try
+            {
+                if (completeVigor) await vigorAttack.Complete(context);
+            }
+            finally
+            {
+                if (comboAttack != null)
+                {
+                    try { await comboAttack.Complete(context); }
+                    finally { comboAttack.Dispose(); }
+                }
+            }
         }
         if (CanAct()) await HotaruCannonSupportUpgradeHelper.AfterPhase(context, this, kind, phase, cardPlay);
         await ResolveCriticalCannonRewards(context);

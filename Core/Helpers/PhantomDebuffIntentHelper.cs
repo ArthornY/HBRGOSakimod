@@ -95,10 +95,10 @@ internal static class PhantomDebuffIntentHelper
             target.CanReceivePowers).ToArray();
         var context = new ThrowingPlayerChoiceContext();
         if (vulnerable > 0)
-            await PowerCmd.Apply<VulnerablePower>(context, livingTargets,
+            await HbrPercentDebuffApplication.ApplyDefenseDown(context, livingTargets,
                 vulnerable, phantom, null);
         if (weak > 0)
-            await PowerCmd.Apply<WeakPower>(context, livingTargets, weak, phantom, null);
+            await HbrPercentDebuffApplication.ApplyAttackDown(context, livingTargets, weak, phantom, null);
         if (frail > 0)
             await PowerCmd.Apply<FrailPower>(context, livingTargets, frail, phantom, null);
 

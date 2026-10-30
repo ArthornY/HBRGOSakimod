@@ -497,7 +497,7 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
                 dealer,
                 cardSource);
         decimal gainedCharge = decimal.Round(
-            result.TotalDamage * 0.5m * gainMultiplier,
+            result.TotalDamage * 0.001m * gainMultiplier,
             2,
             MidpointRounding.AwayFromZero);
         if (gainedCharge > 0)

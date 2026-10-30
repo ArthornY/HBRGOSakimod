@@ -30,6 +30,9 @@ internal static class HbrNativeFixedResourceHelper
     internal static Creature GetResourceOwner(DynamicVar variable)
     {
         AbstractModel owner = variable == null ? null : VariableOwner(variable);
+        // Character selection and compendia format canonical templates. Their
+        // Owner getters require a mutable instance; no player exists yet.
+        if (owner?.IsMutable != true) return null;
         return owner switch
         {
             CardModel card => card.Owner?.Creature,

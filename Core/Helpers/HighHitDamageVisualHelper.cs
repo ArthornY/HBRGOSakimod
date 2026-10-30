@@ -106,18 +106,17 @@ internal static class HighHitDamageVisualHelper
         internal Creature Dealer;
     }
 
-    // X-loop cards issue several Execute calls. This shared boundary merges
-    // their presentation and keeps one destruction budget, without changing X,
-    // replaying hit-count hooks, or changing the number of damage commands.
+    // The card boundary counts Execute calls, not hits within a command. These
+    // cards now use one multi-hit Execute; its resolved count owns the splitting.
     internal static CardBatchScope BeginCardBatch(CardModel card) =>
         BeginCardBatch(card, GetExpectedLoopHits(card));
 
     private static long GetExpectedLoopHits(CardModel card) => card switch
     {
-        DragonArrowHbrgoSaki => Math.Max(0, DualSwordsCopyHelper.PeekXEnergySpent(card,
-            card.EnergyCost.CapturedXValue)),
-        MagicSwordLuckySevenHbrgoSaki => Math.Max(0, (int)(LuckySevenHits.GetValue(card) ?? 0)),
-        BladeDanceHbrgoSaki => Math.Max(0, card.DynamicVars.Repeat.IntValue),
+        DragonArrowHbrgoSaki => DualSwordsCopyHelper.PeekXEnergySpent(card,
+            card.EnergyCost.CapturedXValue) > 0 ? 1 : 0,
+        MagicSwordLuckySevenHbrgoSaki => (int)(LuckySevenHits.GetValue(card) ?? 0) > 0 ? 1 : 0,
+        BladeDanceHbrgoSaki => card.DynamicVars.Repeat.IntValue > 0 ? 1 : 0,
         _ => 0
     };
 
@@ -228,7 +227,7 @@ internal static class HighHitDamageVisualHelper
             // cannot change the budget of later native Execute calls.
             decimal coefficient = next / loops - previous / loops;
             scope.DestructionSkill = HbrDestructionGainHelper.BeginSkill(
-                command.Attacker, source, hits, coefficient);
+                command.Attacker, source, hits, HbrDestructionGainHelper.DefaultSkillCoefficient * coefficient);
         }
         else
         {
@@ -250,6 +249,11 @@ internal static class HighHitDamageVisualHelper
         AttackScope scope)
     {
         try { return await original; }
+        catch
+        {
+            HbrComboHelper.CancelAttack(scope?.Command);
+            throw;
+        }
         finally { CloseAttack(scope); }
     }
 

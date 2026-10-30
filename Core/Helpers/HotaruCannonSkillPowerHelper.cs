@@ -1,4 +1,6 @@
+using System;
 using System.Globalization;
+using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization;
 
@@ -35,16 +37,45 @@ internal static class HotaruCannonSkillPowerHelper
     };
 
     internal static string DamagePercent(decimal units) =>
-        HbrSkillPower.DamagePercent(units).ToString("0.###", CultureInfo.InvariantCulture);
+        HbrSkillPower.DamagePercent(units).ToString("0.##", CultureInfo.InvariantCulture);
 
     internal static string BlockPercent(decimal units) =>
-        HbrSkillPower.BlockPercent(units).ToString("0.###", CultureInfo.InvariantCulture);
+        HbrSkillPower.BlockPercent(units).ToString("0.##", CultureInfo.InvariantCulture);
 
     internal static LocString Description(string table, string key, Player owner)
     {
         LocString hbr = new(table, key + ".hbr");
         return HbrBattleStatsHelper.IsEnabled(owner) && hbr.Exists()
             ? hbr : new LocString(table, key);
+    }
+
+    // Outside combat there is no enemy to evaluate. Match card descriptions:
+    // show the single-coefficient base, then this cannon's own final Soul scale.
+    // Live manual pages reuse the exact same previews as battle hover/intent.
+    internal static void AddMenuEffectVariables(LocString text, HotaruCannonKind kind,
+        Player owner, int? soulPercent = null)
+    {
+        if (!HbrBattleStatsHelper.IsEnabled(owner)) return;
+        Millsage relic = owner?.GetRelic<Millsage>();
+        var cannon = relic?.GetCannon(kind);
+        string Damage(decimal units, HotaruCannonPhase phase = HotaruCannonPhase.End) =>
+            cannon != null && !soulPercent.HasValue
+                ? HotaruCannonStatsHelper.FormatDamagePreview(cannon, units,
+                    includeContestBonus: kind == HotaruCannonKind.Contest, previewPhase: phase)
+                : CardDamageNumberFormatter.Format(Math.Max(units > 0m ? 1m : 0m,
+                    decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
+                        HbrSkillPower.DamageBaseFromUnits(units),
+                        (soulPercent ?? relic?.GetCannonDamagePercent(kind) ?? Millsage.InitialCannonDamagePercent) / 100m))));
+        string template = text.GetRawText();
+        if (template.Contains("{Damage}", StringComparison.Ordinal))
+            text.Add("Damage", Damage(EndDamage(kind)));
+        if (template.Contains("{Block}", StringComparison.Ordinal))
+            text.Add("Block", CardDamageNumberFormatter.Format(HotaruCannonBlockHelper.Preview(
+                owner?.Creature, StartBlock(kind), null, cannon)));
+        if (template.Contains("{StartDamage}", StringComparison.Ordinal))
+            text.Add("StartDamage", Damage(AbsolutionStartDamage, HotaruCannonPhase.Start));
+        if (template.Contains("{EndDamage}", StringComparison.Ordinal))
+            text.Add("EndDamage", Damage(AbsolutionEndDamage));
     }
 
     internal static void AddDescriptionVariables(LocString text, HotaruCannonKind kind,
@@ -60,5 +91,10 @@ internal static class HotaruCannonSkillPowerHelper
         text.Add("UpgradedGrowthSkillPercent", DamagePercent(UpgradedHappinessGrowth));
         text.Add("HitGrowthSkillPercent", DamagePercent(HappinessHitGrowth));
         text.Add("ResistanceSkillPercent", DamagePercent(ContestResistanceDamage));
+        text.Add("GrowthBaseDamage", CardDamageNumberFormatter.Format(HbrSkillPower.DamageBaseFromUnits(growth ?? HappinessGrowthStep)));
+        text.Add("GrowthStepBaseDamage", CardDamageNumberFormatter.Format(HbrSkillPower.DamageBaseFromUnits(HappinessGrowthStep)));
+        text.Add("UpgradedGrowthBaseDamage", CardDamageNumberFormatter.Format(HbrSkillPower.DamageBaseFromUnits(UpgradedHappinessGrowth)));
+        text.Add("HitGrowthBaseDamage", CardDamageNumberFormatter.Format(HbrSkillPower.DamageBaseFromUnits(HappinessHitGrowth)));
+        text.Add("ResistanceBaseDamage", CardDamageNumberFormatter.Format(HbrSkillPower.DamageBaseFromUnits(ContestResistanceDamage)));
     }
 }

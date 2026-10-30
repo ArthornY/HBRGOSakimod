@@ -29,7 +29,9 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
         shape.Add("Count", Relic?.RetiredCannonCount ?? 0);
         shape.Add("Soul", Relic?.EndgameSoulPercent ?? (positive ? 80 : 50));
         decimal baseDamage = HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, null, CurrentDamage);
-        shape.Add("BaseDamage", HotaruMyIndulgencePower.ModifyBaseDamage(cannon, CurrentDamage));
+        if (HbrBattleStatsHelper.IsEnabled(Relic?.Owner))
+            shape.Add("BaseDamage", CardDamageNumberFormatter.Format(HbrSkillPower.DamageBaseFromUnits(CurrentDamage)));
+        else shape.Add("BaseDamage", HotaruMyIndulgencePower.ModifyBaseDamage(cannon, CurrentDamage));
         shape.Add("BaseDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(CurrentDamage));
         shape.Add("StartDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(baseDamage));
         shape.Add("EndDamageSkillPercent", HotaruCannonSkillPowerHelper.DamagePercent(baseDamage));

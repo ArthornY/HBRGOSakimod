@@ -216,16 +216,28 @@ internal static class HotaruCannonVigorHelper
                 ? HotaruCannonPhase.Start : HotaruCannonPhase.End)),
             completeActions: true, fireHappiness: fireHappiness);
 
-    private static int GetCompleteActionHitCount(Millsage relic, HotaruCannonKind kind, bool fireHappiness) => kind switch
+    private static int GetCompleteActionHitCount(Millsage relic, HotaruCannonKind kind, bool fireHappiness)
     {
-        HotaruCannonKind.Happiness when fireHappiness => GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
-        HotaruCannonKind.Absolution or HotaruCannonKind.Endgame => (int)Math.Min(int.MaxValue,
-            (long)GetPlannedHitCount(relic, kind, HotaruCannonPhase.Start) +
-            GetPlannedHitCount(relic, kind, HotaruCannonPhase.End)),
-        HotaruCannonKind.Contest or HotaruCannonKind.Longing =>
-            GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
-        _ => 0
-    };
+        if (kind is HotaruCannonKind.Absolution or HotaruCannonKind.Endgame)
+        {
+            int start = GetPlannedHitCount(relic, kind, HotaruCannonPhase.Start, includeCombo: false);
+            int end = GetPlannedHitCount(relic, kind, HotaruCannonPhase.End, includeCombo: false);
+            Creature cannon = relic?.GetCannon(kind);
+            // START spends one application of each active combo. Longer-lived
+            // combos can still enhance END in the same complete action.
+            int priorAttacks = start > 0 ? 1 : 0;
+            if (start > 0) start = HbrComboHelper.PreviewHitCount(cannon, start);
+            if (end > 0) end = HbrComboHelper.PreviewHitCountAfterAttacks(cannon, end, priorAttacks);
+            return (int)Math.Min(int.MaxValue, (long)start + end);
+        }
+        return kind switch
+        {
+            HotaruCannonKind.Happiness when fireHappiness => GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
+            HotaruCannonKind.Contest or HotaruCannonKind.Longing =>
+                GetPlannedHitCount(relic, kind, HotaruCannonPhase.End),
+            _ => 0
+        };
+    }
 
     internal static AttackScope BeginAttack(Creature cannon, HotaruCannonPhase phase)
     {
@@ -296,8 +308,11 @@ internal static class HotaruCannonVigorHelper
         return ReferenceEquals(winner, cannon) ? Math.Max(0, vigor.Amount) : 0m;
     }
 
-    internal static int GetPlannedHitCount(Millsage relic, HotaruCannonKind kind, HotaruCannonPhase phase) =>
-        HotaruMyIndulgencePower.GetHitCount(relic?.GetCannon(kind), phase switch
+    internal static int GetPlannedHitCount(Millsage relic, HotaruCannonKind kind,
+        HotaruCannonPhase phase, bool includeCombo = true)
+    {
+        Creature cannon = relic?.GetCannon(kind);
+        int hits = HotaruMyIndulgencePower.GetHitCount(cannon, phase switch
         {
             HotaruCannonPhase.Start => kind == HotaruCannonKind.Absolution ? 3 :
                 kind == HotaruCannonKind.Endgame ? relic?.EndgameStartHitCount ?? 0 : 0,
@@ -312,4 +327,6 @@ internal static class HotaruCannonVigorHelper
             },
             _ => 0
         });
+        return includeCombo && hits > 0 ? HbrComboHelper.PreviewHitCount(cannon, hits) : hits;
+    }
 }

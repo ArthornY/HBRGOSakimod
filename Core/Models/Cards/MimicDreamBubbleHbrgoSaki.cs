@@ -47,11 +47,12 @@ public sealed class MimicDreamBubbleHbrgoSaki : CardModel
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             base.DynamicVars.Damage.BaseValue);
-        for (int i = 0; i < _hitCount && !CombatManager.Instance.IsOverOrEnding; i++)
+        if (!CombatManager.Instance.IsOverOrEnding)
         {
             var attack = await DamageCmd.Attack(damage)
                 .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
+                .WithHitCount(_hitCount)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
 

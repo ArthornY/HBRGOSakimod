@@ -420,7 +420,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
         }
 
         var choiceContext = new ThrowingPlayerChoiceContext();
-        await PowerCmd.Apply<WeakPower>(
+        await HbrPercentDebuffApplication.ApplyAttackDown(
             choiceContext,
             targets,
             99,
@@ -432,7 +432,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
             99,
             Creature,
             null);
-        await PowerCmd.Apply<VulnerablePower>(
+        await HbrPercentDebuffApplication.ApplyDefenseDown(
             choiceContext,
             targets,
             99,

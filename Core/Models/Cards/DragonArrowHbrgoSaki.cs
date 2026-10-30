@@ -51,16 +51,13 @@ public sealed class DragonArrowHbrgoSaki : CardModel
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
             DynamicVars.Damage.BaseValue);
-        for (int i = 0;
-             i < energySpent && !CombatManager.Instance.IsOverOrEnding;
-             i++)
-        {
-            await DamageCmd.Attack(damage)
-                .FromCardCompat(this, cardPlay)
-                .TargetingAllOpponents(CombatState)
-                .WithHitFx("vfx/vfx_attack_slash")
-                .Execute(choiceContext);
-        }
+        if (energySpent <= 0 || CombatManager.Instance.IsOverOrEnding) return;
+        await DamageCmd.Attack(damage)
+            .FromCardCompat(this, cardPlay)
+            .TargetingAllOpponents(CombatState)
+            .WithHitCount(energySpent)
+            .WithHitFx("vfx/vfx_attack_slash")
+            .Execute(choiceContext);
     }
 
     protected override void OnUpgrade()

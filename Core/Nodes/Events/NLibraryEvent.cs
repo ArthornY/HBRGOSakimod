@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Godot;
 using HBRGOSakiMod.Core.Models.Acts;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Story;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.ControllerInput;
@@ -170,9 +171,9 @@ public partial class NLibraryEvent : Control, ICustomEventNode
             return;
         }
 
-        // ui_select is STS2's controller select action. Native Godot Buttons only
-        // understand ui_accept, so route both once before their GUI handling.
-        if (inputEvent.IsActionPressed(MegaInput.accept) || inputEvent.IsActionPressed(MegaInput.select))
+        // Native confirmation was renamed in beta. Route the active game's
+        // confirmation/select actions once before Godot Button GUI handling.
+        if (LibraryInputCompatibility.IsAdvancePressed(inputEvent))
         {
             Control focused = GetViewport().GuiGetFocusOwner();
             if (focused is Button button && IsAncestorOf(button))

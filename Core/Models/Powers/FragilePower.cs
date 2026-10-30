@@ -58,8 +58,7 @@ public sealed class FragilePower : PowerModel
                 return new LocString("powers", Id.Entry + ".hbrReferenceDescription");
             if (!HbrBattleStatsHelper.IsEnabled(Owner)) return base.Description;
             LocString text = new("powers", Id.Entry + ".hbrDescription");
-            text.Add("FragilePercent", DamageAmplificationLimits.AddSaturated(HbrEffectPercent,
-                HotaruUnfadingScarsPower.AdditionalEffect(Owner) * 100m)
+            text.Add("FragilePercent", HotaruUnfadingScarsPower.EnhanceEffect(Owner, HbrEffectPercent)
                 .ToString("0.#", CultureInfo.InvariantCulture));
             text.Add("Turns", Math.Max(0, Amount));
             text.Add("ModifierCount", ModifierAmount);
@@ -78,6 +77,7 @@ public sealed class FragilePower : PowerModel
             ConfigureHbr(HbrEffectPercent, ModifierAmount);
             SetAmount(Math.Min(2, Amount), silent: true);
         }
+        if (HbrBattleStatsHelper.IsEnabled(Owner)) SkipNextDurationTick = false;
         Flash();
         await PowerCmd.TickDownDuration(this);
     }
@@ -88,8 +88,9 @@ public sealed class FragilePower : PowerModel
         if (target != Owner || amount <= 0m || !Owner.HasPower<BreakPower>()) return 1m;
         bool hbr = HbrBattleStatsHelper.IsEnabled(Owner);
         if (hbr && Amount <= 0) return 1m;
-        decimal multiplier = (hbr ? 1m + HbrEffectPercent / 100m : 1.5m) +
-            HotaruUnfadingScarsPower.AdditionalEffect(Owner);
+        decimal effect = hbr ? HbrEffectPercent / 100m : 0.5m;
+        decimal multiplier = DamageAmplificationLimits.AddSaturated(1m,
+            HotaruUnfadingScarsPower.EnhanceEffect(Owner, effect));
         return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
     }
 }

@@ -3,6 +3,7 @@ using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -88,6 +89,15 @@ internal struct HbrDamageMultiplierAccumulator
         {
             _destructionMultiplier = DamageAmplificationLimits.MultiplySaturated(
                 _destructionMultiplier, multiplier);
+        }
+        else if (_hbrNumerics && model is WeakPower or VulnerablePower)
+        {
+            // Vanilla effects retain their own multiplicative bucket, alongside
+            // (and independently of) the HBR attack/defense-down abilities.
+            runningDamage = DamageAmplificationLimits.MultiplySaturated(runningDamage, multiplier);
+            rawDamage = DamageAmplificationLimits.MultiplySaturated(rawDamage, Math.Max(1m, multiplier));
+            OtherMultiplier = DamageAmplificationLimits.MultiplySaturated(OtherMultiplier, multiplier);
+            RawOtherMultiplier = DamageAmplificationLimits.MultiplySaturated(RawOtherMultiplier, Math.Max(1m, multiplier));
         }
         else if (_hbrNumerics && HbrgoSakiDamageMultiplierHelper.IsDefenseDownSource(
             model, _target, _dealer, multiplier))

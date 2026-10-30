@@ -1,3 +1,4 @@
+using HBRGOSakiMod.Core.Helpers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -183,13 +184,13 @@ public sealed class RedCrimsonBossMonster : HbrgoStaticMonster
             .ToList();
         PlayerChoiceContext choiceContext =
             new ThrowingPlayerChoiceContext();
-        await PowerCmd.Apply<VulnerablePower>(
+        await HbrPercentDebuffApplication.ApplyDefenseDown(
             choiceContext,
             livingTargets,
             2,
             Creature,
             null);
-        await PowerCmd.Apply<WeakPower>(
+        await HbrPercentDebuffApplication.ApplyAttackDown(
             choiceContext,
             livingTargets,
             2,

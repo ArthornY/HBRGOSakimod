@@ -123,13 +123,13 @@ public sealed class FatePointsHbrgoSaki : CardModel
                 DynamicVars["FragilePower"].BaseValue,
                 Owner.Creature,
                 this);
-            await PowerCmd.Apply<VulnerablePower>(
+            await HbrPercentDebuffApplication.ApplyDefenseDown(
                 choiceContext,
                 cardPlay.Target,
                 DynamicVars["VulnerablePower"].BaseValue,
                 Owner.Creature,
                 this);
-            await PowerCmd.Apply<WeakPower>(
+            await HbrPercentDebuffApplication.ApplyAttackDown(
                 choiceContext,
                 cardPlay.Target,
                 DynamicVars["WeakPower"].BaseValue,

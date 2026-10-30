@@ -50,7 +50,7 @@ public sealed class HelloWorldHbrgoSaki : CardModel
             if (HasUpgradeEffect(4))
             {
                 yield return HoverTipFactory.Static(StaticHoverTip.Block);
-                yield return HoverTipFactory.FromPower<PhantomDamageInheritancePower>();
+                yield return HoverTipFactory.FromPower<HotaruDamageAmplificationPower>();
             }
             if (HasUpgradeEffect(6)) yield return HoverTipFactory.FromPower<MyLegendNextAttackPower>();
         }

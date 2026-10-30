@@ -56,10 +56,13 @@ public sealed class HotaruUnfadingScarsPower : HotaruUncommonCardPower
             : Enumerable.Empty<HotaruUnfadingScarsPower>();
 
     internal static bool PreventsNaturalDecay(PowerModel power) =>
-        (power is VulnerablePower or WeakPower or FragilePower) && Sources(power.Owner).Any();
+        HotaruRareDebuffHelper.IsLinkedDebuff(power) && Sources(power.Owner).Any();
 
-    internal static decimal AdditionalEffect(Creature affected) =>
-        Sources(affected).Sum(power => (decimal)power.EffectPercent) / 100m;
+    // Enhance the resolved abnormal-effect amount, not the whole damage factor
+    // and not its remaining duration. Existing copies still pool their bonuses.
+    internal static decimal EnhanceEffect(Creature affected, decimal effect) =>
+        DamageAmplificationLimits.MultiplySaturated(effect,
+            1m + Sources(affected).Sum(power => (decimal)power.EffectPercent) / 100m);
 }
 
 [CustomID("HOTARU_TRACE_OLD_SCAR_POWER")]

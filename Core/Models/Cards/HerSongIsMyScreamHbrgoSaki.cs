@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
@@ -108,44 +110,66 @@ public sealed class HerSongIsMyScreamHbrgoSaki : CardModel
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
         HasPlayedThisCombat = true;
-
-        await DamageCmd.Attack(DynamicVars.Damage.BaseValue)
-            .FromCardCompat(this, cardPlay)
-            .Targeting(cardPlay.Target)
-            .WithHitFx("vfx/vfx_attack_slash")
-            .Execute(choiceContext);
-
-        await CreatureCmd.GainBlock(
-            Owner.Creature,
-            DynamicVars.Block,
-            cardPlay);
-
-        if (HasUpgradeEffect(4))
-            await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
-
-        if (HasUpgradeEffect(0))
+        using var comboAttack = HbrComboHelper.BeginCardAttack(this);
+        List<Func<Task<AttackCommand>>> attacks = comboAttack == null ? null : new(2);
+        try
         {
-            decimal blockDamage = Owner.Creature.Block;
-            using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(Owner)
-                ? HbrAbsoluteBaseDamageContext.Begin(Owner.Creature, this, cardPlay.Target, blockDamage)
-                : null;
-            await DamageCmd.Attack(blockDamage)
+            decimal primaryDamage = DynamicVars.Damage.BaseValue;
+            Task<AttackCommand> PrimaryAttack() => DamageCmd.Attack(primaryDamage)
                 .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")
                 .Execute(choiceContext);
+            attacks?.Add(PrimaryAttack);
+            AttackCommand primary = await PrimaryAttack();
+            comboAttack?.Record(primary);
+
+            await CreatureCmd.GainBlock(
+                Owner.Creature,
+                DynamicVars.Block,
+                cardPlay);
+
+            if (HasUpgradeEffect(4))
+                await CreatureCmd.GainBlock(Owner.Creature, DynamicVars.Block, cardPlay);
+
+            if (HasUpgradeEffect(0))
+            {
+                decimal blockDamage = Owner.Creature.Block;
+                async Task<AttackCommand> BlockAttack()
+                {
+                    using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(Owner)
+                        ? HbrAbsoluteBaseDamageContext.Begin(Owner.Creature, this, cardPlay.Target, blockDamage)
+                        : null;
+                    return await DamageCmd.Attack(blockDamage)
+                        .FromCardCompat(this, cardPlay)
+                        .Targeting(cardPlay.Target)
+                        .WithHitFx("vfx/vfx_attack_slash")
+                        .Execute(choiceContext);
+                }
+                attacks?.Add(BlockAttack);
+                AttackCommand blockAttack = await BlockAttack();
+                comboAttack?.Record(blockAttack);
+            }
+
+            if (comboAttack != null)
+                await comboAttack.ReplayExtra(attacks, () =>
+                    !CombatManager.Instance.IsOverOrEnding && cardPlay.Target.IsAlive);
+
+            if (HasUpgradeEffect(1))
+                await PowerCmd.Apply<DexterityPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
+
+            if (HasUpgradeEffect(3))
+                await CardPileCmd.Draw(choiceContext, 2m, Owner);
+
+            // Applied last, so this play's two block grants only benefit from
+            // stacks acquired on earlier plays, and Dexterity applies next time.
+            if (HasUpgradeEffect(5))
+                await PowerCmd.Apply<ScreamBlockBoostPower>(choiceContext, Owner.Creature, 25m, Owner.Creature, this);
         }
-
-        if (HasUpgradeEffect(1))
-            await PowerCmd.Apply<DexterityPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
-
-        if (HasUpgradeEffect(3))
-            await CardPileCmd.Draw(choiceContext, 2m, Owner);
-
-        // Applied last, so this play's two block grants only benefit from
-        // stacks acquired on earlier plays, and Dexterity applies next time.
-        if (HasUpgradeEffect(5))
-            await PowerCmd.Apply<ScreamBlockBoostPower>(choiceContext, Owner.Creature, 25m, Owner.Creature, this);
+        finally
+        {
+            if (comboAttack != null) await comboAttack.Complete(choiceContext);
+        }
     }
 
     protected override void OnUpgrade()

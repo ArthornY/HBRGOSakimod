@@ -41,8 +41,8 @@ public sealed class HotaruEchoingWounds : HotaruCannonCard
         ArgumentNullException.ThrowIfNull(play.Target);
         // All three conditions describe the target when this card resolves;
         // a break/debuff caused by the first branch cannot enable another one.
-        bool weak = play.Target.HasPower<WeakPower>();
-        bool vulnerable = play.Target.HasPower<VulnerablePower>();
+        bool weak = HotaruContestVulnerabilityHelper.HasAttackDown(play.Target);
+        bool vulnerable = HotaruContestVulnerabilityHelper.HasDefenseDown(play.Target);
         bool fragile = play.Target.HasPower<FragilePower>();
         if (weak)
             await SixSenseCombatHelper.ReduceHighestResistance(context, Owner, play.Target,
@@ -101,13 +101,26 @@ public sealed class HotaruReplayPain : HotaruCannonCard
         var snapshot = combat.Creatures.Where(creature => creature.IsAlive)
             .SelectMany(creature => creature.Powers
                 .Where(power => power.Amount != 0 && power.GetTypeForAmount(power.Amount) == PowerType.Debuff)
-                .Select(power => (Creature: creature, Power: power, Amount: power.Amount)))
+                .Select(power => (Creature: creature, Power: power, Amount: power.Amount,
+                    Percent: HbrPercentDebuffHelper.IsEnabled(power)
+                        ? (decimal?)HbrPercentDebuffHelper.GetEffectPercent(power) : null,
+                    Modifiers: HbrPercentDebuffHelper.IsEnabled(power)
+                        ? HbrPercentDebuffHelper.GetModifierAmount(power) : 0)))
             .ToArray();
         foreach (var entry in snapshot)
         {
             if (!HotaruCommonUtilityCardHelper.CanContinue(this, combat)) return;
-            if (!entry.Creature.IsAlive || !ReferenceEquals(entry.Creature.CombatState, combat) ||
-                !entry.Creature.Powers.Contains(entry.Power)) continue;
+            if (!entry.Creature.IsAlive || !ReferenceEquals(entry.Creature.CombatState, combat)) continue;
+            if (entry.Percent.HasValue)
+            {
+                // Unlimited independent copies are specific to this card. Each
+                // source snapshot is visited once, even if a reaction changes
+                // or removes it; fresh copies cannot enter this play's list.
+                await HbrPercentDebuffApplication.ReplayCopy(context, entry.Power,
+                    entry.Creature, entry.Percent.Value, entry.Modifiers, Owner.Creature, this);
+                continue;
+            }
+            if (!entry.Creature.Powers.Contains(entry.Power)) continue;
             // Adding the signed amount also doubles negative Strength and
             // Dexterity. Native power modification retains prevention hooks.
             await PowerCmd.ModifyAmount(context, entry.Power, entry.Amount, Owner.Creature, this);

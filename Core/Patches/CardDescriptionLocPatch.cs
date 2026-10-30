@@ -26,6 +26,8 @@ internal static class CardDescriptionLocPatch
             __result = replacement;
         }
         if (skillPower) HbrSkillCardDescription.AddParameters(__instance, __result);
+        else if (HbrPercentDebuffCardDescription.IsEnabled(__instance))
+            HbrPercentDebuffCardDescription.AddParameters(__instance, __result);
     }
 
     private static string GetReplacementLocKey(CardModel card)

@@ -20,7 +20,8 @@ internal static class HbrNativeFixedPowerDescriptionPatch
 {
     private static void Postfix(PowerModel __instance, LocString __0, int? __1)
     {
-        if (__instance is not (RegenPower or PaperCutsPower) || !HbrBattleStatsHelper.IsEnabled(__instance.Owner)) return;
+        if (__instance is not (RegenPower or PaperCutsPower) || !__instance.IsMutable ||
+            !HbrBattleStatsHelper.IsEnabled(__instance.Owner)) return;
         __0.Add("Amount", HbrResourceValueHelper.Fixed(__instance.Owner, __1 ?? __instance.Amount));
     }
 }

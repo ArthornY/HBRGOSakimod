@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -104,6 +105,8 @@ internal static class DamageModifierCompatibility
         // stable-signature power explicitly so both runtimes enforce immunity.
         if (model is NararaNullificationPower nullification)
             return nullification.GetNullificationDamageCap(target, cardSource);
+        if (model is HotaruCannonModel cannon)
+            return cannon.GetCannonDamageCap(target);
         return RuntimeCap(model, target, props, dealer, cardSource, cardPlay);
     }
 

@@ -93,6 +93,7 @@ static partial class Checks
             Check(h.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat." + name, true)!).Patch().Count > 0,
                 "actual production Harmony patch installs " + name);
 
+        CanonicalOwnerChecks();
         Feed feed = Card<Feed>(); DynamicVar hp = feed.DynamicVars.MaxHp;
         Check(hp.BaseValue == 3 && hp.IntValue == 3 && Read(hp) == 300, "Feed raw storage stays 3; selected consumption is 300");
         Check(hp.ToString() == "300" && ((IConvertible)hp).ToString(CultureInfo.InvariantCulture) == "300",
@@ -110,7 +111,7 @@ static partial class Checks
         DynamicVar loaded = new MaxHpVar(saved); loaded.SetOwner(feed);
         Check(loaded.BaseValue == 5 && Read(loaded) == 500, "raw save/recreate round trip scales once on consumption");
         var ownerless = new MaxHpVar(3);
-        Check(Read(ownerless) == 3 && ownerless.ToString() == "3", "canonical or ownerless variable remains native units");
+        Check(Read(ownerless) == 3 && ownerless.ToString() == "3", "unbound variable remains native units");
         Mode(false);
         Check(Read(hp) == 4 && hp.ToString() == "4", "disabled HBR mode retains native numeric and display values");
         Mode(true);
@@ -135,7 +136,7 @@ static partial class Checks
             "ordinary Strike DamageVar is excluded from fixed-resource conversion");
         Mode(false); await Effect(burn, "OnTurnEndInHand", new ThrowingPlayerChoiceContext());
         Check(Damage[^1] == 2, "disabled-mode native Burn remains 2"); Mode(true);
-        // Constructing all registered canonical variables exposes typoed model
+        // Constructing all registered instance variables exposes typoed model
         // names and ensures named fixed fields exist without changing their raw data.
         int registeredVariables = 0;
         foreach (Type type in (IEnumerable<Type>)Helper.GetProperty("ModelTypes", F)!.GetValue(null)!)
