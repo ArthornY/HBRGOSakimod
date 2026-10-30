@@ -38,6 +38,15 @@ static class Checks
     static Creature Hero = null!, Enemy = null!;
     static ElectronicSoldierManual Manual = null!;
     static Type Helper(string name) => Mod.GetType("HBRGOSakiMod.Core.Helpers." + name, true)!;
+    static string RepositoryRoot
+    {
+        get
+        {
+            for(DirectoryInfo? directory=new(AppContext.BaseDirectory);directory!=null;directory=directory.Parent)
+                if(File.Exists(Path.Combine(directory.FullName,"HBRGOSakiMod.csproj")))return directory.FullName;
+            throw new DirectoryNotFoundException("Fixture must remain below its checkout");
+        }
+    }
     static object? Call(string helper, string name, params object?[] args) => Helper(helper).GetMethod(name, F)!.Invoke(null, args);
     static decimal Number(string helper, string name, params object?[] args) => (decimal)Call(helper, name, args)!;
     static FieldInfo Field(Type type, string name)
@@ -98,9 +107,18 @@ static class Checks
     static decimal Convert(Creature target, Creature dealer, decimal raw = 6m, ValueProp props = ValueProp.Move) =>
         Number("HbrDamageSkillAdapter", "ConvertBaseDamage", target, dealer, raw, props, null);
     static decimal Preview(Creature target, Creature dealer, decimal raw = 6m, ValueProp props = ValueProp.Move, CardModel? card = null) =>
-        Hook.ModifyDamage(RunState, Combat, target, dealer, raw, props, card, ModifyDamageHookType.All, CardPreviewMode.None, out _);
+        (decimal)Mod.GetType("HBRGOSakiMod.Core.Compatibility.HookCompatibility",true)!.GetMethod("ModifyDamage",F)!.Invoke(null,
+            [RunState,Combat,target,dealer,raw,props,card,ModifyDamageHookType.All,CardPreviewMode.None,null,null])!;
     static decimal Block(Creature target, decimal raw = 5m, ValueProp props = ValueProp.Move, CardModel? card = null) =>
         Hook.ModifyBlock(Combat, target, raw, props, card, null, out _);
+    static decimal NativeAdditive(PowerModel power, string name, params object?[] args)
+    {
+        MethodInfo method=power.GetType().GetMethods(F).Where(method=>method.Name==name)
+            .OrderByDescending(method=>method.DeclaringType==power.GetType())
+            .ThenByDescending(method=>method.GetParameters().Length).First();
+        if(method.GetParameters().Length==args.Length+1)args=[..args,null];
+        return (decimal)method.Invoke(power,args)!;
+    }
     static decimal Actual(Creature target,Creature dealer,decimal raw=6m,ValueProp props=ValueProp.Move)
     {
         Type wrapper=Mod.GetType("HBRGOSakiMod.Core.Patches.Combat.StrongestShieldDamagePatch",true)!;
@@ -113,14 +131,22 @@ static class Checks
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerType Type=>MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff;
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerStackType StackType=>MegaCrit.Sts2.Core.Entities.Powers.PowerStackType.Counter;
         internal decimal Factor;
+#if HBR_BETA_NATIVE
+        public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card,CardPlay? play)=>
+#else
         public override decimal ModifyDamageMultiplicative(Creature? target,decimal damage,ValueProp props,Creature? dealer,CardModel? card)=>
+#endif
             dealer==Owner?Factor:1m;
     }
     sealed class FractionalCap : PowerModel
     {
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerType Type=>MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff;
         public override MegaCrit.Sts2.Core.Entities.Powers.PowerStackType StackType=>MegaCrit.Sts2.Core.Entities.Powers.PowerStackType.Counter;
+#if HBR_BETA_NATIVE
+        public override decimal ModifyDamageCap(Creature? target,ValueProp props,Creature? dealer,CardModel? card,CardPlay? play)=>
+#else
         public override decimal ModifyDamageCap(Creature? target,ValueProp props,Creature? dealer,CardModel? card)=>
+#endif
             target==Owner?29.95m:decimal.MaxValue;
     }
     static T TestPower<T>(Creature owner) where T:PowerModel
@@ -162,7 +188,20 @@ static class Checks
         Manual = Blank<ElectronicSoldierManual>(); Set(Manual, "<IsMutable>k__BackingField", true); Set(Manual, "_owner", Player);
         Set(Player, "_relics", new List<RelicModel> { Manual }); Set(RunState, "_players", new List<Player> { Player });
         Enemy = Actor(Blank<SmallHopper>()); Set(Combat, "_allies", new List<Creature> { Hero }); Set(Combat, "_enemies", new List<Creature> { Enemy });
+#if HBR_BETA_NATIVE
+        Type turnType=typeof(CombatManager).Assembly.GetType("MegaCrit.Sts2.Core.Combat.CombatTurnState",true)!;
+        object turn=RuntimeHelpers.GetUninitializedObject(turnType);
+        Set(turn,"_cts",new CancellationTokenSource());Set(turn,"<State>k__BackingField",Combat);Set(turn,"<IsInProgress>k__BackingField",true);
+        Set(turn,"<PlayersTakingExtraTurn>k__BackingField",new List<Player>());
+        Set(turn,"<ReadyLock>k__BackingField",Activator.CreateInstance(typeof(System.Threading.Lock)));
+        Set(turn,"<PlayersReadyToEndTurn>k__BackingField",new HashSet<Player>());
+        Set(turn,"<PlayersReadyToBeginEnemyTurn>k__BackingField",new HashSet<Player>());
+        Set(CombatManager.Instance,"_turnState",turn);
+        object tracker=typeof(CombatManager).GetProperty("StateTracker",F)!.GetValue(CombatManager.Instance)!;
+        Set(tracker,"_state",Combat);
+#else
         Set(CombatManager.Instance,"_state",Combat); Set(CombatManager.Instance,"<IsInProgress>k__BackingField",true);
+#endif
         foreach (var row in new[] { ("_enemyDamagePercent", 100), ("_enemyDamageGrowthPerActPercent", 0) })
             typeof(HBRGOSakiConfig).GetField(row.Item1, F)!.SetValue(null, row.Item2);
         // Install the real production power boundaries as well as the full
@@ -180,8 +219,8 @@ static class Checks
         Reset(); string saved = Manual.HbrBattleProgressData;
         var strength = Power<StrengthPower>(Hero, 1); var dexterity = Power<DexterityPower>(Hero, 1);
         StatsEqual(Stats(Hero), [101m, 101m, 101m, 100m, 100m, 100m], "one layer adds only the authored stats");
-        Equal(strength.ModifyDamageAdditive(Enemy, 6m, ValueProp.Move, Hero, null), 0m, "real native Strength additive is disabled in HBR");
-        Equal(dexterity.ModifyBlockAdditive(Hero, 5m, ValueProp.Move, null, null), 0m, "real native Dexterity additive is disabled in HBR");
+        Equal(NativeAdditive(strength,"ModifyDamageAdditive",Enemy, 6m, ValueProp.Move, Hero, null), 0m, "real native Strength additive is disabled in HBR");
+        Equal(NativeAdditive(dexterity,"ModifyBlockAdditive",Hero, 5m, ValueProp.Move, null, null), 0m, "real native Dexterity additive is disabled in HBR");
         Equal(Convert(Enemy, Hero), Outgoing(101m, 101m, 150m), "adapter uses Strength stats once");
         EqualFinal(Preview(Enemy, Hero), Outgoing(101m, 101m, 150m), "full native Hook adds no extra1000 flat Strength");
         Equal(Block(Hero), 505m, "native block converts INT101 rather than raw5 plus Dex1");
@@ -215,6 +254,88 @@ static class Checks
         Powers(Enemy).Clear();
         Powers(Hero).Clear();
     }
+    static void NonHundredBase()
+    {
+        Sense("Madness",25); Sense("LeadershipCharm",40); Sense("Talent",60);
+        Sense("Gentleness",15); Sense("MentalStrength",20); Sense("Simplicity",30);
+    }
+    static void PercentageCases()
+    {
+        Reset(); NonHundredBase(); string saved=Manual.HbrBattleProgressData;
+        object original=Stats(Hero);
+        StatsEqual(original,[150m,180m,220m,130m,140m,160m],"non100 saved profile before percentage buffs");
+        var strength=Power<StrengthPower>(Hero,1);var dexterity=Power<DexterityPower>(Hero,1);
+        StatsEqual(Stats(Hero),[151.5m,181.8m,222.2m,130m,140m,160m],"one layer scales each non100 base by1percent without truncating stats");
+        EqualFinal(Preview(Enemy,Hero),Outgoing(151.5m,181.8m,150m),"real damage hook uses fractional percentage attributes exactly once");
+        Equal(Block(Hero),1111m,"real block hook uses INT222point2 rather than adding one raw point");
+        Set(strength,"_amount",20);Set(dexterity,"_amount",25);
+        StatsEqual(Stats(Hero),[180m,216m,275m,130m,140m,160m],"20Strength and25Dexterity layers add percentages rather than compound each layer");
+        var calamity=Power<HbrCalamityPower>(Hero,10);
+        StatsEqual(Stats(Hero),[170m,206m,265m,120m,130m,150m],"fixed Calamity subtracts10 after percentage bonuses");
+        EqualFinal(Preview(Enemy,Hero),Outgoing(170m,206m,150m),"post-percentage Calamity reaches actual damage preview");
+        Equal(Block(Hero),1325m,"post-percentage fixed Calamity reaches actual block preview");
+        Powers(Hero).Remove(calamity);Set(strength,"_amount",-50);Set(dexterity,"_amount",-25);
+        StatsEqual(Stats(Hero),[75m,90m,165m,130m,140m,160m],"negative signed layers scale each original non100 attribute");
+        foreach(int amount in new[]{-100,-101,int.MinValue})
+        {
+            Set(strength,"_amount",amount);Set(dexterity,"_amount",amount);
+            StatsEqual(Stats(Hero),[0m,0m,0m,130m,140m,160m],"effective percentage floors at zero for signed amount"+amount);
+        }
+        Set(strength,"_amount",20);Set(dexterity,"_amount",25);
+        for(int index=0;index<3;index++)
+        {
+            StatsEqual(Stats(Hero),[180m,216m,275m,130m,140m,160m],"repeated non100 percentage stat view does not compound"+index);
+            Check(Manual.HbrBattleProgressData==saved&&Manual.Madness==25&&Manual.LeadershipCharm==40&&Manual.Talent==60,
+                "percentage stat read never changes progression or allocated senses"+index);
+        }
+        StatsEqual(original,[150m,180m,220m,130m,140m,160m],"previous stat snapshot remains immutable after buff changes");
+        Powers(Hero).Remove(strength);Powers(Hero).Remove(dexterity);
+        StatsEqual(Stats(Hero),[150m,180m,220m,130m,140m,160m],"live buff removal immediately restores unmodified non100 bases");
+        Check(Manual.HbrBattleProgressData==saved,"percentage add/change/remove never persists temporary attributes");
+        Reset();
+    }
+    static void PercentageOwnershipCases()
+    {
+        Reset();NonHundredBase();string saved=Manual.HbrBattleProgressData;
+        var ownerStrength=Power<StrengthPower>(Hero,20);Power<DexterityPower>(Hero,25);
+        var phantom=Actor(Blank<TestSubject>(),owner:Player);Power<PhantomPower>(phantom,1);
+        StatsEqual(Stats(phantom),[150m,180m,220m,130m,140m,160m],"non100 phantom does not inherit owner percentage buffs");
+        Power<StrengthPower>(phantom,10);Power<DexterityPower>(phantom,40);
+        StatsEqual(Stats(phantom),[165m,198m,308m,130m,140m,160m],"non100 phantom uses only its own percentage layers");
+        EqualFinal(Preview(Enemy,phantom),Outgoing(165m,198m,150m),"phantom native damage hook applies its own percent once");
+        Equal(Block(phantom),1540m,"phantom native block hook applies its own40percent INT once");
+        var millsage=new Millsage();Set(millsage,"<IsMutable>k__BackingField",true);Set(millsage,"_owner",Player);
+        Set(Player,"_relics",new List<RelicModel>{Manual,millsage});
+        var happy=Actor(Blank<HotaruHappinessCannon>(),owner:Player);var contest=Actor(Blank<HotaruContestCannon>(),owner:Player);
+        Set(Combat,"_allies",new List<Creature>{Hero,phantom,happy,contest});
+        Power<StrengthPower>(contest,999);Power<DexterityPower>(contest,999);
+        StatsEqual(Stats(contest),[180m,216m,275m,130m,140m,160m],"non100 cannon uses owner percentage buffs once and ignores local native counters");
+        Equal(Block(contest),1375m,"non100 cannon block reads owner INT275 once");
+        EqualFinal(Cannon(contest,()=>Preview(Enemy,Hero)),Outgoing(180m,216m,150m)*.5m,"non100 cannon damage uses owner percentage attributes once before soul factor");
+        typeof(Millsage).GetProperty("HappinessUpgradeLevel",F)!.SetValue(millsage,3);
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(210m,252m,150m),"HappinessLv3 adds a second20percent rather than compounding1point2 twice");
+        StatsEqual(Stats(Hero),[180m,216m,275m,130m,140m,160m],"Happiness percentage copy remains local to its attack");
+        var ownerCalamity=Power<HbrCalamityPower>(Hero,10);Power<HbrCalamityPower>(happy,3);
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(197m,239m,150m),"Happiness extra percentage resolves before owner10 and local3 fixed Calamity");
+        Set(ownerStrength,"_amount",-20);
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(107m,131m,150m),"Happiness does not double negative percentage Strength before fixed Calamity");
+        Set(ownerStrength,"_amount",20);Powers(Hero).Remove(ownerCalamity);Powers(happy).Clear();Power<DexterityPower>(Enemy,3);Act(1);
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(204m,246m,210m),"enemy flat per-act ignore remains after local percentage Happiness bonus");
+        Act(0);Powers(Enemy).Clear();
+        var state=Blank<PlayerCombatState>();Set(state,"<TurnNumber>k__BackingField",1);Set(Player,"<PlayerCombatState>k__BackingField",state);
+        typeof(Millsage).GetProperty("LongingUpgradeLevel",F)!.SetValue(millsage,2);
+        var again=Power<HotaruSeeYouAgainPower>(Hero,2);
+        typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryCopies",F)!.SetValue(again,2);
+        typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryTurnNumber",F)!.SetValue(again,1);
+        Equal(Number("HotaruSeeYouAgainHelper","GetExtraDexterity",Player),6m,"real active copies supply six virtual Dexterity layers");
+        StatsEqual(Stats(Hero),[180m,216m,288.2m,130m,140m,160m],"virtual six layers add to native25percent before non100 INT multiplication");
+        Equal(Block(Hero),1441m,"native block uses220 times1point31 intelligence");
+        Equal(Block(contest),1441m,"cannon virtual Dexterity reads owner percentage once");
+        StatsEqual(Stats(phantom),[165m,198m,308m,130m,140m,160m],"phantom percentage stats remain independent of owner virtual Dexterity");
+        Set(state,"<TurnNumber>k__BackingField",2);Equal(Block(Hero),1375m,"virtual Dexterity expiry immediately removes only its six percent");
+        Check(Manual.HbrBattleProgressData==saved,"ownership and virtual percentage effects never rewrite progression");
+        Set(Player,"_relics",new List<RelicModel>{Manual});Set(Combat,"_allies",new List<Creature>{Hero});Reset();
+    }
     static void EnemyCases()
     {
         Reset(); Sense("Gentleness", 5); Sense("MentalStrength", 10);
@@ -235,8 +356,8 @@ static class Checks
             decimal e = 150m + Math.Max(0,index)*60m;
             Equal(Convert(Hero,Enemy,10m), Incoming(e,Math.Max(0m,110m-3m*per),Math.Max(0m,120m-3m*per)), "incoming adapter honors Strength stat ignore " + index);
             EqualFinal(Preview(Hero,Enemy,10m), Convert(Hero,Enemy,10m), "native pipeline adds no fixed enemy Strength damage " + index);
-            Equal(dex.ModifyBlockAdditive(Enemy,3m,ValueProp.Move,null,null),0m,"native enemy Dexterity contributes no flat block " + index);
-            Equal(strength.ModifyDamageAdditive(Hero,10m,ValueProp.Move,Enemy,null),0m,"native enemy Strength contributes no flat damage " + index);
+            Equal(NativeAdditive(dex,"ModifyBlockAdditive",Enemy,3m,ValueProp.Move,null,null),0m,"native enemy Dexterity contributes no flat block " + index);
+            Equal(NativeAdditive(strength,"ModifyDamageAdditive",Hero,10m,ValueProp.Move,Enemy,null),0m,"native enemy Strength contributes no flat damage " + index);
         }
         Act(4); Set(strength,"_amount",-3); Set(dex,"_amount",-4);
         StatsEqual(Call("HbrStatPowerHelper","GetIncomingDefense",Enemy,defense)!,[100m,110m,120m,35m,45m,150m],"negative enemy Strength raises temporary defense");
@@ -309,7 +430,7 @@ static class Checks
         typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryTurnNumber",F)!.SetValue(again,1);
         Equal(Number("HotaruSeeYouAgainHelper","GetExtraDexterity",Player),6m,"two real active longing copies expose six virtual Dexterity");
         StatsEqual(Stats(Hero),[110m,110m,113m,100m,100m,100m],"virtual Dexterity enters current hero intelligence once");
-        Equal(again.ModifyBlockAdditive(Hero,5m,ValueProp.Move,null!,null!),0m,"HBR virtual Dexterity no longer adds raw block");
+        Equal(NativeAdditive(again,"ModifyBlockAdditive",Hero,5m,ValueProp.Move,null!,null!),0m,"HBR virtual Dexterity no longer adds raw block");
         Equal(Block(Hero),565m,"real active longing block uses INT113 without additive rescale");
         var defend=new DefendIronclad(); Set(defend,"<IsMutable>k__BackingField",true); Set(defend,"_owner",Player);
         Equal(Block(Hero,card:defend),565m,"card-sourced native Defend uses current INT113 once");
@@ -319,7 +440,7 @@ static class Checks
         Equal(Number("HotaruSeeYouAgainHelper","GetExtraDexterity",Player),0m,"expired ordinary-turn virtual Dexterity reads zero");
         Equal(Block(Hero),535m,"turn expiry immediately restores only native Dexterity intelligence");
         Set(playerCombat,"<TurnNumber>k__BackingField",1); Mode(false);
-        Equal(again.ModifyBlockAdditive(Hero,5m,ValueProp.Move,null!,null!),6m,"legacy virtual Dexterity keeps native raw additive six");
+        Equal(NativeAdditive(again,"ModifyBlockAdditive",Hero,5m,ValueProp.Move,null!,null!),6m,"legacy virtual Dexterity keeps native raw additive six");
         Equal(Block(Hero),18m,"legacy block stacks raw5 nativeDex7 and virtualDex6 normally");
         Mode(true);
         Set(Player,"_relics",new List<RelicModel>{Manual}); Reset();
@@ -328,10 +449,10 @@ static class Checks
     {
         Reset(); var s=Power<StrengthPower>(Hero,2); var d=Power<DexterityPower>(Hero,3);
         var es=Power<StrengthPower>(Enemy,4); var ed=Power<DexterityPower>(Enemy,5); Mode(false);
-        Equal(s.ModifyDamageAdditive(Enemy,6m,ValueProp.Move,Hero,null),2m,"legacy native player Strength additive remains two");
-        Equal(d.ModifyBlockAdditive(Hero,5m,ValueProp.Move,null,null),3m,"legacy native player Dexterity additive remains three");
-        Equal(es.ModifyDamageAdditive(Hero,6m,ValueProp.Move,Enemy,null),4m,"legacy native enemy Strength additive remains four");
-        Equal(ed.ModifyBlockAdditive(Enemy,5m,ValueProp.Move,null,null),5m,"legacy native enemy Dexterity additive remains five");
+        Equal(NativeAdditive(s,"ModifyDamageAdditive",Enemy,6m,ValueProp.Move,Hero,null),2m,"legacy native player Strength additive remains two");
+        Equal(NativeAdditive(d,"ModifyBlockAdditive",Hero,5m,ValueProp.Move,null,null),3m,"legacy native player Dexterity additive remains three");
+        Equal(NativeAdditive(es,"ModifyDamageAdditive",Hero,6m,ValueProp.Move,Enemy,null),4m,"legacy native enemy Strength additive remains four");
+        Equal(NativeAdditive(ed,"ModifyBlockAdditive",Enemy,5m,ValueProp.Move,null,null),5m,"legacy native enemy Dexterity additive remains five");
         Equal(Preview(Enemy,Hero),8m,"disabled HBR full player pipeline retains raw6 plus Strength2");
         Equal(Preview(Hero,Enemy),10m,"disabled HBR full enemy pipeline retains raw6 plus Strength4");
         Equal(Block(Hero),8m,"disabled HBR block retains raw5 plus Dexterity3");
@@ -355,8 +476,7 @@ static class Checks
         var manager=Blank<LocManager>(); Set(manager,"<Language>k__BackingField","zhs");
         Set(manager,"<CultureInfo>k__BackingField",CultureInfo.InvariantCulture); Set(manager,"<StringComparer>k__BackingField",StringComparer.Ordinal);
         typeof(LocManager).GetField("<Instance>k__BackingField",F)!.SetValue(null,manager);
-        string root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../"));
-        string localization=Path.Combine(root,"HBRGOSakiMod/localization/zhs/powers.json");
+        string localization=Path.Combine(RepositoryRoot,"HBRGOSakiMod/localization/zhs/powers.json");
         var table=JsonSerializer.Deserialize<Dictionary<string,string>>(File.ReadAllText(localization))!;
         Set(manager,"_tables",new Dictionary<string,LocTable>{["powers"]=new LocTable("powers",table,null!)});
         typeof(LocManager).GetMethod("LoadLocFormatters",F)!.Invoke(manager,null);
@@ -374,6 +494,11 @@ static class Checks
         }
         Check(Rewrite(powers[0],original).GetFormattedText().Contains("[gold]力[/gold]与[gold]器用[/gold]"),"allied Strength description names both stats");
         Check(Rewrite(powers[1],original).GetFormattedText().Contains("[gold]知性[/gold]"),"allied Dexterity description names intelligence");
+        foreach(PowerModel power in powers.Take(2))
+        {
+            string text=Rewrite(power,original).GetFormattedText();
+            Check(text.Contains("1%")&&text.Contains("同类层数相加"),"allied percentage description renders one percent and additive layers "+power.GetType().Name);
+        }
         foreach(int index in new[]{0,1,2,3,4,5,20})
         {
             Act(index);decimal expected=index==0?1m:index==1?2m:index==2?3m:index==3?4m:8m;
@@ -434,13 +559,16 @@ static class Checks
     public static Task Run()
     {
         bool ok=false; string? error=null;
-        try { Setup(); AlliedCases(); EnemyCases(); OwnershipCases(); LegacyCases(); DescriptionCases(); FinalFloorCases(); ok=true; }
+        try { Setup(); AlliedCases(); PercentageCases(); EnemyCases(); OwnershipCases(); PercentageOwnershipCases(); LegacyCases(); DescriptionCases(); FinalFloorCases(); ok=true; }
         catch(Exception failure) { error=failure.ToString(); Console.Error.WriteLine(failure); }
-        File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"report.json"),JsonSerializer.Serialize(new {
+        string report=System.Environment.GetEnvironmentVariable("HBR_STAT_REPORT_PATH")??Path.Combine(AppContext.BaseDirectory,"report.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(report)!);
+        File.WriteAllText(report,JsonSerializer.Serialize(new {
             ok, checks=Passed.Count, passed=Passed,error,
             modSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
-            localizationSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../HBRGOSakiMod/localization/zhs/powers.json"))))),
+            localizationSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(RepositoryRoot,"HBRGOSakiMod/localization/zhs/powers.json")))),
+            runtimeProfile=System.Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE"),
             boundary="Real native Strength/Dexterity/Vigor methods, production Harmony power and damage/block adapters, full native Hook.ModifyDamage and Hook.ModifyBlock pipelines, current saved manual stats, local attack/defense snapshots, real Millsage state, active ordinary-turn longing copies, production cannon Begin/Close, actual StrongestShield wrapper and raw capture, and description wrapper with native LocManager/LocTable/SmartFormat. StringName/logging and hook-listener enumeration are isolated leaves. Final rounding uses explicit fixture multiplier/cap input powers. No Godot nodes, game process, rendered UI, save loading, complete card/cannon/temporary-power command lifecycle, package or upload."
         },new JsonSerializerOptions{WriteIndented=true}));
         Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" stat power checks");

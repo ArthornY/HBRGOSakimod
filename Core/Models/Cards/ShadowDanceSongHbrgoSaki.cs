@@ -49,7 +49,7 @@ public sealed class ShadowDanceSongHbrgoSaki : HighSongChoiceCard
         int songLevel = SongLevel;
         int highSongAmount = HighSongAmount;
         Creature target = cardPlay.Target;
-        await PowerCmd.Apply<ShadowDanceTemporaryStrengthPower>(
+        await PowerCmd.Apply<StrengthPower>(
             choiceContext,
             target,
             highSongAmount * 2m,

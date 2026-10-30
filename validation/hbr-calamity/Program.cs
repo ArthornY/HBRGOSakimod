@@ -173,7 +173,7 @@ static class CalamityChecks
         Check(LastOutgoing is {Length:6}&&LastOutgoing[0]==0&&LastOutgoing[1]==0,"real Happiness Lv3 attack combines extra Strength before Calamity floors to zero");
         Reset();Power<StrengthPower>(hero,10);Apply(105,hero);Apply(10,happiness);AllStats(happiness,0,"ordinary Happiness view floors normal source before upgrade-only bonus");LastOutgoing=null;
         Call("HotaruCannonStatsHelper","PreviewDamage",happiness,6m,false,null,HBRGOSakiMod.Core.Helpers.HotaruCannonPhase.End);
-        Check(LastOutgoing is {Length:6}&&LastOutgoing[0]==5&&LastOutgoing[1]==5,"real Happiness Lv3 combines100+20-105-10 to five without intermediate clamp loss");
+        Check(LastOutgoing is {Length:6}&&LastOutgoing[0]==5&&LastOutgoing[1]==5,"real Happiness Lv3 combines100 times1point2 minus105 minus10 to five without intermediate clamp loss");
         typeof(Millsage).GetProperty("HappinessUpgradeLevel",F)!.SetValue(player.GetRelic<Millsage>(),0);Reset();
     }
     static void ImmunityCases()

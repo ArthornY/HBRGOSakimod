@@ -21,7 +21,8 @@ internal static class HbrStatPowerHelper
         if (!HbrBattleStatsHelper.IsEnabled(creature) || EnemyStatScalingHelper.IsEnemy(creature)) return stats;
         Creature source = creature?.Monster is HotaruCannonModel
             ? creature.PetOwner?.Creature ?? creature : creature;
-        decimal strength = (source?.GetPowerAmount<StrengthPower>() ?? 0) + additionalStrength;
+        decimal strength = DamageAmplificationLimits.AddSaturated(
+            source?.GetPowerAmount<StrengthPower>() ?? 0, additionalStrength);
         decimal dexterity = (source?.GetPowerAmount<DexterityPower>() ?? 0) +
             HotaruSeeYouAgainHelper.GetExtraDexterity(source?.Player);
         decimal calamity = Math.Max(0, creature?.GetPowerAmount<CalamityPower>() ?? 0);
@@ -31,9 +32,9 @@ internal static class HbrStatPowerHelper
             calamity += Math.Max(0, source?.GetPowerAmount<CalamityPower>() ?? 0);
         return stats with
         {
-            Strength = Adjust(stats.Strength, strength - calamity),
-            Dexterity = Adjust(stats.Dexterity, strength - calamity),
-            Intelligence = Adjust(stats.Intelligence, dexterity - calamity),
+            Strength = ApplyPercent(stats.Strength, strength, calamity),
+            Dexterity = ApplyPercent(stats.Dexterity, strength, calamity),
+            Intelligence = ApplyPercent(stats.Intelligence, dexterity, calamity),
             Vitality = Adjust(stats.Vitality, -calamity),
             Spirit = Adjust(stats.Spirit, -calamity),
             Luck = Adjust(stats.Luck, -calamity)
@@ -104,4 +105,10 @@ internal static class HbrStatPowerHelper
 
     private static decimal Adjust(decimal value, decimal delta) =>
         Math.Max(0m, DamageAmplificationLimits.AddSaturated(value, delta));
+
+    // Each native layer is one percentage point of the unbuffed live attribute.
+    // Flat Calamity applies afterward so one layer still removes one stat point.
+    private static decimal ApplyPercent(decimal value, decimal layers, decimal calamity) =>
+        Adjust(DamageAmplificationLimits.MultiplySaturated(Math.Max(0m, value),
+            Math.Max(0m, 1m + layers / 100m)), -calamity);
 }

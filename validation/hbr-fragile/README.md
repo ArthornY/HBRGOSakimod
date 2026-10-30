@@ -122,3 +122,17 @@ predicate calls and `DoomPower.GetDoomedCreatures` read a saved five-billion HP
 ledger while the visible native HP proxy is one, then verify exact threshold
 edges and ordinary-creature fallback. These tests evaluate the real predicate
 and public filter; they do not execute Doom's kill animation or death command.
+
+The percentage Strength/Dexterity maintenance candidate
+`724860094E42C5D9F719203E5C72C6D925ED6776CBA781E79ED3337A9D5F9B91`
+passes 651 checks on stable 0.107.1 and 651 on beta 0.111.0 with the prepared
+current dependency profiles. Both fixture builds have zero warnings and errors.
+This changes one expected value: a level-seven phantom with base INT/LUCK 262
+and three Dexterity layers now has INT `262 × 1.03 = 269.86`, so its one-strength
+Fragile effect is exactly `33.4386%`, replacing the old flat-stat `33.39%`.
+The original independent duration, save, copy, damage, and native-status checks
+remain in place. Reports for this candidate are preserved separately at
+`outputs/percent-stats/fragile-validation/stable/report.json` and
+`outputs/percent-stats/fragile-validation/beta/report.json`; the earlier results
+above remain historical records. This run retains the same managed-fixture
+boundaries and does not start the game, package, or upload.

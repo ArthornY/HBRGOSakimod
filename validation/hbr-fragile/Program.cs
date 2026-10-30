@@ -306,7 +306,7 @@ static class Checks
         Equal(Percent(Apply(2,cannon)!),41.25m,"cannon application reads owner current stats exactly once");
         var phantom=Actor(Blank<SmallHopper>(),owner:Player);var p=Power<PhantomPower>(phantom,1);
         Set(p,"<IsSummonedMinion>k__BackingField",true);Set(p,"<SummonedMinionLevel>k__BackingField",7);Power<DexterityPower>(phantom,3);
-        Equal(Percent(Apply(1,phantom)!),33.39m,"phantom application uses own level and intelligence buff");Reset();
+        Equal(Percent(Apply(1,phantom)!),33.4386m,"phantom application uses level-seven base262 and own three-percent intelligence buff");Reset();
     }
     sealed class TargetDefenseDown : PowerModel
     {
