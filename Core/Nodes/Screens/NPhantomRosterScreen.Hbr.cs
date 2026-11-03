@@ -39,13 +39,19 @@ public partial class NPhantomRosterScreen
         };
         SetFullRect(sky);
         AddChild(sky);
-        ColorRect dim = new()
+        foreach (Texture2D shade in new[] { PhantomRosterArt.SkyShade, PhantomRosterArt.SkyVignette })
         {
-            Color = new Color(0.02f, 0.015f, 0.05f, 0.58f),
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        SetFullRect(dim);
-        AddChild(dim);
+            TextureRect overlay = new()
+            {
+                Texture = shade,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.Scale,
+                MouseFilter = MouseFilterEnum.Ignore
+            };
+            SetFullRect(overlay);
+            AddChild(overlay);
+        }
+
         AddCenteredRing(PhantomRosterArt.RingLine, 1015f, new Vector2(180f, 40f), 0.028f, 0.45f);
         AddCenteredRing(PhantomRosterArt.RingDots, 640f, new Vector2(180f, 40f), -0.045f, 0.3f);
 
@@ -216,7 +222,7 @@ public partial class NPhantomRosterScreen
         {
             _titleEnglish.Text = _view switch
             {
-                RosterView.Roster => "PHANTOM ROSTER",
+                RosterView.Roster => "BLACK BIRTHDAY · PHANTOM ROSTER",
                 RosterView.Detail => "PHANTOM DETAIL",
                 RosterView.Upgrade => "FUSION",
                 RosterView.Devour => "DEVOUR",
@@ -294,8 +300,8 @@ public partial class NPhantomRosterScreen
         _consumeFullFusion = false;
         ClearDynamicUi();
         SetHeader(
-            "幻影召唤列表",
-            "选择一张本局击败的怪物牌，查看成长状态或进行融合。重复击败会保留为不同卡牌。");
+            "黑色生日",
+            "吾所击败之物，皆收录于此。选择一张本局击败的怪物牌，查看成长状态或进行融合。重复击败会保留为不同卡牌。");
 
         IReadOnlyList<PhantomRosterEntry> entries = _relic.GetRosterEntries();
         if (entries.Count == 0)
@@ -378,7 +384,7 @@ public partial class NPhantomRosterScreen
         {
             Label tag = PhantomRosterArt.MakeLabel("召唤中", 22, Colors.White, 3);
             tag.HorizontalAlignment = HorizontalAlignment.Center;
-            tag.AddThemeStyleboxOverride("normal", PhantomRosterArt.Panel(PhantomRosterArt.Pink, new Color(1f, 0.8f, 0.9f), 18));
+            tag.AddThemeStyleboxOverride("normal", PhantomRosterArt.SummonTag(18));
             tag.Position = new Vector2(center.X - 60f, 0f);
             tag.Size = new Vector2(120f, 40f);
             circle.AddChild(tag);
@@ -896,12 +902,12 @@ public partial class NPhantomRosterScreen
         row.AddThemeConstantOverride("separation", 10);
         row.AddChild(new ColorRect
         {
-            Color = PhantomRosterArt.Pink,
+            Color = PhantomRosterArt.Crimson,
             CustomMinimumSize = new Vector2(6f, 26f),
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
             MouseFilter = MouseFilterEnum.Ignore
         });
-        row.AddChild(PhantomRosterArt.MakeLabel(title, 25, PhantomRosterArt.PinkLight));
+        row.AddChild(PhantomRosterArt.MakeLabel(title, 25, PhantomRosterArt.CrimsonLight));
         parent.AddChild(row);
     }
 
@@ -926,8 +932,8 @@ public partial class NPhantomRosterScreen
     {
         PanelContainer line = new() { MouseFilter = MouseFilterEnum.Ignore };
         StyleBoxFlat style = PhantomRosterArt.Panel(
-            accent ? new Color(1f, 0.37f, 0.7f, 0.08f) : Colors.Transparent,
-            PhantomRosterArt.Pink,
+            accent ? new Color(PhantomRosterArt.Crimson, 0.1f) : Colors.Transparent,
+            PhantomRosterArt.Crimson,
             12,
             0);
         style.BorderWidthLeft = accent ? 3 : 0;
@@ -959,7 +965,7 @@ public partial class NPhantomRosterScreen
         };
         bar.AddThemeStyleboxOverride("background", PhantomRosterArt.Panel(
             new Color(1f, 1f, 1f, 0.12f), new Color(1f, 0.65f, 0.84f, 0.35f), 8));
-        bar.AddThemeStyleboxOverride("fill", PhantomRosterArt.Panel(PhantomRosterArt.Pink, PhantomRosterArt.Pink, 8, 0));
+        bar.AddThemeStyleboxOverride("fill", PhantomRosterArt.BarFill(8));
         return bar;
     }
 
@@ -988,10 +994,10 @@ public partial class NPhantomRosterScreen
 
     private static void ApplyButtonAccent(Button button, bool accent)
     {
-        Color background = accent ? new Color(0.45f, 0.12f, 0.32f, 0.62f) : new Color(0.08f, 0.05f, 0.15f, 0.78f);
-        Color border = accent ? PhantomRosterArt.Pink : new Color(1f, 0.65f, 0.84f, 0.3f);
+        Color background = accent ? new Color(0.45f, 0.06f, 0.13f, 0.62f) : new Color(0.08f, 0.05f, 0.15f, 0.78f);
+        Color border = accent ? PhantomRosterArt.Crimson : new Color(1f, 0.65f, 0.84f, 0.3f);
         StyleBoxFlat normal = PhantomRosterArt.Panel(background, border, 18, accent ? 2 : 1);
-        StyleBoxFlat hover = PhantomRosterArt.Panel(background.Lightened(0.08f), PhantomRosterArt.PinkLight, 18, 2);
+        StyleBoxFlat hover = PhantomRosterArt.Panel(background.Lightened(0.08f), PhantomRosterArt.CrimsonLight, 18, 2);
         foreach (string state in new[] { "normal", "pressed" })
         {
             button.AddThemeStyleboxOverride(state, normal);

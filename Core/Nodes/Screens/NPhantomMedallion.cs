@@ -12,8 +12,12 @@ public partial class NPhantomMedallion : Control
 {
     private const float Margin = 20f;
     private const float Top = 12f;
+    private const float IdleFlameAlpha = 0.65f;
+    private const float FlameCycle = 2.4f;
 
     private TextureRect _halo;
+    private TextureRect _soulFlame;
+    private float _flameTime;
     private TextureRect _frameActive;
     private TextureRect _cursor;
     private TextureRect _mark;
@@ -83,6 +87,18 @@ public partial class NPhantomMedallion : Control
         };
         art.SetAnchorsPreset(LayoutPreset.FullRect);
         mask.AddChild(art);
+        // Every phantom burns with an azure soul-flame; the summoned one breathes (see _Process).
+        TextureRect soulFlame = new()
+        {
+            Name = "SoulFlame",
+            Texture = PhantomRosterArt.SoulFlame,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            Modulate = new Color(1f, 1f, 1f, IdleFlameAlpha),
+            MouseFilter = MouseFilterEnum.Ignore
+        };
+        soulFlame.SetAnchorsPreset(LayoutPreset.FullRect);
+        mask.AddChild(soulFlame);
         return mask;
     }
 
@@ -104,6 +120,10 @@ public partial class NPhantomMedallion : Control
         Control portrait = CreatePortraitCircle(PhantomRosterArt.GetPortrait(entry.MonsterId), diameter);
         portrait.Position = Centered(diameter);
         AddChild(portrait);
+        if (_active)
+        {
+            _soulFlame = portrait.GetNode<TextureRect>("SoulFlame");
+        }
         AddChild(PhantomRosterArt.Image(PhantomRosterArt.Frame, Centered(diameter * 1.116f), Vector2.One * diameter * 1.116f));
         _frameActive = PhantomRosterArt.Image(PhantomRosterArt.FrameActive, Centered(diameter * 1.263f), Vector2.One * diameter * 1.263f);
         AddChild(_frameActive);
@@ -119,7 +139,7 @@ public partial class NPhantomMedallion : Control
             _active ? PhantomRosterArt.LevelFrameActive : PhantomRosterArt.LevelFrame,
             badgeCenter - Vector2.One * badge / 2f,
             Vector2.One * badge));
-        Label lvCaption = PhantomRosterArt.MakeLabel("Lv", Mathf.RoundToInt(diameter * 0.07f), PhantomRosterArt.PinkLight, 3);
+        Label lvCaption = PhantomRosterArt.MakeLabel("Lv", Mathf.RoundToInt(diameter * 0.07f), PhantomRosterArt.CrimsonLight, 3);
         lvCaption.HorizontalAlignment = HorizontalAlignment.Center;
         lvCaption.Position = badgeCenter + new Vector2(-badge / 2f, -badge * 0.42f);
         lvCaption.Size = new Vector2(badge, badge * 0.3f);
@@ -171,7 +191,7 @@ public partial class NPhantomMedallion : Control
         };
         experience.AddThemeStyleboxOverride("background", PhantomRosterArt.Panel(
             new Color(1f, 1f, 1f, 0.14f), new Color(1f, 0.65f, 0.84f, 0.35f), 5));
-        experience.AddThemeStyleboxOverride("fill", PhantomRosterArt.Panel(PhantomRosterArt.Pink, PhantomRosterArt.Pink, 5, 0));
+        experience.AddThemeStyleboxOverride("fill", PhantomRosterArt.BarFill(5));
         AddChild(experience);
 
         Label footerLabel = PhantomRosterArt.MakeLabel(footer, 17, PhantomRosterArt.Muted, 4);
@@ -184,8 +204,7 @@ public partial class NPhantomMedallion : Control
         {
             Label tag = PhantomRosterArt.MakeLabel("召唤中", 18, Colors.White, 3);
             tag.HorizontalAlignment = HorizontalAlignment.Center;
-            tag.AddThemeStyleboxOverride("normal", PhantomRosterArt.Panel(
-                PhantomRosterArt.Pink, new Color(1f, 0.8f, 0.9f), 16));
+            tag.AddThemeStyleboxOverride("normal", PhantomRosterArt.SummonTag(16));
             tag.Position = new Vector2(-4f, -4f);
             AddChild(tag);
         }
@@ -209,6 +228,13 @@ public partial class NPhantomMedallion : Control
         if (_halo != null)
         {
             _halo.Rotation += (float)delta * 0.2f;
+        }
+
+        if (_soulFlame != null)
+        {
+            _flameTime = (_flameTime + (float)delta) % FlameCycle;
+            float breath = 0.5f - 0.5f * Mathf.Cos(_flameTime / FlameCycle * Mathf.Tau);
+            _soulFlame.Modulate = new Color(1f, 1f, 1f, Mathf.Lerp(IdleFlameAlpha, 1f, breath));
         }
     }
 
