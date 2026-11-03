@@ -21,6 +21,9 @@ internal sealed class SakiSelectionPortraitFade
         return (float)Math.Clamp(opacity - fadeOutElapsed / FadeDuration, 0, 1);
     }
 
+    // No card is held and the last fade has finished, so a frame can be skipped.
+    internal bool IsIdle(double now) => !_selected && OpacityAt(now) <= 0f;
+
     internal void Select(double now)
     {
         if (_selected) return;

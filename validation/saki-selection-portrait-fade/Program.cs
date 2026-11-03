@@ -11,6 +11,20 @@ void Expect(SakiSelectionPortraitFade fade, double time, double expected, string
         throw new InvalidOperationException($"{description}: t={time:R}, expected {expected:R}, got {actual:R}");
 }
 
+void ExpectIdle(SakiSelectionPortraitFade fade, double time, bool expected, string description)
+{
+    checks++;
+    if (fade.IsIdle(time) != expected)
+        throw new InvalidOperationException($"{description}: t={time:R}, expected idle={expected}");
+}
+
+void ExpectValue(double actual, double expected, string description)
+{
+    checks++;
+    if (!double.IsFinite(actual) || Math.Abs(actual - expected) > 0.001)
+        throw new InvalidOperationException($"{description}: expected {expected:R}, got {actual:R}");
+}
+
 void Scenario(string name, Action<SakiSelectionPortraitFade> body)
 {
     body(new SakiSelectionPortraitFade());
@@ -197,4 +211,54 @@ Scenario("Selection exactly at hold end cancels fade; selection after expiry sta
     Expect(fade, 20.5, 1, "Fresh fade-in finishes after half a second");
 });
 
-Console.WriteLine($"PASS: {checks} opacity checks across {scenarios} scenarios; no Godot or game runtime required.");
+Scenario("Idle only when no card is held and no fade remains", fade =>
+{
+    ExpectIdle(fade, 10, true, "Initial state");
+    fade.Select(10);
+    ExpectIdle(fade, 10, false, "A held card is not idle even at zero opacity");
+    fade.Release(11, played: true);
+    ExpectIdle(fade, 11.9, false, "Post-play hold");
+    ExpectIdle(fade, 12.4, false, "Fade-out in progress");
+    ExpectIdle(fade, 12.5, true, "Fade-out complete");
+    fade.Select(13);
+    fade.Release(13.2, played: false);
+    ExpectIdle(fade, 13.3, false, "Cancelled fade still running");
+    // 13.4 is the exact end; sample just after it, clear of floating-point rounding.
+    ExpectIdle(fade, 13.41, true, "Cancelled partial opacity needs only its remaining time");
+    fade.Select(14);
+    fade.Reset();
+    ExpectIdle(fade, 14, true, "Reset is idle at once");
+});
+
+Scenario("Body keeps 700/1080 of the UI height, cutout capped at 30% of the width", _ =>
+{
+    ExpectValue(SakiSelectionPortraitLayout.Scale(1920, 1080, 691, 1200) * 1200, 700, "Normal form body at 1080p");
+    ExpectValue(SakiSelectionPortraitLayout.Scale(1920, 1080, 832, 1095) * 1095, 700, "Dual swords keep the body height");
+    ExpectValue(SakiSelectionPortraitLayout.Scale(1920, 1080, 832, 1095) * 832, 531.872, "Dual swords fit inside 30% of the width");
+    ExpectValue(SakiSelectionPortraitLayout.Scale(1920, 1080, 1005, 929) * 1005, 576, "Scythe cutout is capped at 30% of the width");
+    ExpectValue(SakiSelectionPortraitLayout.Scale(1280, 720, 691, 1200) * 1200, 466.667, "Body follows the UI height at 720p");
+    ExpectValue(SakiSelectionPortraitLayout.Scale(1920, 1440, 691, 1200) * 1200, 933.333, "Taller 4:3 UI keeps the same share");
+    ExpectValue(SakiSelectionPortraitLayout.Scale(2520, 1080, 1005, 929) * 1005, 756, "Ultrawide raises the width cap");
+});
+
+Scenario("Slide-in follows the fade with an ease-out", _ =>
+{
+    ExpectValue(SakiSelectionPortraitLayout.SlideOffset(0f, 1080), -40, "Transparent portrait starts 40px to the left");
+    ExpectValue(SakiSelectionPortraitLayout.SlideOffset(0.5f, 1080), -5, "Half opacity leaves an eighth of the distance");
+    ExpectValue(SakiSelectionPortraitLayout.SlideOffset(1f, 1080), 0, "Opaque portrait rests on the edge");
+    ExpectValue(SakiSelectionPortraitLayout.SlideOffset(0f, 1440), -53.333, "Distance scales with the UI height");
+    ExpectValue(SakiSelectionPortraitLayout.SlideOffset(-1f, 1080), -40, "Opacity below zero clamps");
+    ExpectValue(SakiSelectionPortraitLayout.SlideOffset(2f, 1080), 0, "Opacity above one clamps");
+});
+
+Scenario("Form crossfade takes a quarter second", _ =>
+{
+    ExpectValue(SakiSelectionPortraitLayout.CrossfadeProgress(0), 0, "Starts on the outgoing form");
+    ExpectValue(SakiSelectionPortraitLayout.CrossfadeProgress(0.125), 0.5, "Halfway");
+    ExpectValue(SakiSelectionPortraitLayout.CrossfadeProgress(0.25), 1, "Complete");
+    ExpectValue(SakiSelectionPortraitLayout.CrossfadeProgress(5), 1, "Stays complete");
+    ExpectValue(SakiSelectionPortraitLayout.CrossfadeProgress(double.PositiveInfinity), 1, "No pending crossfade shows the current form");
+    ExpectValue(SakiSelectionPortraitLayout.CrossfadeProgress(-0.1), 0, "Negative elapsed time clamps");
+});
+
+Console.WriteLine($"PASS: {checks} checks across {scenarios} scenarios; no Godot or game runtime required.");
