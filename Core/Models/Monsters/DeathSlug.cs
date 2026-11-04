@@ -303,7 +303,7 @@ public sealed class DeathSlug :
     private async Task RecoveryMove(IReadOnlyList<Creature> _)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        Creature.GetPower<HighDimensionalShellPower>()?.Restore(30);
+        Creature.GetPower<HighDimensionalShellPower>()?.Restore(HbrResourceValueHelper.Fixed(Creature, 30m));
     }
 
     private async Task DeathBurstMove(IReadOnlyList<Creature> _)

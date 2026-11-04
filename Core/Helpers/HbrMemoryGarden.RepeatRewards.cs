@@ -54,6 +54,7 @@ internal static partial class HbrMemoryGarden
     internal static bool NeedsRepeatMemoryRewardStep(Player player, HbrStoryEvent story,
         IEnumerable<string> encountered)
     {
+        if (!story.IsShared) return HasRepeatMemoryRewards(player, story, encountered);
         // Shared event options must match for every player, including teammates
         // without the manual and players who already claimed this node's reward.
         HashSet<string> met = new(encountered, StringComparer.Ordinal);

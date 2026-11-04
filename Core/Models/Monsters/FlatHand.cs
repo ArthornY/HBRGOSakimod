@@ -450,7 +450,7 @@ public sealed class FlatHand :
             30m,
             ValueProp.Move,
             null);
-        Creature.GetPower<HighDimensionalShellPower>()?.Restore(40);
+        Creature.GetPower<HighDimensionalShellPower>()?.Restore(HbrResourceValueHelper.Fixed(Creature, 40m));
     }
 
     internal async Task BeforePhantomIntentPerformed(

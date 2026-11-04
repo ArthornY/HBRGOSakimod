@@ -37,9 +37,18 @@ internal static class HbrEnemyProfileHelper
         // value is the fallback; act lengths vary, especially in multiplayer.
         int localFloor = run.CurrentMapCoord is { } coord ? Math.Max(1, coord.row + 1) :
             Math.Max(1, run.ActFloor);
+        // Completed acts retain their floor growth. Native history is saved per
+        // act and survives the coordinate/ActFloor reset on entering a new act.
+        // Each act's first floor has no floor bonus; current-act history must
+        // not be added again on top of the live coordinate/fallback above.
+        decimal previousFloorGrowth = 0m;
+        var history = run.MapPointHistory;
+        for (int index = 0; index < Math.Min(act, history?.Count ?? 0); index++)
+            previousFloorGrowth += Math.Max(0, (history[index]?.Count ?? 0) - 1);
         RoomType room = creature.CombatState.Encounter?.RoomType ??
             run.CurrentRoom?.RoomType ?? RoomType.Monster;
-        return InitialEnemyParameter + GainPerAct * act + GainPerFloor * (localFloor - 1) +
+        return InitialEnemyParameter + GainPerAct * act +
+            GainPerFloor * (previousFloorGrowth + localFloor - 1) +
             (room == RoomType.Boss ? BossBonus : room == RoomType.Elite ? EliteBonus : 0m);
     }
 }

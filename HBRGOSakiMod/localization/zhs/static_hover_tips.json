@@ -1,4 +1,5 @@
 {
+  "HBR_NATIVE_EFFECT_SKILL_DAMAGE.description": "{SkillPower}%倍率",
   "HBRGO_MEMORY_FRAGMENT.title": "记忆碎片",
   "HBRGO_MEMORY_FRAGMENT.description": "进入后必定触发一段记忆碎片。每次遇见后，该事件的当前权重减半，减少的权重平均分配给其它记忆碎片；仍可再次遇见。"
 }

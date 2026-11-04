@@ -265,7 +265,9 @@ public sealed class FallingContinuallyHbrgoSaki : CardModel
         await PowerCmd.Apply<FallingContinuallyPower>(
             choiceContext,
             cardPlay.Target,
-            DynamicVars["FallingContinuallyPower"].BaseValue,
+            FallingContinuallyHelper.ResolveAmount(
+                DynamicVars["FallingContinuallyPower"].BaseValue,
+                Owner.Creature, cardPlay.Target),
             Owner.Creature,
             this);
     }

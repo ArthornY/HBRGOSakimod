@@ -68,8 +68,6 @@ internal static class HbrNativeFixedResourceHelper
         Add("Cards", "Feed", "MaxHp");
         Add("Cards", "NotYet", "Heal");
         Add("Cards", "Spur", "Heal");
-        foreach (string name in new[] { "Burn", "Decay", "Infection", "Toxic", "Wither" })
-            Add("Cards", name, "Damage");
 
         foreach (string name in new[] { "BigMushroom", "ChosenCheese", "DarkstonePeriapt", "DragonFruit",
             "FakeMango", "LeafyPoultice", "LeesWaffle", "LoomingFruit", "Mango", "NutritiousOyster",
@@ -83,7 +81,7 @@ internal static class HbrNativeFixedResourceHelper
         Add("Relics", "FragrantMushroom", "HpLoss");
         Add("Potions", "FruitJuice", "MaxHp");
 
-        Add("Events", "AbyssalBaths", "MaxHp", "Heal", "Damage");
+        Add("Events", "AbyssalBaths", "MaxHp", "Heal");
         Add("Events", "ByrdonisNest", "MaxHp");
         Add("Events", "DenseVegetation", "HpLoss");
         Add("Events", "DrowningBeacon", "HpLoss");
@@ -99,9 +97,6 @@ internal static class HbrNativeFixedResourceHelper
         Add("Events", "BrainLeech", "RipHpLoss");
         Add("Events", "DollRoom", "TakeTimeHpLoss", "ExamineHpLoss");
         Add("Events", "JungleMazeAdventure", "SoloHp");
-        Add("Events", "RoomFullOfCheese", "Damage");
-        Add("Events", "RoundTeaParty", "Damage");
-        Add("Events", "TheLegendsWereTrue", "Damage");
         Add("Events", "StoneOfAllTime", "DrinkMaxHpGain", "PushHpLoss");
         Add("Events", "TabletOfTruth", "SmashHPGain", "DecipherMaxHpLoss");
         return result;

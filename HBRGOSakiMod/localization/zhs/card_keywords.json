@@ -51,6 +51,6 @@
   "HBRGO_SIX_SENSE.MentalStrength.menuDescription": "普通：打出后，获得{normal}%伤害减免。\n强化：获得{enhanced}%伤害减免。可叠加，累计上限50%，下次自身回合开始时清空。\n非复制牌削减精神力抗性{loss}点；复制牌不削减抗性。",
   "HBRGO_SIX_SENSE.Talent.menuDescription": "每点才能使获得的金币+2%。\n普通：打出后，立即获得{normal}基础金币。\n强化：打出后，立即获得{enhanced}基础金币（额外5金币）。\n非复制牌削减才能抗性{loss}点，包含额外1点；复制牌不削减抗性。",
   "HBRGO_SIX_SENSE.Gentleness.menuDescription": "普通：打出后，本场战斗出目+{normal}。\n强化：出目加值提升为+{enhanced}。小数保留累积。\n非复制牌削减温柔抗性{loss}点，包含额外1点；复制牌不削减抗性。",
-  "HBRGO_SIX_SENSE.Madness.hbrDescription": "{state}效果：本次出牌时，此牌的基础伤害×{value}%，打出后受到100点伤害。基础倍率为（120+疯狂层数）%；强化后为（120+1.5×疯狂层数）%。削减对应抗性{loss}点。",
-  "HBRGO_SIX_SENSE.Madness.hbrMenuDescription": "普通：此牌本次基础伤害×{normal}%，打出后受到100点伤害。\n强化：基础伤害倍率提升为{enhanced}%，仍受到100点伤害。原牌和复制牌各计算一次，不重复叠乘。\n非复制牌削减疯狂抗性{loss}点；复制牌不削减抗性。"
+  "HBRGO_SIX_SENSE.Madness.hbrDescription": "{state}效果：本次出牌时，此牌的基础伤害×{value}%，打出后受到约16.67%倍率伤害。基础倍率为（120+疯狂层数）%；强化后为（120+1.5×疯狂层数）%。削减对应抗性{loss}点。",
+  "HBRGO_SIX_SENSE.Madness.hbrMenuDescription": "普通：此牌本次基础伤害×{normal}%，打出后受到约16.67%倍率伤害。\n强化：基础伤害倍率提升为{enhanced}%，仍受到约16.67%倍率伤害。原牌和复制牌各计算一次，不重复叠乘。\n非复制牌削减疯狂抗性{loss}点；复制牌不削减抗性。"
 }

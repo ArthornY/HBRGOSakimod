@@ -621,7 +621,7 @@ public sealed class SkullFeather :
             50m,
             ValueProp.Move,
             null);
-        Creature.GetPower<HighDimensionalShellPower>()?.Restore(100);
+        Creature.GetPower<HighDimensionalShellPower>()?.Restore(HbrResourceValueHelper.Fixed(Creature, 100m));
     }
 
     private async Task RespawnMove(IReadOnlyList<Creature> _)

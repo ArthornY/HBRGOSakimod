@@ -24,6 +24,11 @@ public sealed class ReturnToMeHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
+    public override IEnumerable<CardKeyword> CanonicalKeywords => new[]
+    {
+        CardKeyword.Exhaust
+    };
+
     protected override bool IsPlayable =>
         PhantomHelper.GetLivingPhantom(Owner) != null;
 
@@ -65,7 +70,7 @@ public sealed class ReturnToMeHbrgoSaki : CardModel
         if (damageDealt > 0)
         {
             phantom?.GetPower<PhantomPower>()?
-                .AddCombatDamageBonus(damageDealt);
+                .AddCombatDamageBonus(damageDealt / 100m);
         }
     }
 

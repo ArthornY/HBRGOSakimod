@@ -249,10 +249,10 @@ static class Checks
         EqualFinal(Preview(Enemy,Hero),Outgoing(103m,103m,150m),"temporary Strength marker adds no second stat or damage bonus");
         Equal(Block(Hero),525m,"temporary Dexterity marker adds no second intelligence or block bonus");
         Powers(Hero).Clear();
-        var vigor = Power<VigorPower>(Hero, 2); EqualFinal(Preview(Enemy, Hero), Outgoing(100m,100m,150m)+2000m, "unrelated Vigor retains two fixed outgoing units");
+        var vigor = Power<VigorPower>(Hero, 2); EqualFinal(Preview(Enemy, Hero), Outgoing(100m,100m,150m,raw:8m), "Vigor joins the outgoing base skill coefficient before the attribute curve");
         Check(vigor.Amount == 2, "damage preview does not consume Vigor");
         Powers(Hero).Clear(); Power<VigorPower>(Enemy, 2);
-        EqualFinal(Preview(Hero,Enemy,10m),Incoming(150m,100m,100m)+200m,"enemy Vigor retains two fixed incoming units");
+        EqualFinal(Preview(Hero,Enemy,10m),Incoming(150m,100m,100m,raw:12m),"enemy Vigor joins the incoming base skill coefficient before the attribute curve");
         Powers(Enemy).Clear();
         Powers(Hero).Clear();
     }

@@ -1,13 +1,37 @@
 # Enemy skill and actor regression
 
-Build the mod with `SkipModOutputCopy=true`, then build this fixture with
-`dotnet build validation/hbr-enemy-skills/Checks.csproj -c Release -p:ModAssemblyPath='<candidate DLL>'`. Supply
-`-p:GodotSharpAssemblyPath=<GodotSharp.dll path>` if its NuGet root is unavailable.
-Run the resulting `Checks.dll` with the same four arguments as the sibling
-enemy-resource fixture: built mod DLL, expected SHA256, runtime dependency
-directory containing `sts2.dll`, and matching GodotSharp DLL path. The entry
-point checks the hash before loading the mod; `report.json` records that hash
-and all assertion names.
+Current candidate `100E63797656C1E459980CB0ECEA057DF467C5C29B1944191BDE13ACD09B9C84` passes 650 checks in the stable actor/map/scope/skill segment with the obsolete Hopper card-budget calibration excluded. The focused act-carryover entry passes 161 checks on both stable and beta v0.111.0. These are managed native-model checks, not a complete game run or full-suite beta result.
+
+| Report under `outputs/enemy-parameter-act-carryover/` | Result |
+| --- | --- |
+| `candidate-stable-segment.json` | 650 pass; existing actor/map/scope/single-coefficient checks plus new carryover and real native Hook checks, Hopper calibration excluded |
+| `candidate-focused-stable.json` | 161 pass; native history/getters/current-act setter |
+| `candidate-beta.json` | 161 pass; same focused checks against verified beta runtime |
+| `baseline-stable.json` | Expected carryover failure: prior floor17 is E246, then old next-act E210 instead of E306 |
+| `baseline-existing-suite.json` | Existing Hopper calibration fails after 484 prior checks |
+| `candidate-existing-suite-failure.json` | Same existing Hopper failure after the same 484 prior checks, with new carryover entry explicitly skipped for comparison |
+
+The frozen pre-change DLL is `outputs/enemy-parameter-act-carryover/baseline/HBRGOSakiMod.dll`, SHA256 `8026D7C86D6D7DB3E59A3B3B138FEFF48E1519860439751D2D36AC79FDE18C94`. Both the baseline and candidate fail the unchanged historical first Hopper HP12/four-Strike assertion with HP0 and `DestructionRatePower.Amount = 19`; the historical calibration still assumes a fixed +2 destruction gain, while production already uses skill-coefficient growth. This carryover change does not alter that production mechanism or rewrite the old budget expectations.
+
+Build and run the green stable segment from this checkout:
+
+```powershell
+$candidate = (Resolve-Path outputs/enemy-parameter-act-carryover/candidate/HBRGOSakiMod.dll).Path
+$digest = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash
+$godot = 'C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll'
+dotnet build validation/hbr-enemy-skills/Checks.csproj -c Release -p:SkipModOutputCopy=true "-p:GodotSharpAssemblyPath=$godot"
+dotnet validation/hbr-enemy-skills/bin/Release/net9.0/Checks.dll $candidate $digest libs $godot outputs/enemy-parameter-act-carryover/candidate-stable-segment.json --skip-hopper-calibration
+```
+
+Use the same stable-compiled fixture binary for the focused native-history checks. The bootstrap calls `RunActCarryover` directly, so it never JITs old Counter/preview APIs in the legacy suite when loading beta:
+
+```powershell
+dotnet validation/hbr-enemy-skills/bin/Release/net9.0/Checks.dll $candidate $digest libs $godot outputs/enemy-parameter-act-carryover/candidate-focused-stable.json --act-carryover
+$profile = (Resolve-Path outputs/hotaru-overcharge/beta-profile).Path
+dotnet validation/hbr-enemy-skills/bin/Release/net9.0/Checks.dll $candidate $digest $profile $godot outputs/enemy-parameter-act-carryover/candidate-beta.json --act-carryover --isolate-telemetry
+```
+
+Without skip flags, the old full suite remains attempted and reports its existing Hopper failure. `--skip-act-carryover` excludes only the new carryover cases for the baseline/candidate old-suite comparison; it does not mask or modify the Hopper assertion. The optional fifth argument selects the report path; the original four-argument invocation still writes `report.json` alongside the executable. The local bootstrap replaces only this project's old linked bootstrap. It verifies candidate/profile hashes and links the existing strict telemetry isolator unchanged. Beta source SHA256 `0861BFA1DF347538D932F22D580E75420F08082792EB914E53B4882764ACDBE9` becomes output-local telemetry-only copy `0C0C1CC3DD3FFF8E2D10BDE4FDA76A5E7743402047B518B4B188A7ED8B65BFAA`; the proof verifies only Sentry's exact five-byte initialization call changed. Original runtime/profile assemblies are not edited.
 
 The fixture uses actual saved manual progress, native Player/Creature models
 and stat accessors. It verifies that enemies do not expose player six stats,
@@ -18,22 +42,13 @@ vitality fallback, including an additional living ally and an unrelated monster
 with the same move name. Endpoint cases check the incoming maximum and 1 floor;
 legacy mode, Unpowered and the STS enemy block support bridge have separate cases.
 
-Enemy growth uses E150 at act index0/local floor1, +60 per act, +6 for
-each additional local floor, and +30 for elite/+50 for boss rooms. Both a
-native SmallHopper and an ordinary actor are checked at explicit early/later
-floor, act, elite and boss points. These cases verify independent incoming,
-outgoing and block formulas through the real native preview Hook and production
-actual-damage wrapper. Native encounter models supply the room classifications;
-native MapCoord, ActFloor and history collections exercise coordinate precedence,
-absent-coordinate/native-ActFloor fallback, floor/act clamps and missing encounter/current
-room fallback. Player six-stat allocations are verified to change the actual
-matching stat while leaving E independent; absent run/combat falls back to150.
-Native coordinate row0 is floor1; row1 is floor2/E156. If Neow occupies row0,
-the first monster at row1 therefore starts at E156. The explicit row0 Hopper
-calibration below remains an opening numeric benchmark, not a forced first-fight
-exception. Total history length does not substitute for native ActFloor, because
-act lengths and multiplayer progression can differ.
+Enemy E is `150 + 60*act + 6*(sum(max(0,completedActHistory.Count-1)) + localFloor-1) + currentRoomBonus`. The current coordinate row+1 takes precedence over native ActFloor; a missing coordinate uses ActFloor clamped to at least1. Completed buckets are read directly from existing native `RunState.MapPointHistory`, with empty/null/missing buckets contributing zero. Current/future history is not added to the local floor again. There is no assumed17-floor act length, saved cache or cumulative write on reads.
 
+Two different completed-act length layouts, 17/22/9 and 8/13/19, exercise act1→2→3→4. The first layout gives first-floor E306/492/600 in subsequent acts; the second gives252/384/552. Cases include a current history bucket not yet present, an empty current bucket before history append, coordinate precedence over ActFloor99, absent coordinates with inconsistent current history counts, repeated reads retaining the identical history reference and counts, null/missing histories, and ordinary/elite/boss classification. Only the current room's +30/+50 applies, and a prior enemy's temporary calamity reduction does not enter progress.
+
+One17-entry scenario executes the real native `RunState.CurrentActIndex = 1` setter. It clears the current coordinate and resets ActFloor to0 while retaining the completed history reference and17 node entries; the production getter then returns E306 from E246 plus the act60 increment. The other scenarios install native collection structures and entry instances directly. They do not execute AppendNode, complete room transitions, event/encounter lifecycle or save deserialization. Native history counts map-node entries, including the row0 Ancient; extra Rooms within one node do not add floor growth. Stable segment checks additionally run carried E through native incoming preview, the production actual wrapper and the support-block Hook. Beta focused checks cover only the native history/getter/setter paths.
+
+Existing per-floor/room/actor tests continue to use independently derived incoming/outgoing/block formulas. Their synthetic total-history disagreement now belongs to the current act's bucket, preserving the coordinate/ActFloor precedence test without accidentally creating previous-act growth. Player stat allocations remain independent of E; absent run/combat falls back to150. Native row0 is floor1, row1 floor2/E156. The row0 Hopper case below is a historical numeric benchmark, not a forced first-fight exception.
 Preview calculations enter actual native `Hook.ModifyDamage`, then the
 production `ModifyDamageInternal` replacement and complete common pipeline.
 Actual calculations enter the production StrongestShield wrapper, which marks
@@ -60,6 +75,8 @@ Godot StringName construction are controlled leaves. Thus these checks do not
 validate every modifier combination, UI preview context, a complete native
 damage task, replay/save restoration or original per-enemy skill data. No Godot
 process, real game save/config IO or packaging is performed.
+
+The following Hopper budget section documents the original historical calibration. Its fixed-destruction expectations are stale, and it is excluded from the green650-check segment; both frozen baseline and candidate reproduce its same failure as reported above.
 
 The Hopper calibration reads the installed native unupgraded StrikeIronclad,
 Bash and DefendIronclad variables and costs (6/1, 8/2 plus Vulnerable2, and5/1).

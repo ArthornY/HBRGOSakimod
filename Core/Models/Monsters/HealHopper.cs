@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
@@ -53,7 +54,7 @@ public sealed class HealHopper : HbrgoStaticMonster
             if (!ally.HasPower<BreakPower>())
             {
                 ally.GetPower<HighDimensionalShellPower>()?
-                    .Restore(RepairAmount);
+                    .Restore(HbrResourceValueHelper.Fixed(ally, RepairAmount));
             }
 
             await CreatureCmd.GainBlock(

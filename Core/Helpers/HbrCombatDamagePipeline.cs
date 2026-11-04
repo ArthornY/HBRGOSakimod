@@ -32,12 +32,17 @@ internal static class HbrCombatDamagePipeline
         CardPlay cardPlay,
         out List<AbstractModel> modifiers)
     {
-        bool isPrecalculatedDamage =
-            PrecalculatedDamageContext.Matches(
+        using var effectCalculation = HbrEffectSkillDamageContext.EnterCalculation(
+            target, dealer, cardSource, damage, props);
+        bool effectSkill = HbrEffectSkillDamageContext.IsCurrentEffectCalculation;
+        // A newly declared raw skill source wins over an enclosing resolved
+        // hit, even when its target/card/amount happen to be identical.
+        bool isPrecalculatedDamage = !effectSkill &&
+            (PrecalculatedDamageContext.Matches(
                 cardSource,
                 target,
                 damage) || HpOnlyDamageContext.IsCurrentHpDamage(
-                    target, dealer, cardSource, props);
+                    target, dealer, cardSource, props));
         ModeTransitionDamagePreviewState previewState = default;
         bool isModeTransitionPreview =
             !isPrecalculatedDamage &&
@@ -46,15 +51,33 @@ internal static class HbrCombatDamagePipeline
                 out previewState);
         bool hbrNumerics = HbrBattleStatsHelper.IsEnabled(dealer) ||
             HbrBattleStatsHelper.IsEnabled(target);
+        List<AbstractModel> appliedModifiers = new();
+        HashSet<AbstractModel> baseVigor = new(ReferenceEqualityComparer.Instance);
+        decimal vigorUnits = 0m;
+        if (!isPrecalculatedDamage && modifyDamageHookType.HasFlag(ModifyDamageHookType.Additive) &&
+            props.IsPoweredAttack() && HbrBattleStatsHelper.IsEnabled(dealer))
+        {
+            foreach (AbstractModel model in runState.IterateHookListeners(combatState))
+            {
+                if (model is not MegaCrit.Sts2.Core.Models.Powers.VigorPower ||
+                    PhantomHelper.IsSummonerOwnedDamageModifier(model, dealer) || !baseVigor.Add(model)) continue;
+                // Query the real native reservation and cannon-allocation hook
+                // once, using the original flags and raw command amount.
+                decimal units = PhantomIncomingDamageHelper.ModifyDamageAdditive(
+                    model, target, damage, props, dealer, cardSource, cardPlay);
+                vigorUnits = DamageAmplificationLimits.AddSaturated(vigorUnits, units);
+                if (units != 0m) appliedModifiers.Add(model);
+            }
+        }
         decimal baseDamage = !isPrecalculatedDamage &&
             modifyDamageHookType.HasFlag(ModifyDamageHookType.Additive)
-                ? HbrDamageSkillAdapter.ConvertBaseDamage(target, dealer, damage, props, cardSource)
+                ? HbrDamageSkillAdapter.ConvertBaseDamageWithSkillBonus(
+                    target, dealer, damage, props, cardSource, vigorUnits)
                 : damage;
         decimal modifiedDamage = baseDamage *
             (isModeTransitionPreview
                 ? previewState.BaseDamageMultiplier
                 : 1m);
-        List<AbstractModel> appliedModifiers = new();
         // Capture pre-reduction damage alongside the live hooks, without evaluating any hook twice.
         decimal rawDamage = Math.Max(0m, baseDamage) * (isModeTransitionPreview
             ? Math.Max(1m, previewState.BaseDamageMultiplier) : 1m);
@@ -74,7 +97,7 @@ internal static class HbrCombatDamagePipeline
         {
             foreach (AbstractModel model in runState.IterateHookListeners(combatState))
             {
-                if (PhantomHelper.IsSummonerOwnedDamageModifier(
+                if (baseVigor.Contains(model) || PhantomHelper.IsSummonerOwnedDamageModifier(
                         model,
                         dealer))
                 {
@@ -86,12 +109,14 @@ internal static class HbrCombatDamagePipeline
                     model,
                     target,
                     modifiedDamage,
-                    props,
+                    HbrEffectSkillDamageContext.GetModifierProps(model, props),
                     dealer,
                     cardSource,
                     cardPlay);
-                additiveAmount = HbrDamageSkillAdapter.ConvertFlatDamageBonus(model, dealer,
-                    additiveAmount, hbrNumerics && props.IsPoweredAttack());
+                additiveAmount = HbrDamageSkillAdapter.ConvertFlatDamageBonus(model, target, dealer,
+                    cardSource, props, additiveAmount,
+                    hbrNumerics && HbrEffectSkillDamageContext.GetModifierProps(model, props).IsPoweredAttack(),
+                    effectSkill || !HbrAbsoluteBaseDamageContext.Matches(target, dealer, cardSource, damage));
                 modifiedDamage += additiveAmount;
                 rawDamage += Math.Max(0m, additiveAmount);
                 if (additiveAmount != 0m)
@@ -114,9 +139,11 @@ internal static class HbrCombatDamagePipeline
             // Shared by intent previews and actual damage. Apply after additive
             // bonuses, before reductions/caps, and never to already resolved hits.
             enemyDamageMultiplier = EnemyStatScalingHelper.GetDamageMultiplier(dealer) *
-                SaviorGrandEntranceCombatHelper.GetDamageMultiplier(target, dealer, props) *
+                SaviorGrandEntranceCombatHelper.GetDamageMultiplier(target, dealer,
+                    HbrEffectSkillDamageContext.GetPersistentEffectProps(props)) *
                 WorldsFinestCombatHelper.GetDamageMultiplier(target) *
-                CrushYouLikeABugCombatHelper.GetDpDamageMultiplier(cardSource, target, props);
+                CrushYouLikeABugCombatHelper.GetDpDamageMultiplier(cardSource, target,
+                    HbrEffectSkillDamageContext.GetPersistentEffectProps(props));
             modifiedDamage *= enemyDamageMultiplier;
             rawDamage *= enemyDamageMultiplier;
             multiplierBaseDamage = modifiedDamage;
@@ -152,7 +179,7 @@ internal static class HbrCombatDamagePipeline
                         model,
                         target,
                         amountForHook,
-                        props,
+                        HbrEffectSkillDamageContext.GetModifierProps(model, props),
                         dealer,
                         cardSource,
                         cardPlay);

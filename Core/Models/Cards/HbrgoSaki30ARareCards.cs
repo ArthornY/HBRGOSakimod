@@ -530,7 +530,9 @@ public sealed class DeathToYouHbrgoSaki : CardModel
             await PowerCmd.Apply<FallingContinuallyPower>(
                 choiceContext,
                 target,
-                DynamicVars["FallingContinuallyPower"].BaseValue,
+                FallingContinuallyHelper.ResolveAmount(
+                    DynamicVars["FallingContinuallyPower"].BaseValue,
+                    Owner.Creature, target),
                 Owner.Creature,
                 this);
         }

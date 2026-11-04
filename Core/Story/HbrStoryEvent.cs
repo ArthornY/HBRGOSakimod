@@ -58,7 +58,19 @@ public abstract class HbrStoryEvent : ModEventTemplate
     public HbrStoryPage CurrentStoryPage => Definition.GetPage(CurrentStoryPageId);
     internal bool RepeatMemoryRewardsClaimed { get; private set; }
     public override EventLayoutType LayoutType => EventLayoutType.Custom;
-    public override bool IsShared => true;
+    public override bool IsShared
+    {
+        get
+        {
+            HbrStoryDefinition definition = Definition;
+            // Map memories use the native per-player option/reward replay.
+            // Dedicated transitions and combat still require a party choice.
+            return definition.EventPool != HbrMemoryFragmentPoolRules.PoolId ||
+                definition.Id == HbrMemoryGardenRestStory.EventId ||
+                definition.Id == ActEndingDoorEventId ||
+                definition.Pages.Any(page => page.Choices.Any(choice => choice.Combat.Length > 0));
+        }
+    }
     public override EventAssetProfile AssetProfile => new(LayoutScenePath: ReaderScenePath,
         InitialPortraitPath: Definition.Presentation.Background);
     public override LocString InitialDescription => PageDescription(Definition.StartPage);
@@ -183,8 +195,8 @@ public abstract class HbrStoryEvent : ModEventTemplate
         {
             if (HbrMemoryGarden.HasRepeatMemoryRewards(Owner, this, _memoryEncounteredCharacters))
                 await HbrMemoryGarden.ClaimRepeatMemoryRewards(Owner, this, _memoryEncounteredCharacters);
-            // Do not start another shared vote after other players have finished.
-            // A prevented reward remains unclaimed; a closed run cancels above.
+            // Finish this player's reward step; a prevented reward remains
+            // unclaimed and a closed run cancels above.
             RepeatMemoryRewardsClaimed = true;
             SetEventFinished(PageDescription(pageId));
         }

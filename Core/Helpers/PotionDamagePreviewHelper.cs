@@ -178,6 +178,10 @@ internal static class PotionDamagePreviewHelper
         StrongestShieldDamagePatch.BeginIntentPreview();
         try
         {
+            using var skill = potion.GetType().Assembly == typeof(PotionModel).Assembly
+                ? HbrEffectSkillDamageContext.Begin(target, potion.Owner.Creature, null,
+                    variable.BaseValue, variable.Props, potion.Owner.Creature)
+                : null;
             decimal amount = HookCompatibility.ModifyDamage(
                 potion.Owner.RunState,
                 potion.Owner.Creature.CombatState,

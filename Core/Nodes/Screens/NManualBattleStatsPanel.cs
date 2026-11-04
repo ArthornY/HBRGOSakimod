@@ -163,7 +163,7 @@ public partial class NManualBattleStatsPanel : Control
             "敌方每层力量在攻击时无视目标一定数值的体力、精神；每层敏捷在受击时无视攻击者一定数值的力、器用。第一至第五幕每层依次为 1、2、3、4、8 点，第六幕起保持 8 点。负层数反向修正，仅对本次攻击有效；参照属性最低为 0。");
         AddSection(content, "敌方状态值与受击",
             "敌人使用独立状态值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
-            $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，本幕每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}，每进入下一幕额外 +{HbrEnemyProfileHelper.GainPerAct}；精英再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 再 +{HbrEnemyProfileHelper.BossBonus}。Hopper 同样成长。\n" +
+            $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}；换幕保留此前各幕的楼层成长，再额外 +{HbrEnemyProfileHelper.GainPerAct}。精英当前房间再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 当前房间再 +{HbrEnemyProfileHelper.BossBonus}；房间修正不跨幕累计。Hopper 同样成长。\n" +
             "敌方技能按自身配置参照（2 × 体力 + 精神）÷3，或（体力 + 2 × 精神）÷3。参照属性不随实际命中人数或当前 DP 改变。\n" +
             "受击基础威力按状态值与防御参照的差值插值，最低为 1，达到该技能威力上端后封顶。后续再结算原有增减伤、格挡与 DP。\n" +
             "尖塔敌人沿用当前适配的资源与技能威力参数；尚未逐个替换成 HBR 原作敌技能数据。");

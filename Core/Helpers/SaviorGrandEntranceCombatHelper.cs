@@ -143,8 +143,8 @@ internal static class SaviorGrandEntranceCombatHelper
         DpFollowupDepth.Value++;
         try
         {
-            using IDisposable computed = PrecalculatedDamageContext.Begin(cardSource, target, HbrResourceValueHelper.Fixed(dealer, 1m));
-            await CreatureCommandCompatibility.Damage(context, target, HbrResourceValueHelper.Fixed(dealer, 1m), ValueProp.Unpowered, dealer, cardSource);
+            using var skill = HbrEffectSkillDamageContext.Begin(target, dealer, cardSource, 1m, ValueProp.Unpowered, dealer);
+            await CreatureCommandCompatibility.Damage(context, target, 1m, ValueProp.Unpowered, dealer, cardSource);
         }
         finally { DpFollowupDepth.Value--; }
     }

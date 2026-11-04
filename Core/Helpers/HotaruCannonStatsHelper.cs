@@ -72,6 +72,7 @@ internal static class HotaruCannonStatsHelper
     internal static bool TryGetCurrentCannon(Creature target, Creature dealer, CardModel card,
         ValueProp props, out Creature cannon)
     {
+        props = HbrEffectSkillDamageContext.GetNativeEffectProps(props);
         // A synchronous intent refresh can run inside another cannon's real hit.
         // Its pure preview must use its own cannon and must never fall back to
         // the matching outer command (same owner/target and null card source).

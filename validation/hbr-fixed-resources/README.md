@@ -6,24 +6,26 @@ Build the source without packaging, then build `Checks.csproj`, supplying `Godot
 
 Fixed values retain their original units in raw `DynamicVar` data. The production patch replaces only audited consumption and display reads. Percentages, life steal, phase resets, save fields, ordinary skill damage, and percentage-derived event healing are deliberately excluded.
 
+The later effect-skill migration also excludes five status-card and four event `Damage` fields from fixed resource scaling. This fixture captures their raw skill-unit commands (`Burn=2`, successive `AbyssalBaths=3,4`) and verifies unchanged raw mutation; it does not resolve their damage at its isolated leaf. The [effect-skill fixture](../hbr-effect-skill-damage/README.md) exercises the separately declared calculation route where raw6 means100%. HP-loss costs, recovery and maximum-HP resources retain their existing conversion.
+
 ## Storage audit
 
 The installed `sts2.dll` SHA-256 is `A1F9E653F1E28E4076558FEE1E60D218619CB7E057B887C6417F62C62C6D7A52`. The explicit model registry has 103 native methods containing candidate variable reads. Four methods also write a variable:
 
 | Method | Raw write | Treatment |
 | --- | --- | --- |
-| `AbyssalBaths.OnImmerse` async body | `Damage.BaseValue = Damage.BaseValue + 1` | Preserve the exact `dup → reader → decimal addition → same variable setter` raw read; convert the separate max-HP command and `DamageVar` consumption. |
+| `AbyssalBaths.OnImmerse` async body | `Damage.BaseValue = Damage.BaseValue + 1` | Preserve the exact raw setter and separate max-HP resource conversion. Damage now carries raw skill units through its explicitly declared source. |
 | `JungleMazeAdventure.CalculateVars` | Randomize `SoloGold` and `JoinForcesGold` | Gold is not a resource mapping. Initialization/mutation methods are not patched. |
 | `WhisperingHollow.CalculateVars` | Randomize `Gold` | Gold is not a resource mapping. Initialization/mutation methods are not patched. |
 | `TabletOfTruth.Decipher` async body | Set `DecipherMaxHpLoss` from native integer `GetDecipherCost()` | The stored integer remains raw. Resource reads are consumed by commands/options; no scaled value feeds the setter. |
 
-The native `DynamicVar.BaseValue`, `IntValue`, `UpgradeValueBy`, `ResetToBase`, `Clone` and setters remain unchanged. Selected model `CalculateVars`, `OnUpgrade` and `AfterDowngraded` storage methods are excluded. Remaining field writes are async state/await bookkeeping, card selections and local effect amounts, not persistent raw resource data. The event regression runs the real first and second `OnImmerse` effects, checks damage `300 → 400`, and verifies raw `3 → 4 → 5`; its post-set option refresh is isolated after the actual native setter completes. Disabled-mode damage stays `3 → 4`.
+The native `DynamicVar.BaseValue`, `IntValue`, `UpgradeValueBy`, `ResetToBase`, `Clone` and setters remain unchanged. Selected model `CalculateVars`, `OnUpgrade` and `AfterDowngraded` storage methods are excluded. Remaining field writes are async state/await bookkeeping, card selections and local effect amounts, not persistent raw resource data. The event regression runs the real first and second `OnImmerse` effects and verifies raw `3 → 4 → 5`; its post-set option refresh is isolated after the actual native setter completes. Captured command inputs remain `3 → 4` in both modes; only the separate skill calculation interprets their units in HBR mode.
 
 ## Descriptions and command boundaries
 
 The formatting tests use exact English templates read from the installed PCK with the actual native `LocTable`, `LocString.GetFormattedText`, `LocManager.SmartFormat` and game-provided SmartFormat assembly. Locale filesystem loading, UI locale selection and rendering are not executed. Regen and Paper Cuts use their native smart-description `Amount` argument, while stacks and stack decay stay unscaled. Cook retains its native `MaxHp` argument. Terminal and Night Terrors encode their fixed amounts literally: only the exact descriptions' `LocString` instances are tagged; substitution skips BBCode attributes/colors/IDs and requires one exact standalone numeric match. Unknown or ambiguous templates retain their original text.
 
-Actual native Offering, Burn, Burning Blood, Regen, Paper Cuts, Regal Pillow and Abyssal Baths methods execute with captured command leaves. The production max-HP-to-DP prefix consumes the already converted amount without scaling again. Terminal, Night Terrors, Cook and Knowledge Demon fixed command call sites are audited and installed, but their complete room/selection/monster hosts are not simulated. Knowledge Demon's `PonderMove` heals exactly `30 × player count` and is the only native monster fixed-heal row; Waterfall Giant damage-derived healing and Test Subject/Illusion phase recovery stay excluded.
+Actual native Offering, Burn, Burning Blood, Regen, Paper Cuts, Regal Pillow and Abyssal Baths methods execute with captured command leaves. The production max-HP-to-DP prefix consumes the already converted amount without scaling again. Terminal, Night Terrors, Cook and Knowledge Demon fixed command call sites are audited and installed, but their complete room/selection/monster hosts are not simulated here. Knowledge Demon's `PonderMove` heals exactly `30 × player count`. Waterfall Giant's `SiphonMove` also heals a fixed `10/15 × player count`, independently of damage dealt, and now crosses the fixed-resource boundary. Regen resolves its actual declared async hook (`AfterSideTurnEnd` on stable, `BeforeSideTurnEndEarly` on beta). Test Subject/Illusion phase recovery stays excluded. The separate [enemy-healing fixture](../hbr-enemy-healing/README.md) covers those runtime-specific healing paths.
 
 ## Canonical templates and character selection
 

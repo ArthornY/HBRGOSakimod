@@ -379,10 +379,10 @@ public sealed partial class Millsage : RelicModel
         }
     }
 
-    internal void ApplyHappinessHitGrowth()
+    internal void ApplyHappinessHitGrowth(bool halveIncrease = true)
     {
         HotaruCannonState state = StateFor(HotaruCannonKind.Happiness);
-        state.HalveHappinessIncreaseAfterDamage();
+        if (halveIncrease) state.HalveHappinessIncreaseAfterDamage();
         if (HasCannonUpgrade(HotaruCannonKind.Happiness, 2)) state.AddHappinessIncrease(HotaruCannonSkillPowerHelper.HappinessHitGrowth);
     }
 

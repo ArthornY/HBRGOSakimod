@@ -129,8 +129,8 @@ static partial class Checks
             "native Offering loses 600 HP while stored cost stays 6");
         Burn burn = Card<Burn>();
         await Effect(burn, "OnTurnEndInHand", new ThrowingPlayerChoiceContext());
-        Check(Damage[^1] == 200 && burn.DynamicVars.Damage.BaseValue == 2,
-            $"native Burn DamageVar command adapter scales once to 200 (actual {Damage[^1]})");
+        Check(Damage[^1] == 2 && burn.DynamicVars.Damage.BaseValue == 2 && Read(burn.DynamicVars.Damage) == 2,
+            $"native Burn retains raw skill units2 instead of resource scaling (actual {Damage[^1]})");
         StrikeIronclad strike = Card<StrikeIronclad>();
         Check(Read(strike.DynamicVars.Damage) == 6 && strike.DynamicVars.Damage.ToString() != "600",
             "ordinary Strike DamageVar is excluded from fixed-resource conversion");
@@ -153,7 +153,7 @@ static partial class Checks
                 if ((bool)Helper.GetMethod("IsFixedVariable", F)!.Invoke(null, [variable])!)
                 { Check(Read(variable) == variable.BaseValue * 100, "registered fixed variable scales once " + type.Name + "." + variable.Name); registeredVariables++; }
         }
-        Check(registeredVariables >= 45, "more than 45 native fixed card/relic resource variables are covered");
+        Check(registeredVariables >= 40, "native fixed card/relic resource coverage excludes five migrated damage fields");
         await DescriptionChecks(h);
         await EventStorageChecks(h);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new

@@ -289,9 +289,8 @@ public sealed class ReptureBowPower : PowerModel
         get
         {
             LocString text = base.Description;
-            text.Add("ResourceFollowup", IsMutable
-                ? HbrResourceValueHelper.Fixed(Owner, 1m)
-                : HbrResourceValueHelper.FixedResourceScale);
+            text.Add("ResourceFollowup", IsMutable && HbrBattleStatsHelper.IsEnabled(Owner)
+                ? HbrSkillPower.DamagePercent(1m) : 1m);
             return text;
         }
     }
@@ -318,10 +317,7 @@ public sealed class ReptureBowPower : PowerModel
                 target,
                 dealer
             });
-        decimal fixedDamage = HbrResourceValueHelper.Fixed(dealer, 1m);
-        using var absoluteDamage = HbrBattleStatsHelper.IsEnabled(dealer)
-            ? HbrAbsoluteBaseDamageContext.Begin(dealer, cardSource, target, fixedDamage)
-            : null;
+        const decimal skillUnits = 1m;
         using (HighDimensionalShellPower.SuppressDamageReduction())
         {
             return HookCompatibility.ModifyDamage(
@@ -329,7 +325,7 @@ public sealed class ReptureBowPower : PowerModel
                 combatState,
                 target,
                 dealer,
-                fixedDamage,
+                skillUnits,
                 props,
                 cardSource,
                 ModifyDamageHookType.All,

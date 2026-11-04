@@ -33,11 +33,11 @@ static partial class Checks
         Mode(true);
         Check(damage.BaseValue == 3, "AbyssalBaths starts from native raw Damage 3");
         await Immerse();
-        Check(Damage[^1] == 300 && damage.BaseValue == 4 && damage.PreviewValue == 4,
-            "real first Immerse deals 300 and raw compound setter increments 3 to 4");
+        Check(Damage[^1] == 3 && damage.BaseValue == 4 && damage.PreviewValue == 4,
+            "real first Immerse issues raw skill units3 and raw compound setter increments 3 to 4");
         await Immerse();
-        Check(Damage[^1] == 400 && damage.BaseValue == 5,
-            "real second Immerse deals 400 and raw compound setter increments 4 to 5");
+        Check(Damage[^1] == 4 && damage.BaseValue == 5,
+            "real second Immerse issues raw skill units4 and raw compound setter increments 4 to 5");
         Check(Maximum[^1] == 200, "Immerse's separate max HP gain remains scaled exactly once to 200");
         damage.BaseValue = 3; Mode(false);
         await Immerse(); Check(Damage[^1] == 3 && damage.BaseValue == 4,

@@ -31,6 +31,8 @@ static partial class Checks
     const decimal Tolerance = 0.00000000000000000001m;
     static readonly Assembly Mod = typeof(ElectronicSoldierManual).Assembly;
     static readonly List<string> Passed = [];
+    static readonly List<object> CarryoverTraces=[];
+    static string ReportPath=>System.Environment.GetEnvironmentVariable("HBR_ENEMY_SKILLS_REPORT")??Path.Combine(AppContext.BaseDirectory,"report.json");
     static Type Helper(string name) => Mod.GetType("HBRGOSakiMod.Core.Helpers." + name, true)!;
     static Type PatchType(string name) => Mod.GetType("HBRGOSakiMod.Core.Patches.Combat." + name, true)!;
     static Type Context => Helper("HbrCriticalDamageContext");
@@ -65,7 +67,7 @@ static partial class Checks
     static decimal Number(Type type, string name, params object?[] args) => (decimal)Call(type, name, args)!;
     static void Check(bool condition, string label)
     {
-        if (!condition) throw new Exception(label);
+        if (!condition) throw new Exception(label+"; enemyHP="+Enemy?.CurrentHp+"; powers="+string.Join(",",Enemy?.Powers.Select(power=>power.GetType().Name+":"+power.Amount)??[]));
         Passed.Add(label);
     }
     static void Equal(decimal actual, decimal expected, string label) => Check(Math.Abs(actual - expected) <= Tolerance, $"{label}: {actual} = {expected}");
@@ -193,8 +195,9 @@ static partial class Checks
         Set(RunState, "<ActFloor>k__BackingField", actFloor);
         Set(RunState, "_visitedMapCoords", localFloor.HasValue
             ? new List<MapCoord> { new(0, localFloor.Value - 1) } : new List<MapCoord>());
-        Set(RunState, "_mapPointHistory", new List<List<MapPointHistoryEntry>>
-            { Enumerable.Repeat<MapPointHistoryEntry>(null!, totalFloor).ToList() });
+        var history=Enumerable.Range(0,Math.Max(0,act)+1).Select(_=>new List<MapPointHistoryEntry>()).ToList();
+        history[^1]=Enumerable.Range(0,totalFloor).Select(_=>Blank<MapPointHistoryEntry>()).ToList();
+        Set(RunState,"_mapPointHistory",history);
         Set(Combat, "_encounter", room.HasValue ? Encounter(room.Value) : null);
         var rooms = new List<AbstractRoom>();
         if (currentRoom.HasValue)
@@ -289,7 +292,94 @@ static partial class Checks
         Enemy = original; Set(Combat, "_enemies", new List<Creature> { Enemy });
         EnemyMap(0, 1, room: null);
     }
-    public static async Task Run()
+    static List<List<MapPointHistoryEntry>> NativeHistory(params int?[] lengths)=>lengths.Select(length=>length.HasValue
+        ?Enumerable.Range(0,length.Value).Select(_=>Blank<MapPointHistoryEntry>()).ToList():null!).ToList();
+    static void HistoryMap(int act,int? localFloor,List<List<MapPointHistoryEntry>>? history,int fallback=1,RoomType room=RoomType.Monster)
+    {EnemyMap(act,localFloor,room,actFloor:fallback);Set(RunState,"_mapPointHistory",history);}
+    static void CarryE(decimal expected,string label,bool pipeline=false)
+    {
+        decimal actual=Parameter(Enemy);
+        var history=(List<List<MapPointHistoryEntry>>?)Field(typeof(RunState),"_mapPointHistory").GetValue(RunState);
+        CarryoverTraces.Add(new{label,act=RunState.CurrentActIndex,coord=RunState.CurrentMapCoord?.row,RunState.ActFloor,
+            history=history?.Select(bucket=>(int?)bucket?.Count).ToArray(),expected,actual});
+        Equal(actual,expected,label);
+        if(pipeline)CarryPipeline(expected,label);
+    }
+    static void CarryPipeline(decimal parameter,string label)
+    {
+        decimal incoming=parameter-100m>=140m?2000m:1000m*(1m+(parameter-100m)/140m);
+        Equal(Preview(Enemy,Hero),decimal.Floor(incoming),label+" reaches real incoming preview Hook");
+        Equal(ActualDamage(Enemy,Hero),decimal.Floor(incoming),label+" reaches production incoming actual wrapper");
+        decimal potency=parameter<300m?.8m+.4m*parameter/300m:1.2m*(1m+(parameter-300m)*.0002m);
+        Equal(Hook.ModifyBlock(Combat,Enemy,3m,ValueProp.Move,null,null,out _),decimal.Floor(3000m*potency),label+" reaches growing-E native support-block Hook");
+    }
+    static void ActCarryoverChecks(bool checkPipeline)
+    {
+        CalibrationConfig();ResetSenses();Progress(true);CalibrationListeners=false;Move(Enemy,"UNKNOWN_MOVE");
+        foreach(int[] lengths in new[]{new[]{17,22,9},new[]{8,13,19}})
+        {
+            decimal previousGrowth=0m;
+            for(int act=1;act<=3;act++)
+            {
+                int last=lengths[act-1];int?[] completed=lengths.Take(act).Select(length=>(int?)length).ToArray();
+                HistoryMap(act-1,last,NativeHistory(completed));
+                decimal prior=150m+60m*(act-1)+6m*(previousGrowth+last-1);
+                CarryE(prior,$"lengths{string.Join('-',lengths)} act{act} final ordinary floor{last}");
+                previousGrowth+=last-1;decimal next=150m+60m*act+6m*previousGrowth;
+                HistoryMap(act,1,NativeHistory(completed));
+                CarryE(next,$"lengths{string.Join('-',lengths)} transition to act{act+1} before current history bucket exists",checkPipeline);
+                Equal(next-prior,60m,"act transition adds60 while retaining all completed floor growth");
+                HistoryMap(act,null,NativeHistory([..completed,0]));CarryE(next,"empty current history and absent coordinate use fresh ActFloor1");
+                HistoryMap(act,4,NativeHistory([..completed,0]),fallback:99);CarryE(next+18m,"new coordinate contributes local steps even before history is written and overrides ActFloor99");
+                HistoryMap(act,null,NativeHistory([..completed,90]),fallback:3);CarryE(next+12m,"absent coordinate uses current native ActFloor and never double counts current history");
+                var history=NativeHistory([..completed,0]);HistoryMap(act,1,history);int?[] counts=history.Select(bucket=>(int?)bucket?.Count).ToArray();
+                for(int read=0;read<10;read++)Equal(Parameter(Enemy),next,"repeated enemy-E read retains the same accumulated value");
+                Check(ReferenceEquals(Field(typeof(RunState),"_mapPointHistory").GetValue(RunState),history)&&history.Select(bucket=>(int?)bucket?.Count).SequenceEqual(counts),"E getter reads existing native history without changing bucket identity or counts");
+            }
+        }
+        var retained=NativeHistory(17);HistoryMap(0,17,retained);
+        RunState.CurrentActIndex=1;
+        Check(RunState.CurrentActIndex==1&&RunState.CurrentMapCoord==null&&RunState.ActFloor==0,"real native CurrentActIndex setter clears coordinates and resets ActFloor to zero");
+        Check(ReferenceEquals(Field(typeof(RunState),"_mapPointHistory").GetValue(RunState),retained)&&retained.Count==1&&retained[0].Count==17,"real native act setter preserves existing history reference and completed17 node entries");
+        CarryE(306m,"real native act setter retains prior16 floor steps when coordinates and ActFloor reset",checkPipeline);
+        HistoryMap(0,17,NativeHistory(17),room:RoomType.Boss);CarryE(296m,"act1 floor17 boss has only its current temporary50 bonus");
+        var calamity=Blank<HbrCalamityPower>();AddPower(Enemy,calamity);Set(calamity,"_amount",20);
+        CarryE(276m,"current enemy calamity reduces the current boss parameter only");Powers(Enemy).Remove(calamity);
+        HistoryMap(1,1,NativeHistory(17,0));CarryE(306m,"next act inherits floor96 but no previous boss50 or calamity20");
+        HistoryMap(1,1,NativeHistory(17,0),room:RoomType.Elite);CarryE(336m,"only current elite adds30 on retained progress");
+        HistoryMap(1,1,NativeHistory(17,0),room:RoomType.Boss);CarryE(356m,"only current boss adds50 on retained progress");
+        HistoryMap(3,2,NativeHistory(1,0,null,100));CarryE(336m,"first-only empty and null previous buckets contribute zero floor growth");
+        HistoryMap(3,2,NativeHistory(8));CarryE(378m,"missing later history buckets preserve available completed progress without assuming17 floors");
+        HistoryMap(2,2,null);CarryE(276m,"null native history safely contributes no prior floor progress");
+        HistoryMap(2,null,NativeHistory(17,22,100),fallback:0);CarryE(492m,"ActFloor clamps to one while completed native progress remains");
+        HistoryMap(0,1,NativeHistory(99,99));CarryE(150m,"current and future history buckets cannot become previous-act growth");
+        EnemyMap(0,1,room:null);ResetSenses();
+    }
+    public static Task RunActCarryover()
+    {
+        bool ok=false;string? error=null;
+        try
+        {
+            var harmony=new Harmony("hbr.enemy.act-carryover.focused");
+            Patch(harmony,typeof(StringName).GetConstructor([typeof(string)])!,nameof(Skip));
+            Type logger=typeof(ModelDb).Assembly.GetType("MegaCrit.Sts2.Core.Logging.Logger",true)!;
+            foreach(MethodInfo method in logger.GetMethods(F).Where(method=>method.Name is "Log" or "Info" or "Warn" or "Error" or "Debug" or "Verbose"))Patch(harmony,method,nameof(Skip));
+            RunState=Blank<RunState>();EmptyList(RunState,"_visitedMapCoords");EmptyList(RunState,"_currentRooms");EmptyList(RunState,"_mapPointHistory");
+            Combat=Blank<CombatState>();Set(Combat,"<RunState>k__BackingField",RunState);Player=Blank<Player>();Set(Player,"_runState",RunState);
+            Hero=Creature(player:Player);Set(Player,"<Creature>k__BackingField",Hero);Enemy=Creature(Blank<SmallHopper>());
+            Set(RunState,"_players",new List<Player>{Player});Set(Combat,"_allies",new List<Creature>{Hero});Set(Combat,"_enemies",new List<Creature>{Enemy});
+            Manual=Blank<ElectronicSoldierManual>();Set(Manual,"<IsMutable>k__BackingField",true);Set(Manual,"_owner",Player);Set(Player,"_relics",new List<RelicModel>{Manual});
+            ActCarryoverChecks(checkPipeline:false);ok=true;
+        }
+        catch(Exception failure){error=failure.ToString();Console.Error.WriteLine(failure);}
+        Directory.CreateDirectory(Path.GetDirectoryName(ReportPath)!);
+        File.WriteAllText(ReportPath,JsonSerializer.Serialize(new{passed=ok,checks=Passed.Count,cases=Passed,error,actCarryover=CarryoverTraces,
+            modSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),nativeGameSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
+            runtimeProfile=System.Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE"),sourceNativeSha256=System.Environment.GetEnvironmentVariable("HBR_NATIVE_SOURCE_SHA256"),telemetryIsolation=System.Environment.GetEnvironmentVariable("HBR_TELEMETRY_ISOLATION"),
+            boundary="Focused managed native RunState history/MapCoord/ActFloor/Encounter/manual/power models and real production E getters. Native history buckets contain actual entry objects and are read without new saved state. No old enemy-skills suite, native damage Hook/HP/DP commands, act-transition gameplay, save loading, rendering, game process, package or installed-file changes."},new JsonSerializerOptions{WriteIndented=true}));
+        Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" focused act-carryover checks");if(!ok)throw new Exception("Inspect "+ReportPath);return Task.CompletedTask;
+    }
+    static async Task RunSuiteBody()
     {
         var harmony = new Harmony("hbr.enemy.skills.native.checks");
         Patch(harmony, typeof(StringName).GetConstructor([typeof(string)])!, nameof(Skip));
@@ -313,6 +403,7 @@ static partial class Checks
         new Harmony("hbr.enemy.skills.native.terminal").Patch(Canonical, prefix: new HarmonyMethod(
             typeof(Checks).GetMethod(nameof(Terminal), F)!) { priority = Priority.Last, after = [harmony.Id] });
         await EnemyGrowthChecks();
+        if(System.Environment.GetEnvironmentVariable("HBR_SKIP_ACT_CARRYOVER")!="1")ActCarryoverChecks(checkPipeline:true);
         object enemyStats = Stats(Enemy, out bool enemyFound);
         Check(!enemyFound && Stat(enemyStats, "Strength") == 0m, "enabled enemy exposes no fabricated six-stat profile");
         object heroStats = Stats(Hero, out bool heroFound);
@@ -374,15 +465,26 @@ static partial class Checks
         finally { FailListeners = false; }
         Check(Current == null && !ActualFlag, "faulted player command closes critical and actual scopes");
         SingleMultiplierChecks();
-        await HopperCalibration(harmony);
-        File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
+        if(System.Environment.GetEnvironmentVariable("HBR_SKIP_HOPPER_CALIBRATION")!="1")await HopperCalibration(harmony);
+    }
+    public static async Task Run()
+    {
+        bool ok=false;string? error=null;
+        try{await RunSuiteBody();ok=true;}catch(Exception failure){error=failure.ToString();Console.Error.WriteLine(failure);}
+        bool skipHopper=System.Environment.GetEnvironmentVariable("HBR_SKIP_HOPPER_CALIBRATION")=="1";
+        bool skipCarryover=System.Environment.GetEnvironmentVariable("HBR_SKIP_ACT_CARRYOVER")=="1";
+        Directory.CreateDirectory(Path.GetDirectoryName(ReportPath)!);
+        File.WriteAllText(ReportPath,JsonSerializer.Serialize(new
         {
-            passed = true, checks = Passed.Count, cases = Passed,
-            hopperCalibration = CalibrationReport,
-            modSha256 = System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
-            nativeGameSha256 = System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
-            boundary = "Actual saved manual, native actor/card models and OnUpgrade mutations, stat helpers, Hook.ModifyDamage/Block and full production pipeline. Actual calls use production StrongestShield wrapper; canonical Damage terminal is replaced with an asynchronous hook driver. Single-coefficient actor checks use real Millsage state, a constructed intent through production cannon Begin/Close, real cannon preview, fixed replay sample through production critical scope, and controlled resolved-gain/absolute-base scopes. These do not execute complete card plays, cannon phases or asynchronous block commands. Hopper calibration includes live native/mod power listeners, production DP absorption/exact amount patch, native HP/block mutation and production break-hit/destruction receipts. Only shell break attachment/removal/stun is a controlled lifecycle leaf; Bash damage-before-Vulnerable follows the frozen native OnPlay order. No draw/energy payment/turn simulation, rendering, real save/config writes or Godot."
-        }, new JsonSerializerOptions { WriteIndented = true }));
-        Console.WriteLine("PASS " + Passed.Count + " enemy skill native checks");
+            passed=ok,checks=Passed.Count,cases=Passed,error,hopperCalibrationSkipped=skipHopper,actCarryoverSkipped=skipCarryover,
+            hopperCalibration=CalibrationReport,actCarryover=CarryoverTraces,
+            modSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
+            nativeGameSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
+            boundary="Existing saved-manual actor/map/scope/single-coefficient native Hook regression. Actual calls use production StrongestShield wrapper; canonical Damage terminal is an asynchronous actual-hook driver. "
+                +(skipCarryover?"New act-carryover cases explicitly excluded. ":"Act-carryover native history/getter and real CurrentActIndex setter cases included, with native incoming preview/actual/support-block checks. ")
+                +(skipHopper?"Obsolete Hopper destruction/card-budget calibration explicitly excluded: this is a stable segment, not the full prior suite. ":"Original Hopper HP/DP/calibration segment attempted with unchanged existing assertions; report error identifies any pre-existing failure. ")
+                +"No rendered game, complete room transition, save deserialization, replay, Godot process, package or installed-file changes."
+        },new JsonSerializerOptions{WriteIndented=true}));
+        Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" enemy skill native checks");if(!ok)throw new Exception("Inspect "+ReportPath);
     }
 }

@@ -4,6 +4,13 @@ This managed fixture loads the exact candidate DLL by SHA256 and exercises real
 native Strength, Dexterity and Vigor methods, production Harmony adapters, native
 damage/block hooks and saved-manual stat reads.
 
+Vigor's current HBR contract adds its original units to the base skill coefficient
+before the attribute curve: raw attack6 plus Vigor2 evaluates raw8, and enemy
+attack10 plus Vigor2 evaluates raw12. Its native stack count and preview lifecycle
+remain unchanged. The full attack-consumption and cannon-reservation checks live
+in `validation/hbr-effect-skill-damage`; the older fixed +2000/+200 expectations
+have been replaced here.
+
 Coverage includes allied Strength STR/DEX +1% per layer and allied Dexterity INT
 +1% per layer, with layers added before multiplying the unbuffed live stat.
 Non-100 bases (150 STR, 180 DEX, 220 INT) distinguish percentage growth from

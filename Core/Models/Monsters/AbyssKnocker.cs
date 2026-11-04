@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
@@ -87,7 +88,7 @@ public sealed class AbyssKnocker : HbrgoStaticMonster
     private async Task RecoveryMove(IReadOnlyList<Creature> _)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        Creature.GetPower<HighDimensionalShellPower>()?.Restore(10);
+        Creature.GetPower<HighDimensionalShellPower>()?.Restore(HbrResourceValueHelper.Fixed(Creature, 10m));
         await CreatureCmd.GainBlock(
             Creature,
             10,

@@ -24,12 +24,30 @@ internal static class HbrNativeFixedResourceCommandPatch
 {
     private static IEnumerable<MethodBase> TargetMethods()
     {
-        yield return Body(typeof(RegenPower), nameof(RegenPower.AfterSideTurnEnd));
+        yield return RegenBody();
         yield return Body(typeof(PaperCutsPower), nameof(PaperCutsPower.AfterDamageGiven));
         yield return Body(typeof(Terminal), nameof(Terminal.AfterRoomEntered));
         yield return Body(typeof(NightTerrors), nameof(NightTerrors.AfterRestSiteHeal));
         yield return Body(typeof(CookRestSiteOption), nameof(CookRestSiteOption.OnSelect));
         yield return Body(typeof(KnowledgeDemon), "PonderMove");
+        yield return Body(typeof(WaterfallGiant), "SiphonMove");
+    }
+
+    private static MethodInfo RegenBody()
+    {
+        // Beta moved regeneration to an earlier hook. Resolving an inherited
+        // empty AfterSideTurnEnd would silently miss its actual healing body.
+        MethodInfo body = null;
+        foreach (string name in new[] { "AfterSideTurnEnd", "BeforeSideTurnEndEarly" })
+        {
+            MethodInfo method = typeof(RegenPower).GetMethod(name,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+            Type state = method?.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType;
+            if (state == null) continue;
+            if (body != null) throw new InvalidOperationException("Expected one declared native Regen healing hook.");
+            body = AccessTools.Method(state, "MoveNext");
+        }
+        return body ?? throw new MissingMethodException("Missing declared native Regen healing hook.");
     }
 
     private static MethodInfo Body(Type type, string name)

@@ -15,11 +15,29 @@ internal static class HbrPercentDebuffHelper
     internal static decimal BasePercent(decimal modifiers) => HbrFragilePowerHelper.ScaleModifierPercent(modifiers, 15m);
 
     internal static decimal EvaluatePercent(decimal modifiers, decimal intelligence, decimal luck, decimal enemyParameter) =>
-        EvaluateBasePercent(BasePercent(modifiers), intelligence, luck, enemyParameter);
+        EvaluateBasePotency(BasePercent(modifiers), intelligence, luck, enemyParameter);
 
-    private static decimal EvaluateBasePercent(decimal basis, decimal intelligence, decimal luck, decimal enemyParameter)
+    // Share the attribute curve with counter debuffs without importing the
+    // percentage effects' modifier growth, independent slots or duration.
+    internal static decimal EvaluateBasePotency(decimal basis, decimal intelligence, decimal luck, decimal enemyParameter)
     {
         if (basis <= 0m) return 0m;
+        intelligence = Math.Max(0m, intelligence);
+        luck = Math.Max(0m, luck);
+        enemyParameter = Math.Max(0m, enemyParameter);
+        try
+        {
+            // Average last: an exact integer counter must not become 399.999...
+            // because a recurring weighted-stat fraction was rounded earlier.
+            decimal numerator = Math.Max(0m, intelligence * 2m + luck - enemyParameter * 3m);
+            decimal step = basis * HbrOriginalNumericFormula.DebuffOverflowPerPoint;
+            if (step != 0m)
+                return DamageAmplificationLimits.AddSaturated(basis, step * numerator / 3m);
+        }
+        catch (OverflowException)
+        {
+            // The normalized path below retains saturation for extreme inputs.
+        }
         decimal reference = HbrOriginalNumericFormula.EvaluateWeightedStat(
             new HbrBattleStats(0, 0, intelligence, 0, 0, luck), Weights);
         decimal difference = Math.Max(0m, reference - Math.Max(0m, enemyParameter));
@@ -40,7 +58,7 @@ internal static class HbrPercentDebuffHelper
         decimal basis = BasePercent(modifiers);
         if (power is HbrDefenseDownPower) basis = ApplyVulnerableBaseBoost(target, basis);
         return HbrBattleStatsHelper.TryGetStats(applier, out HbrBattleStats stats)
-            ? EvaluateBasePercent(basis, stats.Intelligence, stats.Luck, HbrEnemyProfileHelper.GetEnemyParameter(target))
+            ? EvaluateBasePotency(basis, stats.Intelligence, stats.Luck, HbrEnemyProfileHelper.GetEnemyParameter(target))
             : basis;
     }
 

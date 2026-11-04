@@ -14,6 +14,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Characters;
+using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.TestSupport;
@@ -117,6 +118,8 @@ static partial class Checks
         foreach (MethodInfo method in logger.GetMethods(F).Where(method => method.Name is "Log" or "Info" or "Warn" or "Error" or "Debug" or "Verbose")) Prefix(method);
         Prefix(typeof(RelicModel).GetMethod("Flash", F, null, Type.EmptyTypes, null)!);
         harmony.Patch(Helper("HbrResourceValueHelper").GetMethod("Fixed", F)!, prefix: new HarmonyMethod(typeof(Checks).GetMethod(nameof(FixedEntered), F)!));
+        Check(harmony.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.HotaruAncientHealthRecoveryPatch", true)!).Patch().Count == 1,
+            "production Hotaru ancient recovery guard installs on native BeforeEventStarted");
         TestMode.IsOn = true;
         foreach (Type type in new[] { typeof(ElectronicSoldierManual), typeof(HotaruElectronicSoldierManual), typeof(DeflectorProtection) })
             SavedPropertiesTypeCache.InjectTypeIntoCache(type);
@@ -127,7 +130,7 @@ static partial class Checks
         Equal(Blank<HbrgoSaki31O>().StartingHp, 3500, "31O inherits scaled original35 maximum");
         Equal(Blank<HbrgoSaki30A>().StartingHp, 1000, "30A original10 maximum gains100 scale");
         Equal(Blank<HbrgoHotaru>().StartingHp, 3000, "Hotaru original30 maximum gains100 scale");
-        Equal((int)typeof(HbrgoHotaru).GetProperty("InitialScaledCurrentHp", F)!.GetValue(null)!, 100, "Hotaru initial current HP uses same scale");
+        Equal((int)typeof(HbrgoHotaru).GetField("InitialCurrentHp", F)!.GetRawConstantValue()!, 1, "Hotaru initial current HP is the explicit unscaled1 exception");
         Check(Blank<HotaruHappinessCannon>().MinInitialHp == 1 && Blank<HotaruHappinessCannon>().MaxInitialHp == 1,
             "non-targetable cannon hidden HP sentinel remains1");
         Fixture fresh = new();
@@ -155,14 +158,18 @@ static partial class Checks
         Fixture hotaru = new(Blank<HbrgoHotaru>(), hotaruBook: true);
         var hotaruManual = (HotaruElectronicSoldierManual)hotaru.Book;
         Call(typeof(HotaruElectronicSoldierManual), "InitializeStartingHealth", hotaruManual);
-        Equal(hotaru.Hero.CurrentHp, 100, "Hotaru actual fresh initialization sets100 currentHP");
+        Equal(hotaru.Hero.CurrentHp, 1, "Hotaru actual fresh initialization sets1 currentHP");
+        Equal(hotaru.Hero.MaxHp, 3000, "Hotaru currentHP exception leaves scaled maximum3000");
+        var hotaruShield = hotaru.Shield();
+        Check(hotaruShield.Dp == 6000 && hotaruShield.MaxDp == 6000,
+            "Hotaru initial1HP retains full6000DP from maximum3000");
         hotaru.Hero.SetCurrentHpInternal(73); Call(typeof(HotaruElectronicSoldierManual), "InitializeStartingHealth", hotaruManual);
         Equal(hotaru.Hero.CurrentHp, 73, "Hotaru initial currentHP receipt is once-only");
         Fixture hotaruSaved = new(Blank<HbrgoHotaru>(), enabled: false, current: 7, hotaruBook: true);
         Call(typeof(HotaruElectronicSoldierManual), "PreserveLoadedHealth", hotaruSaved.Book);
         Call(typeof(HotaruElectronicSoldierManual), "InitializeStartingHealth", hotaruSaved.Book);
         Check(hotaruSaved.Hero.CurrentHp == 7 && ((HotaruElectronicSoldierManual)hotaruSaved.Book).StartingHealthInitialized,
-            "Hotaru loaded legacy currentHP remains7 rather than resetting to100");
+            "Hotaru loaded legacy currentHP remains7 rather than resetting to1 or rescaling");
         Creature phantom = fresh.Phantom();
         Call(Helper("PhantomHelper"), "ConfigureSummonedMinionHealth", null, phantom, 1, fresh.Player);
         Equal(phantom.MaxHp, 4000, "summoned phantom uses raw80 half baseline then100 scale");
@@ -173,6 +180,37 @@ static partial class Checks
         Creature oldPhantom = old.Phantom();
         Call(Helper("PhantomHelper"), "ConfigureSummonedMinionHealth", null, oldPhantom, 1, old.Player);
         Equal(oldPhantom.MaxHp, 40, "legacy summoned phantom stays native half baseline");
+    }
+    static void AncientEntryCases()
+    {
+        Type patch = Mod.GetType("HBRGOSakiMod.Core.Patches.HotaruAncientHealthRecoveryPatch", true)!;
+        MethodInfo prefix = patch.GetMethod("Prefix", F)!;
+        MethodInfo native = AccessTools.Method(typeof(AncientEventModel), "BeforeEventStarted");
+        Neow AncientFor(Player player)
+        {
+            var ancient = Blank<Neow>(); Set(ancient, "<IsMutable>k__BackingField", true);
+            PropertyInfo owner = typeof(EventModel).GetProperty("Owner", F)!;
+            if (owner.SetMethod != null) owner.SetValue(ancient, player);
+            else Set(ancient, "_owner", player);
+            return ancient;
+        }
+        Fixture fresh = new(Blank<HbrgoHotaru>(), hotaruBook: true);
+        Call(typeof(HotaruElectronicSoldierManual), "InitializeStartingHealth", fresh.Book);
+        var shield = fresh.Shield(); Neow neow = AncientFor(fresh.Player);
+        Task entry = (Task)native.Invoke(neow, [false])!; entry.GetAwaiter().GetResult();
+        Check(entry.IsCompletedSuccessfully && fresh.Hero.CurrentHp == 1 && fresh.Hero.MaxHp == 3000 && shield.Dp == 6000,
+            "actual patched native Neow BeforeEventStarted skips HP reset and healing, preserving1of3000 and6000DP");
+        fresh.Hero.SetCurrentHpInternal(73);
+        ((Task)native.Invoke(neow, [false])!).GetAwaiter().GetResult();
+        Equal(fresh.Hero.CurrentHp, 73, "repeat patched ancient entry preserves later73HP without resetting or healing");
+        Task original = new TaskCompletionSource().Task;
+        object?[] preFinished = [neow, true, original];
+        Check((bool)prefix.Invoke(null, preFinished)! && ReferenceEquals(preFinished[2], original),
+            "pre-finished Hotaru ancient retains native path and original task");
+        Fixture nativePlayer = new(Blank<Ironclad>(), current: 50);
+        object?[] otherCharacter = [AncientFor(nativePlayer.Player), false, original];
+        Check((bool)prefix.Invoke(null, otherCharacter)! && ReferenceEquals(otherCharacter[2], original),
+            "non-Hotaru ancient retains native path and original task");
     }
     static void FixedCases()
     {
@@ -212,14 +250,14 @@ static partial class Checks
     public static Task Run()
     {
         bool ok = false; string? error = null;
-        try { Install(); InitialCases(); FixedCases(); DerivedCases(); PhantomGrowthCases(); ok = true; }
+        try { Install(); InitialCases(); AncientEntryCases(); FixedCases(); DerivedCases(); PhantomGrowthCases(); ok = true; }
         catch (Exception exception) { error = exception.ToString(); Console.Error.WriteLine(error); }
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {
             ok, checks = Passed.Count, cases = Passed, error,
             modSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
-            limits = "Actual candidate model methods and native internal HP setters, relic clone/save serialization, stored manual progress and phantom roster/fusion metadata readers are exercised. StringName native construction, log output and relic Flash are controlled leaves. Temporary phantom growth additionally controls terminal GainMaxHp/SetMaxHp, DP refill and intent refresh leaves; production bonus ledger and expiry stay intact. No Godot process, Neow event synchronizer execution, rendered selection UI, complete fusion command, full combat, real save/config IO, network, packaging or Steam upload. Legacy HP test models serialized relic progress attached to existing stored native HP; it does not load a complete gameplay save."
+            limits = "Actual candidate model methods and native internal HP setters, relic clone/save serialization, stored manual progress and phantom roster/fusion metadata readers are exercised. StringName native construction, log output and relic Flash are controlled leaves. Temporary phantom growth additionally controls terminal GainMaxHp/SetMaxHp, DP refill and intent refresh leaves; production bonus ledger and expiry stay intact. Actual Harmony-guarded Hotaru AncientEventModel.BeforeEventStarted skips the native HP reset/heal and preserves current HP; direct prefix controls cover pre-finished and non-Hotaru branches. No Godot process, complete Neow event synchronizer execution, rendered selection UI, complete fusion command, full combat, real save/config IO, network, packaging or Steam upload. Legacy HP test models serialized relic progress attached to existing stored native HP; it does not load a complete gameplay save."
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"{(ok ? "PASS" : "FAIL")}: {Passed.Count} resource-scale checks");
         if (!ok) throw new Exception("Resource-scale checks failed; inspect report.json");

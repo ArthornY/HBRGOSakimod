@@ -321,7 +321,7 @@ internal static class HotaruCannonSupportUpgradeHelper
         {
             deflector.EnsureDpInitialized();
             if (deflector.MaxDp > 0)
-                await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, creature, deflector.MaxDp, creature, null);
+                await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, creature, deflector.MaxDp / 100m, creature, null);
         }
         if (relic.HasCannonUpgrade(HotaruCannonKind.Coffin, 7))
             await PowerCmd.Apply<BarricadePower>(context, creature, 1m, creature, null);

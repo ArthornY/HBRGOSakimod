@@ -1,10 +1,13 @@
+using System;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
-// Keep native counters in saves and clones. Only fixed HP-unit thresholds are
-// adapted at their consumers; actual damage received this turn is never scaled.
+// Native stacks are percentages in HBR mode. Keep them raw in saves/clones;
+// actual HP lost this turn remains in combat units. Fusion caps already carry
+// their own health-relative meaning and must not be reinterpreted as stacks.
 internal static class HbrDamageCapHelper
 {
     internal static bool TryGetMaximum(PowerModel power, out decimal maximum)
@@ -15,7 +18,27 @@ internal static class HbrDamageCapHelper
         if (PhantomHealthDamageCapHelper.TryGetHealthBasedMaximum(power, out maximum))
             return maximum > BigCombatNumbers.NativeStatCap;
         if (!HbrBattleStatsHelper.IsEnabled(power.Owner)) return false;
-        maximum = BigCombatNumbers.ClampStat(HbrResourceValueHelper.Fixed(power.Owner, power.Amount));
+        maximum = GetPercentMaximum(power.Owner, power.Amount);
         return true;
+    }
+
+    internal static bool TryGetNativePercent(PowerModel power, out int percent)
+    {
+        percent = 0;
+        if (power is not (HardToKillPower or HardenedShellPower) || !power.IsMutable ||
+            !HbrBattleStatsHelper.IsEnabled(power.Owner) ||
+            PhantomHealthDamageCapHelper.TryGetHealthBasedMaximum(power, out _)) return false;
+        percent = power.Amount;
+        return true;
+    }
+
+    internal static decimal GetPercentMaximum(Creature owner, int percent)
+    {
+        if (percent <= 0) return 0m;
+        // Clamp HP before multiplying. The resource limit times Int32.MaxValue
+        // fits decimal, while an unbounded saved value need not. Clamp only the
+        // final percentage result, preserving ratios above 100% correctly.
+        decimal maximumHp = BigCombatNumbers.ClampStat(LargeCreatureHealthHelper.GetMaxHp(owner));
+        return Math.Max(1m, BigCombatNumbers.ClampStat(maximumHp * percent / 100m));
     }
 }

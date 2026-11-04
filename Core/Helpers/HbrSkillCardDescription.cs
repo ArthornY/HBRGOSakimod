@@ -29,6 +29,7 @@ internal static class HbrSkillCardDescription
         HbrFixedResourceDescriptionHelper.AddParameters(card, description);
         HbrFragileCardDescription.AddParameters(card, description);
         HbrPercentDebuffCardDescription.AddParameters(card, description);
+        AddFallingContinuallyParameters(card, description);
         foreach (DynamicVar variable in card.DynamicVars.Values)
         {
             if (variable is not IHbrSkillPowerVar skill) continue;
@@ -80,6 +81,30 @@ internal static class HbrSkillCardDescription
             amount = CalculateLive(card, nativeUnits, ValueProp.Move, false);
         text.Add(name + "Display", Number(amount, BaseAmount(card, nativeUnits, false), false));
         text.Add(name + "SkillDetail", Detail(card, HbrSkillPower.DamagePercent(nativeUnits)));
+    }
+
+    private static void AddFallingContinuallyParameters(CardModel card, LocString text)
+    {
+        if (!IsEnabled(card) || card is not (FallingContinuallyHbrgoSaki or DeathToYouHbrgoSaki)) return;
+        DynamicVar variable = card.DynamicVars["FallingContinuallyPower"];
+        decimal basis = HbrSkillPower.BlockBaseFromUnits(variable.BaseValue);
+        decimal amount = basis;
+        var target = HbrCardDescriptionContext.GetTarget(card);
+        var applier = card.IsMutable ? card.Owner?.Creature : null;
+        if (!HbrCardDescriptionContext.IsUnpowered(card) && applier != null && target != null)
+        {
+            amount = FallingContinuallyHelper.ResolveAmount(variable.BaseValue, applier, target);
+            // Match OnPlay: the debuff curve resolves before ordinary given
+            // hooks, including the active dice multiplier. Block supplies the
+            // base units; GainBlock-specific modifiers do not participate.
+            if (card.CombatState != null)
+                amount = Hook.ModifyPowerAmountGiven(card.CombatState,
+                    ModelDb.Power<FallingContinuallyPower>(), applier, amount,
+                    target, card, out _);
+        }
+        text.Add("FallingContinuallyPowerDisplay", Number(
+            IntegralStatAmountHelper.Normalize(amount, ModelDb.Power<FallingContinuallyPower>()),
+            basis, variable.WasJustUpgraded));
     }
 
     private static decimal DisplayAmount(CardModel card, DynamicVar variable, decimal units, bool block)

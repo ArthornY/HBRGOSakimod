@@ -51,10 +51,12 @@ internal static class HotaruCannonDamageUpgradeHelper
         Millsage relic = cannon.PetOwner?.GetRelic<Millsage>();
         if (cannon.Monster is HotaruHappinessCannon)
         {
-            relic?.ApplyHappinessHitGrowth();
+            // Growth reactions are extra damage, not a manual cannon shot.
+            // Keep on-hit upgrades, but do not spend the next growth step.
+            relic?.ApplyHappinessHitGrowth(halveIncrease: receipt.IsPrimary);
             if (Has(cannon, HotaruCannonKind.Happiness, 4))
                 await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, receipt.Dealer,
-                    receipt.ActualDamage, receipt.Dealer, receipt.CardSource);
+                    receipt.ActualDamage / 1000m, receipt.Dealer, receipt.CardSource);
         }
         if (cannon.Monster is not HotaruContestCannon) return;
         if (receipt.ActualHpDamage > 0m && Has(cannon, HotaruCannonKind.Contest, 1) &&
@@ -62,8 +64,12 @@ internal static class HotaruCannonDamageUpgradeHelper
             await PowerCmd.Apply<FragilePower>(context, receipt.Target, 1m, receipt.Dealer, receipt.CardSource);
         if (receipt.IsPrimary && receipt.ActualDpDamage > 0m && Has(cannon, HotaruCannonKind.Contest, 2) &&
             Millsage.IsEnemy(receipt.Target, cannon.PetOwner))
-            await HotaruCannonStatsHelper.ReactionDamage(context, cannon, receipt.Target, HbrResourceValueHelper.Fixed(cannon, 1m),
-                receipt.CardSource, receipt.CardPlay, hpOnly: true, absoluteBase: true);
+        {
+            using var skill = HbrEffectSkillDamageContext.Begin(receipt.Target, receipt.Dealer,
+                receipt.CardSource, 1m, ValueProp.Unblockable | ValueProp.Unpowered, receipt.Dealer);
+            await HotaruCannonStatsHelper.ReactionDamage(context, cannon, receipt.Target, 1m,
+                receipt.CardSource, receipt.CardPlay, hpOnly: true);
+        }
         if (receipt.IsPrimary && receipt.ActualDpDamage > 0m && Has(cannon, HotaruCannonKind.Contest, 5) &&
             Millsage.IsEnemy(receipt.Target, cannon.PetOwner))
         {

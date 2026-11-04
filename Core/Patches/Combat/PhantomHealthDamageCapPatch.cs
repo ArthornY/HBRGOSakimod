@@ -53,6 +53,47 @@ internal static class PhantomHealthHardenedCapPatch
     }
 }
 
+[HarmonyPatch(typeof(HardenedShellPower), nameof(HardenedShellPower.ModifyHpLostBeforeOstyLate))]
+internal static class HbrHardenedHpLossFloorPatch
+{
+    private static void Postfix(HardenedShellPower __instance, Creature target, ref decimal __result)
+    {
+        // A reduced maximum HP can put the new percentage budget below HP
+        // already lost this turn. Native fixed caps assume this cannot happen.
+        if (__result >= 0m || !HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum) ||
+            target != __instance.Owner ||
+            PhantomHealthDamageCapHelper.GetReceivedThisTurn(__instance) <= maximum) return;
+        __result = 0m;
+    }
+}
+
+[HarmonyPatch(typeof(Creature), nameof(Creature.SetMaxHpInternal))]
+internal static class HbrHardenedMaximumHpDisplayPatch
+{
+    private static readonly Action<PowerModel> RefreshBadge = AccessTools.MethodDelegate<Action<PowerModel>>(
+        AccessTools.Method(typeof(PowerModel), "InvokeDisplayAmountChanged"));
+
+    private static void Postfix(Creature __instance)
+    {
+        HardToKillPower hardToKill = __instance.GetPower<HardToKillPower>();
+        if (HbrDamageCapHelper.TryGetMaximum(hardToKill, out _)) RefreshBadge(hardToKill);
+        HardenedShellPower power = __instance.GetPower<HardenedShellPower>();
+        if (power == null || !HbrDamageCapHelper.TryGetMaximum(power, out decimal maximum)) return;
+        // Keep the native turn ledger. Only refresh the shell's exhausted-HP
+        // display after maximum HP changes the available percentage budget.
+        if (__instance.HpDisplay is HpDisplay.Normal or HpDisplay.InfiniteWithNumbers)
+        {
+            if (PhantomHealthDamageCapHelper.GetReceivedThisTurn(power) >= maximum)
+                __instance.HpDisplay = HpDisplay.InfiniteWithNumbers;
+            else if (__instance.HpDisplay == HpDisplay.InfiniteWithNumbers)
+                __instance.HpDisplay = HpDisplay.Normal;
+        }
+        // Native power badges refresh on this event, not every frame or when
+        // maximum HP changes. Do not rewrite the raw percentage to wake them.
+        RefreshBadge(power);
+    }
+}
+
 [HarmonyPatch(typeof(HardenedShellPower), nameof(HardenedShellPower.DisplayAmount), MethodType.Getter)]
 internal static class PhantomHealthHardenedBadgePatch
 {
@@ -70,7 +111,13 @@ internal static class PhantomHealthDamageCapDescriptionPatch
 {
     private static void Postfix(PowerModel __instance, LocString description, int? amountOverride)
     {
-        if (amountOverride == null && HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum))
+        if (HbrDamageCapHelper.TryGetNativePercent(__instance, out int percent))
+        {
+            int displayedPercent = amountOverride ?? percent;
+            description.Add("CapPercent", displayedPercent);
+            description.Add("Amount", HbrDamageCapHelper.GetPercentMaximum(__instance.Owner, displayedPercent));
+        }
+        else if (amountOverride == null && HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum))
             description.Add("Amount", maximum);
     }
 }
@@ -91,10 +138,13 @@ internal static class HbrDamageCapDescriptionPatch
     private static void Postfix(PowerModel __instance, ref LocString __result)
     {
         if (!HbrDamageCapHelper.TryGetMaximum(__instance, out decimal maximum)) return;
-        LocString text = new("powers", __instance is HardToKillPower
-            ? "HBR_FIXED_HARD_TO_KILL.description" : "HBR_FIXED_HARDENED_SHELL.description");
+        bool nativePercent = HbrDamageCapHelper.TryGetNativePercent(__instance, out int percent);
+        string prefix = nativePercent ? "HBR_PERCENT_" : "HBR_FIXED_";
+        LocString text = new("powers", prefix + (__instance is HardToKillPower
+            ? "HARD_TO_KILL.description" : "HARDENED_SHELL.description"));
         text.AddVariablesFrom(__result);
         text.Add("Amount", maximum);
+        if (nativePercent) text.Add("CapPercent", percent);
         __result = text;
     }
 }

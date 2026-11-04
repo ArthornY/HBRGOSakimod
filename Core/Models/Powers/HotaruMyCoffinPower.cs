@@ -201,7 +201,8 @@ public sealed class HotaruMyCoffinPower : PowerModel, ICustomPower
             Flash();
             HighDimensionalShellPower shell = target.GetPower<HighDimensionalShellPower>();
             decimal maximum = shell?.MaxAmount ?? 0m;
-            decimal spent = shell == null || dpDamage <= 0m ? 0m : await shell.DamageDpOnly(context, dpDamage);
+            decimal spent = shell == null || dpDamage <= 0m ? 0m :
+                await shell.DamageDpOnly(context, dpDamage, Owner, source, play);
             if (spent > 0m)
                 await HotaruCannonStatsHelper.NotifyDirectDpDamage(context, Owner, target, spent, maximum, source, cannon, play);
             // Keep the target chosen at the start, including when it has no DP.

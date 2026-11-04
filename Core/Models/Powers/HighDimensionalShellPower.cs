@@ -12,6 +12,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
@@ -367,10 +368,18 @@ public class HighDimensionalShellPower : PowerModel
     }
 
     // The amount has already been resolved from another effect (for example,
-    // actual block gained). Spend only DP: no block, damage multipliers or HP.
+    // actual block gained). Respect recipient caps, then spend only DP: no
+    // block, repeated damage multipliers or HP loss.
     // Callers dispatch their own owner/cannon receipt from the returned amount.
-    internal async Task<decimal> DamageDpOnly(PlayerChoiceContext choiceContext, decimal amount)
+    internal async Task<decimal> DamageDpOnly(PlayerChoiceContext choiceContext, decimal amount,
+        Creature dealer = null, CardModel cardSource = null, CardPlay cardPlay = null)
     {
+        if (!IsMutable || Owner?.IsAlive != true || amount <= 0m || CurrentDp <= 0m ||
+            _pendingBreak || NararaNullificationHelper.IsCardNullified(Owner)) return 0m;
+
+        amount = await ApplyDpDamageCaps(amount, dealer, cardSource, cardPlay);
+        // Cap notifications run before the resource spend, just like native
+        // damage, and may change the target or its remaining DP while awaiting.
         if (!IsMutable || Owner?.IsAlive != true || amount <= 0m || CurrentDp <= 0m ||
             _pendingBreak || NararaNullificationHelper.IsCardNullified(Owner)) return 0m;
 
@@ -404,6 +413,30 @@ public class HighDimensionalShellPower : PowerModel
         }
 
         return actualDamage;
+    }
+
+    private async Task<decimal> ApplyDpDamageCaps(decimal amount, Creature dealer,
+        CardModel cardSource, CardPlay cardPlay)
+    {
+        var combat = Owner.CombatState;
+        var run = combat?.RunState;
+        if (run == null) return amount;
+        List<AbstractModel> modifiers = new();
+        decimal activeCap = decimal.MaxValue;
+        foreach (AbstractModel model in run.IterateHookListeners(combat))
+        {
+            if (PhantomHelper.IsSummonerOwnedDamageModifier(model, dealer)) continue;
+            decimal cap = Math.Max(0m, PhantomIncomingDamageHelper.ModifyDamageCap(model, Owner,
+                ValueProp.Unpowered, dealer, cardSource, cardPlay));
+            if (cap >= activeCap) continue;
+            activeCap = cap;
+            if (amount <= cap) continue;
+            amount = Math.Max(0m, cap);
+            modifiers.Add(model);
+        }
+        if (modifiers.Count > 0)
+            await Hook.AfterModifyingDamageAmount(run, combat, cardSource, modifiers);
+        return amount;
     }
 
     public decimal Restore(decimal amount)

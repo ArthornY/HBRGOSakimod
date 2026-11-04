@@ -238,9 +238,13 @@ internal static class SixSenseCombatHelper
             switch (attribute)
             {
                 case SixSenseAttribute.Madness:
-                    await CreatureCommandCompatibility.Damage(context, player.Creature, HbrResourceValueHelper.Fixed(player.Creature, 1m),
+                {
+                    using var skill = HbrEffectSkillDamageContext.Begin(player.Creature, player.Creature, null,
+                        1m, ValueProp.Unpowered, player.Creature);
+                    await CreatureCommandCompatibility.Damage(context, player.Creature, 1m,
                         ValueProp.Unpowered, player.Creature, null);
                     break;
+                }
                 case SixSenseAttribute.Simplicity:
                     await CreatureCmd.GainBlock(player.Creature, HbrSkillBlockHelper.ResolveUnpowered(player.Creature, value), ValueProp.Unpowered, null);
                     break;
