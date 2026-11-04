@@ -602,16 +602,22 @@ internal static class PhantomHelper
         Creature target = phantom.CombatState?
             .GetOpponentsOf(phantom)
             .FirstOrDefault(IsValidPhantomTarget);
-        return segments
-            .Select(segment => Math.Max(
-                0,
-                (int)(target == null
+        // Every segment in this synchronous preview has the same dealer,
+        // target, props and hook mode. Repeated base damage therefore needs
+        // only one hook evaluation; never retain it across previews or hits.
+        // Intent refreshes can also be nested inside a real damage notification.
+        StrongestShieldDamagePatch.BeginIntentPreview();
+        try
+        {
+            return PhantomIntentDamagePreview.Calculate(segments,
+                segment => target == null
                     ? segment
-                    : GetModifiedIntentDamage(
-                        phantom,
-                        target,
-                        segment))))
-            .ToArray();
+                    : GetModifiedIntentDamage(phantom, target, segment));
+        }
+        finally
+        {
+            StrongestShieldDamagePatch.EndIntentPreview();
+        }
     }
 
     internal static bool HasCurrentAttackIntent(Creature phantom)

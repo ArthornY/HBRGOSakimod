@@ -62,11 +62,13 @@ internal static class HotaruMyHappinessCardValueHelper
         if (RawValueDepth.Value > 0 || variable is CalculatedVar or IComputedDynamicVar ||
             VariableOwner(variable) is not CardModel { IsMutable: true } card ||
             card.Owner?.Creature?.CombatState is not { } combat ||
-            !ReferenceEquals(card.CombatState, combat) || card.Pile?.Type == PileType.Deck ||
-            card.Owner.Deck.Cards.Contains(card)) return 0m;
+            !ReferenceEquals(card.CombatState, combat) || card.Pile?.Type == PileType.Deck) return 0m;
 
         decimal bonus = Math.Max(0m, card.Owner.Creature.GetPower<HotaruMyHappinessPower>()
             ?.GetCardBaseValueBonus(card) ?? 0m);
+        // All DynamicVars pass through these getters. Ordinary cards without
+        // this bonus must not scan the permanent deck for every value read.
+        if (bonus == 0m || card.Owner.Deck.Cards.Contains(card)) return 0m;
         decimal stored = StoredBaseValue(variable);
         // A capped input contributes only the increase it can actually retain.
         // The display receipt must use that same increase at the native ceiling.
@@ -92,13 +94,27 @@ internal static class HotaruMyHappinessCardValueHelper
         return AddClamped(stored, GetBonus(variable) - included, maximum);
     }
 
-    internal static void RecordEnchantedWrite(DynamicVar variable) =>
-        DisplayStates.GetValue(variable, static _ => new DisplayState()).EnchantedIncludedBonus =
-            DisplayCalculationDepth.Value > 0 ? GetBonus(variable) : 0m;
+    internal static void RecordEnchantedWrite(DynamicVar variable)
+    {
+        if (GetWriteState(variable, out decimal includedBonus) is { } state)
+            state.EnchantedIncludedBonus = includedBonus;
+    }
 
-    internal static void RecordPreviewWrite(DynamicVar variable) =>
-        DisplayStates.GetValue(variable, static _ => new DisplayState()).PreviewIncludedBonus =
-            DisplayCalculationDepth.Value > 0 ? GetBonus(variable) : 0m;
+    internal static void RecordPreviewWrite(DynamicVar variable)
+    {
+        if (GetWriteState(variable, out decimal includedBonus) is { } state)
+            state.PreviewIncludedBonus = includedBonus;
+    }
+
+    private static DisplayState GetWriteState(DynamicVar variable, out decimal includedBonus)
+    {
+        includedBonus = DisplayCalculationDepth.Value > 0 ? GetBonus(variable) : 0m;
+        // Existing receipts still need clearing when an unboosted value is
+        // written. Getters also retain them until that write if the power ends.
+        if (DisplayStates.TryGetValue(variable, out DisplayState state)) return state;
+        return includedBonus == 0m ? null
+            : DisplayStates.GetValue(variable, static _ => new DisplayState());
+    }
 
     private static decimal AddClamped(decimal value, decimal bonus, decimal maximum) =>
         Math.Min(maximum, DamageAmplificationLimits.AddSaturated(value, bonus));
