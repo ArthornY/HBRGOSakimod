@@ -95,7 +95,7 @@ public partial class NPhantomPortraitRenderer : Node
             {
                 TraceStage("load-static-image");
                 using Image isolated = ResourceLoader.Load<Texture2D>(isolatedPath).GetImage();
-                UpdateTexture(texture, isolated);
+                await UpdateTexture(texture, isolated);
                 return;
             }
 
@@ -263,8 +263,9 @@ public partial class NPhantomPortraitRenderer : Node
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         TraceStage("read-viewport-image");
         using Image captured = viewport.GetTexture().GetImage();
+        viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
         TraceStage("update-card-texture");
-        UpdateTexture(texture, captured);
+        await UpdateTexture(texture, captured);
     }
 
     private static void SetPortraitPose(MegaSprite spine)
@@ -333,17 +334,37 @@ public partial class NPhantomPortraitRenderer : Node
         }
     }
 
-    private static void UpdateTexture(ImageTexture texture, Image source)
+    private async Task UpdateTexture(ImageTexture texture, Image source)
     {
         if (source.IsCompressed()) source.Decompress();
         source.Convert(Image.Format.Rgba8);
         byte[] rgba = source.GetData();
         if (!HasVisiblePixels(rgba))
             throw new InvalidOperationException("Monster portrait rendered no visible pixels.");
-        byte[] pixels = PhantomPortraitCompositor.Compose(rgba, source.GetWidth(), source.GetHeight());
+        int width = source.GetWidth(), height = source.GetHeight();
+        SceneTree tree = GetTree();
+        // The bounds scan and bilinear sampling touch only managed pixels and
+        // can otherwise consume a whole combat frame for each new monster.
+        Task<byte[]> composition = Task.Run(() => PhantomPortraitCompositor.Compose(rgba, width, height));
+        // Observe the worker from a game-thread signal instead of awaiting its
+        // continuation: all Godot image and texture calls must stay on that thread.
+        while (!composition.IsCompleted)
+        {
+            await ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+            EnsureTextureTargetUsable(texture);
+        }
+        byte[] pixels = composition.GetAwaiter().GetResult();
+        EnsureTextureTargetUsable(texture);
         using Image portrait = Image.CreateFromData(PhantomPortraitCompositor.Width, PhantomPortraitCompositor.Height,
             false, Image.Format.Rgba8, pixels);
         texture.Update(portrait);
+    }
+
+    private void EnsureTextureTargetUsable(ImageTexture texture)
+    {
+        if (!GodotObject.IsInstanceValid(this) || !IsInsideTree() ||
+            !GodotObject.IsInstanceValid(texture))
+            throw new OperationCanceledException("The portrait renderer left the scene tree.");
     }
 
     private static bool HasVisiblePixels(byte[] rgba)

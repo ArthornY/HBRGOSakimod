@@ -40,21 +40,25 @@ public partial class NHotaruCannonMultiplierStatus : Control
     private int _lastLevel = -1;
     private bool _hovered;
 
-    internal static void Refresh(NCreature cannon)
+    internal static NHotaruCannonMultiplierStatus Refresh(NCreature cannon, NHotaruCannonMultiplierStatus status)
     {
-        if (!Usable(cannon) || cannon.Entity?.Monster is not HotaruCannonModel model) return;
-        NPowerContainer container = cannon.GetNodeOrNull<NPowerContainer>("HealthBar/PowerContainer");
-        if (!Usable(container)) return;
-        NHotaruCannonMultiplierStatus status = container.GetNodeOrNull<NHotaruCannonMultiplierStatus>(WidgetName);
-        if (!Usable(status))
+        if (!Usable(cannon) || cannon.Entity?.Monster is not HotaruCannonModel model) return null;
+        if (!Usable(status) || !Usable(status._container))
         {
-            status = Create(cannon, container);
-            container.AddChild(status);
+            NPowerContainer container = cannon.GetNodeOrNull<NPowerContainer>("HealthBar/PowerContainer");
+            if (!Usable(container)) return null;
+            status = container.GetNodeOrNull<NHotaruCannonMultiplierStatus>(WidgetName);
+            if (!Usable(status))
+            {
+                status = Create(cannon, container);
+                container.AddChild(status);
+            }
         }
         status._cannon = cannon;
         status._kind = model.Kind;
         status.RefreshState();
         status.LayoutFirstSlot();
+        return status;
     }
 
     private static NHotaruCannonMultiplierStatus Create(NCreature cannon, NPowerContainer container)
@@ -170,6 +174,7 @@ public partial class NHotaruCannonMultiplierStatus : Control
 
     private void OnUnhovered()
     {
+        if (!_hovered) return;
         _hovered = false;
         if (Usable(_icon)) _icon.Scale = Vector2.One;
         NHoverTipSet.Remove(this);

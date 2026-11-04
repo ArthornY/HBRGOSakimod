@@ -3,8 +3,10 @@ using Godot;
 using HBRGOSakiMod.Core.Config;
 using HBRGOSakiMod.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -26,6 +28,9 @@ public partial class NTopBarHealthHud : Node
     private Control _heart;
     private Control _nativeText;
     private NHealthBar _view;
+    private NCombatRoom _sourceRoom;
+    private NHealthBar _sourceBar;
+    private (int Hp, int MaxHp, int Block, HpDisplay Display, int Poison, int Doom)? _viewValues;
     private NDeflectorProtectionDpBar _viewDp;
     private Control _viewBlock;
     private Control _viewResistance;
@@ -75,15 +80,17 @@ public partial class NTopBarHealthHud : Node
     public override void _Process(double delta)
     {
         _refreshElapsed += delta;
-        if (_refreshElapsed < 0.1 || !Usable(_view)) return;
+        if (_refreshElapsed < 0.1 || !_enabled || !Usable(_view)) return;
         _refreshElapsed = 0;
-        _view.RefreshValues();
+        RefreshViewValues();
         HideViewExtras();
     }
 
     public override void _ExitTree()
     {
         RenderingServer.FramePreDraw -= RefreshLayout;
+        _sourceRoom = null;
+        _sourceBar = null;
         if (_player?.Creature != null)
         {
             _player.Creature.CurrentHpChanged -= OnHpChanged;
@@ -100,8 +107,22 @@ public partial class NTopBarHealthHud : Node
     private void OnHpChanged(int previous, int current)
     {
         if (!Usable(_view)) return;
-        _view.RefreshValues();
+        RefreshViewValues();
         HideViewExtras();
+    }
+
+    private void RefreshViewValues()
+    {
+        Creature creature = _player.Creature;
+        var values = (creature.CurrentHp, creature.MaxHp, creature.Block, creature.HpDisplay,
+            creature.GetPower<PoisonPower>()?.CalculateTotalDamageNextTurn() ?? 0,
+            creature.GetPowerAmount<DoomPower>());
+        // Native RefreshValues also rebuilds text/theme overrides and runs all
+        // health-bar postfixes. Poll its actual inputs, not the full UI, while
+        // retaining poison/doom and block updates without an HP-change event.
+        if (_viewValues == values) return;
+        _viewValues = values;
+        _view.RefreshValues();
     }
 
     private void CreateView()
@@ -111,6 +132,7 @@ public partial class NTopBarHealthHud : Node
         _viewExtrasDirty = true;
         _view.ChildOrderChanged += InvalidateViewExtras;
         _view.Name = "HBRGOTopBarHealthView";
+        _viewValues = null;
         _view.SetMeta(ViewMarker, true);
         _view.MouseFilter = Control.MouseFilterEnum.Ignore;
         _view.TopLevel = true;
@@ -123,7 +145,7 @@ public partial class NTopBarHealthHud : Node
         _view.SetCreature(_player.Creature);
         RefreshViewExtraBindings();
         if (Usable(_viewDp)) _viewDp.ShowCurrentRoll = false;
-        _view.RefreshValues();
+        RefreshViewValues();
         HideViewExtras();
     }
 
@@ -166,13 +188,21 @@ public partial class NTopBarHealthHud : Node
             return;
         }
         if (!Usable(_view)) CreateView();
+        bool justEnabled = !_enabled;
         _enabled = true;
         _view.Show();
+        if (justEnabled) RefreshViewValues();
         if (Usable(_heart)) _heart.Hide();
         if (Usable(_nativeText)) _nativeText.Hide();
 
-        NHealthBar source = NCombatRoom.Instance?.GetCreatureNode(_player.Creature)
-            ?.GetNodeOrNull<NHealthBar>("HealthBar/HealthBar");
+        NCombatRoom room = NCombatRoom.Instance;
+        if (!ReferenceEquals(room, _sourceRoom) || !Usable(_sourceBar) || !_sourceBar.IsInsideTree())
+        {
+            _sourceRoom = room;
+            _sourceBar = Usable(room) ? room.GetCreatureNode(_player.Creature)
+                ?.GetNodeOrNull<NHealthBar>("HealthBar/HealthBar") : null;
+        }
+        NHealthBar source = _sourceBar;
         if (Usable(source?.HpBarContainer))
         {
             // Mirror the battle gauges' dimensions and rendered scale while
@@ -180,12 +210,20 @@ public partial class NTopBarHealthHud : Node
             _barSize = source.HpBarContainer.Size;
             _barScale = source.HpBarContainer.GetGlobalTransform().Scale;
         }
-        Vector2 parentScale = _nativeHp.GetGlobalTransform().Scale;
+        Transform2D parentTransform = _nativeHp.GetGlobalTransform();
+        Vector2 parentScale = parentTransform.Scale;
         _view.Scale = _barScale;
-        _view.Rotation = _nativeHp.GetGlobalTransform().Rotation;
-        _view.GlobalPosition = _nativeHp.GetGlobalTransform() * new Vector2(0f, 54f);
+        _view.Rotation = parentTransform.Rotation;
+        _view.GlobalPosition = parentTransform * new Vector2(0f, 54f);
         _view.HpBarContainer.Position = Vector2.Zero;
-        if (!_view.HpBarContainer.Size.IsEqualApprox(_barSize)) SetBarSize(_view, _barSize);
+        if (!_view.HpBarContainer.Size.IsEqualApprox(_barSize))
+        {
+            SetBarSize(_view, _barSize);
+            // Native resizing only updates HP/middleground. Poison and doom
+            // previews also need their offsets recomputed for the new width.
+            _viewValues = null;
+            RefreshViewValues();
+        }
         _nativeHp.CustomMinimumSize = new Vector2(Math.Max(_minimumSize.X,
             _barSize.X * _barScale.X / Math.Max(0.001f, Math.Abs(parentScale.X))), Math.Max(80f, _minimumSize.Y));
         // DP already follows its model events and exact-value polling. Layout

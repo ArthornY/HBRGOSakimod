@@ -65,6 +65,8 @@ public partial class NDeflectorProtectionDpBar : Control
     private Vector2 _layoutSize;
     private Vector2 _layoutOffset;
     private bool _layoutPlayer;
+    private decimal? _lastExactHp;
+    private decimal? _lastExactMaxHp;
 
     public void SetCreature(Creature creature, Control hpBarContainer, NHealthBar nativeHealthBar = null)
     {
@@ -78,6 +80,7 @@ public partial class NDeflectorProtectionDpBar : Control
         _redCrimson = creature?.Monster as RedCrimson;
         _labelStateInitialized = false;
         _layoutInitialized = false;
+        _lastExactHp = _lastExactMaxHp = null;
         Subscribe();
         SyncLayoutToHpBar();
         Refresh();
@@ -108,9 +111,23 @@ public partial class NDeflectorProtectionDpBar : Control
         // A small hit on a very large HP pool can leave the integer proxy
         // unchanged. Refresh the exact HP text even without a native int event.
         if (_creature?.Monster != null && _nativeHealthBar != null &&
-            GodotObject.IsInstanceValid(_nativeHealthBar) &&
-            LargeCreatureHealthHelper.GetMaxHp(_creature) > BigCombatNumbers.NativeStatCap)
-            _nativeHealthBar.RefreshValues();
+            GodotObject.IsInstanceValid(_nativeHealthBar))
+        {
+            decimal maximum = LargeCreatureHealthHelper.GetMaxHp(_creature);
+            if (maximum > BigCombatNumbers.NativeStatCap)
+            {
+                decimal current = LargeCreatureHealthHelper.GetCurrentHp(_creature);
+                // Exact-value polling catches hits that leave the int proxy
+                // unchanged without rebuilding idle boss bars ten times/second.
+                if (_lastExactHp != current || _lastExactMaxHp != maximum)
+                {
+                    _lastExactHp = current;
+                    _lastExactMaxHp = maximum;
+                    _nativeHealthBar.RefreshValues();
+                }
+            }
+            else _lastExactHp = _lastExactMaxHp = null;
+        }
         RefreshBindings();
         Refresh();
     }
