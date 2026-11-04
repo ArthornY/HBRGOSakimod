@@ -611,7 +611,7 @@
   "RESTLESS_HBRGO_SAKI.title": "蠢蠢欲动",
   "RESTLESS_HBRGO_SAKI.description": "自己的[gold]幻影[/gold]的所有爪牙按当前意图行动一次。",
   "VISITING_PAIN_HBRGO_SAKI.title": "莅临苦痛",
-  "VISITING_PAIN_HBRGO_SAKI.description": "使自己的[gold]幻影[/gold]失去全部DP，并获得等同于实际失去DP数值2倍的本场战斗伤害增幅。需要有存活的[gold]幻影[/gold]。",
+  "VISITING_PAIN_HBRGO_SAKI.description": "使自己的[gold]幻影[/gold]失去全部DP，并获得等同于实际失去DP数值2%的本场战斗伤害增幅。需要有存活的[gold]幻影[/gold]。",
   "RAPID_CHARGING_HBRGO_SAKI.title": "急速充能",
   "RAPID_CHARGING_HBRGO_SAKI.description": "使自己的[gold]幻影[/gold]失去{HpLoss:diff()}点生命。获得{ChargePower:diff()}层[gold]充能[/gold]。",
   "SACRIFICIAL_ATTACK_HBRGO_SAKI.title": "舍身攻击",

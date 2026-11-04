@@ -427,7 +427,7 @@ public sealed class VisitingPainHbrgoSaki : CardModel
         if (lostDp > 0)
         {
             phantom.GetPower<PhantomPower>()?
-                .AddCombatDamageBonus(lostDp * 2m);
+                .AddCombatDamageBonus(lostDp * 0.02m);
         }
     }
 
