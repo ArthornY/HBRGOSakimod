@@ -23,9 +23,11 @@ internal sealed class PhantomHealthScaleState
     internal static float CalculateFactor(decimal maxHp, decimal baseMaxHp)
     {
         decimal baseline = Math.Max(1, baseMaxHp);
-        // Each complete 5 HP gained over the unupgraded summon adds one percentage point.
-        decimal steps = decimal.Floor(Math.Max(0m, maxHp - baseline) / 5m);
-        return (float)(0.8m + steps * 0.01m);
+        // Each doubling of max HP over the unupgraded summon adds its starting size
+        // again, without a ceiling: 200% HP gives a 200% body. Using the ratio keeps
+        // native and HBR-scaled HP growing alike.
+        double ratio = (double)Math.Max(1m, maxHp / baseline);
+        return (float)(0.8 * (1d + Math.Log2(ratio)));
     }
 
     internal float UpdateHealth(decimal maxHp, decimal baseMaxHp)
