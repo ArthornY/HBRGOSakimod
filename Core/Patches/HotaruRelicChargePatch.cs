@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs.History;
 
 namespace HBRGOSakiMod.Core.Patches;
@@ -54,6 +56,13 @@ internal static class HotaruRelicDescriptionPatch
         if (__instance is HotaruIridescence iridescence) iridescence.AddDescriptionVariables(__result);
         else if (__instance is Millsage millsage && millsage.Layers >= Millsage.MaximumLayers)
             __result = new LocString("relics", "MILLSAGE.fullChargeDescription");
+        else if (__instance is StrikeDummy && __instance.IsMutable &&
+            HbrBattleStatsHelper.IsEnabled(__instance.Owner))
+        {
+            LocString replacement = new("relics", "STRIKE_DUMMY.hbrDescription");
+            replacement.AddVariablesFrom(__result);
+            __result = replacement;
+        }
         else if (__instance is ElectronicSoldierManual manual &&
             (!manual.IsMutable || manual.IsHbrNumericsEnabled))
         {

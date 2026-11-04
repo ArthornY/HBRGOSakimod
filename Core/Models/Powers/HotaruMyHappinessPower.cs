@@ -209,7 +209,9 @@ public sealed class HotaruMyHappinessPower : PowerModel, ICustomPower
             cannon?.Monster is not HotaruCannonModel { Kind: HotaruCannonKind.Happiness } ||
             !Millsage.IsOwnedCannon(cannon, Owner.Player)) return Task.CompletedTask;
 
-        decimal increase = DamageAmplificationLimits.MultiplySaturated(actualIncrease, Amount);
+        // Growth receipts use native damage units; this reward counts skill percentage points.
+        decimal increase = DamageAmplificationLimits.MultiplySaturated(
+            HbrSkillPower.DamagePercent(actualIncrease), Amount);
         HotaruCannonKind[] kinds = Owner.CombatState.Allies
             .Where(ally => Millsage.IsOwnedCannon(ally, Owner.Player))
             .Select(ally => ((HotaruCannonModel)ally.Monster).Kind)

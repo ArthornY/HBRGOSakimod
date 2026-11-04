@@ -34,7 +34,7 @@
   "HOTARU_MY_HAPPINESS.sacrificeTitle": "millsage，我的幸福-牺牲",
   "HOTARU_MY_HAPPINESS.redemptionTitle": "millsage，我的幸福-救赎",
   "HOTARU_MY_HAPPINESS.description": "{HappinessDescription}",
-  "HOTARU_MY_HAPPINESS.normalDescription": "幸福炮基础伤害提升时，其他浮游炮获得等量本场战斗[gold]伤害增幅[/gold]。\n幸福炮退役后，根据所选牺牲／救赎转化。",
+  "HOTARU_MY_HAPPINESS.normalDescription": "幸福炮每提升1%基础倍率，其他浮游炮累计获得1%本场战斗[gold]伤害增幅[/gold]。\n幸福炮退役后，根据所选牺牲／救赎转化。",
   "HOTARU_MY_HAPPINESS.sacrificeDescription": "连打同类型攻击牌或技能牌，从第二张起，每次按{BaseValueGain:diff()}×连续次数，为同类型牌的全部效果基础值累加本场战斗加成。",
   "HOTARU_MY_HAPPINESS.sacrificeDescription.hbr": "连打同类型攻击牌或技能牌，从第二张起，每次按{BaseValueGain:diff()}×连续次数，为同类型牌的全部效果基础值累加本场战斗加成。每增加1基础值，对应基础伤害增加{FixedDamageOneDisplay}点{FixedDamageOneSkillDetail}、基础格挡增加{FixedBlockOneDisplay}点{FixedBlockOneSkillDetail}；张数、计数等其他效果仍按基础值增加。",
   "HOTARU_MY_HAPPINESS.redemptionDescription": "同一门炮连续完整行动，从第二次起，每次累计获得10%×连续次数的本场战斗[gold]伤害增幅[/gold]。\n同阶段自然行动视为同时进行。",

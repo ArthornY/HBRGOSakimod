@@ -29,6 +29,24 @@ beta native profiles**, with zero fixture build warnings or errors:
 - SHA256: `724860094E42C5D9F719203E5C72C6D925ED6776CBA781E79ED3337A9D5F9B91`
 - Reports: `outputs/percent-stats/validation/{stable,beta}/report.json`
 
+Strike Dummy follow-up: the stable-built candidate below passed **661 checks on
+both stable and beta native profiles**, with zero fixture build warnings or
+errors:
+
+- DLL: `outputs/strike-dummy/stable/bin/Release/HBRGOSakiMod.dll`
+- SHA256: `E5AD63911EC22479A10B90C2D7482B0DB377EFEA7F398AB082E2DB6E0CF7BF59`
+- Reports: `outputs/strike-dummy/validation/{stable,beta}/report.json`
+
+The added cases use the real native Strike Dummy listener and complete damage
+hook. They distinguish +50 skill percentage points from a final flat bonus or
+50% multiplication: a 100% Strike becomes 150%, while a 150% Strike becomes
+200%. They also cover a zero-base Strike, live Strength attributes, repeated
+previews, untagged/cardless/unpowered damage, unchanged legacy +3 behavior,
+excluded summoner relics on phantoms, separate dealer/card-owner relics, and
+already resolved absolute/precalculated damage. The real localization formatter
+renders the owned HBR description; canonical, detached and legacy descriptions
+keep their original strings. Reports also record the relic localization hash.
+
 The local bootstrap validates the candidate hash and every dependency recorded in
 the runtime profile manifest. Beta fixture compilation adapts native signatures;
 the production candidate DLL is the same stable-built binary in both runs.

@@ -20,6 +20,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.TestSupport;
@@ -32,6 +33,7 @@ static class Checks
     static readonly Assembly Mod = typeof(ElectronicSoldierManual).Assembly;
     static readonly List<string> Passed = [];
     static readonly List<Creature> Actors = [];
+    static readonly List<RelicModel> ExtraListeners = [];
     static RunState RunState = null!;
     static CombatState Combat = null!;
     static Player Player = null!;
@@ -168,7 +170,7 @@ static class Checks
     }
     static bool Skip() => false;
     static bool Listeners(ref IEnumerable<AbstractModel> __result)
-    { __result = Actors.SelectMany(c => c.Powers).Cast<AbstractModel>().ToArray(); return false; }
+    { __result = Actors.SelectMany(c => c.Powers).Cast<AbstractModel>().Concat(ExtraListeners).ToArray(); return false; }
     static void Setup()
     {
         TestMode.IsOn = true; var h = new Harmony("hbr.stat.powers.native.checks");
@@ -207,7 +209,7 @@ static class Checks
         // Install the real production power boundaries as well as the full
         // native hook adapters. No Strength/Dexterity return is mocked here.
         foreach (string name in new[] { "HbrgoSakiAdditiveDamagePatch", "HbrNumericBlockPatch", "HotaruCannonHappinessStrengthPatch",
-            "HbrStrengthAttributePatch", "HbrDexterityAttributePatch" })
+            "HbrStrengthAttributePatch", "HbrDexterityAttributePatch", "HbrAbsoluteBaseDamageHookPatch" })
         {
             Type type = Mod.GetType("HBRGOSakiMod.Core.Patches.Combat." + name, true)!;
             Check(h.CreateClassProcessor(type).Patch().Count > 0, "installs production " + name);
@@ -520,6 +522,67 @@ static class Checks
         Check(original.LocEntryKey=="NATIVE_ORIGINAL.description"&&original.Variables.Count==1,"description wrapper never mutates original LocString");
         Reset();
     }
+    static void StrikeDummyCases()
+    {
+        Reset();
+        StrikeDummy Dummy(Player owner)
+        {
+            var relic = new StrikeDummy(); Set(relic,"<IsMutable>k__BackingField",true); Set(relic,"_owner",owner);
+            ((List<RelicModel>)Field(typeof(Player),"_relics").GetValue(owner)!).Add(relic);
+            ExtraListeners.Add(relic); return relic;
+        }
+        var strike = new StrikeIronclad(); Set(strike,"<IsMutable>k__BackingField",true); Set(strike,"_owner",Player);
+        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m),"Strike without Dummy retains100percent skill coefficient");
+        var dummy = Dummy(Player);
+        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m,raw:9m),"owned Dummy changes100percent Strike to150percent before attribute curve");
+        EqualFinal(Preview(Enemy,Hero,raw:9m,card:strike),Outgoing(100m,100m,150m,raw:12m),"Dummy adds50points to150percent upgraded Strike rather than multiplying by1point5");
+        EqualFinal(Preview(Enemy,Hero,raw:0m,card:strike),Outgoing(100m,100m,150m,raw:3m),"zero base Strike still receives Dummy50percent skill coefficient");
+        using((IDisposable)Call("HbrAbsoluteBaseDamageContext","Begin",Hero,strike,Enemy,6m)!)
+            Equal(Preview(Enemy,Hero,card:strike),6m,"absolute world-space Strike skips coefficient and second native flat three");
+        using((IDisposable)Call("PrecalculatedDamageContext","Begin",strike,Enemy,6m)!)
+            Equal(Preview(Enemy,Hero,card:strike),6m,"precalculated Strike skips coefficient and second native flat three");
+        for(int i=0;i<3;i++) EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m,raw:9m),"repeated native preview applies exactly one owned Dummy "+i);
+        var strength=Power<StrengthPower>(Hero,20);
+        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(120m,120m,150m,raw:9m),"Dummy coefficient receives current Strength attribute curve");
+        Powers(Hero).Remove(strength);
+        var defend = new DefendIronclad(); Set(defend,"<IsMutable>k__BackingField",true); Set(defend,"_owner",Player);
+        EqualFinal(Preview(Enemy,Hero,card:defend),Outgoing(100m,100m,150m),"card without Strike tag receives no Dummy coefficient");
+        EqualFinal(Preview(Enemy,Hero),Outgoing(100m,100m,150m),"cardless attack receives no Dummy coefficient");
+        Equal(Preview(Enemy,Hero,props:ValueProp.Unpowered,card:strike),6m,"unpowered Strike source receives no Dummy conversion or flat bonus");
+        Mode(false);
+        Equal(Preview(Enemy,Hero,card:strike),9m,"legacy native Strike Dummy still adds three flat damage");
+        Mode(true);
+        var phantom=Actor(Blank<SmallHopper>(),owner:Player); Power<PhantomPower>(phantom,1);
+        EqualFinal(Preview(Enemy,phantom,card:strike),Outgoing(100m,100m,150m),"phantom does not inherit excluded summoner Dummy coefficient or flat damage");
+        var other=Blank<Player>(); Set(other,"_runState",RunState); var otherHero=Actor(player:other); Set(other,"<Creature>k__BackingField",otherHero);
+        var otherManual=Blank<ElectronicSoldierManual>(); Set(otherManual,"<IsMutable>k__BackingField",true); Set(otherManual,"_owner",other);
+        typeof(ElectronicSoldierManual).GetProperty("HbrBattleProgressData",F)!.SetValue(otherManual,Manual.HbrBattleProgressData);
+        Set(other,"_relics",new List<RelicModel>{otherManual}); Dummy(other); Set(strike,"_owner",other);
+        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m,raw:12m),"borrowed Strike retains distinct dealer and card owner Dummy bonuses once each");
+        Set(Player,"_relics",new List<RelicModel>{Manual}); ExtraListeners.Remove(dummy);
+        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m,raw:9m),"borrowed Strike card owner Dummy qualifies without dealer Dummy");
+
+        var manager=LocManager.Instance;
+        var tables=(Dictionary<string,LocTable>)Field(typeof(LocManager),"_tables").GetValue(manager)!;
+        var table=JsonSerializer.Deserialize<Dictionary<string,string>>(File.ReadAllText(Path.Combine(RepositoryRoot,"HBRGOSakiMod/localization/zhs/relics.json")))!;
+        tables["relics"]=new LocTable("relics",table,null!);
+        Type descriptionPatch=Mod.GetType("HBRGOSakiMod.Core.Patches.HotaruRelicDescriptionPatch",true)!;
+        LocString Rewrite(RelicModel relic,LocString original)
+        {
+            object?[] args=[relic,original]; descriptionPatch.GetMethod("Postfix",F)!.Invoke(null,args); return (LocString)args[1]!;
+        }
+        var original=new LocString("relics","NATIVE_ORIGINAL.description"); original.Add("ExtraDamage",3m);
+        LocString rendered=Rewrite(dummy,original);
+        Check(rendered.LocEntryKey=="STRIKE_DUMMY.hbrDescription","owned HBR Dummy selects coefficient description");
+        Check((decimal)rendered.Variables["ExtraDamage"]==3m,"Dummy description retains bound native variables");
+        Check(rendered.GetFormattedText().Contains("50%")&&!rendered.GetFormattedText().Contains('{'),"real native SmartFormat renders complete50percent Dummy rule");
+        Mode(false); Check(ReferenceEquals(Rewrite(dummy,original),original),"legacy Dummy retains original description"); Mode(true);
+        Check(ReferenceEquals(Rewrite(new StrikeDummy(),original),original),"canonical ownerless Dummy retains original description");
+        var detached=new StrikeDummy(); Set(detached,"<IsMutable>k__BackingField",true);
+        Check(ReferenceEquals(Rewrite(detached,original),original),"mutable detached Dummy retains original description");
+        Check(original.LocEntryKey=="NATIVE_ORIGINAL.description"&&original.Variables.Count==1,"Dummy wrapper never mutates original description");
+        ExtraListeners.Clear(); Set(Player,"_relics",new List<RelicModel>{Manual}); Reset();
+    }
     static void FinalFloorCases()
     {
         Reset(); var multiplier=TestPower<FractionalMultiplier>(Hero); multiplier.Factor=20.5m;
@@ -559,7 +622,7 @@ static class Checks
     public static Task Run()
     {
         bool ok=false; string? error=null;
-        try { Setup(); AlliedCases(); PercentageCases(); EnemyCases(); OwnershipCases(); PercentageOwnershipCases(); LegacyCases(); DescriptionCases(); FinalFloorCases(); ok=true; }
+        try { Setup(); AlliedCases(); PercentageCases(); EnemyCases(); OwnershipCases(); PercentageOwnershipCases(); LegacyCases(); DescriptionCases(); StrikeDummyCases(); FinalFloorCases(); ok=true; }
         catch(Exception failure) { error=failure.ToString(); Console.Error.WriteLine(failure); }
         string report=System.Environment.GetEnvironmentVariable("HBR_STAT_REPORT_PATH")??Path.Combine(AppContext.BaseDirectory,"report.json");
         Directory.CreateDirectory(Path.GetDirectoryName(report)!);
@@ -568,6 +631,7 @@ static class Checks
             modSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
             localizationSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(RepositoryRoot,"HBRGOSakiMod/localization/zhs/powers.json")))),
+            relicLocalizationSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(RepositoryRoot,"HBRGOSakiMod/localization/zhs/relics.json")))),
             runtimeProfile=System.Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE"),
             boundary="Real native Strength/Dexterity/Vigor methods, production Harmony power and damage/block adapters, full native Hook.ModifyDamage and Hook.ModifyBlock pipelines, current saved manual stats, local attack/defense snapshots, real Millsage state, active ordinary-turn longing copies, production cannon Begin/Close, actual StrongestShield wrapper and raw capture, and description wrapper with native LocManager/LocTable/SmartFormat. StringName/logging and hook-listener enumeration are isolated leaves. Final rounding uses explicit fixture multiplier/cap input powers. No Godot nodes, game process, rendered UI, save loading, complete card/cannon/temporary-power command lifecycle, package or upload."
         },new JsonSerializerOptions{WriteIndented=true}));

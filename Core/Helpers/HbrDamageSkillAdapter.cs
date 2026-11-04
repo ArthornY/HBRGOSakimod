@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Helpers;
@@ -22,7 +24,7 @@ internal static class HbrDamageSkillAdapter
     internal static decimal ConvertBaseDamage(Creature target, Creature dealer,
         decimal legacyPower, ValueProp props, CardModel cardSource)
     {
-        if (legacyPower <= 0m || !props.IsPoweredAttack() ||
+        if (!props.IsPoweredAttack() ||
             !HbrBattleStatsHelper.IsEnabled(dealer))
             return legacyPower;
 
@@ -31,6 +33,12 @@ internal static class HbrDamageSkillAdapter
         // coefficient conversion or stat-curve/natural-critical evaluation.
         if (HbrAbsoluteBaseDamageContext.Matches(target, dealer, cardSource, legacyPower))
             return legacyPower;
+
+        // Strike Dummy adds skill percentage points before the attribute curve,
+        // rather than flat damage after it. The native hook is suppressed below.
+        legacyPower = DamageAmplificationLimits.AddSaturated(legacyPower,
+            GetStrikeDummyBonus(dealer, cardSource));
+        if (legacyPower <= 0m) return legacyPower;
 
         // Ghost's Focused Breakthrough scales its skill coefficient, before
         // the shared attribute curve. Precalculated and absolute-base hits
@@ -70,10 +78,26 @@ internal static class HbrDamageSkillAdapter
         // Strength now contributes attributes, never a second flat bonus.
         if (model is MegaCrit.Sts2.Core.Models.Powers.StrengthPower)
             return HbrBattleStatsHelper.IsEnabled(dealer) ? 0m : amount;
+        if (model is StrikeDummy dummy && HbrBattleStatsHelper.IsEnabled(dummy.Owner) &&
+            HbrBattleStatsHelper.IsEnabled(dealer)) return 0m;
         // Vigor retains its separate one-shot additive damage behavior.
         if (!enabled || model is not MegaCrit.Sts2.Core.Models.Powers.VigorPower) return amount;
         return DamageAmplificationLimits.MultiplySaturated(amount,
             EnemyStatScalingHelper.IsEnemy(dealer) ? IncomingPowerUnit : OutgoingPowerUnit);
+    }
+
+    private static decimal GetStrikeDummyBonus(Creature dealer, CardModel cardSource)
+    {
+        if (cardSource == null || !cardSource.Tags.Contains(CardTag.Strike)) return 0m;
+        StrikeDummy dealerRelic = dealer.Player?.GetRelic<StrikeDummy>();
+        StrikeDummy cardRelic = cardSource.Owner?.GetRelic<StrikeDummy>();
+        decimal Bonus(StrikeDummy relic) => relic != null &&
+            HbrBattleStatsHelper.IsEnabled(relic.Owner) &&
+            !PhantomHelper.IsSummonerOwnedDamageModifier(relic, dealer)
+                ? HbrSkillPower.DamageUnits(50m) : 0m;
+        // A borrowed card can qualify its owner's relic as well as the dealer's.
+        return DamageAmplificationLimits.AddSaturated(Bonus(dealerRelic),
+            ReferenceEquals(cardRelic, dealerRelic) ? 0m : Bonus(cardRelic));
     }
 
     internal static decimal ConvertBlock(Creature target, decimal amount, ValueProp props)
