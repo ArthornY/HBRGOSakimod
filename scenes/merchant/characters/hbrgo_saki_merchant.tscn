@@ -1,10 +1,10 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://images/characters/hbrgo_saki_combat.png" id="2_saki"]
+[ext_resource type="Texture2D" path="res://images/characters/hbrgo_saki_normal.png" id="2_saki"]
 
 [node name="HBRGOSakiMerchant" type="Node2D"]
 
 [node name="Visuals" type="Sprite2D" parent="."]
-position = Vector2(0, -230)
-scale = Vector2(0.35, 0.35)
+position = Vector2(11, -230)
+scale = Vector2(0.076043, 0.076043)
 texture = ExtResource("2_saki")
