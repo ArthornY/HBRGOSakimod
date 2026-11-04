@@ -19,8 +19,8 @@ public partial class NHBRGOSakiEnergyCounter : NEnergyCounter
         "res://images/ui/energys/hbrgosaki30a_energy_counter.png";
     private const string HotaruIconPath =
         "res://images/ui/energys/hbrgohotaru_energy_counter.png";
-    private const string HotaruGlowPath =
-        "res://images/ui/energys/hbrgohotaru_energy_counter_glow.png";
+    private const string RainbowShaderPath = "res://shaders/hotaru_energy_glow.gdshader";
+    private const string GlowShaderPath = "res://shaders/hbrgo_saki_energy_glow.gdshader";
 
     private static readonly AccessTools.FieldRef<NEnergyCounter, Player> PlayerField =
         AccessTools.FieldRefAccess<NEnergyCounter, Player>("_player");
@@ -28,6 +28,9 @@ public partial class NHBRGOSakiEnergyCounter : NEnergyCounter
     private TextureRect _icon;
     private TextureRect _glow;
     private string _iconPath;
+    private ShaderMaterial _rainbow;
+    private ShaderMaterial _sakura;
+    private ShaderMaterial _soulFlame;
 
     public override void _Ready()
     {
@@ -43,33 +46,46 @@ public partial class NHBRGOSakiEnergyCounter : NEnergyCounter
         RefreshIcon();
     }
 
+    // Each icon's lit part (31O's sakura accents, 30A's soul flame, Hotaru's rainbow rim)
+    // is a matching *_glow.png drawn by a self-lit shader on %Glow. %Glow sits outside
+    // %Layers because the base counter resets the materials of everything under %Layers,
+    // and it goes out at zero energy, when the base counter darkens the orb.
     private void RefreshIcon()
     {
-        Player player = PlayerField(this);
-        RefreshGlow(player);
-        string path = GetIconPath(player);
-        if (_icon == null || path == _iconPath)
+        if (_icon == null || _glow == null)
         {
             return;
         }
 
-        _iconPath = path;
-        _icon.Texture = ResourceLoader.Load<Texture2D>(path);
+        Player player = PlayerField(this);
+        string path = GetIconPath(player);
+        if (path != _iconPath)
+        {
+            _iconPath = path;
+            _icon.Texture = ResourceLoader.Load<Texture2D>(path);
+            _glow.Texture = ResourceLoader.Load<Texture2D>(path.Replace(".png", "_glow.png"));
+            _glow.Material = GetGlowMaterial(path);
+        }
+
+        _glow.Visible = player?.PlayerCombatState?.Energy > 0;
     }
 
-    // Hotaru's rainbow rim is a self-lit shader layer outside %Layers, because the
-    // base counter resets the materials of everything under %Layers. It goes out at
-    // zero energy, when the base counter darkens the orb.
-    private void RefreshGlow(Player player)
+    private ShaderMaterial GetGlowMaterial(string iconPath) => iconPath switch
     {
-        bool lit = player?.Character is HbrgoHotaru && player.PlayerCombatState?.Energy > 0;
-        if (_glow == null || _glow.Visible == lit)
+        HotaruIconPath => _rainbow ??= CreateGlow(RainbowShaderPath),
+        ThirtyAIconPath => _soulFlame ??= CreateGlow(GlowShaderPath, ("flicker_amount", 0.45f), ("intensity", 1.05f)),
+        _ => _sakura ??= CreateGlow(GlowShaderPath, ("pulse_amount", 0.18f))
+    };
+
+    private static ShaderMaterial CreateGlow(string shaderPath, params (string Name, float Value)[] parameters)
+    {
+        var material = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>(shaderPath) };
+        foreach ((string name, float value) in parameters)
         {
-            return;
+            material.SetShaderParameter(name, value);
         }
 
-        _glow.Texture ??= ResourceLoader.Load<Texture2D>(HotaruGlowPath);
-        _glow.Visible = lit;
+        return material;
     }
 
     // Hotaru shares this scene. 31O follows her combat portrait; the scythe borrows 30A's crescent.
