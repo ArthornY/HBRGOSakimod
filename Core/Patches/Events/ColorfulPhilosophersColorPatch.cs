@@ -15,7 +15,7 @@ internal static class ColorfulPhilosophersColorPatch
     private static readonly MethodInfo EnergyColorGetter =
         AccessTools.PropertyGetter(typeof(CardPoolModel), nameof(CardPoolModel.EnergyColorName));
 
-    // These pools share energy art, but have distinct colors in this event.
+    // Option text is keyed by pool, not by energy icon: 31O shares the base pool's icon name.
     private static string GetEventColorName(CardPoolModel pool) => pool switch
     {
         HBRGOSaki30ACardPool => "hbrgo_saki_30a",

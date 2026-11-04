@@ -7,6 +7,6 @@ namespace HBRGOSakiMod.Core.Models.RelicPools;
 // Hotaru's starter relics without adding them to ordinary random rewards.
 public sealed class HbrgoHotaruRelicPool : CustomRelicPoolModel
 {
-    public override string EnergyColorName => "hbrgosaki";
+    public override string EnergyColorName => "hbrgohotaru";
     public override Color LabOutlineColor => new("D4D6EEFF");
 }
