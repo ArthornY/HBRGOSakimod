@@ -13,7 +13,7 @@ public sealed class HBRGOSaki30ACardPool : CustomCardPoolModel, IModColorfulPhil
 {
     public override string Title => "hbrgo_saki_30a";
 
-    public override string EnergyColorName => "hbrgosaki";
+    public override string EnergyColorName => "hbrgosaki30a";
 
     public override string CardFrameMaterialPath => "card_frame_light_blue";
 

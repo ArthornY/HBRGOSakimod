@@ -18,8 +18,9 @@ public partial class NSakiCardSelectionPortrait : Control
 {
     public const string WidgetName = "SakiCardSelectionPortrait";
 
-    private const float ReferenceHeight = 1080f;
-    private const float VisiblePortraitHeight = 820f;
+    // Forms change only through card plays, so ten checks a second still catch
+    // a form card resolving during the post-play hold.
+    private const double ModeCheckInterval = 0.1;
     private const string ScytheExtensionPath =
         "res://images/characters/selection/hbrgo_saki_30a_scythe_extension.png";
     // The supplemental 1280x1200 canvas contains the unmodified 1024x1024
@@ -55,15 +56,20 @@ public partial class NSakiCardSelectionPortrait : Control
             new Rect2(12f, 16f, 691f, 1200f), 1200f)
     };
 
+    // Region views over the session-cached sources, shared by every combat.
+    private static readonly AtlasTexture[] PortraitTextures = new AtlasTexture[4];
+
     private NCombatUi _ui;
     private NPlayerHand _hand;
     private Player _player;
+    private Control _layers;
     private TextureRect _portrait;
+    private TextureRect _outgoingPortrait;
     private TextureRect _scytheExtension;
-    private Texture2D _scytheExtensionTexture;
-    private readonly Texture2D[] _portraitTextures = new Texture2D[4];
     private PortraitMode _portraitMode = PortraitMode.Unset;
     private PortraitSpec _portraitSpec;
+    private double _nextModeCheck;
+    private double _crossfadeStart = double.NegativeInfinity;
     private NCardPlay _activePlay;
     private Callable _onPlayFinished;
     private Callable _onPlayExiting;
@@ -78,6 +84,9 @@ public partial class NSakiCardSelectionPortrait : Control
         ZAsRelative = false;
         // Above battlefield HP/DP, below hand, piles and energy at UI layer 0.
         ZIndex = -1;
+        // The art is drawn at roughly half its source size or less; mipmaps
+        // keep fine hair strands from shimmering at lower resolutions.
+        TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         ResetPresentation();
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _ui = GetParent() as NCombatUi;
@@ -104,39 +113,65 @@ public partial class NSakiCardSelectionPortrait : Control
     {
         if (!ReferenceEquals(_player, player)) ResetPresentation();
         _player = player;
+        PreloadArt();
         if (IsInsideTree()) RefreshPresentation();
+    }
+
+    // Requests the current form first, then the forms this character can
+    // enter mid-combat, so neither the first selection nor a form change waits.
+    private void PreloadArt()
+    {
+        if (_player?.Character is not HbrgoSaki) return;
+        PortraitMode current = GetPortraitMode();
+        SakiSelectionPortraitArt.Preload(GetPortraitSpec(current).Path);
+        if (current == PortraitMode.ThirtyAScythe)
+        {
+            SakiSelectionPortraitArt.Preload(ScytheExtensionPath);
+            return;
+        }
+        foreach (PortraitMode mode in new[] { PortraitMode.Normal, PortraitMode.DualSwords, PortraitMode.Bow })
+            SakiSelectionPortraitArt.Preload(GetPortraitSpec(mode).Path);
     }
 
     private void BuildPortrait()
     {
         if (IsValid(_portrait)) return;
-        _scytheExtension = new TextureRect
+        // All layers slide together with the fade. During a form change the
+        // outgoing form sits under the incoming one.
+        _layers = new Control
         {
-            Name = "ScytheCompletionLayer",
+            Name = "PortraitLayers",
             MouseFilter = MouseFilterEnum.Ignore,
-            FocusMode = FocusModeEnum.None,
-            ClipContents = false,
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
-            Visible = false
+            FocusMode = FocusModeEnum.None
         };
-        AddChild(_scytheExtension);
-        _portrait = new TextureRect
+        AddChild(_layers);
+        _scytheExtension = CreateLayer("ScytheCompletionLayer");
+        _scytheExtension.Visible = false;
+        _outgoingPortrait = CreateLayer("OutgoingPortrait");
+        _outgoingPortrait.Visible = false;
+        _portrait = CreateLayer("SelectionPortrait");
+    }
+
+    private TextureRect CreateLayer(string name)
+    {
+        TextureRect layer = new()
         {
-            Name = "SelectionPortrait",
+            Name = name,
             MouseFilter = MouseFilterEnum.Ignore,
             FocusMode = FocusModeEnum.None,
             ClipContents = false,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.Scale
         };
-        AddChild(_portrait);
+        _layers.AddChild(layer);
+        return layer;
     }
 
     private PortraitMode GetPortraitMode()
     {
         if (_player.Character is HbrgoSaki30A) return PortraitMode.ThirtyAScythe;
         var creature = _player.Creature;
+        if (creature == null) return PortraitMode.Normal;
         if (creature.HasPower<ReptureBowPower>()) return PortraitMode.Bow;
         if (creature.HasPower<ReptureDualSwordsPower>() ||
             creature.HasPower<MagicSwordModePower>() ||
@@ -144,35 +179,53 @@ public partial class NSakiCardSelectionPortrait : Control
         return PortraitMode.Normal;
     }
 
-    private bool RefreshPortraitArt()
+    private bool RefreshPortraitArt(double now, bool wasVisible)
     {
-        PortraitMode mode = GetPortraitMode();
-        if (mode != _portraitMode)
+        if (_portraitMode == PortraitMode.Unset || now >= _nextModeCheck)
         {
-            _portraitMode = mode;
-            _portraitSpec = GetPortraitSpec(mode);
-            Texture2D texture = _portraitTextures[(int)mode];
-            if (!IsValid(texture))
-            {
-                Texture2D source = ResourceLoader.Load<Texture2D>(_portraitSpec.Path);
-                if (source != null)
-                {
-                    texture = new AtlasTexture
-                    {
-                        Atlas = source,
-                        Region = _portraitSpec.VisibleRegion
-                    };
-                    _portraitTextures[(int)mode] = texture;
-                }
-            }
-            _portrait.Texture = texture;
+            _nextModeCheck = now + ModeCheckInterval;
+            PortraitMode mode = GetPortraitMode();
+            if (mode != _portraitMode)
+                SetPortraitMode(mode, now, wasVisible && _portraitMode != PortraitMode.Unset);
         }
-        bool scythe = mode == PortraitMode.ThirtyAScythe;
-        if (scythe && !IsValid(_scytheExtensionTexture))
-            _scytheExtensionTexture = ResourceLoader.Load<Texture2D>(ScytheExtensionPath);
-        _scytheExtension.Texture = _scytheExtensionTexture;
-        _scytheExtension.Visible = scythe && IsValid(_scytheExtensionTexture);
         return _portrait.Texture != null;
+    }
+
+    private void SetPortraitMode(PortraitMode mode, double now, bool crossfade)
+    {
+        if (crossfade && _portrait.Texture != null)
+        {
+            // A form card resolved while the portrait is shown: the old form
+            // keeps its own size and fades out under the new one.
+            _outgoingPortrait.Texture = _portrait.Texture;
+            _outgoingPortrait.Position = _portrait.Position;
+            _outgoingPortrait.Size = _portrait.Size;
+            _crossfadeStart = now;
+        }
+        _portraitMode = mode;
+        _portraitSpec = GetPortraitSpec(mode);
+        _portrait.Texture = GetPortraitTexture(mode);
+        Texture2D extension = mode == PortraitMode.ThirtyAScythe
+            ? SakiSelectionPortraitArt.Get(ScytheExtensionPath)
+            : null;
+        _scytheExtension.Texture = extension;
+        _scytheExtension.Visible = extension != null;
+    }
+
+    private static Texture2D GetPortraitTexture(PortraitMode mode)
+    {
+        AtlasTexture texture = PortraitTextures[(int)mode];
+        if (IsValid(texture) && IsValid(texture.Atlas)) return texture;
+        PortraitSpec spec = GetPortraitSpec(mode);
+        Texture2D source = SakiSelectionPortraitArt.Get(spec.Path);
+        if (source == null) return null;
+        texture = new AtlasTexture
+        {
+            Atlas = source,
+            Region = spec.VisibleRegion
+        };
+        PortraitTextures[(int)mode] = texture;
+        return texture;
     }
 
     private void BindHand(NPlayerHand hand)
@@ -241,6 +294,8 @@ public partial class NSakiCardSelectionPortrait : Control
     private void ResetPresentation()
     {
         _fade.Reset();
+        _crossfadeStart = double.NegativeInfinity;
+        if (IsValid(_outgoingPortrait)) _outgoingPortrait.Visible = false;
         Modulate = new Color(1f, 1f, 1f, 0f);
         Visible = false;
     }
@@ -254,6 +309,14 @@ public partial class NSakiCardSelectionPortrait : Control
         }
         BindHand(_ui.Hand);
         if (_activePlay != null && !IsLive(_activePlay)) OnPlayEnded(_activePlay, false);
+
+        double now = Now;
+        // Most frames have no held card and nothing left to fade.
+        if (_activePlay == null && _fade.IsIdle(now))
+        {
+            if (Visible) ResetPresentation();
+            return;
+        }
 
         NCombatRoom room = NCombatRoom.Instance;
         bool canPresent = IsValid(_portrait) && HBRGOSakiConfig.ModUI &&
@@ -272,17 +335,15 @@ public partial class NSakiCardSelectionPortrait : Control
             ResetPresentation();
             return;
         }
-        double now = Now;
         if (selecting) _fade.Select(now);
         float opacity = _fade.OpacityAt(now);
-        bool show = opacity > 0f && RefreshPortraitArt();
+        bool show = opacity > 0f && RefreshPortraitArt(now, Visible);
         if (show)
         {
             // Keep the visible cutout flush with the lower-left UI edge. UI
             // height supplies the same proportion at other window sizes.
-            float scale = Mathf.Min(
-                VisiblePortraitHeight * Size.Y / ReferenceHeight / _portraitSpec.BodyReferenceHeight,
-                Size.X / _portraitSpec.VisibleRegion.Size.X);
+            float scale = SakiSelectionPortraitLayout.Scale(Size.X, Size.Y,
+                _portraitSpec.VisibleRegion.Size.X, _portraitSpec.BodyReferenceHeight);
             Vector2 portraitSize = _portraitSpec.VisibleRegion.Size * scale;
             _portrait.Size = portraitSize;
             _portrait.Position = new Vector2(0f, Size.Y - portraitSize.Y);
@@ -292,8 +353,13 @@ public partial class NSakiCardSelectionPortrait : Control
                 // separate draw nodes, using the same original-pixel scale.
                 Vector2 originalOrigin = _portrait.Position - _portraitSpec.VisibleRegion.Position * scale;
                 _scytheExtension.Position = originalOrigin - ScytheOriginalOffset * scale;
-                _scytheExtension.Size = _scytheExtensionTexture.GetSize() * scale;
+                _scytheExtension.Size = _scytheExtension.Texture.GetSize() * scale;
             }
+            float incoming = SakiSelectionPortraitLayout.CrossfadeProgress(now - _crossfadeStart);
+            _portrait.Modulate = new Color(1f, 1f, 1f, incoming);
+            _outgoingPortrait.Modulate = new Color(1f, 1f, 1f, 1f - incoming);
+            _outgoingPortrait.Visible = incoming < 1f;
+            _layers.Position = new Vector2(SakiSelectionPortraitLayout.SlideOffset(opacity, Size.Y), 0f);
         }
         // Both the original pixels and supplemental weapon layer fade together.
         Modulate = new Color(1f, 1f, 1f, opacity);

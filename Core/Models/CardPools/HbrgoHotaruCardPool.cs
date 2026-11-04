@@ -12,7 +12,7 @@ namespace HBRGOSakiMod.Core.Models.CardPools;
 public sealed class HbrgoHotaruCardPool : CustomCardPoolModel
 {
     public override string Title => "hbrgo_hotaru";
-    public override string EnergyColorName => "hbrgosaki";
+    public override string EnergyColorName => "hbrgohotaru";
     public override string CardFrameMaterialPath => "card_frame_light_blue";
     public override Color DeckEntryCardColor => new("D4D6EEFF");
     public override Color EnergyOutlineColor => new("494959FF");

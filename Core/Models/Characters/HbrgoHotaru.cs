@@ -98,6 +98,7 @@ public sealed class HbrgoHotaru : CustomCharacterModel, IModCharacterVanillaSele
     public override float CastAnimDelay => 0.25f;
     public override string CharacterTransitionSfx => "event:/sfx/ui/wipe_ironclad";
     public override Color DialogueColor => new("494959");
+    public override Color EnergyLabelOutlineColor => new("494959FF");
     public override VfxColor SpeechBubbleColor => VfxColor.Cyan;
     public override Color MapDrawingColor => new("D4D6EE");
     public override Color RemoteTargetingLineColor => new("D4D6EEFF");

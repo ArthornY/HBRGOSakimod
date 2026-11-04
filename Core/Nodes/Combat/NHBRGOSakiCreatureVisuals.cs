@@ -1,6 +1,5 @@
 using Godot;
-using HBRGOSakiMod.Core.Models.Characters;
-using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 
@@ -125,32 +124,15 @@ public partial class NHBRGOSakiCreatureVisuals : NCreatureVisuals
         ? new Vector2(-(DualSwordsBodyCenterX - 0.5f) * textureWidth * scaleX, basePosition.Y)
         : basePosition;
 
-    private static PortraitMode GetPortraitMode(Creature creature)
-    {
-        if (creature.Player?.Character is HbrgoSaki30A)
+    private static PortraitMode GetPortraitMode(Creature creature) =>
+        HbrgoSakiCombatFormHelper.GetForm(creature) switch
         {
-            return PortraitMode.ThirtyA;
-        }
-
-        if (creature.HasPower<RaptureScythePower>())
-        {
-            return PortraitMode.Scythe;
-        }
-
-        if (creature.HasPower<ReptureBowPower>())
-        {
-            return PortraitMode.Bow;
-        }
-
-        if (creature.HasPower<ReptureDualSwordsPower>() ||
-            creature.HasPower<MagicSwordModePower>() ||
-            creature.HasPower<CrimsonBladeFlowPower>())
-        {
-            return PortraitMode.DualSwords;
-        }
-
-        return PortraitMode.Normal;
-    }
+            HbrgoSakiCombatForm.ThirtyA => PortraitMode.ThirtyA,
+            HbrgoSakiCombatForm.Scythe => PortraitMode.Scythe,
+            HbrgoSakiCombatForm.Bow => PortraitMode.Bow,
+            HbrgoSakiCombatForm.DualSwords => PortraitMode.DualSwords,
+            _ => PortraitMode.Normal
+        };
 
     private enum PortraitMode
     {

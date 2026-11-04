@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Core/Nodes/Combat/SakiSelectionPortraitFade.cs" Link="SakiSelectionPortraitFade.cs" />
+    <Compile Include="../../Core/Nodes/Combat/SakiSelectionPortraitLayout.cs" Link="SakiSelectionPortraitLayout.cs" />
   </ItemGroup>
 </Project>

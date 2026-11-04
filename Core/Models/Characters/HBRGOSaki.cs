@@ -126,6 +126,8 @@ public class HbrgoSaki :
 
     public override Color DialogueColor => new("1C274A");
 
+    public override Color EnergyLabelOutlineColor => new("1C274AFF");
+
     public override VfxColor SpeechBubbleColor => VfxColor.Cyan;
 
     public override Color MapDrawingColor => new("5C8DFF");
