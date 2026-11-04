@@ -52,15 +52,23 @@ internal static class HbrNativeFixedModifierDescriptionPatch
         if (amount == 0 || __result == null) return;
         Creature owner = Run(__instance)?.Players.FirstOrDefault(HbrBattleStatsHelper.IsEnabled)?.Creature;
         if (owner == null) return;
-        Displays.Remove(__result);
-        Displays.Add(__result, new Display(owner, amount));
+        Tag(__result, owner, amount);
+    }
+
+    // Event options whose text writes a fixed HP amount literally tag themselves too.
+    internal static void Tag(LocString text, Creature owner, int nativeAmount)
+    {
+        if (text == null) return;
+        Displays.Remove(text);
+        Displays.Add(text, new Display(owner, nativeAmount));
     }
 }
 
 [HarmonyPatch(typeof(LocString), nameof(LocString.GetRawText))]
 internal static class HbrNativeFixedModifierTextPatch
 {
-    // Terminal/NightTerrors encode their fixed HP amount literally in native
+    // Terminal/NightTerrors and a few event options (Colossal Flower's digs,
+    // Trial's Noble Guilty) encode their fixed HP amount literally in native
     // translation text. Only instances tagged by those exact descriptions are
     // adapted. Skip all BBCode tags, colors and IDs, and require exactly one
     // standalone occurrence of the audited native amount; otherwise retain it.

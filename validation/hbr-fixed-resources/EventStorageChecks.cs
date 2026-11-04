@@ -46,6 +46,45 @@ static partial class Checks
             "disabled HBR second Immerse retains native 4 damage and raw 5");
         Mode(true);
 
+        // Hold On loses its CurrentHpLoss property; HpLoss is only the native copy for text.
+        var bridge = Blank<SlipperyBridge>(); Set(bridge, "<IsMutable>k__BackingField", true);
+        Set(bridge, "<Owner>k__BackingField", Player);
+        DynamicVar hpLoss = bridge.DynamicVars["HpLoss"];
+        async Task HoldOn()
+        {
+            EventStoredVariable = hpLoss;
+            try { await Effect(bridge, "HoldOn"); throw new Exception("native event did not reach isolated UI leaf"); }
+            catch (StopAtEventUi) { }
+            finally { EventStoredVariable = null; }
+        }
+        Check(hpLoss.BaseValue == 3 && Read(hpLoss) == 300 && hpLoss.ToString() == "300",
+            "SlipperyBridge stores native HpLoss 3 and displays 300");
+        await HoldOn();
+        Check(Damage[^1] == 300 && hpLoss.BaseValue == 4 && hpLoss.ToString() == "400",
+            "real first Hold On loses 300 HP and stores native 4 for the 400 shown next");
+        await HoldOn();
+        Check(Damage[^1] == 400 && hpLoss.BaseValue == 5, "real second Hold On loses 400 HP and stores native 5");
+        Mode(false);
+        await HoldOn();
+        Check(Damage[^1] == 5 && hpLoss.BaseValue == 6 && hpLoss.ToString() == "6",
+            "disabled HBR Hold On keeps native 5 HP and text");
+        Mode(true);
+        MethodInfo scaledRead = AccessTools.Method(
+            Mod.GetType("HBRGOSakiMod.Core.Patches.Events.SlipperyBridgeHpLossPatch", true)!, "ScaledHpLoss");
+        MethodInfo nativeRead = AccessTools.PropertyGetter(typeof(SlipperyBridge), "CurrentHpLoss");
+        Type holdOnState = AccessTools.Method(typeof(SlipperyBridge), "HoldOn")
+            .GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>()!.StateMachineType;
+        foreach ((MethodBase body, int scaled, int native) in new (MethodBase, int, int)[]
+        {
+            (AccessTools.Method(typeof(SlipperyBridge), "GenerateInitialOptions"), 1, 0),
+            (AccessTools.Method(holdOnState, "MoveNext"), 2, 1)
+        })
+        {
+            List<CodeInstruction> code = PatchProcessor.GetCurrentInstructions(body);
+            Check(code.Count(i => i.Calls(scaledRead)) == scaled && code.Count(i => i.Calls(nativeRead)) == native,
+                $"{body.DeclaringType!.Name}.{body.Name} scales {scaled} command/lethal reads and keeps {native} native");
+        }
+
         Patch(h, AccessTools.Method(typeof(DeflectorProtection), nameof(DeflectorProtection.GainMaxDp)), nameof(CaptureMaxDp));
         var protection = Relic<DeflectorProtection>();
         Set(Player, "_relics", new List<RelicModel> { Manual, protection });

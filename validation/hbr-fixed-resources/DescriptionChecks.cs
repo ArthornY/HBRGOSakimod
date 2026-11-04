@@ -65,6 +65,7 @@ static partial class Checks
             ["powers"] = new LocTable("powers", PowerText, null!),
             ["modifiers"] = new LocTable("modifiers", ModifierText, null!),
             ["rest_site_ui"] = new LocTable("rest_site_ui", CookText, null!),
+            ["events"] = new LocTable("events", EventText, null!),
             // Minimal fixture exercises native SmartFormat with the same
             // canonical starting-relic variable used by character selection.
             ["canonical_checks"] = new LocTable("canonical_checks",

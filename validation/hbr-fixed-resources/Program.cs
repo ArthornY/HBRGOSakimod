@@ -53,10 +53,21 @@ static partial class Checks
         T relic = Blank<T>(); Set(relic, "<IsMutable>k__BackingField", true); Set(relic, "_owner", Player); return relic;
     }
     static bool Skip() => false;
+    // Set while an event body runs only up to its HP command; its later UI leaf is not simulated.
+    static bool StopAfterCommand;
     static bool CaptureDamage(decimal amount, ref Task<IEnumerable<DamageResult>> __result)
-    { Damage.Add(amount); __result = Task.FromResult<IEnumerable<DamageResult>>([]); return false; }
+    {
+        Damage.Add(amount); __result = Task.FromResult<IEnumerable<DamageResult>>([]);
+        if (StopAfterCommand) throw new StopAtEventUi();
+        return false;
+    }
     static bool CaptureHeal(decimal amount, ref Task __result)
-    { Heals.Add(amount); __result = Task.CompletedTask; return false; }
+    {
+        Heals.Add(amount); __result = Task.CompletedTask;
+        if (StopAfterCommand) throw new StopAtEventUi();
+        return false;
+    }
+    static bool CaptureGold(ref Task __result) { __result = Task.CompletedTask; return false; }
     static bool CaptureMaximum(decimal amount, ref Task __result)
     { Maximum.Add(amount); __result = Task.CompletedTask; return false; }
     static bool CaptureEnergy(ref Task __result) { __result = Task.CompletedTask; return false; }
@@ -86,12 +97,17 @@ static partial class Checks
         Patch(h, AccessTools.Method(typeof(CreatureCmd), nameof(CreatureCmd.GainMaxHp)), nameof(CaptureMaximum));
         Patch(h, AccessTools.Method(typeof(CreatureCmd), nameof(CreatureCmd.LoseMaxHp)), nameof(CaptureLoseMaximum));
         Patch(h, AccessTools.Method(typeof(PlayerCmd), nameof(PlayerCmd.GainEnergy)), nameof(CaptureEnergy));
+        Patch(h, AccessTools.Method(typeof(PlayerCmd), nameof(PlayerCmd.GainGold)), nameof(CaptureGold));
         Patch(h, typeof(CardPileCmd).GetMethods(F).Single(m => m.Name == nameof(CardPileCmd.Draw) &&
             m.GetParameters().Length == 4), nameof(CaptureDraw));
         foreach (MethodInfo method in typeof(SfxCmd).GetMethods(F).Where(m => m.Name == nameof(SfxCmd.Play))) Patch(h, method, nameof(Skip));
         foreach (string name in new[] { "HbrNativeFixedResourcePatch", "HbrNativeFixedResourceCommandPatch" })
             Check(h.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat." + name, true)!).Patch().Count > 0,
                 "actual production Harmony patch installs " + name);
+        foreach ((string name, int bodies) in new[] { ("SlipperyBridgeHpLossPatch", 2), ("ColossalFlowerHpLossPatch", 3),
+            ("ColossalFlowerMinimumHpPatch", 1), ("TrialNobleGuiltyTextPatch", 1) })
+            Check(h.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Events." + name, true)!).Patch().Count == bodies,
+                $"actual production Harmony patch installs {name} on {bodies} native bodies");
 
         CanonicalOwnerChecks();
         Feed feed = Card<Feed>(); DynamicVar hp = feed.DynamicVars.MaxHp;
@@ -156,6 +172,7 @@ static partial class Checks
         Check(registeredVariables >= 40, "native fixed card/relic resource coverage excludes five migrated damage fields");
         await DescriptionChecks(h);
         await EventStorageChecks(h);
+        await NativeEventChecks(h);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {
             checks = Passed.Count, passed = Passed, registeredVariables,

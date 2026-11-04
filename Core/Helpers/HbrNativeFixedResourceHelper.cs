@@ -88,6 +88,8 @@ internal static class HbrNativeFixedResourceHelper
         Add("Events", "EndlessConveyor", "ClamRollHeal", "CaviarMaxHp");
         Add("Events", "MorphicGrove", "MaxHp");
         Add("Events", "SapphireSeed", "Heal");
+        // Text only: Hold On's actual loss reads a property, see SlipperyBridgeHpLossPatch.
+        Add("Events", "SlipperyBridge", "HpLoss");
         Add("Events", "SpiritGrafter", "RejectionHpLoss", "LetItInHealAmount");
         Add("Events", "ThisOrThat", "HpLoss");
         Add("Events", "TrashHeap", "HpLoss");
@@ -98,6 +100,7 @@ internal static class HbrNativeFixedResourceHelper
         Add("Events", "DollRoom", "TakeTimeHpLoss", "ExamineHpLoss");
         Add("Events", "JungleMazeAdventure", "SoloHp");
         Add("Events", "StoneOfAllTime", "DrinkMaxHpGain", "PushHpLoss");
+        Add("Events", "SunkenStatue", "HpLoss");
         Add("Events", "TabletOfTruth", "SmashHPGain", "DecipherMaxHpLoss");
         return result;
     }

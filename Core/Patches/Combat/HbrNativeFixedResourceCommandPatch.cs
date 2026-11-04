@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Modifiers;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Powers;
@@ -31,6 +32,8 @@ internal static class HbrNativeFixedResourceCommandPatch
         yield return Body(typeof(CookRestSiteOption), nameof(CookRestSiteOption.OnSelect));
         yield return Body(typeof(KnowledgeDemon), "PonderMove");
         yield return Body(typeof(WaterfallGiant), "SiphonMove");
+        // Its option text writes the 10 literally; see TrialNobleGuiltyTextPatch.
+        yield return Body(typeof(Trial), "NobleGuilty");
     }
 
     private static MethodInfo RegenBody()
