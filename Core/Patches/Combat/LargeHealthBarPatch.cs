@@ -9,6 +9,20 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
 
+[HarmonyPatch(typeof(NHealthBar), nameof(NHealthBar.UpdateWidthRelativeToReferenceValue))]
+internal static class HbrPlayerHealthBarWidthPatch
+{
+    private static void Prefix(Creature ____creature, ref float refMaxHp)
+    {
+        if (____creature?.Player is { } player && HbrBattleStatsHelper.IsEnabled(player))
+        {
+            // Native multiplayer rows grow linearly with maximum HP. Keep the
+            // pre-conversion slope while displaying the real enlarged values.
+            refMaxHp *= HbrBattleStatsHelper.PlayerHealthScale;
+        }
+    }
+}
+
 [HarmonyPatch(typeof(NHealthBar), "RefreshText")]
 internal static class LargeHealthBarTextPatch
 {
