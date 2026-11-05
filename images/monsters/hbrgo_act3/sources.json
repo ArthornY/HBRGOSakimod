@@ -1,0 +1,386 @@
+{
+ "description": "Monster cutouts cut from HBR arcade-mode enemy cards in the local unpacked client (package 6.2.0.0). Seeds from a recovered per-pixel-mode card plate plus OpenCV GrabCut; the translucent rarity band is inverted with a per-channel linear model fitted across its top edge; MolArms/ArachneLine use same-pose arcade silhouettes.",
+ "items": [
+  {
+   "file": "images/monsters/hbrgo_act3/balb_flea_cutout.png",
+   "monster": "BalbFlea",
+   "sha256": "8C1CF5318D09E4B423B84A9B40250FB24D098F798CDA8508CFE7C632CB772C24",
+   "size": [
+    478,
+    560
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/BalbFleaDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_3831615734771289950_BalbFleaDefault.png",
+    "sha256": "B0ACDCD83B63DE554698388D15E2C8C5EA598F6F14121DCE5C94351DA53324B0"
+   },
+   "cut": {}
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/tri_claw_cutout.png",
+   "monster": "TriClaw",
+   "sha256": "95F5AA96F30EDDD146C82620A19F62F59EE51D16A19353E834D1151A7EC7F552",
+   "size": [
+    449,
+    471
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/TriClawSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-5421309493780414102_TriClawSmall.png",
+    "sha256": "3A71473E43DD1CF89A610427C844790A77655FC70B12CAA5942782147ABBAFCC"
+   },
+   "cut": {
+    "bg_points": [
+     [
+      110,
+      330,
+      30
+     ],
+     [
+      378,
+      320,
+      25
+     ],
+     [
+      300,
+      575,
+      12
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/bigotry_gate_cutout.png",
+   "monster": "BigotryGate",
+   "sha256": "DD74F37EFC7EF8218DEB029B77750C12B3BECE086D07846F390CB85298BD7F26",
+   "size": [
+    478,
+    529
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/BigotryGateSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-7078654725465394213_BigotryGateSmall.png",
+    "sha256": "EFB7E40E845798239D97B489192CCE63ACFFBBB8EB8622474573C83026EB5409"
+   },
+   "cut": {
+    "near": 45
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/corolla_knife_cutout.png",
+   "monster": "CorollaKnife",
+   "sha256": "73E84050A0B3C34F4E738579978EA50F07AE49E09FEBA4551299DB3DEEED2B1D",
+   "size": [
+    219,
+    579
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/CorollaKnifeSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_601234200737503815_CorollaKnifeSmall.png",
+    "sha256": "5B7334F04BFE57FC9E1FFFAB44F357E68CFE653D1289097DC2A2400681C4815A"
+   },
+   "cut": {
+    "bg_rects": [
+     [
+      30,
+      30,
+      145,
+      330
+     ],
+     [
+      365,
+      30,
+      495,
+      330
+     ],
+     [
+      310,
+      30,
+      365,
+      185
+     ],
+     [
+      25,
+      560,
+      200,
+      650
+     ]
+    ],
+    "bg_points": [
+     [
+      120,
+      310,
+      15
+     ],
+     [
+      296,
+      86,
+      9
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/mol_arms_cutout.png",
+   "monster": "MolArms",
+   "sha256": "5042297019F6A5549D1184B41CB228D51A8B6E29AFDCFFD5AE24CF9963DD972C",
+   "size": [
+    478,
+    588
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season4/MolArmsMys.png",
+    "bundle": "cache/71608cf88ee71d52919841693ef2d8ca/a143c38366f87adbccd77bf538b97d2e",
+    "extracted_png": "images/cache/71608cf88ee71d52919841693ef2d8ca/a143c38366f87adbccd77bf538b97d2e/107f494f1637422e_-688959513571468718_MolArmsMys.png",
+    "sha256": "24C2ED0F09B1E47976A5CAC17D5390B3F9114EF86CF066953E92A3E27A440865"
+   },
+   "cut": {
+    "mask": "mask_MolArmsMys.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season4/Mask/MolArmsMys.png",
+    "extracted_png": "images/cache/71608cf88ee71d52919841693ef2d8ca/a143c38366f87adbccd77bf538b97d2e/107f494f1637422e_3375204640616150300_MolArmsMys.png",
+    "sha256": "7A4A1B36F2AED5D7ADADF9078E10A7A520DBEF73B1CD341DB38C393D4FB9DB6D"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/shrimp_crab_cutout.png",
+   "monster": "ShrimpCrab",
+   "sha256": "0DEA99463258012AFA6320C743B90D1784E27DA4D606BDDD1A87C1AABEE3B7DE",
+   "size": [
+    429,
+    461
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/ShrimpCrabDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_6793913080369103104_ShrimpCrabDefault.png",
+    "sha256": "F469D11B1E59D3003A51431A471578D4014C51778945C79363A7C614BF037F0B"
+   },
+   "cut": {}
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/slimy_serpent_cutout.png",
+   "monster": "SlimySerpent",
+   "sha256": "26E45CF0E52C774691EC71DADC89A143B8775262AFEF35621BCDDF73F274E530",
+   "size": [
+    478,
+    414
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/SlimySerpentDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_1819720784243176543_SlimySerpentDefault.png",
+    "sha256": "1DFDF90F3CA0FB0041A5DF99BBC04D657A3B1808D420072DC5762BE424A4A0EB"
+   },
+   "cut": {}
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/giraffe_halo_cutout.png",
+   "monster": "GiraffeHalo",
+   "sha256": "7BEBDF971B358DC37289C3B5E4FA4A9A99F5CF6AB789FAF8E026CABECF13BCD6",
+   "size": [
+    399,
+    433
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/GiraffeHaloDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_6155291843083813867_GiraffeHaloDefault.png",
+    "sha256": "36484D7B98E4479A5D4B422D4B892466A2BD97852D30912A0572E3B099E1F118"
+   },
+   "cut": {
+    "palette_veto": true,
+    "veto_density": 10,
+    "veto_min_lum": 60,
+    "veto_min_sat": 0.12,
+    "bg_points": [
+     [
+      110,
+      315,
+      18
+     ],
+     [
+      215,
+      265,
+      12
+     ],
+     [
+      300,
+      335,
+      10
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/arachne_line_cutout.png",
+   "monster": "ArachneLine",
+   "sha256": "06C856A25653D7319EEEFB29B52C097EF286CAD111196A962F40A11EDBBF0CA4",
+   "size": [
+    478,
+    605
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/ArachneLineDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-3192391249671560733_ArachneLineDefault.png",
+    "sha256": "97E3EACBDF33564CC74BC8B62F40E018A901728D1D26146C47FC973F4733A570"
+   },
+   "cut": {
+    "mask": "mask_ArachneLineDefault.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/ArachneLineDefault.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_4435612192019270834_ArachneLineDefault.png",
+    "sha256": "A014D40CCC295E6C8804DF504CA133193408A327A8CF4FA91EC8326BEC2D9E44"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act3/pillar_guardian_cutout.png",
+   "monster": "PillarGuardian",
+   "sha256": "FDE0DD3773058FD5D4D0AF83D7FC4C75DA7959028D18F327E2D94BD76880D813",
+   "size": [
+    478,
+    625
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/PillarGuardianDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-8376937177773055357_PillarGuardianDefault.png",
+    "sha256": "86A83CD05646B1A6F2AB57F8C4401A4F02D8857265DEE2A421269A0CA56BFC29"
+   },
+   "cut": {
+    "palette_veto": true,
+    "veto_density": 10,
+    "veto_min_lum": 60,
+    "veto_min_sat": 0.14,
+    "bg_rects": [
+     [
+      25,
+      25,
+      80,
+      300
+     ],
+     [
+      145,
+      25,
+      225,
+      135
+     ],
+     [
+      385,
+      70,
+      460,
+      200
+     ],
+     [
+      385,
+      205,
+      428,
+      285
+     ],
+     [
+      25,
+      420,
+      120,
+      470
+     ],
+     [
+      25,
+      470,
+      80,
+      540
+     ],
+     [
+      395,
+      432,
+      495,
+      540
+     ],
+     [
+      110,
+      612,
+      230,
+      660
+     ],
+     [
+      235,
+      612,
+      320,
+      660
+     ]
+    ],
+    "fg_points": [
+     [
+      300,
+      120,
+      15
+     ],
+     [
+      200,
+      185,
+      10
+     ],
+     [
+      100,
+      360,
+      10
+     ],
+     [
+      440,
+      350,
+      10
+     ],
+     [
+      150,
+      520,
+      10
+     ],
+     [
+      300,
+      560,
+      8
+     ],
+     [
+      110,
+      150,
+      8
+     ],
+     [
+      350,
+      500,
+      8
+     ],
+     [
+      470,
+      180,
+      6
+     ],
+     [
+      400,
+      45,
+      8
+     ],
+     [
+      480,
+      150,
+      8
+     ],
+     [
+      480,
+      250,
+      8
+     ]
+    ],
+    "near": 60
+   }
+  }
+ ]
+}

@@ -1,0 +1,287 @@
+{
+ "description": "Monster cutouts cut from HBR arcade-mode enemy cards in the local unpacked client (package 6.2.0.0). Seeds from a recovered per-pixel-mode card plate plus OpenCV GrabCut; the translucent rarity band is inverted with a per-channel linear model fitted across its top edge; IvoryScooper/NeedleBird use same-pose arcade silhouettes.",
+ "items": [
+  {
+   "file": "images/monsters/hbrgo_act1/marionette_cutout.png",
+   "monster": "Marionette",
+   "sha256": "8D742B1C3DF10A917AE482D48C3A30395DA4D95ECA80C478CF69010B4DF4C295",
+   "size": [
+    212,
+    348
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/MarionetteDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-3645356052031088359_MarionetteDefault.png",
+    "sha256": "254E8AF17A83C4428D613C401FF78DC4B5B4AF42AF2883F5344BA1BE45541E55"
+   },
+   "cut": {
+    "box": [
+     110,
+     195,
+     352,
+     560
+    ],
+    "bg_points": [
+     [
+      60,
+      315,
+      14
+     ],
+     [
+      105,
+      318,
+      9
+     ],
+     [
+      372,
+      318,
+      12
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/cat_horn_cutout.png",
+   "monster": "CatHorn",
+   "sha256": "775CF619CF9D6D754DA2FBF5EBFA53BD3355C8BEC420CB509F12B145F9A5EF04",
+   "size": [
+    478,
+    642
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/CatHornSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_2988267848516455313_CatHornSmall.png",
+    "sha256": "12D704C50B212BA1F2168ECD445C32A35340D02D17F51EE0DE4A6C226892D185"
+   },
+   "cut": {
+    "bg_points": [
+     [
+      322,
+      44,
+      12
+     ],
+     [
+      463,
+      221,
+      6
+     ],
+     [
+      470,
+      240,
+      6
+     ]
+    ],
+    "shadow_kmin": 0.2,
+    "shadow_resid": 16
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/wire_slasher_cutout.png",
+   "monster": "WireSlasher",
+   "sha256": "36FEFD5FB32920A24A9D6E37A5E8B9105BA4645E5E4512ADBB379F8869AED1F6",
+   "size": [
+    362,
+    577
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/WireSlasherDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-4645274508620454336_WireSlasherDefault.png",
+    "sha256": "0CF60885B00817838BA87311FD286452BD0A448CC504331C194BF83E057E337D"
+   },
+   "cut": {
+    "band_fg_diff": 999,
+    "frame_fade": 10.0,
+    "bg_points": [
+     [
+      200,
+      642,
+      18
+     ],
+     [
+      300,
+      636,
+      18
+     ],
+     [
+      385,
+      620,
+      14
+     ],
+     [
+      212,
+      315,
+      6
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/octopus_tail_cutout.png",
+   "monster": "OctopusTail",
+   "sha256": "8061CD4F15EAD382580AA6821F668F8986ED3D799DF79EFC88D210E23EF6B31B",
+   "size": [
+    461,
+    587
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/OctopusTailDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_6432871845592039077_OctopusTailDefault.png",
+    "sha256": "C25FEB8D678764EEB30E87A7458F2778E89C384C81EADBC080020AA6A2C3FFA8"
+   },
+   "cut": {
+    "bg_points": [
+     [
+      350,
+      50,
+      10
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/target_wire_frame_cutout.png",
+   "monster": "TargetWireFrame",
+   "sha256": "48A2E9CF865BB38E626D3310D6A5962B192D9E6A60B145205541E280D6973083",
+   "size": [
+    477,
+    530
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/TargetWireFrameSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_2271070758524013056_TargetWireFrameSmall.png",
+    "sha256": "B0246C96412B065BD75471D940385B82679866A2767D0D2AE61C9EAE767A29D5"
+   },
+   "cut": {
+    "band_fg_diff": 999,
+    "palette_veto": true,
+    "veto_density": 12,
+    "veto_min_lum": 60,
+    "bg_points": [
+     [
+      235,
+      195,
+      16
+     ],
+     [
+      330,
+      175,
+      14
+     ],
+     [
+      215,
+      300,
+      10
+     ],
+     [
+      455,
+      275,
+      10
+     ],
+     [
+      225,
+      505,
+      8
+     ],
+     [
+      330,
+      437,
+      8
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/needle_bird_cutout.png",
+   "monster": "NeedleBird",
+   "sha256": "630E4642ED46A15178C6247F7D2C073F1486D86F79688D2EF364BD1B8E8201BF",
+   "size": [
+    478,
+    584
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/NeedleBirdSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-2006370269401934737_NeedleBirdSmall.png",
+    "sha256": "68534DAECAD1779FF9539188349E0AA2A6CC23FA8A8829D3F8290FC36545FDB3"
+   },
+   "cut": {
+    "mask": "mask_NeedleBirdSmall.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/NeedleBirdSmall.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-5439195275707516945_NeedleBirdSmall.png",
+    "sha256": "CEC404C3BFAA3E1B0EF7217EC3746E7C1E268D21F43E124757882514C4EAE1F2"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/crow_horse_cutout.png",
+   "monster": "CrowHorse",
+   "sha256": "C35732FA35B291F45E339508EA9D00DEB57C190161F2562702660257AD8E9BC5",
+   "size": [
+    434,
+    603
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/CrowHorseDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_8812621302640108636_CrowHorseDefault.png",
+    "sha256": "1D60FA9533299F496758EB0834E75CED8BB59400409F415B90FED8860FEB6408"
+   },
+   "cut": {
+    "band_fg_diff": 30,
+    "bg_points": [
+     [
+      45,
+      285,
+      10
+     ],
+     [
+      66,
+      305,
+      12
+     ],
+     [
+      84,
+      312,
+      6
+     ],
+     [
+      54,
+      283,
+      4
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act1/ivory_scooper_cutout.png",
+   "monster": "IvoryScooper",
+   "sha256": "2D3EEC269FBCBD7A9E32D96D3C53F06772CB7B9B0A8C7790E6D84A310D3B7F3E",
+   "size": [
+    478,
+    646
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/IvoryScooperDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-7638726316400128385_IvoryScooperDefault.png",
+    "sha256": "FD29E53D71D0A971A2563B570842DC0C048F94A7105F7FDB0E6BA7940B095796"
+   },
+   "cut": {
+    "mask": "mask_IvoryScooperDefault_Obsidian.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/IvoryScooperDefault_Obsidian.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-2918794800278867692_IvoryScooperDefault_Obsidian.png",
+    "sha256": "5F28435D8A65F9074786B2743820F25D9897DC8973E3B070295055AFAE9D53CF"
+   }
+  }
+ ]
+}

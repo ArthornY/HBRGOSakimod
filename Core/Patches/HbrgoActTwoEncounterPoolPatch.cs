@@ -65,6 +65,65 @@ internal static class HbrgoActTwoBossEncounterPoolPatch
 
 [HarmonyPatch(
     typeof(ActModel),
+    nameof(ActModel.AllWeakEncounters),
+    MethodType.Getter)]
+internal static class HbrgoActTwoWeakEncounterPoolPatch
+{
+    private static void Postfix(
+        ActModel __instance,
+        ref IEnumerable<EncounterModel> __result)
+    {
+        __result = HbrgoActTwoEncounterPoolPatch
+            .AppendActTwoEncounters(
+                __instance,
+                __result,
+                encounter =>
+                    encounter.RoomType == RoomType.Monster &&
+                    encounter.IsWeak);
+    }
+}
+
+[HarmonyPatch(
+    typeof(ActModel),
+    nameof(ActModel.AllRegularEncounters),
+    MethodType.Getter)]
+internal static class HbrgoActTwoRegularEncounterPoolPatch
+{
+    private static void Postfix(
+        ActModel __instance,
+        ref IEnumerable<EncounterModel> __result)
+    {
+        __result = HbrgoActTwoEncounterPoolPatch
+            .AppendActTwoEncounters(
+                __instance,
+                __result,
+                encounter =>
+                    encounter.RoomType == RoomType.Monster &&
+                    !encounter.IsWeak);
+    }
+}
+
+[HarmonyPatch(
+    typeof(ActModel),
+    nameof(ActModel.AllEliteEncounters),
+    MethodType.Getter)]
+internal static class HbrgoActTwoEliteEncounterPoolPatch
+{
+    private static void Postfix(
+        ActModel __instance,
+        ref IEnumerable<EncounterModel> __result)
+    {
+        __result = HbrgoActTwoEncounterPoolPatch
+            .AppendActTwoEncounters(
+                __instance,
+                __result,
+                encounter =>
+                    encounter.RoomType == RoomType.Elite);
+    }
+}
+
+[HarmonyPatch(
+    typeof(ActModel),
     nameof(ActModel.AllMonsters),
     MethodType.Getter)]
 internal static class HbrgoActTwoMonsterPoolPatch

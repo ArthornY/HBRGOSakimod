@@ -110,7 +110,35 @@ internal enum PhantomFusionEffectType
     Aeonglass = 96,
     MysteriousKnight = 97,
     FakeMerchant = 98,
-    FlatHand = 99
+    FlatHand = 99,
+    Marionette = 100,
+    CatHorn = 101,
+    WireSlasher = 102,
+    OctopusTail = 103,
+    TargetWireFrame = 104,
+    NeedleBird = 105,
+    CrowHorse = 106,
+    IvoryScooper = 107,
+    MarionetteKiller = 108,
+    CrestHopperKiller = 109,
+    DarkKnockerKiller = 110,
+    CatHornKiller = 111,
+    OctopusTailKiller = 112,
+    AbyssKnockerKiller = 113,
+    TargetWireFrameKiller = 114,
+    PileGolemEdge = 115,
+    DiamondEyeball = 116,
+    BarrelWalker = 117,
+    BalbFlea = 118,
+    TriClaw = 119,
+    BigotryGate = 120,
+    CorollaKnife = 121,
+    MolArms = 122,
+    ShrimpCrab = 123,
+    SlimySerpent = 124,
+    GiraffeHalo = 125,
+    ArachneLine = 126,
+    PillarGuardian = 127
 }
 
 internal static class PhantomFusionEffectHelper
@@ -276,6 +304,15 @@ internal static class PhantomFusionEffectHelper
             GetEffect(effects, PhantomFusionEffectType.CrestHopper, 5m, 2m) +
             GetEffect(effects, PhantomFusionEffectType.ClayKnocker, 5m, 2m) +
             GetEffect(effects, PhantomFusionEffectType.Knocker, 3m, 1m) +
+            GetEffect(effects, PhantomFusionEffectType.CatHorn, 4m, 2m) +
+            GetEffect(effects, PhantomFusionEffectType.NeedleBird, 8m, 3m) +
+            GetEffect(effects, PhantomFusionEffectType.CrowHorse, 10m, 4m) +
+            GetEffect(effects, PhantomFusionEffectType.CrestHopperKiller, 6m, 2m) +
+            GetEffect(effects, PhantomFusionEffectType.CatHornKiller, 6m, 3m) +
+            GetEffect(effects, PhantomFusionEffectType.DiamondEyeball, 12m, 5m) +
+            GetEffect(effects, PhantomFusionEffectType.CorollaKnife, 7m, 3m) +
+            GetEffect(effects, PhantomFusionEffectType.GiraffeHalo, 10m, 4m) +
+            GetEffect(effects, PhantomFusionEffectType.ArachneLine, 14m, 6m) +
             GetSecondaryEffect(effects, PhantomFusionEffectType.TheInsatiable, 0m, 80m) -
             GetSecondaryEffect(effects, PhantomFusionEffectType.TurretOperator, 30m, 10m) +
             GetSecondaryEffect(effects, PhantomFusionEffectType.SlimedBerserker, 15m, 8m) +
@@ -297,6 +334,26 @@ internal static class PhantomFusionEffectHelper
                 PhantomFusionEffectType.AxeRubyRaider,
                 3m,
                 1m) +
+            GetEffect(
+                effects,
+                PhantomFusionEffectType.Marionette,
+                3m,
+                1m) +
+            GetEffect(
+                effects,
+                PhantomFusionEffectType.MarionetteKiller,
+                4m,
+                1m) +
+            GetEffect(
+                effects,
+                PhantomFusionEffectType.BalbFlea,
+                4m,
+                2m) +
+            GetEffect(
+                effects,
+                PhantomFusionEffectType.ShrimpCrab,
+                5m,
+                2m) +
             GetSecondaryEffect(
                 effects,
                 PhantomFusionEffectType.LivingShield,
@@ -319,7 +376,10 @@ internal static class PhantomFusionEffectHelper
             GetSecondaryEffect(effects, PhantomFusionEffectType.TwigSlimeM, 1m, 0m) +
             GetEffect(effects, PhantomFusionEffectType.DecimillipedeSegment, 6m, 3m) +
             GetEffect(effects, PhantomFusionEffectType.SlimedBerserker, 8m, 0m) +
-            GetSecondaryEffect(effects, PhantomFusionEffectType.ScrollOfBiting, 0m, 1m);
+            GetSecondaryEffect(effects, PhantomFusionEffectType.ScrollOfBiting, 0m, 1m) +
+            GetEffect(effects, PhantomFusionEffectType.IvoryScooper, 8m, 4m) +
+            GetEffect(effects, PhantomFusionEffectType.PileGolemEdge, 10m, 5m) +
+            GetEffect(effects, PhantomFusionEffectType.SlimySerpent, 12m, 6m);
     }
 
     internal static decimal GetExtraMaxDp(string effectData)
@@ -329,7 +389,11 @@ internal static class PhantomFusionEffectHelper
         return GetEffect(effects, PhantomFusionEffectType.SmallHopper, 1m, 1m) +
             GetSecondaryEffect(effects, PhantomFusionEffectType.ClayKnocker, 2m, 1m) +
             GetSecondaryEffect(effects, PhantomFusionEffectType.Knocker, 1m, 1m) +
-            GetEffect(effects, PhantomFusionEffectType.TezukaSaki, 0m, 10m);
+            GetEffect(effects, PhantomFusionEffectType.TezukaSaki, 0m, 10m) +
+            GetEffect(effects, PhantomFusionEffectType.OctopusTail, 2m, 1m) +
+            GetEffect(effects, PhantomFusionEffectType.OctopusTailKiller, 3m, 1m) +
+            GetEffect(effects, PhantomFusionEffectType.BigotryGate, 4m, 2m) +
+            GetEffect(effects, PhantomFusionEffectType.PillarGuardian, 12m, 6m);
     }
 
     internal static int GetSkulkingColonyShellAmount(string effectData, decimal maximumHp)
@@ -448,6 +512,62 @@ internal static class PhantomFusionEffectHelper
         AddClayKnockerDescription(descriptions, effects, resourceOwner);
         AddKnockerDescription(descriptions, effects, resourceOwner);
         AddTezukaDescription(descriptions, effects, resourceOwner);
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.Marionette, 3m, 1m,
+            value => $"伤害减免+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.CatHorn, 4m, 2m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.WireSlasher, 1m, 1m,
+            value => $"第1次攻击意图段数+{Format(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.OctopusTail, 2m, 1m,
+            value => $"最大偏导护盾+{Resource(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.TargetWireFrame, 4m, 2m,
+            value => $"每第3次攻击意图，额外造成{Format(value)}点伤害。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.NeedleBird, 8m, 3m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.CrowHorse, 10m, 4m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.IvoryScooper, 8m, 4m,
+            value => $"最大生命值+{Resource(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.MarionetteKiller, 4m, 1m,
+            value => $"伤害减免+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.CrestHopperKiller, 6m, 2m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.DarkKnockerKiller, 6m, 3m,
+            value => $"每第3次攻击意图，额外造成{Format(value)}点伤害。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.CatHornKiller, 6m, 3m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.OctopusTailKiller, 3m, 1m,
+            value => $"最大偏导护盾+{Resource(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.AbyssKnockerKiller, 8m, 4m,
+            value => $"每第3次攻击意图，额外造成{Format(value)}点伤害。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.TargetWireFrameKiller, 1m, 1m,
+            value => $"第1次攻击意图段数+{Format(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.PileGolemEdge, 10m, 5m,
+            value => $"最大生命值+{Resource(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.DiamondEyeball, 12m, 5m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.BarrelWalker, 2m, 1m,
+            value => $"第1次攻击意图段数+{Format(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.BalbFlea, 4m, 2m,
+            value => $"伤害减免+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.TriClaw, 1m, 1m,
+            value => $"第1次攻击意图段数+{Format(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.BigotryGate, 4m, 2m,
+            value => $"最大偏导护盾+{Resource(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.CorollaKnife, 7m, 3m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.MolArms, 10m, 5m,
+            value => $"每第3次攻击意图，额外造成{Format(value)}点伤害。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.ShrimpCrab, 5m, 2m,
+            value => $"伤害减免+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.SlimySerpent, 12m, 6m,
+            value => $"最大生命值+{Resource(value)}。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.GiraffeHalo, 10m, 4m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.ArachneLine, 14m, 6m,
+            value => $"伤害增幅+{Format(value)}%。");
+        AddAmountDescription(descriptions, effects, PhantomFusionEffectType.PillarGuardian, 12m, 6m,
+            value => $"最大偏导护盾+{Resource(value)}。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.Toadpole, 4m, 2m,
             value => $"被召唤时，获得{Format(value)}层荆棘。");
         AddAmountDescription(descriptions, effects, PhantomFusionEffectType.DampCultist, 3m, 1m,
@@ -724,6 +844,34 @@ internal static class PhantomFusionEffectHelper
             Aeonglass => PhantomFusionEffectType.Aeonglass,
             FakeMerchantMonster => PhantomFusionEffectType.FakeMerchant,
             FlatHand => PhantomFusionEffectType.FlatHand,
+            Marionette => PhantomFusionEffectType.Marionette,
+            CatHorn => PhantomFusionEffectType.CatHorn,
+            WireSlasher => PhantomFusionEffectType.WireSlasher,
+            OctopusTail => PhantomFusionEffectType.OctopusTail,
+            TargetWireFrame => PhantomFusionEffectType.TargetWireFrame,
+            NeedleBird => PhantomFusionEffectType.NeedleBird,
+            CrowHorse => PhantomFusionEffectType.CrowHorse,
+            IvoryScooper => PhantomFusionEffectType.IvoryScooper,
+            MarionetteKiller => PhantomFusionEffectType.MarionetteKiller,
+            CrestHopperKiller => PhantomFusionEffectType.CrestHopperKiller,
+            DarkKnockerKiller => PhantomFusionEffectType.DarkKnockerKiller,
+            CatHornKiller => PhantomFusionEffectType.CatHornKiller,
+            OctopusTailKiller => PhantomFusionEffectType.OctopusTailKiller,
+            AbyssKnockerKiller => PhantomFusionEffectType.AbyssKnockerKiller,
+            TargetWireFrameKiller => PhantomFusionEffectType.TargetWireFrameKiller,
+            PileGolemEdge => PhantomFusionEffectType.PileGolemEdge,
+            DiamondEyeball => PhantomFusionEffectType.DiamondEyeball,
+            BarrelWalker => PhantomFusionEffectType.BarrelWalker,
+            BalbFlea => PhantomFusionEffectType.BalbFlea,
+            TriClaw => PhantomFusionEffectType.TriClaw,
+            BigotryGate => PhantomFusionEffectType.BigotryGate,
+            CorollaKnife => PhantomFusionEffectType.CorollaKnife,
+            MolArms => PhantomFusionEffectType.MolArms,
+            ShrimpCrab => PhantomFusionEffectType.ShrimpCrab,
+            SlimySerpent => PhantomFusionEffectType.SlimySerpent,
+            GiraffeHalo => PhantomFusionEffectType.GiraffeHalo,
+            ArachneLine => PhantomFusionEffectType.ArachneLine,
+            PillarGuardian => PhantomFusionEffectType.PillarGuardian,
             _ => PhantomFusionEffectType.None
         };
     }
@@ -1023,6 +1171,34 @@ internal static class PhantomFusionEffectHelper
             PhantomFusionEffectType.MysteriousKnight => new(2m, 1m, 6m, 3m),
             PhantomFusionEffectType.FakeMerchant => new(20m, 15m),
             PhantomFusionEffectType.FlatHand => new(1m, 1m),
+            PhantomFusionEffectType.Marionette => new(3m, 1m),
+            PhantomFusionEffectType.CatHorn => new(4m, 2m),
+            PhantomFusionEffectType.WireSlasher => new(1m, 1m),
+            PhantomFusionEffectType.OctopusTail => new(2m, 1m),
+            PhantomFusionEffectType.TargetWireFrame => new(4m, 2m),
+            PhantomFusionEffectType.NeedleBird => new(8m, 3m),
+            PhantomFusionEffectType.CrowHorse => new(10m, 4m),
+            PhantomFusionEffectType.IvoryScooper => new(8m, 4m),
+            PhantomFusionEffectType.MarionetteKiller => new(4m, 1m),
+            PhantomFusionEffectType.CrestHopperKiller => new(6m, 2m),
+            PhantomFusionEffectType.DarkKnockerKiller => new(6m, 3m),
+            PhantomFusionEffectType.CatHornKiller => new(6m, 3m),
+            PhantomFusionEffectType.OctopusTailKiller => new(3m, 1m),
+            PhantomFusionEffectType.AbyssKnockerKiller => new(8m, 4m),
+            PhantomFusionEffectType.TargetWireFrameKiller => new(1m, 1m),
+            PhantomFusionEffectType.PileGolemEdge => new(10m, 5m),
+            PhantomFusionEffectType.DiamondEyeball => new(12m, 5m),
+            PhantomFusionEffectType.BarrelWalker => new(2m, 1m),
+            PhantomFusionEffectType.BalbFlea => new(4m, 2m),
+            PhantomFusionEffectType.TriClaw => new(1m, 1m),
+            PhantomFusionEffectType.BigotryGate => new(4m, 2m),
+            PhantomFusionEffectType.CorollaKnife => new(7m, 3m),
+            PhantomFusionEffectType.MolArms => new(10m, 5m),
+            PhantomFusionEffectType.ShrimpCrab => new(5m, 2m),
+            PhantomFusionEffectType.SlimySerpent => new(12m, 6m),
+            PhantomFusionEffectType.GiraffeHalo => new(10m, 4m),
+            PhantomFusionEffectType.ArachneLine => new(14m, 6m),
+            PhantomFusionEffectType.PillarGuardian => new(12m, 6m),
             _ => default
         };
     }
@@ -1539,6 +1715,34 @@ internal static class PhantomFusionEffectHelper
             PhantomFusionEffectType.MysteriousKnight => "神秘骑士",
             PhantomFusionEffectType.FakeMerchant => "商人？？？",
             PhantomFusionEffectType.FlatHand => "FlatHand",
+            PhantomFusionEffectType.Marionette => "Marionette",
+            PhantomFusionEffectType.CatHorn => "CatHorn",
+            PhantomFusionEffectType.WireSlasher => "WireSlasher",
+            PhantomFusionEffectType.OctopusTail => "OctopusTail",
+            PhantomFusionEffectType.TargetWireFrame => "TargetWireFrame",
+            PhantomFusionEffectType.NeedleBird => "NeedleBird",
+            PhantomFusionEffectType.CrowHorse => "CrowHorse",
+            PhantomFusionEffectType.IvoryScooper => "IvoryScooper",
+            PhantomFusionEffectType.MarionetteKiller => "MarionetteKiller",
+            PhantomFusionEffectType.CrestHopperKiller => "CrestHopperKiller",
+            PhantomFusionEffectType.DarkKnockerKiller => "DarkKnockerKiller",
+            PhantomFusionEffectType.CatHornKiller => "CatHornKiller",
+            PhantomFusionEffectType.OctopusTailKiller => "OctopusTailKiller",
+            PhantomFusionEffectType.AbyssKnockerKiller => "AbyssKnockerKiller",
+            PhantomFusionEffectType.TargetWireFrameKiller => "TargetWireFrameKiller",
+            PhantomFusionEffectType.PileGolemEdge => "PileGolemEdge",
+            PhantomFusionEffectType.DiamondEyeball => "DiamondEyeball",
+            PhantomFusionEffectType.BarrelWalker => "BarrelWalker",
+            PhantomFusionEffectType.BalbFlea => "BalbFlea",
+            PhantomFusionEffectType.TriClaw => "TriClaw",
+            PhantomFusionEffectType.BigotryGate => "BigotryGate",
+            PhantomFusionEffectType.CorollaKnife => "CorollaKnife",
+            PhantomFusionEffectType.MolArms => "MolArms",
+            PhantomFusionEffectType.ShrimpCrab => "ShrimpCrab",
+            PhantomFusionEffectType.SlimySerpent => "SlimySerpent",
+            PhantomFusionEffectType.GiraffeHalo => "GiraffeHalo",
+            PhantomFusionEffectType.ArachneLine => "ArachneLine",
+            PhantomFusionEffectType.PillarGuardian => "PillarGuardian",
             _ => string.Empty
         };
     }

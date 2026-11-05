@@ -1,0 +1,240 @@
+{
+ "description": "Monster cutouts cut from HBR arcade-mode enemy cards in the local unpacked client (package 6.2.0.0). Seeds from a recovered per-pixel-mode card plate plus OpenCV GrabCut; the translucent rarity band is inverted with a per-channel linear model fitted across its top edge; CrestHopperKiller/DarkKnockerKiller/AbyssKnockerKiller/DiamondEyeball use same-pose arcade silhouettes.",
+ "items": [
+  {
+   "file": "images/monsters/hbrgo_act2/marionette_killer_cutout.png",
+   "monster": "MarionetteKiller",
+   "sha256": "3ADE20B3C007C818C659BC0600E7FBB4BFE6D91DB937B0563BCFDCB3B9DB1F77",
+   "size": [
+    219,
+    423
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/MarionetteKiller.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-4160809709707396787_MarionetteKiller.png",
+    "sha256": "C4180AE0FD5BE84B58407120D0FC6142E0A09CDE657FA5DA86EA5033183F4F95"
+   },
+   "cut": {
+    "bg_points": [
+     [
+      80,
+      200,
+      30
+     ],
+     [
+      80,
+      290,
+      20
+     ],
+     [
+      380,
+      260,
+      25
+     ],
+     [
+      360,
+      310,
+      12
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/crest_hopper_killer_cutout.png",
+   "monster": "CrestHopperKiller",
+   "sha256": "D31177693FCBA72A89A0726C35AF13AA9B8A0E8F4BC745314639BC068768F8D2",
+   "size": [
+    478,
+    554
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/CrestHopperKiller_tutorial.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_1033678836033217217_CrestHopperKiller_tutorial.png",
+    "sha256": "B0BA8CD64E037A2A7961AEF13E2EC510812C2EECF6C2B6183923C1F8118A7E01"
+   },
+   "cut": {
+    "mask": "mask_CrestHopperKiller_tutorial.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/CrestHopperKiller_tutorial.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-8093864711477253050_CrestHopperKiller_tutorial.png",
+    "sha256": "04A7E7A7C8ADB5F3CF783A4B0A8F108A9DD443FC21EF8DB1A4BDB9DD248C6435"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/dark_knocker_killer_cutout.png",
+   "monster": "DarkKnockerKiller",
+   "sha256": "723F0AD062A702FD6790AB479F3C5F659D2CB5FA183E5A1EF1B39077D4CB7C95",
+   "size": [
+    478,
+    640
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/DarkKnockerKiller_tutorial.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_5666556986785653515_DarkKnockerKiller_tutorial.png",
+    "sha256": "9F09652CCB3F301DA7611B4C0598EE3547F80C5B5BF87308085C4479582AE630"
+   },
+   "cut": {
+    "mask": "mask_DarkKnockerKiller_tutorial.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/DarkKnockerKiller_tutorial.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_5456198521059309182_DarkKnockerKiller_tutorial.png",
+    "sha256": "FC2A7B50D5849B4CC1F91892E30D972EB45BDA69129CE704A5C9C7B263992D39"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/cat_horn_killer_cutout.png",
+   "monster": "CatHornKiller",
+   "sha256": "2EA3F418DA7A0BF5F99710EBBE111EA8D8C7402D8E2AB5B51B0EAA1C9A2EFEB0",
+   "size": [
+    478,
+    627
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/CatHornKiller.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_3451212276232345884_CatHornKiller.png",
+    "sha256": "2A0B500E8DFB2182171C08E8A889EE7B67FD01BB69D9B7BF8C2BF4DC359F9C52"
+   },
+   "cut": {
+    "shadow_kmin": 0.2,
+    "shadow_resid": 16
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/octopus_tail_killer_cutout.png",
+   "monster": "OctopusTailKiller",
+   "sha256": "BC3C3EED3B6ECAFFEAABDE5930DE74C1619E9E9F4397BF83F528D3363D4B5740",
+   "size": [
+    478,
+    557
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/OctopusTailKiller.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-1495395929951329423_OctopusTailKiller.png",
+    "sha256": "C36CB8214D5B38CB056C8CB49A74B73F89CCB7EADCC8B08F29FD2E68017D6B28"
+   },
+   "cut": {
+    "bg_points": [
+     [
+      425,
+      60,
+      15
+     ],
+     [
+      315,
+      565,
+      12
+     ]
+    ]
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/abyss_knocker_killer_cutout.png",
+   "monster": "AbyssKnockerKiller",
+   "sha256": "1A0D68EF2AE47148B83645F00412C1FFB8C2121C02AE783CC3E4D32F02996B58",
+   "size": [
+    478,
+    611
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/AbyssKnockerKiller.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_6307575578049206262_AbyssKnockerKiller.png",
+    "sha256": "66C678A64502DB0130BB2913E7628ED4FC376EF425343FBFD4A18B0E64C14F2A"
+   },
+   "cut": {
+    "mask": "mask_AbyssKnockerKiller.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/AbyssKnockerKiller.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_9000694817075077030_AbyssKnockerKiller.png",
+    "sha256": "A626EC34E000EA71468976F5924FD91CEBF6446F11BB8727EAAD8423D0FBBEFA"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/target_wire_frame_killer_cutout.png",
+   "monster": "TargetWireFrameKiller",
+   "sha256": "92C2ABCA9F4D0E5987854B9157A38E48FB07CC72480511D3C82854F861A19855",
+   "size": [
+    478,
+    546
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/TargetWireFrameKiller.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_3644712907186033931_TargetWireFrameKiller.png",
+    "sha256": "F00A1D7C42FEC4E530319061E2B89026DCEB9014194E37E6ACBAC177897BE07C"
+   },
+   "cut": {
+    "palette_veto": true,
+    "veto_density": 12,
+    "veto_min_lum": 60
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/pile_golem_edge_cutout.png",
+   "monster": "PileGolemEdge",
+   "sha256": "207FADD25491979B9FAE7C5FD3640CC0A8D3AB0AA77752E38D7A276D995DA6C9",
+   "size": [
+    327,
+    555
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/PileGolemEdgeSmall.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_5452016729368642730_PileGolemEdgeSmall.png",
+    "sha256": "E51FC7A3CCECF6E2E394BF4D3918D63B835CCC37A37C27BA8F423386D0A68FF3"
+   },
+   "cut": {}
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/diamond_eyeball_cutout.png",
+   "monster": "DiamondEyeball",
+   "sha256": "16D6DC29FBA593A6DE97D32C5F7A698E5490E1837E0409567A1079E18E51E8CA",
+   "size": [
+    478,
+    528
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/DiamondEyeballDefault.png",
+    "bundle": "cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_-7266053508019824641_DiamondEyeballDefault.png",
+    "sha256": "720F0563663C9E2BF83A968BD942587A0804DCA40AD8FA0CF59D8189FE216AC5"
+   },
+   "cut": {
+    "mask": "mask_DiamondEyeballDefault.png",
+    "iters": 4
+   },
+   "silhouette": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season1/Mask/DiamondEyeballDefault.png",
+    "extracted_png": "images/cache/942755cb71b4ce766121d9e312b355f5/a159694e0e403d75113a07b4ec1005cc/090c0faa7080bb65_8519433594547322661_DiamondEyeballDefault.png",
+    "sha256": "951245CA475FF4EF8D47FED2D71288FC88E6B811CC49F5E80AB5161179971B3B"
+   }
+  },
+  {
+   "file": "images/monsters/hbrgo_act2/barrel_walker_cutout.png",
+   "monster": "BarrelWalker",
+   "sha256": "2F115F7E43A752D38737827071929791049289F20F78989D37A5D4044DA8F443",
+   "size": [
+    478,
+    625
+   ],
+   "source": {
+    "asset_path": "Assets/Contents/Image/Arcade/Enemy/Season4/BarrelWalkerDefault.png",
+    "bundle": "cache/71608cf88ee71d52919841693ef2d8ca/a143c38366f87adbccd77bf538b97d2e",
+    "extracted_png": "images/cache/71608cf88ee71d52919841693ef2d8ca/a143c38366f87adbccd77bf538b97d2e/107f494f1637422e_-2472613664761882901_BarrelWalkerDefault.png",
+    "sha256": "CB048F1C71097D50F9A4A93409D263C59FE98B95A988CC84D2BC7472A5A07525"
+   },
+   "cut": {}
+  }
+ ]
+}

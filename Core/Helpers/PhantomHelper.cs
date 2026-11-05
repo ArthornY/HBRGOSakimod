@@ -529,6 +529,11 @@ internal static class PhantomHelper
                 {
                     await narara.AfterPhantomIntentPerformed(move, targets);
                 }
+                else if (phantom.Monster is IHbrgoPhantomAttackEffects attackEffects)
+                {
+                    await attackEffects.AfterPhantomAttackIntent(move,
+                        targets.Where(IsValidPhantomTarget).ToArray());
+                }
             }
             finally
             {
@@ -921,6 +926,26 @@ internal static class PhantomHelper
                         fusionEffectData,
                         PhantomFusionEffectType.Mawler,
                         1m,
+                        1m) +
+                    PhantomFusionEffectHelper.GetEffect(
+                        fusionEffectData,
+                        PhantomFusionEffectType.WireSlasher,
+                        1m,
+                        1m) +
+                    PhantomFusionEffectHelper.GetEffect(
+                        fusionEffectData,
+                        PhantomFusionEffectType.TargetWireFrameKiller,
+                        1m,
+                        1m) +
+                    PhantomFusionEffectHelper.GetEffect(
+                        fusionEffectData,
+                        PhantomFusionEffectType.BarrelWalker,
+                        2m,
+                        1m) +
+                    PhantomFusionEffectHelper.GetEffect(
+                        fusionEffectData,
+                        PhantomFusionEffectType.TriClaw,
+                        1m,
                         1m)),
                 maximumSegments);
         }
@@ -942,7 +967,27 @@ internal static class PhantomHelper
                 fusionEffectData,
                 PhantomFusionEffectType.AbyssKnocker,
                 5m,
-                3m);
+                3m) +
+                PhantomFusionEffectHelper.GetEffect(
+                    fusionEffectData,
+                    PhantomFusionEffectType.TargetWireFrame,
+                    4m,
+                    2m) +
+                PhantomFusionEffectHelper.GetEffect(
+                    fusionEffectData,
+                    PhantomFusionEffectType.DarkKnockerKiller,
+                    6m,
+                    3m) +
+                PhantomFusionEffectHelper.GetEffect(
+                    fusionEffectData,
+                    PhantomFusionEffectType.AbyssKnockerKiller,
+                    8m,
+                    4m) +
+                PhantomFusionEffectHelper.GetEffect(
+                    fusionEffectData,
+                    PhantomFusionEffectType.MolArms,
+                    10m,
+                    5m);
             if (bonusDamage > 0m && segments.Count < maximumSegments)
             {
                 segments.Add(bonusDamage);
