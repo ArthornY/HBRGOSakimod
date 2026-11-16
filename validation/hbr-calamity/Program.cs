@@ -54,7 +54,7 @@ static class CalamityChecks
     static CalamityPower? Apply(decimal amount,Creature? target=null,Creature? applier=null,CardModel? card=null)=>
         PowerCmd.Apply<CalamityPower>(null!,target??State<Creature>("Enemy"),amount,applier??State<Creature>("Hero"),card,true).GetAwaiter().GetResult();
     static void Start(CalamityPower power,CombatSide? side=null,IReadOnlyList<Creature>? participants=null,ICombatState? combat=null)=>
-        power.BeforeSideTurnStart(null!,side??power.Owner.Side,participants??new[]{power.Owner},combat??power.Owner.CombatState).GetAwaiter().GetResult();
+        power.BeforeSideTurnStart(null!,side??power.Owner.Side,participants??new[]{power.Owner},combat??power.Owner.CombatState!).GetAwaiter().GetResult();
     static string Snapshot(CalamityPower power)=>$"{power.Amount}:{power.RemainingTurns}";
     static decimal[] Stats(Creature creature)
     {
@@ -71,11 +71,13 @@ static class CalamityChecks
         var relics=(List<RelicModel>)relicField.GetValue(State<Player>("Player"))!;
         relics.Add(relic);Register<CalamityPower>();Register<DoomPower>();Register<NativeCalamityPower>();
         var h=new Harmony("hbr.calamity.managed.checks");
-        foreach(string patch in new[]{"CalamityApplyPatch","CalamityModifyPatch","HbrNumericBlockPatch","HotaruCannonBlockScopePatch","HotaruCannonBlockRoundingPatch"})
+        foreach(string patch in new[]{"IntegerStatAmountPatch","HbrNumericBlockPatch","HotaruCannonBlockScopePatch","HotaruCannonBlockRoundingPatch"})
             Check(h.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat."+patch,true)!).Patch().Count>0,"installs real "+patch);
         h.Patch(Helper("HbrStatPowerHelper").GetMethod("GetOutgoingAttack",F)!,postfix:new HarmonyMethod(typeof(CalamityChecks).GetMethod(nameof(ObserveOutgoing),F)!));
-        h.Patch(AccessTools.Method(typeof(SfxCmd),"Play",[typeof(string),typeof(float)]),prefix:new HarmonyMethod(typeof(CalamityChecks).GetMethod(nameof(SkipFx),F)!));
-        h.Patch(AccessTools.Method(typeof(VfxCmd),"PlayOnCreatureCenter",[typeof(Creature),typeof(string)]),prefix:new HarmonyMethod(typeof(CalamityChecks).GetMethod(nameof(SkipFx),F)!));
+        foreach(var method in typeof(SfxCmd).GetMethods(F).Where(method=>method.Name=="Play"&&method.ReturnType==typeof(void)))
+            h.Patch(method,prefix:new HarmonyMethod(typeof(CalamityChecks).GetMethod(nameof(SkipFx),F)!));
+        foreach(var method in typeof(VfxCmd).GetMethods(F).Where(method=>method.Name=="PlayOnCreatureCenter"&&method.ReturnType==typeof(void)))
+            h.Patch(method,prefix:new HarmonyMethod(typeof(CalamityChecks).GetMethod(nameof(SkipFx),F)!));
         Check(ModelDb.Power<CalamityPower>().Id!=ModelDb.Power<NativeCalamityPower>().Id,"mod Calamity ID differs from original native Calamity buff");
         Check(ModelDb.Power<CalamityPower>().Type==MegaCrit.Sts2.Core.Entities.Powers.PowerType.Debuff&&ModelDb.Power<NativeCalamityPower>().Type==MegaCrit.Sts2.Core.Entities.Powers.PowerType.Buff,"mod debuff and native buff remain distinct types");
     }
@@ -86,61 +88,114 @@ static class CalamityChecks
         public override bool TryModifyPowerAmountReceived(PowerModel power,Creature target,decimal amount,Creature? applier,out decimal modified)
         {modified=amount;if(power is not CalamityPower||target!=Owner||amount<=0)return false;modified=amount/2m;return true;}
     }
+    static void End(CalamityPower power, CombatSide side = CombatSide.Enemy, IEnumerable<Creature>? participants = null) =>
+        power.AfterSideTurnEnd(null!, side, participants ?? new[] { power.Owner }).GetAwaiter().GetResult();
+    static CalamityPower[] Active(Creature target) => target.Powers.OfType<CalamityPower>().ToArray();
+    static void EndAll(Creature target, CombatSide side = CombatSide.Enemy)
+    { foreach (CalamityPower power in Active(target)) End(power, side); }
     static void ApplicationCases()
     {
-        Reset();Creature hero=State<Creature>("Hero"),enemy=State<Creature>("Enemy");
-        var first=Apply(8)!;Check(first.Amount==8&&first.RemainingTurns==2&&enemy.GetPower<CalamityPower>()==first,"native generic Apply creates eight reduction stacks with independent two-turn clock");
-        Start(first);Check(first.Amount==8&&first.RemainingTurns==1,"first actual owner start consumes time without decaying strength");
-        var weak=Apply(3,applier:enemy)!;Check(ReferenceEquals(weak,first)&&first.Amount==8&&first.RemainingTurns==2,"weaker native reapplication retains maximum and refreshes to two");
-        Check(first.Applier==hero,"refresh preserves original applier provenance");
-        Start(first);var equal=Apply(8)!;Check(ReferenceEquals(equal,first)&&first.Amount==8&&first.RemainingTurns==2,"equal application refreshes independent duration");
-        Start(first);var stronger=Apply(12)!;Check(stronger==first&&first.Amount==12&&first.RemainingTurns==2,"stronger application replaces strength by max rather than adding");
-        Check(enemy.Powers.OfType<CalamityPower>().Count()==1,"all generic reapplications retain one instance");
-        Start(first);PowerCmd.ModifyAmount(null!,first,0,hero,null,true).GetAwaiter().GetResult();Check(first.Amount==12&&first.RemainingTurns==1,"zero explicit offset never refreshes");
-        PowerCmd.ModifyAmount(null!,first,-2,hero,null,true).GetAwaiter().GetResult();Check(first.Amount==10&&first.RemainingTurns==1,"negative native offset reduces stacks but never refreshes");
-        PowerCmd.ModifyAmount(null!,first,4,hero,null,true).GetAwaiter().GetResult();Check(first.Amount==10&&first.RemainingTurns==2,"positive direct ModifyAmount applies max-and-refresh instead of addition");
-        Start(first);PowerCmd.ModifyAmount(null!,first,11,hero,null,true).GetAwaiter().GetResult();Check(first.Amount==11&&first.RemainingTurns==2,"positive stronger direct ModifyAmount replaces by maximum");
-        var supplied=(CalamityPower)ModelDb.Power<CalamityPower>().ToMutable();Start(first);
-        PowerCmd.Apply(null!,supplied,enemy,2,hero,null,true).GetAwaiter().GetResult();Check(enemy.GetPower<CalamityPower>()==first&&first.Amount==11&&first.RemainingTurns==2,"non-generic Apply shares the same existing-instance refresh semantics");
-
-        Reset();Apply(0);Apply(-1);Apply(.9m);Check(!enemy.HasPower<CalamityPower>(),"nonpositive and fractional-zero first applications never leave a zero-strength clock");
-        first=Apply(15)!;Start(first);Power<HalveIncoming>(enemy,1);Apply(20);
-        Check(first.Amount==15&&first.RemainingTurns==2,"max compares effective ten-stack received result rather than authored twenty");
-        Start(first);Apply(40);Check(first.Amount==20&&first.RemainingTurns==2,"receiver-modified stronger twenty replaces fifteen");
-        Reset();first=Apply(decimal.MaxValue)!;Check(first.Amount==999999999&&first.RemainingTurns==2,"huge application saturates at the native stack bound without overflow");
-
-        Reset();var artifact=Power<ArtifactPower>(enemy,1);Apply(8);Check(!enemy.HasPower<CalamityPower>(),"real Artifact blocks the first application entirely");
-        Check(artifact.Amount==0&&!enemy.Powers.Contains(artifact),"real receiver after-hook consumes Artifact once");
-        first=Apply(8)!;Start(first);artifact=Power<ArtifactPower>(enemy,1);string before=Snapshot(first);Apply(3);
-        Check(Snapshot(first)==before,"Artifact blocks a weaker zero-difference refresh before its timer changes");
-        Check(artifact.Amount==0&&!enemy.Powers.Contains(artifact),"blocked weaker refresh still consumes actual Artifact");
-        Reset();var doom=PowerCmd.Apply<DoomPower>(null!,enemy,2,hero,null,true).GetAwaiter().GetResult()!;
-        PowerCmd.Apply<DoomPower>(null!,enemy,3,hero,null,true).GetAwaiter().GetResult();Check(doom.Amount==5&&!enemy.HasPower<CalamityPower>(),"native Doom remains additive and is never replaced by the new debuff");
+        Reset(); Creature hero=State<Creature>("Hero"), enemy=State<Creature>("Enemy");
+        var first=Apply(8)!;
+        Check(first.Amount==8 && first.RemainingTurns==2 && Active(enemy).Single()==first,
+            "native generic Apply creates an eight-point independent two-enemy-end instance");
+        End(first);
+        var second=Apply(3, applier:enemy)!;
+        Check(!ReferenceEquals(first,second) && first.Amount==8 && first.RemainingTurns==1 &&
+            second.Amount==3 && second.RemainingTurns==2 && Active(enemy).Length==2,
+            "a weaker reapplication is a new None instance and never refreshes the older clock");
+        Check(first.Applier==hero && second.Applier==enemy, "independent applications retain their own applier provenance");
+        var third=Apply(8)!; var fourth=Apply(12)!;
+        Check(Active(enemy).Length==4 && new[]{first,second,third,fourth}.Distinct().Count()==4,
+            "None allows more than two independent equal or unequal applications");
+        Equal(CalamityPower.GetTotalReduction(enemy),31m,"all active Calamity strengths add rather than taking a maximum");
+        string secondBefore=Snapshot(second);
+        PowerCmd.ModifyAmount(null!,first,0,hero,null,true).GetAwaiter().GetResult();
+        Check(Snapshot(first)=="8:1", "zero direct amount mutation leaves the independent clock untouched");
+        PowerCmd.ModifyAmount(null!,first,-2,hero,null,true).GetAwaiter().GetResult();
+        PowerCmd.ModifyAmount(null!,first,4,hero,null,true).GetAwaiter().GetResult();
+        Check(Snapshot(first)=="10:1" && Snapshot(second)==secondBefore && Active(enemy).Length==4,
+            "direct native amount changes add/subtract only on the chosen instance without refreshing or merging");
+        var supplied=(CalamityPower)ModelDb.Power<CalamityPower>().ToMutable();
+        PowerCmd.Apply(null!,supplied,enemy,2,hero,null,true).GetAwaiter().GetResult();
+        Check(Active(enemy).Length==5 && Active(enemy).Contains(supplied) && supplied.Amount==2 && supplied.RemainingTurns==2,
+            "non-generic native Apply also creates a separate None instance");
+        Reset(); first=Apply(15)!; End(first); Power<HalveIncoming>(enemy,1);
+        var halved=Apply(20)!;
+        Check(first.Amount==15 && first.RemainingTurns==1 && halved.Amount==10 && halved.RemainingTurns==2,
+            "receiver modifiers affect only the new instance's strength, not an older instance or its clock");
+        Equal(CalamityPower.GetTotalReduction(enemy),25m,"the aggregate uses effective received strengths after native hooks");
+        Reset(); first=Apply(decimal.MaxValue)!;
+        Check(first.Amount==999999999 && first.RemainingTurns==2,"native amount normalization safely bounds a huge reduction grant");
+        Reset(); var artifact=Power<ArtifactPower>(enemy,1); Apply(8);
+        Check(!enemy.HasPower<CalamityPower>() && artifact.Amount==0 && !Powers(enemy).Contains(artifact),
+            "real Artifact blocks a first Calamity instance and consumes its charge");
+        first=Apply(8)!; End(first); artifact=Power<ArtifactPower>(enemy,1); string before=Snapshot(first);
+        Apply(3);
+        Check(Active(enemy).Length==1 && Snapshot(first)==before && artifact.Amount==0,
+            "Artifact rejects a fresh weaker instance without modifying the older strength or remaining time");
+        Reset(); var doom=PowerCmd.Apply<DoomPower>(null!,enemy,2,hero,null,true).GetAwaiter().GetResult()!;
+        PowerCmd.Apply<DoomPower>(null!,enemy,3,hero,null,true).GetAwaiter().GetResult();
+        Check(doom.Amount==5 && !enemy.HasPower<CalamityPower>(),"native Doom retains its original additive behavior");
         var vanilla=PowerCmd.Apply<NativeCalamityPower>(null!,hero,2,hero,null,true).GetAwaiter().GetResult()!;
-        PowerCmd.Apply<NativeCalamityPower>(null!,hero,3,hero,null,true).GetAwaiter().GetResult();Check(vanilla.Amount==5&&!hero.HasPower<CalamityPower>(),"native Calamity buff remains additive and does not enter custom patches");
+        PowerCmd.Apply<NativeCalamityPower>(null!,hero,3,hero,null,true).GetAwaiter().GetResult();
+        Check(vanilla.Amount==5 && !hero.HasPower<CalamityPower>(),"original native Calamity buff remains distinct and additive");
         Reset();
     }
     static void ClockAndSaveCases()
     {
-        Reset();Creature hero=State<Creature>("Hero"),enemy=State<Creature>("Enemy");var power=Apply(23)!;
-        Start(power,CombatSide.Player,new[]{enemy});Check(power.RemainingTurns==2,"wrong side does not advance owner clock");
-        Start(power,CombatSide.Enemy,new[]{hero});Check(power.RemainingTurns==2,"owner absent from actual turn participants does not tick");
-        Start(power,combat:Blank<CombatState>());Check(power.RemainingTurns==2,"unrelated combat state does not tick");
-        power.SkipNextDurationTick=true;Start(power);Check(power.RemainingTurns==1&&power.Amount==23,"actual turn start ignores native duration skip marker and keeps full strength");
-        var clone=(CalamityPower)power.ClonePreservingMutability();Check(clone.Owner==null&&clone.Amount==23&&clone.RemainingTurns==1,"real native clone retains saved one-turn clock independently of owner");
-        var property=typeof(CalamityPower).GetProperty("RemainingTurns")!;Check(property.GetCustomAttributes().Any(a=>a.GetType().Name=="SavedPropertyAttribute"),"remaining clock has explicit native saved-property metadata");
-        var restored=(CalamityPower)ModelDb.Power<CalamityPower>().ToMutable();Set(restored,"_amount",power.Amount);property.SetValue(restored,JsonSerializer.Deserialize<int>(JsonSerializer.Serialize(property.GetValue(power))));
-        Check(restored.Amount==23&&restored.RemainingTurns==1,"remaining-one roundtrip does not become stack count or reset to two");
-        property.SetValue(clone,2);Check(power.RemainingTurns==1&&power.Amount==23,"clone mutation leaves original clock and stacks untouched");
-        Start(power);Check(power.RemainingTurns==0&&!enemy.HasPower<CalamityPower>(),"second actual owner start removes the entire reduction rather than a layer");
-        power=Apply(4,hero)!;Start(power);Check(power.RemainingTurns==1,"player-owned debuff also ticks at its first actual start");
-        Start(power);Check(!hero.HasPower<CalamityPower>(),"player-owned debuff expires at its second actual start");Reset();
+        Reset(); Creature hero=State<Creature>("Hero"), enemy=State<Creature>("Enemy"); var first=Apply(23)!;
+        Start(first); Check(Snapshot(first)=="23:2", "turn starts no longer consume Calamity duration");
+        End(first,CombatSide.Player); Check(Snapshot(first)=="23:2", "player-side ends do not count an EnemyTurnEnd effect");
+        first.SkipNextDurationTick=true; End(first);
+        Check(Snapshot(first)=="23:1", "the first enemy-side end consumes time without decaying strength or skipping natively");
+        var second=Apply(7)!;
+        Check(second.RemainingTurns==2 && first.RemainingTurns==1,"later applications keep their own two-end clock");
+        var clone=(CalamityPower)first.ClonePreservingMutability();
+        Check(clone.Owner==null && clone.Amount==23 && clone.RemainingTurns==1,"native clone preserves strength and one remaining end independently of ownership");
+        var property=typeof(CalamityPower).GetProperty("RemainingTurns")!;
+        Check(property.GetCustomAttributes().Any(attribute=>attribute.GetType().Name=="SavedPropertyAttribute"),"remaining ends have native saved-property metadata");
+        var restored=(CalamityPower)ModelDb.Power<CalamityPower>().ToMutable(); Set(restored,"_amount",first.Amount);
+        property.SetValue(restored,JsonSerializer.Deserialize<int>(JsonSerializer.Serialize(property.GetValue(first))));
+        Check(restored.Amount==23 && restored.RemainingTurns==1,"save-value roundtrip retains remaining-one without resetting or converting it into strength");
+        property.SetValue(clone,2); Check(first.RemainingTurns==1 && first.Amount==23,"clone timer changes leave the source instance untouched");
+        EndAll(enemy);
+        Check(!Powers(enemy).Contains(first) && Powers(enemy).Contains(second) && second.RemainingTurns==1,
+            "one enemy-side end can expire the old instance while the newer instance stays at full strength");
+        Equal(CalamityPower.GetTotalReduction(enemy),7m,"expiry removes only the expired instance's reduction");
+        EndAll(enemy); Check(!enemy.HasPower<CalamityPower>(),"the second instance expires on its own second enemy-side end");
+        var playerDebuff=Apply(4,hero)!; Start(playerDebuff); End(playerDebuff,CombatSide.Player);
+        Check(playerDebuff.RemainingTurns==2,"a player holder's starts and player ends do not replace original EnemyTurnEnd timing");
+        End(playerDebuff,CombatSide.Enemy,[enemy]);
+        Check(playerDebuff.RemainingTurns==1,"an enemy-side end counts even though the debuffed player is not an enemy participant");
+        End(playerDebuff,CombatSide.Enemy,[enemy]); Check(!hero.HasPower<CalamityPower>(),"a player-held instance expires after two enemy-side ends");
+        Reset();
+    }
+    static void DoubleCases()
+    {
+        Reset(); Creature hero=State<Creature>("Hero"), enemy=State<Creature>("Enemy");
+        var first=Apply(8)!; End(first); var second=Apply(3)!;
+        var card=(CardModel)Fixture.GetMethod("OwnedCard",F)!.MakeGenericMethod(typeof(DoublePowersHbrgoSaki)).Invoke(null,null)!;
+        Invoke("Play",card,null);
+        Check(Active(enemy).Length==2 && Powers(enemy).Contains(first) && Powers(enemy).Contains(second),
+            "actual Double preserves every independent Calamity instance and its identity");
+        Check(Snapshot(first)=="16:2" && Snapshot(second)=="6:4",
+            "actual Double doubles each instance's strength and its own remaining duration");
+        Check(first.Applier==hero && second.Applier==hero,"Double does not replace original Calamity applier provenance");
+        EndAll(enemy);
+        Check(Snapshot(first)=="16:1" && Snapshot(second)=="6:3","doubled durations continue counting independently rather than clamping back to two");
+        EndAll(enemy); Equal(CalamityPower.GetTotalReduction(enemy),6m,"the shorter doubled instance expires without removing the longer one");
+        Reset(); var guarded=Apply(8)!; End(guarded); var artifact=Power<ArtifactPower>(enemy,1);
+        Invoke("Play",card,null);
+        Check(Snapshot(guarded)=="8:1", "Artifact rejects actual Double's strength and duration atomically for a Calamity instance");
+        Check(!Powers(enemy).Contains(artifact), "the native Artifact charge is consumed while rejecting the Calamity transformation");
+        Reset();
     }
     static void StatCases()
     {
         Reset();Creature hero=State<Creature>("Hero"),enemy=State<Creature>("Enemy");Player player=State<Player>("Player");
         AllStats(hero,100,"opening hero baseline");var heroDebuff=Apply(30,hero)!;AllStats(hero,70,"hero loses thirty in every attribute");
-        Power<StrengthPower>(hero,10);Power<DexterityPower>(hero,20);Check(Stats(hero).SequenceEqual(new decimal[]{80,80,90,70,70,70}),"native Strength/Dexterity retain their own stat mapping alongside Calamity");
+        Power<StrengthPower>(hero,10);Power<DexterityPower>(hero,20);Check(Stats(hero).SequenceEqual(new decimal[]{90,90,110,70,70,70}),"native Strength/Dexterity retain their own stat mapping alongside Calamity");
         Powers(hero).RemoveAll(p=>p is StrengthPower or DexterityPower);
         var phantom=Actor(Blank<SmallHopper>(),player);var phantomIdentity=Power<PhantomPower>(phantom,1);
         Set(phantomIdentity,"<IsSummonedMinion>k__BackingField",true);Set(phantomIdentity,"<SummonedMinionLevel>k__BackingField",7);
@@ -165,15 +220,15 @@ static class CalamityChecks
         for(int i=0;i<12;i++){Stats(hero);Stats(phantom);Stats(cannon);EnemyE(enemy);Call("HotaruCannonBlockHelper","Preview",hero,4m,null,cannon);}
         Check(manualBefore==State<ElectronicSoldierManual>("Manual").HbrBattleProgressData&&heroBefore==Snapshot(heroDebuff)&&enemyBefore==Snapshot(enemyDebuff)&&cannonBefore==Snapshot(cannon.GetPower<CalamityPower>()!),"repeated stats and previews never rewrite progression, stack or clock state");
         Apply(200,hero);AllStats(hero,0,"reduction above base floors every hero attribute at zero");Apply(1000,enemy);Equal(EnemyE(enemy),0,"reduction above enemy E floors at zero");
-        Reset();var expiring=Apply(30,hero)!;Start(expiring);AllStats(hero,70,"reduction stays full through remaining-one turn");Start(expiring);AllStats(hero,100,"clock expiry immediately restores original attributes");
-        var enemyExpiring=Apply(30,enemy)!;Start(enemyExpiring);Start(enemyExpiring);Equal(EnemyE(enemy),baseline,"enemy clock expiry restores original E without permanent loss");Reset();
+        Reset();var expiring=Apply(30,hero)!;End(expiring);AllStats(hero,70,"reduction stays full through remaining-one enemy end");End(expiring);AllStats(hero,100,"clock expiry immediately restores original attributes");
+        var enemyExpiring=Apply(30,enemy)!;End(enemyExpiring);End(enemyExpiring);Equal(EnemyE(enemy),baseline,"enemy clock expiry restores original E without permanent loss");Reset();
         var happiness=Actor(Blank<HotaruHappinessCannon>(),player);typeof(Millsage).GetProperty("HappinessUpgradeLevel",F)!.SetValue(player.GetRelic<Millsage>(),3);
         Power<StrengthPower>(hero,10);Apply(200,hero);LastOutgoing=null;
         Call("HotaruCannonStatsHelper","PreviewDamage",happiness,6m,false,null,HBRGOSakiMod.Core.Helpers.HotaruCannonPhase.End);
         Check(LastOutgoing is {Length:6}&&LastOutgoing[0]==0&&LastOutgoing[1]==0,"real Happiness Lv3 attack combines extra Strength before Calamity floors to zero");
-        Reset();Power<StrengthPower>(hero,10);Apply(105,hero);Apply(10,happiness);AllStats(happiness,0,"ordinary Happiness view floors normal source before upgrade-only bonus");LastOutgoing=null;
+        Reset();Power<StrengthPower>(hero,10);Apply(125,hero);Apply(10,happiness);AllStats(happiness,0,"ordinary Happiness view floors normal source before upgrade-only bonus");LastOutgoing=null;
         Call("HotaruCannonStatsHelper","PreviewDamage",happiness,6m,false,null,HBRGOSakiMod.Core.Helpers.HotaruCannonPhase.End);
-        Check(LastOutgoing is {Length:6}&&LastOutgoing[0]==5&&LastOutgoing[1]==5,"real Happiness Lv3 combines100 times1point2 minus105 minus10 to five without intermediate clamp loss");
+        Check(LastOutgoing is {Length:6}&&LastOutgoing[0]==5&&LastOutgoing[1]==5,"real Happiness Lv3 combines100 times1point4 minus125 minus10 to five without intermediate clamp loss");
         typeof(Millsage).GetProperty("HappinessUpgradeLevel",F)!.SetValue(player.GetRelic<Millsage>(),0);Reset();
     }
     static void ImmunityCases()
@@ -182,37 +237,44 @@ static class CalamityChecks
         FieldInfo enemies=(FieldInfo)Fixture.GetMethod("Field",F)!.Invoke(null,[typeof(CombatState),"_enemies"])!;object? old=enemies.GetValue(combat);Set(combat,"_enemies",new List<Creature>{boss});
         try
         {
+            // Nullification is switched off (2026-11-09): inside the card's own play the
+            // fresh independent application meets Artifact as it would anywhere else.
             Power<NararaNullificationPower>(boss,1);var resistance=Power<SixSenseResistancePower>(boss,1);typeof(SixSenseResistancePower).GetProperty("Resistances",F)!.SetValue(resistance,new[]{10,10,10,10,10,10});
-            var card=(FragileHbrgoSaki)Invoke("TestCard")!;ModelCapabilities.EnsureInitialized();ModelCapabilityRegistry.Register<SixSenseCardCapability>("fixture.calamity.six-sense");
-            var capability=ModelCapabilityRegistry.Create<SixSenseCardCapability>();Set(capability,"_attribute",SixSenseAttribute.Simplicity);card.Capabilities().Add(capability,false,false);
-            var current=Apply(8,boss)!;Start(current);var artifact=Power<ArtifactPower>(boss,1);string before=Snapshot(current);
+            var card=(FragileHbrgoSaki)Invoke("TestCard")!;
+            var current=Apply(8,boss)!;End(current);var artifact=Power<ArtifactPower>(boss,1);
             var scope=Call("NararaNullificationHelper","Begin",card)!;
-            try{Apply(3,boss,hero,card);Check(Snapshot(current)==before&&artifact.Amount==1,"actual captured Narara immunity rejects weak refresh before consuming Artifact or changing time");}
+            try{Check(!(bool)Call("NararaNullificationHelper","IsCardNullified",boss,card)!,"the switched-off Narara nullification captures no card");Apply(3,boss,hero,card);Check(artifact.Amount==0,"inside the card's play Artifact still blocks the application and is consumed, as without Narara");}
             finally{Call("NararaNullificationHelper","Close",scope);}
         }
         finally{Set(combat,"_enemies",old);Reset();}
+    }
+    static string RepositoryRoot()
+    {
+        for(DirectoryInfo? directory=new(AppContext.BaseDirectory);directory!=null;directory=directory.Parent)
+            if(File.Exists(Path.Combine(directory.FullName,"HBRGOSakiMod.csproj")))return directory.FullName;
+        throw new DirectoryNotFoundException("Fixture must remain below its checkout");
     }
     static void DescriptionCases()
     {
         var manager=Blank<LocManager>();Set(manager,"<Language>k__BackingField","zhs");Set(manager,"<CultureInfo>k__BackingField",CultureInfo.InvariantCulture);Set(manager,"<StringComparer>k__BackingField",StringComparer.Ordinal);
         typeof(LocManager).GetField("<Instance>k__BackingField",F)!.SetValue(null,manager);
-        string root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../"));var json=JsonSerializer.Deserialize<Dictionary<string,string>>(File.ReadAllText(Path.Combine(root,"HBRGOSakiMod/localization/zhs/powers.json")))!;
+        string root=RepositoryRoot();var json=JsonSerializer.Deserialize<Dictionary<string,string>>(File.ReadAllText(Path.Combine(root,"HBRGOSakiMod/localization/zhs/powers.json")))!;
         Set(manager,"_tables",new Dictionary<string,LocTable>{["powers"]=new LocTable("powers",json,null!)});typeof(LocManager).GetMethod("LoadLocFormatters",F)!.Invoke(manager,null);
         var canonical=ModelDb.Power<CalamityPower>();Check(!canonical.Description.GetFormattedText().Contains('{'),"canonical reference renders independent duration without requiring an owner");
-        var power=Apply(7)!;Start(power);var description=power.Description;string text=description.GetFormattedText();Check(!text.Contains('{')&&text.Contains("剩余1回合")&&Convert.ToInt32(description.Variables["Amount"],CultureInfo.InvariantCulture)==7,"owned description binds strength seven separately from rendered remaining-one timer");
+        var power=Apply(7)!;End(power);var description=power.Description;string text=description.GetFormattedText();Check(!text.Contains('{')&&text.Contains("剩余1个敌方回合")&&Convert.ToInt32(description.Variables["Amount"],CultureInfo.InvariantCulture)==7,"owned description binds strength seven separately from rendered remaining-one timer");
         Check(power.CustomPackedIconPath=="res://images/powers/hbr_calamity_power.png"&&power.CustomBigBetaIconPath==power.CustomPackedIconPath,"custom icon path is distinct from native Calamity buff icon");Reset();
     }
     public static Task Run()
     {
         bool ok=false;string? error=null;
-        try{Install();ApplicationCases();ClockAndSaveCases();StatCases();ImmunityCases();DescriptionCases();ok=true;}
+        try{Install();ApplicationCases();ClockAndSaveCases();DoubleCases();StatCases();ImmunityCases();DescriptionCases();ok=true;}
         catch(Exception failure){error=failure.ToString();Console.Error.WriteLine(failure);}
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"report.json"),JsonSerializer.Serialize(new{
             ok,checks=Passed.Count,passed=Passed,error,
             runtimeProfile=System.Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE")??"stable",
             modSha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeSha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(PowerModel).Assembly.Location))),
-            boundary="Reuses real native Fragile setup without running its 650 checks. Actual PowerCmd generic/non-generic Apply/ModifyAmount, Artifact hooks, Narara scope, real holder turn-start callbacks, native remove/clone and saved-property roundtrip, HBR six-stat/E helpers, owner-sourced cannon damage preview, native cannon block Gain command/scopes/writer, and native localization. Only Godot StringName/logging/hook enumeration plus sound/VFX leaves are isolated. No Doom replacement, full game UI, full save loading, multiplayer, package or upload."
+            boundary="Reuses real native Fragile setup without running its 650 checks. Actual PowerCmd generic/non-generic Apply/ModifyAmount, Artifact hooks, Narara scope, None/unlimited independent instances, real EnemyTurnEnd callbacks and actual Double card, native remove/clone and saved-property roundtrip, HBR six-stat/E helpers, owner-sourced cannon damage preview, native cannon block Gain command/scopes/writer, and native localization. Only Godot StringName/logging/hook enumeration plus sound/VFX leaves are isolated. No Doom replacement, full game UI, full save loading, multiplayer, package or upload."
         },new JsonSerializerOptions{WriteIndented=true}));
         Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" Calamity checks");if(!ok)throw new Exception("Calamity checks failed; inspect report.json");return Task.CompletedTask;
     }

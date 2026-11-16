@@ -245,7 +245,7 @@
   {
    "file": "images/monsters/hbrgo_act3/pillar_guardian_cutout.png",
    "monster": "PillarGuardian",
-   "sha256": "FDE0DD3773058FD5D4D0AF83D7FC4C75DA7959028D18F327E2D94BD76880D813",
+   "sha256": "E309F008277C428771F013EC9177357F5BE06D22E887E034BBA5BF222F8EC70C",
    "size": [
     478,
     625
@@ -380,6 +380,12 @@
      ]
     ],
     "near": 60
+   },
+   "alpha_cleanup": {
+    "date": "2026-11-07",
+    "previous_sha256": "FDE0DD3773058FD5D4D0AF83D7FC4C75DA7959028D18F327E2D94BD76880D813",
+    "note": "Background removed by lowering alpha only (RGB unchanged): the grey and pink flecks right of the ribbon tip and the maroon floor wedges at the pillar base and under the fork.",
+    "script": "D:/stsmod/outputs/monster-alpha-cleanup-20261107/cleanup.py"
    }
   }
  ]

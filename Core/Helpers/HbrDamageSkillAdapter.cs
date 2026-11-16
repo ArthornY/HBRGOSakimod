@@ -17,9 +17,10 @@ internal static class HbrDamageSkillAdapter
 {
     internal const decimal OutgoingPowerUnit = HbrSkillPower.OutgoingDamageUnit;
     internal const decimal IncomingPowerUnit = 100m;
+    internal const decimal EnvironmentalPowerUnit = HbrBattleStatsHelper.PlayerHealthScale;
     internal const decimal PlayerBlockUnit = HbrSkillPower.PlayerBlockUnit;
-    internal static readonly HbrStatWeights HpWeights = new(2, 1, 0, 0, 0, 0);
-    internal static readonly HbrStatWeights DpWeights = new(1, 2, 0, 0, 0, 0);
+    internal static readonly HbrStatWeights HpWeights = new(1, 1, 0, 0, 0, 0);
+    internal static readonly HbrStatWeights DpWeights = HpWeights;
 
     internal static decimal ConvertBaseDamage(Creature target, Creature dealer,
         decimal legacyPower, ValueProp props, CardModel cardSource) =>
@@ -31,17 +32,30 @@ internal static class HbrDamageSkillAdapter
         bool effectSkill = HbrEffectSkillDamageContext.TryClaimBaseConversion(
             target, dealer, cardSource, legacyPower, props, out Creature effectSource);
         Creature statSource = effectSkill ? effectSource : dealer;
+        decimal sourceUnit = EnemyStatScalingHelper.IsEnemy(statSource) ? IncomingPowerUnit : OutgoingPowerUnit;
         if (!props.IsPoweredAttack() && !effectSkill ||
             !effectSkill && !HbrBattleStatsHelper.IsEnabled(dealer))
             return legacyPower;
 
-        // Resource-derived attacks already carry a world-space DP/HP/block
-        // amount. They still receive normal attack modifiers, not another skill
-        // coefficient conversion or stat-curve/natural-critical evaluation.
+        // Resource-derived attacks already carry world-space DP/HP/block units.
+        // Normalize that basis before the same attribute/critical formula; never
+        // mistake a combat-world value for a raw legacy coefficient.
         if (!effectSkill && HbrAbsoluteBaseDamageContext.Matches(target, dealer, cardSource, legacyPower))
-            return bonusUnits == 0m ? legacyPower : DamageAmplificationLimits.AddSaturated(legacyPower,
-                EvaluateSkillDamage(target, statSource, dealer, bonusUnits, props, cardSource,
-                    effectSkill: false, allowCritical: false));
+            return EvaluateSkillDamage(target, statSource, dealer,
+                DamageAmplificationLimits.AddSaturated(DamageAmplificationLimits.AddSaturated(
+                    legacyPower / sourceUnit, bonusUnits),
+                    NiinaMakeupCombatHelper.GetBonusUnits(dealer, cardSource, props)),
+                props, cardSource, effectSkill: false, allowCritical: true);
+
+        if (effectSkill && HbrEffectSkillDamageContext.IsCurrentWorldBasis)
+            legacyPower /= sourceUnit;
+
+        if (!effectSkill)
+        {
+            legacyPower = DamageAmplificationLimits.AddSaturated(legacyPower,
+                NiinaMakeupCombatHelper.GetBonusUnits(dealer, cardSource, props));
+            legacyPower = ThirtyOneCMachinaHelper.ScaleSkillUnits(dealer, cardSource, props, legacyPower);
+        }
 
         // Keep the original command amount for source-scope matching above.
         // Vigor is a base coefficient: six units add 100 percentage points.
@@ -50,14 +64,18 @@ internal static class HbrDamageSkillAdapter
         // Both join before one check, so a zero-base Strike still gets them.
         // Effect skills may have no dealer, so only attacks look for the relic.
         decimal skillBonus = effectSkill ? bonusUnits : DamageAmplificationLimits.AddSaturated(
-            bonusUnits, GetStrikeDummyBonus(dealer, cardSource));
+            bonusUnits, DamageAmplificationLimits.AddSaturated(GetStrikeDummyBonus(dealer, cardSource),
+                HBRGOSakiMod.Core.Models.Relics.TigersMouthSnackBond.GetDamageBonusUnits(dealer, cardSource)));
         legacyPower = DamageAmplificationLimits.AddSaturated(legacyPower, skillBonus);
         if (legacyPower <= 0m) return legacyPower;
 
         // Audited environmental effects have no attacker to invent attributes
-        // for. Their coefficient still enters the normal target defenses/caps.
+        // for. Like fixed HP losses, their units keep the native share of the
+        // hundredfold player HP, then enter the normal target defenses/caps.
+        if (effectSkill && statSource == null && HbrEffectSkillDamageContext.IsCurrentWorldBasis)
+            return legacyPower * sourceUnit;
         if (effectSkill && statSource == null)
-            return HbrSkillPower.DamageBaseFromUnits(legacyPower);
+            return HbrSkillPower.DamageBaseFromUnits(legacyPower, EnvironmentalPowerUnit);
 
         ValueProp numericalProps = effectSkill
             ? HbrEffectSkillDamageContext.GetPersistentEffectProps(props) : props;
@@ -80,13 +98,22 @@ internal static class HbrDamageSkillAdapter
         bool incoming = EnemyStatScalingHelper.IsEnemy(statSource);
         if (incoming)
         {
-            if (!HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats defense))
-                return units;
-            defense = HbrStatPowerHelper.GetIncomingDefense(statSource, defense);
-            HbrEnemySkillProfile skill = HbrEnemySkillProfiles.Get(statSource);
-            return HbrOriginalNumericFormula.EvaluateIncomingAttackCurve(
-                HbrEnemyProfileHelper.GetEnemyParameter(statSource),
-                skill.EvaluateDefense(defense), skill.CurveFromUnits(units));
+            decimal defensiveParameter;
+            if (HbrBattleStatsHelper.TryGetStats(target, out HbrBattleStats defense))
+            {
+                defense = HbrStatPowerHelper.GetIncomingDefense(statSource, defense);
+                defensiveParameter = HbrEnemySkillProfiles.Get(statSource).EvaluateDefense(defense);
+            }
+            else if (EnemyStatScalingHelper.IsEnemy(target) && HbrBattleStatsHelper.IsEnabled(target))
+            {
+                // Confusion and enemy-owned reflections can hit another enemy.
+                // Its one E is the defensive parameter; do not invent or save
+                // six player attributes, or return unscaled raw skill units.
+                defensiveParameter = HbrEnemyProfileHelper.GetEnemyParameter(target);
+            }
+            else return units;
+            return HbrSkillPower.EvaluateIncomingDamageFromUnits(units,
+                HbrEnemyProfileHelper.GetEnemyParameter(statSource), defensiveParameter, IncomingPowerUnit);
         }
 
         if (!HbrBattleStatsHelper.TryGetStats(statSource, out HbrBattleStats stats))
@@ -100,8 +127,8 @@ internal static class HbrDamageSkillAdapter
             : !HbrEffectSkillDamageContext.HasEffectCommand && HbrCriticalDamageContext.IsCritical(target, dealer,
                 cardSource, props, stats.Luck, parameter));
         bool hpOnlyEffect = effectSkill && HpOnlyDamageContext.IsCurrentHpDamage(target, dealer, cardSource, props);
-        HbrStatWeights weights = !hpOnlyEffect && target?.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m
-            ? DpWeights : HpWeights;
+        HbrStatWeights weights = HbrSkillAttributeProfiles.GetDamageWeights(cardSource,
+            !hpOnlyEffect && target?.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m);
         decimal power = HbrSkillPower.EvaluateDamageFromUnits(units,
             HbrOriginalNumericFormula.EvaluateWeightedStat(stats, weights), parameter, critical);
         return critical ? DamageAmplificationLimits.MultiplySaturated(power,
@@ -116,9 +143,9 @@ internal static class HbrDamageSkillAdapter
             return HbrBattleStatsHelper.IsEnabled(dealer) ? 0m : amount;
         if (model is StrikeDummy dummy && HbrBattleStatsHelper.IsEnabled(dummy.Owner) &&
             HbrBattleStatsHelper.IsEnabled(dealer)) return 0m;
-        // Miniature Cannon's raw three units are a 50% additive skill, applied
+        // Audited raw additive units use six to 100% skill power, applied
         // at the native additive stage before the attack's multipliers/caps.
-        if (enabled && amount > 0m && model is MegaCrit.Sts2.Core.Models.Relics.MiniatureCannon &&
+        if (enabled && amount > 0m && HbrAdditiveSkillDamageSources.Supports(model) &&
             HbrBattleStatsHelper.IsEnabled(dealer))
             return EvaluateSkillDamage(target, dealer, dealer, amount, props, cardSource,
                 HbrEffectSkillDamageContext.IsCurrentEffectCalculation, allowCritical);

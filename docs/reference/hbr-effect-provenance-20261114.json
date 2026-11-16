@@ -1,0 +1,870 @@
+{
+  "schema": 1,
+  "snapshotDate": "2026-11-14",
+  "skillsSource": {
+    "url": "https://master.hbr.quest/v1/cn/skills.json",
+    "sha256": "61040d2ff14404c282fed009fd754a143dcade28bb5314ddeb93ba646e86e8b4",
+    "count": 658,
+    "localSnapshot": "outputs/hbr-effect-framework-20261114/reference/skills.json"
+  },
+  "verifiedSkills": [
+    {
+      "id": 46001106,
+      "label": "RKayamoriSkill51",
+      "name": "梦幻泡影",
+      "parts": [
+        {
+          "label": "RKayamoriSkill51",
+          "skill_type": "AttackSkill",
+          "parameters": {
+            "str": 2,
+            "wis": 0,
+            "dex": 1,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            4005.0,
+            8010.0
+          ],
+          "diff_for_max": 138,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "None",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 46001112,
+      "label": "RKayamoriSkill54",
+      "name": "迅雷风烈",
+      "parts": [
+        {
+          "label": "RKayamoriSkill54",
+          "skill_type": "AttackSkill",
+          "parameters": {
+            "str": 2,
+            "wis": 0,
+            "dex": 1,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            6682.5,
+            13365.0
+          ],
+          "diff_for_max": 149,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "None",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "label": "RKayamoriSkill54_2",
+          "skill_type": "DefenseDown",
+          "parameters": {
+            "str": 0,
+            "wis": 2,
+            "dex": 0,
+            "spr": 0,
+            "luk": 1,
+            "con": 0
+          },
+          "power": [
+            0.3,
+            0.45
+          ],
+          "diff_for_max": 149,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "Default",
+            "exitCond": "EnemyTurnEnd",
+            "exitVal": [
+              1,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 46001120,
+      "label": "RKayamoriSkill56",
+      "name": "若向流星歌唱",
+      "parts": [
+        {
+          "label": "RKayamoriSkill56",
+          "skill_type": "CriticalRateUp",
+          "parameters": {
+            "str": 0,
+            "wis": 0,
+            "dex": 0,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            1.0,
+            0.0
+          ],
+          "diff_for_max": 0,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "Only",
+            "exitCond": "PlayerTurnEnd",
+            "exitVal": [
+              5,
+              0
+            ]
+          }
+        },
+        {
+          "label": "RKayamoriSkill56_2",
+          "skill_type": "CriticalDamageUp",
+          "parameters": {
+            "str": 0,
+            "wis": 0,
+            "dex": 0,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            1.0,
+            0.0
+          ],
+          "diff_for_max": 0,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "Only",
+            "exitCond": "PlayerTurnEnd",
+            "exitVal": [
+              5,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 46002113,
+      "label": "EAoiSkill07",
+      "name": "心动滑行",
+      "parts": [
+        {
+          "label": "EAoiSkill07",
+          "skill_type": "Morale",
+          "parameters": {
+            "str": 0,
+            "wis": 0,
+            "dex": 0,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            2.0,
+            0.0
+          ],
+          "diff_for_max": 0,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "Eternal",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 46002511,
+      "label": "KHiiragiSkill54",
+      "name": "邪眼·海浪斩击",
+      "parts": [
+        {
+          "label": "KHiiragiSkill54a",
+          "skill_type": "AttackSkill",
+          "parameters": {
+            "str": 2,
+            "wis": 0,
+            "dex": 1,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            5105.625,
+            10211.25
+          ],
+          "diff_for_max": 149,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "None",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "label": "KHiiragiSkill54b",
+          "skill_type": "AttackSkill",
+          "parameters": {
+            "str": 2,
+            "wis": 0,
+            "dex": 1,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            5105.625,
+            10211.25
+          ],
+          "diff_for_max": 149,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "None",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 46004304,
+      "label": "MKiryuSkill03",
+      "name": "神妙",
+      "parts": [
+        {
+          "label": "MKiryuSkill03",
+          "skill_type": "AttackSkill",
+          "parameters": {
+            "str": 1,
+            "wis": 0,
+            "dex": 1,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            1815.0,
+            3630.0
+          ],
+          "diff_for_max": 129,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "None",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "label": "MKiryuSkill03_2",
+          "skill_type": "Misfortune",
+          "parameters": {
+            "str": 0,
+            "wis": 0,
+            "dex": 0,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            2.0,
+            0.0
+          ],
+          "diff_for_max": 0,
+          "dv": 20,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "EnemyTurnEnd",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 46004309,
+      "label": "MKiryuSkill53",
+      "name": "冰华，千射万箭",
+      "parts": [
+        {
+          "label": "MKiryuSkill53",
+          "skill_type": "AttackSkill",
+          "parameters": {
+            "str": 1,
+            "wis": 0,
+            "dex": 1,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            4177.5,
+            8355.0
+          ],
+          "diff_for_max": 144,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "None",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "label": "MKiryuSkill53_2",
+          "skill_type": "DefenseDown",
+          "parameters": {
+            "str": 0,
+            "wis": 2,
+            "dex": 0,
+            "spr": 0,
+            "luk": 1,
+            "con": 0
+          },
+          "power": [
+            0.2,
+            0.3
+          ],
+          "diff_for_max": 144,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "Default",
+            "exitCond": "Eternal",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "label": "MKiryuSkill53_3",
+          "skill_type": "DefenseDown",
+          "parameters": {
+            "str": 0,
+            "wis": 2,
+            "dex": 0,
+            "spr": 0,
+            "luk": 1,
+            "con": 0
+          },
+          "power": [
+            0.1,
+            0.2
+          ],
+          "diff_for_max": 144,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "Default",
+            "exitCond": "Eternal",
+            "exitVal": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "genericWeightExamples": {
+    "DefenseDown": {
+      "skillId": 46001112,
+      "skillLabel": "RKayamoriSkill54",
+      "skillName": "迅雷风烈",
+      "part": {
+        "label": "RKayamoriSkill54_2",
+        "skill_type": "DefenseDown",
+        "parameters": {
+          "str": 0,
+          "wis": 2,
+          "dex": 0,
+          "spr": 0,
+          "luk": 1,
+          "con": 0
+        },
+        "power": [
+          0.3,
+          0.45
+        ],
+        "diff_for_max": 149,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "AttackUp": {
+      "skillId": 46001121,
+      "skillLabel": "RKayamoriSkill57",
+      "skillName": "燃烧吧青春！海洋球！",
+      "part": {
+        "label": "RKayamoriSkill57aaa_2",
+        "skill_type": "AttackUp",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 0,
+          "con": 0
+        },
+        "power": [
+          1.5,
+          1.8
+        ],
+        "diff_for_max": 144,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Only",
+          "exitCond": "PlayerTurnEnd",
+          "exitVal": [
+            3,
+            0
+          ]
+        }
+      }
+    },
+    "Fragile": {
+      "skillId": 46001215,
+      "skillLabel": "YIzumiSkill56",
+      "skillName": "暗夜代码",
+      "part": {
+        "label": "YIzumiSkill56a_3",
+        "skill_type": "Fragile",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 2,
+          "con": 0
+        },
+        "power": [
+          0.42,
+          0.6
+        ],
+        "diff_for_max": 149,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            2,
+            0
+          ]
+        }
+      }
+    },
+    "CriticalRateUp": {
+      "skillId": 46001413,
+      "skillLabel": "TTojoSkill55",
+      "skillName": "幻影时刻",
+      "part": {
+        "label": "TTojoSkill55",
+        "skill_type": "CriticalRateUp",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 0,
+          "con": 0
+        },
+        "power": [
+          0.9,
+          1.0
+        ],
+        "diff_for_max": 272,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Only",
+          "exitCond": "PlayerTurnEnd",
+          "exitVal": [
+            5,
+            0
+          ]
+        }
+      }
+    },
+    "AttackDown": {
+      "skillId": 46001705,
+      "skillLabel": "TKunimiSkill04",
+      "skillName": "火焰风暴",
+      "part": {
+        "label": "TKunimiSkill04_2",
+        "skill_type": "AttackDown",
+        "parameters": {
+          "str": 0,
+          "wis": 2,
+          "dex": 0,
+          "spr": 0,
+          "luk": 1,
+          "con": 0
+        },
+        "power": [
+          0.2,
+          0.3
+        ],
+        "diff_for_max": 129,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "DefenseUp": {
+      "skillId": 46002105,
+      "skillLabel": "EAoiSkill04",
+      "skillName": "我来为您点餐",
+      "part": {
+        "label": "EAoiSkill04",
+        "skill_type": "DefenseUp",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 0,
+          "con": 0
+        },
+        "power": [
+          0.3,
+          0.45
+        ],
+        "diff_for_max": 192,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    }
+  },
+  "enemySnapshots": [
+    {
+      "id": 13003117,
+      "label": "BigotryGateSmall_01",
+      "snapshot": "outputs/monster-mechanics-hbrquest-20261107/enemies/BigotryGateSmall_01.json",
+      "sha256": "096cf21eca74ae8a16ec9cd6d267be3663466ec3e6ad385dafdacfb56f45966a",
+      "parts": [
+        {
+          "label": "BigotryGate_AttackAll01_2",
+          "skill_type": "SpiritDownRate",
+          "parameters": {
+            "str": 0,
+            "wis": 1,
+            "dex": 0,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            0.5,
+            0.5
+          ],
+          "diff_for_max": 250,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "EnemyTurnEnd",
+            "exitVal": [
+              2,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 13004087,
+      "label": "MolArmsSmall",
+      "snapshot": "outputs/monster-mechanics-hbrquest-20261107/enemies/MolArmsSmall.json",
+      "sha256": "313089a02826900b5641a41d3dccb2cfd2ec659935f9481c9d589f6e6a9b32c6",
+      "parts": [
+        {
+          "label": "MolArms_AttackSingle02_2",
+          "skill_type": "WisdomDownRate",
+          "parameters": {
+            "str": 0,
+            "wis": 0,
+            "dex": 0,
+            "spr": 0,
+            "luk": 0,
+            "con": 0
+          },
+          "power": [
+            0.8,
+            0.0
+          ],
+          "diff_for_max": 0,
+          "dv": 0,
+          "effect": {
+            "ir": false,
+            "category": "None",
+            "limitType": "None",
+            "exitCond": "EnemyTurnEnd",
+            "exitVal": [
+              3,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "adaptationNotes": [
+    "Original power endpoints and diff_for_max are retained here as provenance only; runtime uses user-authored fixed bases and unclamped linear effect potency.",
+    "Only falls back to Default until its exact runtime semantics are verified.",
+    "Shooting Star Song uses user-selected critical rate INT scaling, fixed critical damage, and 3/4 player-turn-end duration despite original fixed parameters and duration5.",
+    "Ice Flower DefenseDown uses verified Eternal; its mod-authored Fragile has no homologous original part and uses generic EnemyTurnEnd1.",
+    "Thunder Gale original DefenseDown does not supply an original Fragile part; mod Fragile uses generic profile.",
+    "Exorcism Arrow alias to MKiryuSkill01 is unconfirmed; Full Body Shot is unmatched; neither is asserted as a verified named mapping.",
+    "Godly/Myou Misfortune has EnemyTurnEnd, power2 and dv20 but exitVal0 in this snapshot; mod uses the shared authored two-turn Calamity profile."
+  ],
+  "commonProfileExamples": {
+    "AttackUp": {
+      "matchingParts": 88,
+      "countingMethod": "All recursively encountered skill parts in the frozen skills snapshot; conditional variants count as separate declared parts.",
+      "part": {
+        "label": "RKayamoriSkill52Ev1a_2",
+        "skill_type": "AttackUp",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 0,
+          "con": 0
+        },
+        "power": [
+          0.6,
+          0.75
+        ],
+        "diff_for_max": 147,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "Count",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "DefenseUp": {
+      "matchingParts": 12,
+      "countingMethod": "All recursively encountered skill parts in the frozen skills snapshot; conditional variants count as separate declared parts.",
+      "part": {
+        "label": "EAoiSkill04",
+        "skill_type": "DefenseUp",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 0,
+          "con": 0
+        },
+        "power": [
+          0.3,
+          0.45
+        ],
+        "diff_for_max": 192,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "AttackDown": {
+      "matchingParts": 13,
+      "countingMethod": "All recursively encountered skill parts in the frozen skills snapshot; conditional variants count as separate declared parts.",
+      "part": {
+        "label": "TKunimiSkill04_2",
+        "skill_type": "AttackDown",
+        "parameters": {
+          "str": 0,
+          "wis": 2,
+          "dex": 0,
+          "spr": 0,
+          "luk": 1,
+          "con": 0
+        },
+        "power": [
+          0.2,
+          0.3
+        ],
+        "diff_for_max": 129,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "DefenseDown": {
+      "matchingParts": 68,
+      "countingMethod": "All recursively encountered skill parts in the frozen skills snapshot; conditional variants count as separate declared parts.",
+      "part": {
+        "label": "RKayamoriSkill54_2",
+        "skill_type": "DefenseDown",
+        "parameters": {
+          "str": 0,
+          "wis": 2,
+          "dex": 0,
+          "spr": 0,
+          "luk": 1,
+          "con": 0
+        },
+        "power": [
+          0.3,
+          0.45
+        ],
+        "diff_for_max": 149,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "Fragile": {
+      "matchingParts": 17,
+      "countingMethod": "All recursively encountered skill parts in the frozen skills snapshot; conditional variants count as separate declared parts.",
+      "part": {
+        "label": "MAikawaSkill03_2",
+        "skill_type": "Fragile",
+        "parameters": {
+          "str": 0,
+          "wis": 1,
+          "dex": 0,
+          "spr": 0,
+          "luk": 2,
+          "con": 0
+        },
+        "power": [
+          0.42,
+          0.6
+        ],
+        "diff_for_max": 132,
+        "dv": 0,
+        "effect": {
+          "ir": false,
+          "category": "None",
+          "limitType": "Default",
+          "exitCond": "EnemyTurnEnd",
+          "exitVal": [
+            1,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

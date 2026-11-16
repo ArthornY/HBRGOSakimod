@@ -20,9 +20,7 @@ public sealed class SynergyHbrgoSaki : CardModel
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new[]
         {
-            HoverTipFactory.FromPower<SynergyPower>(),
-            HoverTipFactory.FromPower<DualSwordsCounterPower>(),
-            HoverTipFactory.FromPower<BowCounterPower>()
+            HoverTipFactory.FromPower<SynergyPower>()
         };
 
     public SynergyHbrgoSaki()

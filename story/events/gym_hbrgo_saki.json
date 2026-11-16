@@ -68,6 +68,17 @@
             "senseAmount": 0,
             "cardChoices": 0
           }
+        },
+        {
+          "id": "MORE_MEMORIES",
+          "text": "更多回忆",
+          "description": "选择另一段回忆。",
+          "nextPage": "MORE_MEMORIES_1",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
         }
       ],
       "characters": []
@@ -148,6 +159,428 @@
       "lines": [],
       "choices": [],
       "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_1",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_MIYA",
+          "text": "桐生美也",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MIYA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_CHIE",
+          "text": "菅原千惠",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_CHIE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_SUMOMO",
+          "text": "水濑李",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_SUMOMO",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_ICHIGO",
+          "text": "水濑莓",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_ICHIGO",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_CHARLOTTA",
+          "text": "夏洛塔·斯科波夫斯卡娅",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_CHARLOTTA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "NEXT_MEMORIES",
+          "text": "下一页",
+          "description": "查看更多回忆。",
+          "nextPage": "MORE_MEMORIES_2",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_2",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_CHIRORU",
+          "text": "松冈千吕瑠",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_CHIRORU",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_MARIA",
+          "text": "玛利亚·德·安洁莉斯",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MARIA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_SHIKI",
+          "text": "华村诗纪",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_SHIKI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "RETURN_TO_INITIAL",
+          "text": "返回",
+          "description": "返回最初的回忆选项。",
+          "nextPage": "INITIAL",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MEMORY_MIYA",
+      "title": "桐生美也",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了桐生美也。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "miya"
+      ]
+    },
+    {
+      "id": "MEMORY_CHIE",
+      "title": "菅原千惠",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了菅原千惠。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "chie"
+      ]
+    },
+    {
+      "id": "MEMORY_SUMOMO",
+      "title": "水濑李",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了水濑李。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "sumomo"
+      ]
+    },
+    {
+      "id": "MEMORY_ICHIGO",
+      "title": "水濑莓",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了水濑莓。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "ichigo"
+      ]
+    },
+    {
+      "id": "MEMORY_CHARLOTTA",
+      "title": "夏洛塔·斯科波夫斯卡娅",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了夏洛塔·斯科波夫斯卡娅。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "charlotta"
+      ]
+    },
+    {
+      "id": "MEMORY_CHIRORU",
+      "title": "松冈千吕瑠",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了松冈千吕瑠。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "精神力+8，从3张卡牌中选择1张获得。",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "MentalStrength",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "chiroru"
+      ]
+    },
+    {
+      "id": "MEMORY_MARIA",
+      "title": "玛利亚·德·安洁莉斯",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了玛利亚·德·安洁莉斯。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "maria"
+      ]
+    },
+    {
+      "id": "MEMORY_SHIKI",
+      "title": "华村诗纪",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了华村诗纪。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "shiki"
+      ]
     }
   ]
 }

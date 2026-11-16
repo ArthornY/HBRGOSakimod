@@ -17,16 +17,16 @@ internal static class StrikePortraitPatch
         }
         ModNodeAttachmentRegistry.EnsureReadyAttachments(__instance);
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
-                __instance, HBRGOSakiCombatUiIntegration.SixSenseEnergyIconAttachmentId,
-                out NSixSenseEnergyIcon energyIcon))
-        {
-            energyIcon.Refresh();
-        }
-        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
                 __instance, HBRGOSakiCombatUiIntegration.StrikePortraitAttachmentId,
                 out NHbrgoStrikePortrait portrait))
         {
             portrait.Refresh(force: true);
+        }
+        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
+                __instance, HBRGOSakiCombatUiIntegration.CardStyleAttachmentId,
+                out NHbrCardStyle style))
+        {
+            style.Refresh();
         }
     }
 }

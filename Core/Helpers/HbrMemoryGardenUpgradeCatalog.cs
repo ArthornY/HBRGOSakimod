@@ -19,10 +19,8 @@ internal sealed record MemoryGardenUpgradeSkill(
 
 internal static class HbrMemoryGardenUpgradeCatalog
 {
-    // Some cards can take only six upgrades because two of their seven skills
-    // are mutually exclusive. Browsing must include both branches and skills
-    // whose prerequisites have not yet been acquired.
-    private const int UpgradeSkillCount = 7;
+    // Candidate count is distinct from the seven upgrades a card may acquire.
+    internal static int GetCandidateCount(CardModel card) => card is SaviorGrandEntranceHbrgoSaki ? 8 : 7;
 
     // CardCmd.Upgrade is synchronous. Authorize only the selected card while
     // applying a garden effect; unrelated upgrades triggered by hooks stay out.
@@ -37,7 +35,7 @@ internal static class HbrMemoryGardenUpgradeCatalog
         if (!HbrMemoryGardenCardCatalog.IsGardenCard(card))
             return Array.Empty<MemoryGardenUpgradeSkill>();
 
-        return Enumerable.Range(0, UpgradeSkillCount).Select(effectId =>
+        return Enumerable.Range(0, GetCandidateCount(card)).Select(effectId =>
         {
             string title = GetEffectTitle(card, effectId);
             string description = GetEffectDescription(card, effectId.ToString());
@@ -45,7 +43,6 @@ internal static class HbrMemoryGardenUpgradeCatalog
             {
                 AnonAidHbrgoSaki when effectId == 5 => 4,
                 SoyoAidHbrgoSaki when effectId == 1 => 0,
-                WorldsFinestHbrgoSaki when effectId is 1 or 2 => effectId - 1,
                 _ => null
             };
             if (prerequisite is int required)
@@ -81,6 +78,8 @@ internal static class HbrMemoryGardenUpgradeCatalog
             CrushYouLikeABugHbrgoSaki karen => karen.GetAvailableUpgradeEffects(),
             SummerGrassDreamHbrgoSaki saki => saki.GetAvailableUpgradeEffects(),
             BoostUpHbrgoSaki nanami => nanami.GetAvailableUpgradeEffects(),
+            ByakkoRoarHbrgoSaki byakko => byakko.GetAvailableUpgradeEffects(),
+            ThirtyOneBGardenCard member => member.GetAvailableUpgradeEffects(),
             _ => new[] { 0 }
         };
         return HbrMemoryGardenDampen.FilterAvailableEffects(card, effects);
@@ -102,7 +101,7 @@ internal static class HbrMemoryGardenUpgradeCatalog
             preview.UpgradeInternal();
             // Leave native upgrade preview flags intact so the selected variant
             // shows its cost/value changes. Cloning also preserves six-sense data.
-            string suffix = owned is HerSongIsMyScreamHbrgoSaki or MatchaParfaitHbrgoSaki or AnonAidHbrgoSaki or SoyoAidHbrgoSaki or LostStarSongHbrgoSaki or HalfBodyHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki or SummerGrassDreamHbrgoSaki or BoostUpHbrgoSaki
+            string suffix = owned is HerSongIsMyScreamHbrgoSaki or MatchaParfaitHbrgoSaki or AnonAidHbrgoSaki or SoyoAidHbrgoSaki or LostStarSongHbrgoSaki or HalfBodyHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki or SummerGrassDreamHbrgoSaki or BoostUpHbrgoSaki or ByakkoRoarHbrgoSaki or ThirtyOneBGardenCard
                 ? effectId.ToString() : "legacy";
             offers.Add(new(effectId,
                 new LocString("cards", owned.Id.Entry + ".upgrade_effect_title." + suffix).GetFormattedText(),
@@ -112,18 +111,37 @@ internal static class HbrMemoryGardenUpgradeCatalog
         return offers;
     }
 
+    // Choice dialogs retain the granted keyword. The face already gets it from
+    // native CardKeywordOrder, so only the four keyword-granting upgrade rows
+    // omit that prefix when composed into the actual card description.
+    internal static string GetCardEffectDescription(CardModel card, string suffix)
+    {
+        string text = GetEffectDescription(card, suffix);
+        string prefix = (card, suffix) switch
+        {
+            (ItsNinjaShowtimeHbrgoSaki, "6") or (WindForestFireMountainHbrgoSaki, "5") => "[gold]保留[/gold]。",
+            (AbsolutelyNoEffortHbrgoSaki, "1") or (ExorcisingStringResoundHbrgoSaki, "6") => "[gold]固有[/gold]。",
+            _ => null
+        };
+        return prefix != null && text.StartsWith(prefix, StringComparison.Ordinal)
+            ? text[prefix.Length..].TrimStart(' ', '\r', '\n') : text;
+    }
+
     internal static string GetEffectDescription(CardModel card, string suffix)
     {
         if (card is BoostUpHbrgoSaki { UsesThirtyAEffects: true } && suffix is "0" or "5" or "6")
-            suffix += ".30a";
-        if (card is MatchaParfaitHbrgoSaki { UsesThirtyAEffects: true } && suffix is "1" or "2")
             suffix += ".30a";
         string key = card.Id.Entry + ".upgrade_effect." + suffix;
         if (HbrSkillCardDescription.IsEnabled(card) && new LocString("cards", key + ".hbr").Exists())
             key += ".hbr";
         LocString description = new("cards", key);
         description.Add("energyPrefix", EnergyIconHelper.GetPrefix(card));
+        card.DynamicVars.AddTo(description);
         if (HbrSkillCardDescription.IsEnabled(card)) HbrSkillCardDescription.AddParameters(card, description);
+        else HbrSkillCardDescription.AddLegacyParameters(card, description);
+        HbrSkillCardDescription.AddSupplementalDamageParameters(card, description);
+        HanamuraOrchestraCombatHelper.AddDescriptionParameters(card, description);
+        MatsuokaBlowAwayCombatHelper.AddDescriptionParameters(card, description);
         return description.GetFormattedText();
     }
 
@@ -167,6 +185,8 @@ internal static class HbrMemoryGardenUpgradeCatalog
         CrushYouLikeABugHbrgoSaki karen => karen.PrepareUpgradeEffect(effectId),
         SummerGrassDreamHbrgoSaki saki => saki.PrepareUpgradeEffect(effectId),
         BoostUpHbrgoSaki nanami => nanami.PrepareUpgradeEffect(effectId),
+        ByakkoRoarHbrgoSaki byakko => byakko.PrepareUpgradeEffect(effectId),
+        ThirtyOneBGardenCard member => member.PrepareUpgradeEffect(effectId),
         _ => effectId == 0
     };
 
@@ -212,6 +232,12 @@ internal static class HbrMemoryGardenUpgradeCatalog
                 break;
             case SummerGrassDreamHbrgoSaki saki:
                 saki.CancelPreparedUpgradeEffect();
+                break;
+            case ThirtyOneBGardenCard member:
+                member.CancelPreparedUpgradeEffect();
+                break;
+            case ByakkoRoarHbrgoSaki byakko:
+                byakko.CancelPreparedUpgradeEffect();
                 break;
             case BoostUpHbrgoSaki nanami:
                 nanami.CancelPreparedUpgradeEffect();

@@ -19,7 +19,7 @@ using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Runs;
 
-static class Checks
+static partial class Checks
 {
     const BindingFlags F = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     static readonly Assembly Mod = typeof(HighDimensionalShellPower).Assembly;
@@ -81,7 +81,7 @@ static class Checks
         Set(power, "<IsMutable>k__BackingField", true); Set(power, "_owner", creature);
         ((List<PowerModel>)typeof(Creature).GetField("_powers", F)!.GetValue(creature)!).Add(power);
     }
-    public static async Task Run()
+    static async Task RunCases()
     {
         Harmony harmony = new("hbr.enemy.resource.native.checks");
         Patch(harmony, typeof(StringName).GetConstructor([typeof(string)])!, nameof(Skip));
@@ -187,14 +187,8 @@ static class Checks
         Check(stored.CurrentDpData == "765432109876543210", "fresh resource calculation never rescales existing DP ledger");
         Config();
         CheckSharedEnemyHp(adapter, profile);
+        await CheckTableProfiles(adapter, profile);
         await CheckSmallHopper(adapter, profile);
-        File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
-        {
-            passed = true, checks = Passed.Count, cases = Passed,
-            modSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
-            boundary = "Actual native Creature entry, production health helper and DP resource calculators. Enablement, monster entry and phantom suppression are controlled leaves; exact HP/DP saved strings are fixture state. No Godot, game save/config writes, engine combat or original per-enemy HBR resource data is used."
-        }, new JsonSerializerOptions { WriteIndented = true }));
-        Console.WriteLine("PASS " + Passed.Count + " enemy resource native checks");
     }
 
     static void CheckSharedEnemyHp(Type adapter, Type profile)
@@ -207,8 +201,6 @@ static class Checks
             ("native normal LivingFog", Blank<LivingFog>(), 14, 9800, 2800),
             ("native elite Byrdonis", Blank<Byrdonis>(), 42, 29400, 8400),
             ("native boss Queen", Blank<Queen>(), 140, 98000, 28000),
-            ("custom normal GoldHopper", Blank<GoldHopper>(), 14, 9800, 2800),
-            ("custom elite AbyssKnocker", Blank<AbyssKnocker>(), 42, 29400, 8400),
             ("custom boss RedCrimson", Blank<RedCrimsonBossMonster>(), 140, 98000, 28000),
             ("custom boss Narara exception", Blank<NararaShibaBossMonster>(), 140, 140000, 28000),
         })
@@ -228,6 +220,24 @@ static class Checks
             Check((decimal)profile.GetProperty("NativeMaxHpScale", F)!.GetValue(actualProfile)! == scale,
                 row.Category + " selects the expected HP coefficient");
         }
+        // GoldHopper (user, 2026-11-08): as an enemy the original's absolute HP 1
+        // and DP 10, whatever its native roll, the HP/DP settings and growth,
+        // the act, difficulty, party size or numeric mode.
+        foreach (bool hbr in new[] { true, false })
+        foreach (var (hp, hpGrowth, dp, dpGrowth, act, ascension, players) in new[]
+            { (100, 0, 20, 0, 0, 0, 1), (150, 50, 0, 50, 2, 10, 4), (300, 0, 100, 0, 1, 10, 2) })
+        {
+            Enabled = hbr; Config(hp, hpGrowth, dp, dpGrowth);
+            Creature gold = Make(max: 58, current: 58, act: act, ascension: ascension, monster: Blank<GoldHopper>());
+            gold.ScaleMonsterHpForMultiplayer(null, players, 1);
+            Initial(gold);
+            Check(gold.MaxHp == 1 && gold.CurrentHp == 1 && HighDimensionalShellPower.CalculateAmount(gold) == 10m,
+                $"custom GoldHopper keeps the original's HP 1 and DP 10 (HBR {hbr}, HP {hp}%+{hpGrowth}%/act, " +
+                $"shell {dp}%+{dpGrowth}%/act, act {act + 1}, ascension {ascension}, players={players})");
+            Initial(gold);
+            Check(gold.MaxHp == 1 && gold.CurrentHp == 1, "custom GoldHopper's fixed HP is applied once");
+        }
+        Enabled = true; Config();
         Creature unit = Make(max: 1, current: 1, monster: Blank<LivingFog>()); Initial(unit);
         Check(unit.MaxHp == 700 && HighDimensionalShellPower.CalculateAmount(unit) == 200m,
             "generic native one HP yields exact 700 HP and 200 DP without repeating-ratio loss");
@@ -249,12 +259,12 @@ static class Checks
             decimal rawMultiplayer = decimal.Floor(Creature.ScaleHpForMultiplayer(42m, null, players, 1));
             summoned.ScaleMonsterHpForMultiplayer(null, players, 1);
             Initial(summoned);
-            decimal expectedHp = decimal.Floor(rawMultiplayer * 1.5m * 1.5m * 700m);
+            decimal expectedHp = RatioFloor(rawMultiplayer * 1.5m * 1.5m, 900m * 73600m, 117800m);
             Check(summoned.MaxHp == expectedHp &&
-                HighDimensionalShellPower.CalculateAmount(summoned) == decimal.Floor(expectedHp * 300m / 700m),
+                HighDimensionalShellPower.CalculateAmount(summoned) == RatioFloor(expectedHp * 1.5m, 44200m, 73600m),
                 $"fresh custom elite/summon keeps native multiplayer and independent act growth players={players}");
-            Check(Replacement(summoned, 42m) == 66150m,
-                $"custom elite phase takes raw HP through one 700-times calculation players={players}");
+            Check(Replacement(summoned, 42m) == RatioFloor(42m * 1.5m * 1.5m, 900m * 73600m, 117800m),
+                $"custom elite phase takes raw HP through one variant-share calculation players={players}");
         }
         Config();
         foreach (bool enabled in new[] { false, true })
@@ -283,27 +293,27 @@ static class Checks
     static async Task CheckSmallHopper(Type adapter, Type profile)
     {
         Enabled = true; Config();
-        foreach (var row in new[] { (12, 8400, 2571), (13, 9100, 2785), (14, 9800, 3000),
-            (15, 10500, 3214), (16, 11200, 3428), (17, 11900, 3642) })
+        foreach (int raw in Enumerable.Range(12, 6))
         {
-            Creature hopper = Make(max: row.Item1, current: row.Item1, monster: Blank<SmallHopper>());
+            decimal hp = RatioFloor(raw, 8000m, 14m), dp = RatioFloor(hp, 4800m, 8000m);
+            Creature hopper = Make(max: raw, current: raw, monster: Blank<SmallHopper>());
             await hopper.AfterAddedToRoom();
-            Check(hopper.MaxHp == row.Item2 && hopper.CurrentHp == row.Item2 &&
-                HighDimensionalShellPower.CalculateAmount(hopper) == row.Item3,
-                $"SmallHopper native {row.Item1} keeps calibrated HP/independent DP {row.Item2}/{row.Item3}");
+            Check(hopper.MaxHp == hp && hopper.CurrentHp == hp &&
+                HighDimensionalShellPower.CalculateAmount(hopper) == dp,
+                $"SmallHopper native {raw} keeps calibrated HP/independent DP {hp}/{dp}");
             await hopper.AfterAddedToRoom();
-            Check(hopper.MaxHp == row.Item2, $"SmallHopper native {row.Item1} entry remains once-only");
+            Check(hopper.MaxHp == hp, $"SmallHopper native {raw} entry remains once-only");
         }
         Creature baseline = Make(max: 14, current: 14, monster: Blank<SmallHopper>()); Initial(baseline);
         object baselineProfile = Call(adapter, "GetProfile", baseline)!;
         Check((decimal)profile.GetProperty("NativeReferenceHp", F)!.GetValue(baselineProfile)! == 14m &&
-            (decimal)profile.GetProperty("ReferenceMaxHp", F)!.GetValue(baselineProfile)! == 9800m &&
-            (decimal)profile.GetProperty("ReferenceMaxDp", F)!.GetValue(baselineProfile)! == 3000m,
+            (decimal)profile.GetProperty("ReferenceMaxHp", F)!.GetValue(baselineProfile)! == 8000m &&
+            (decimal)profile.GetProperty("ReferenceMaxDp", F)!.GetValue(baselineProfile)! == 4800m,
             "SmallHopper profile stores distinct native reference, HP and DP values");
-        object extraDpProfile = Activator.CreateInstance(profile, F, null, [14m, 9800m, 6000m], CultureInfo.InvariantCulture)!;
+        object extraDpProfile = Activator.CreateInstance(profile, F, null, [14m, 8000m, 9600m], CultureInfo.InvariantCulture)!;
         Check((decimal)profile.GetProperty("NativeMaxHpScale", F)!.GetValue(extraDpProfile)! ==
                 (decimal)profile.GetProperty("NativeMaxHpScale", F)!.GetValue(baselineProfile)! &&
-            (decimal)profile.GetMethod("GetDpReferenceMaximum", F)!.Invoke(extraDpProfile, [9800m])! == 30000m,
+            (decimal)profile.GetMethod("GetDpReferenceMaximum", F)!.Invoke(extraDpProfile, [8000m])! == 48000m,
             "changing independent reference DP does not change the HP coefficient");
         foreach (int difficulty in new[] { 0, 8 })
         {
@@ -317,7 +327,7 @@ static class Checks
                 native.SetUniqueMonsterHpValue([native], new Rng(seed));
                 rolls.Add(native.MaxHp);
                 int raw = native.MaxHp; Initial(native);
-                preservesEveryRoll &= native.MaxHp == raw * 700m;
+                preservesEveryRoll &= native.MaxHp == RatioFloor(raw, 8000m, 14m);
             }
             Check(preservesEveryRoll, $"native SmallHopper sampled HP reaches adapter unchanged difficulty={difficulty}");
             Check(rolls.SetEquals(Enumerable.Range(minimum, maximum - minimum + 1)),
@@ -344,18 +354,18 @@ static class Checks
                 decimal nativeMaximum = decimal.Floor(nativeScaled);
                 Check(multiplayer.MaxHp == nativeMaximum, $"native multiplayer HP rounding retained players={players}, act={act}");
                 decimal growth = act == 0 ? 1m : act == 1 ? 1.5m : 2.25m;
-                decimal expectedHp = decimal.Floor(nativeMaximum * 1.5m * growth * 700m);
+                decimal expectedHp = RatioFloor(nativeMaximum * 1.5m * growth, 8000m, 14m);
                 await multiplayer.AfterAddedToRoom();
                 Check(multiplayer.MaxHp == expectedHp &&
-                    HighDimensionalShellPower.CalculateAmount(multiplayer) == decimal.Floor(expectedHp * 3000m * 2m * growth / 9800m),
-                    $"SmallHopper keeps multiplayer, HP/DP configuration and act growth players={players}, act={act}");
+                    HighDimensionalShellPower.CalculateAmount(multiplayer) == RatioFloor(expectedHp * 2m * growth, 4800m, 8000m),
+                    $"SmallHopper keeps multiplayer, HP/DP configuration and act growth players={players}, act={act}: actual {multiplayer.MaxHp}/{HighDimensionalShellPower.CalculateAmount(multiplayer)}, expected {expectedHp}/{RatioFloor(expectedHp * 2m * growth, 4800m, 8000m)}");
             }
         }
         Config();
-        Check(Replacement(baseline, 14m) == 9800m && Replacement(baseline, 14m) == 9800m,
+        Check(Replacement(baseline, 14m) == 8000m && Replacement(baseline, 14m) == 8000m,
             "SmallHopper raw replacement source retains calibrated one-pass HP");
         baseline.SetMaxHpInternal(9900m);
-        Check(HighDimensionalShellPower.CalculateAmount(baseline) == 3030m,
+        Check(HighDimensionalShellPower.CalculateAmount(baseline) == 5940m,
             "SmallHopper fresh DP continues following dynamic maximum-HP changes");
         var storedDp = Blank<HighDimensionalShellPower>(); AddPower(baseline, storedDp);
         typeof(HighDimensionalShellPower).GetProperty(nameof(HighDimensionalShellPower.CurrentDpData), F)!.SetValue(storedDp, "1234");
@@ -364,7 +374,7 @@ static class Checks
         Creature huge = Make(max: 999999999, monster: Blank<SmallHopper>());
         var exact = Blank<LargeHealthPower>(); AddPower(huge, exact);
         exact.MaxHpData = "18446744073709551616"; exact.CurrentHpData = "18446744073709551616";
-        Check(HighDimensionalShellPower.CalculateAmount(huge) == 5646962471543740290m,
+        Check(HighDimensionalShellPower.CalculateAmount(huge) == 11068046444225730969m,
             "SmallHopper large DP avoids premature clamping of its reference intermediate");
         Config(dp: 1000);
         Check(HighDimensionalShellPower.CalculateAmount(huge) == 18446744073709551616m,

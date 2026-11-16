@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -18,21 +19,17 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class HotaruCannonDamageContextPatch
 {
-    private static MethodBase TargetMethod() => typeof(CreatureCmd).GetMethods(BindingFlags.Public | BindingFlags.Static)
-        .Where(m => m.Name == nameof(CreatureCmd.Damage))
-        .Where(m => m.GetParameters().Length is 6 or 7 &&
-            m.GetParameters()[0].ParameterType == typeof(PlayerChoiceContext) &&
-            m.GetParameters()[1].ParameterType == typeof(IEnumerable<Creature>) &&
-            m.GetParameters()[2].ParameterType == typeof(decimal) &&
-            m.GetParameters()[3].ParameterType == typeof(ValueProp) &&
-            m.GetParameters()[4].ParameterType == typeof(Creature) &&
-            m.GetParameters()[5].ParameterType == typeof(CardModel))
-        .OrderByDescending(m => m.GetParameters().Length).First();
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
     [HarmonyPriority(Priority.First)]
-    private static void Prefix(ref IEnumerable<Creature> targets, decimal amount, ValueProp props,
-        Creature dealer, CardModel cardSource, object[] __args, out HotaruCannonStatsHelper.CommandScope __state) =>
+    private static void Prefix(object[] __args, decimal amount, ValueProp props,
+        Creature dealer, CardModel cardSource, out HotaruCannonStatsHelper.CommandScope __state)
+    {
+        IEnumerable<Creature> originalTargets = NativeDamageApiCompatibility.ReadTargets(__args);
+        IEnumerable<Creature> targets = originalTargets;
         __state = HotaruCannonStatsHelper.Begin(ref targets, amount, props, dealer, cardSource,
             __args.OfType<MegaCrit.Sts2.Core.Entities.Cards.CardPlay>().FirstOrDefault());
+        NativeDamageApiCompatibility.WriteTargets(__args, originalTargets, targets);
+    }
     [HarmonyPriority(Priority.Last)]
     private static void Postfix(HotaruCannonStatsHelper.CommandScope __state, ref Task<IEnumerable<DamageResult>> __result)
     {

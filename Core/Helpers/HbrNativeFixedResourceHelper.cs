@@ -9,8 +9,9 @@ namespace HBRGOSakiMod.Core.Helpers;
 
 // The variables retain native units in storage, upgrades, cloning and saves.
 // Only audited consumers and text formatting read them in HBR resource units.
-// A variable's CLR type alone does not establish this: LizardTail.Heal is a
-// percentage, and several events store an already calculated heal in HealVar.
+// A variable's CLR type alone does not establish this: LizardTail.Heal and
+// FakeLeesWaffle.Heal are percentages, several events store an already
+// calculated heal in HealVar, and a few HP losses are stored in a DamageVar.
 internal static class HbrNativeFixedResourceHelper
 {
     private static readonly AccessTools.FieldRef<DynamicVar, AbstractModel> VariableOwner =
@@ -39,6 +40,7 @@ internal static class HbrNativeFixedResourceHelper
             RelicModel relic => relic.Owner?.Creature,
             PotionModel potion => potion.Owner?.Creature,
             EventModel eventModel => eventModel.Owner?.Creature,
+            PowerModel power => power.Owner,
             _ => null
         };
     }
@@ -49,6 +51,8 @@ internal static class HbrNativeFixedResourceHelper
 
     internal static decimal ReadBase(DynamicVar variable) => Convert(variable, variable.BaseValue);
     internal static decimal ReadPreview(DynamicVar variable) => Convert(variable, variable.PreviewValue);
+    internal static int ReadShown(DynamicVar variable) =>
+        (int)Math.Clamp(ReadPreview(variable), int.MinValue, int.MaxValue);
     internal static decimal ReadEnchanted(DynamicVar variable) => Convert(variable, variable.EnchantedValue);
     internal static int ReadInt(DynamicVar variable) => (int)Math.Clamp(ReadBase(variable), int.MinValue, int.MaxValue);
 
@@ -62,8 +66,22 @@ internal static class HbrNativeFixedResourceHelper
         }
 
         foreach (string name in new[] { "BadLuck", "Beckon", "Bloodletting", "BloodWall", "Brand",
-            "Breakthrough", "DemonicShield", "Haunt", "Hemokinesis", "Offering" })
+            "Breakthrough", "DemonicShield", "Hemokinesis", "Offering" })
             Add("Cards", name, "HpLoss");
+        // Haunt's HpLossVar is enemy damage stored in its later HauntPower,
+        // not an owner HP cost. Scaling it here would multiply the raw skill
+        // stacks by 100 before the damage profile applies actor attributes.
+        // Added by the current beta; absent models must not prevent a stable
+        // runtime from loading this otherwise shared registry.
+        void AddOptional(string category, string name, params string[] variables)
+        {
+            Type type = typeof(CardModel).Assembly.GetType($"MegaCrit.Sts2.Core.Models.{category}.{name}", false);
+            if (type != null) result.Add(type, new HashSet<string>(variables, StringComparer.Ordinal));
+        }
+        AddOptional("Cards", "TheHangedMan", "HpLoss");
+        AddOptional("Events", "ThermaeNonupeipe", "DrinkHpLoss");
+        // WuppyInTrouble writes 5% of current HP into HpLoss at runtime;
+        // that percentage result is already in the current resource scale.
         Add("Cards", "BrightestFlame", "MaxHp");
         Add("Cards", "Feed", "MaxHp");
         Add("Cards", "NotYet", "Heal");
@@ -74,12 +92,27 @@ internal static class HbrNativeFixedResourceHelper
             "Pear", "StoneHumidifier", "Strawberry" })
             Add("Relics", name, "MaxHp");
         foreach (string name in new[] { "BlackBlood", "BloodVial", "BookOfFiveRings", "BookRepairKnife",
-            "BurningBlood", "EternalFeather", "FakeBloodVial", "FakeLeesWaffle", "MealTicket",
+            "BurningBlood", "EternalFeather", "FakeBloodVial", "MealTicket",
             "MeatOnTheBone", "Pantograph", "Planisphere", "RegalPillow", "TeaOfDiscourtesy" })
             Add("Relics", name, "Heal");
+        // v0.111.0 moved Distinguished Cape's max-HP cost to Sere Talon; each
+        // runtime has the variable on only one of them.
         Add("Relics", "DistinguishedCape", "HpLoss");
+        Add("Relics", "SereTalon", "HpLoss");
         Add("Relics", "FragrantMushroom", "HpLoss");
+        // HP losses without an attacker, stored in a DamageVar like Fragrant
+        // Mushroom's HpLoss. Not skill damage: nobody deals them.
+        Add("Relics", "PrecariousShears", "Damage");
+        Add("Relics", "RoyalPoison", "Damage");
+        Add("Relics", "TungstenRod", "HpLossReduction");
+        // Its text writes the 20 literally; see HbrNativeFixedLiteralDescriptionPatch.
+        Add("Relics", "BeatingRemnant", "MaxHpLoss");
+        // A Block threshold: player Block resolves at about a hundred per native point.
+        Add("Relics", "ParryingShield", "Block");
         Add("Potions", "FruitJuice", "MaxHp");
+        // One raw HP per copy played, lost at the start of each turn.
+        Add("Powers", "CrimsonMantlePower", "SelfDamage");
+        Add("Powers", "InfernoPower", "SelfDamage");
 
         Add("Events", "AbyssalBaths", "MaxHp", "Heal");
         Add("Events", "ByrdonisNest", "MaxHp");

@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Linq;
 using Godot;
 using HarmonyLib;
@@ -76,7 +77,7 @@ internal static class PhantomMinionPlacementPatch
 
             node.Position = placement.Position;
             if (node.IsInteractable != placement.IsInteractable)
-                room.SetCreatureIsInteractable(placement.Entity, placement.IsInteractable);
+                room.SetCreatureIsInteractableCompat(placement.Entity, placement.IsInteractable);
         }
     }
 

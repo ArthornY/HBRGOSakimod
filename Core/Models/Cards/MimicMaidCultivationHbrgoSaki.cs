@@ -24,12 +24,15 @@ public sealed class MimicMaidCultivationHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<MaidCultivationPower>(2m)
+        new PowerVar<MaidCultivationPower>(2m),
+        new DynamicVar("RollBonus", 20m),
+        new DynamicVar("RollUses", 2m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
-        HoverTipFactory.FromPower<MaidCultivationPower>()
+        HoverTipFactory.FromPower<MaidCultivationPower>(),
+        HoverTipFactory.FromPower<RollBonusPower>()
     };
 
     public MimicMaidCultivationHbrgoSaki()
@@ -53,6 +56,13 @@ public sealed class MimicMaidCultivationHbrgoSaki : CardModel
             choiceContext,
             Owner.Creature,
             DynamicVars["MaidCultivationPower"].BaseValue,
+            Owner.Creature,
+            this);
+        await RollBonusPower.Apply(
+            choiceContext,
+            Owner.Creature,
+            (int)DynamicVars["RollBonus"].BaseValue,
+            (int)DynamicVars["RollUses"].BaseValue,
             Owner.Creature,
             this);
     }

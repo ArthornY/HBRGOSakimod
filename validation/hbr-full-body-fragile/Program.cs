@@ -148,8 +148,8 @@ static class FullBodyChecks
 
         Reset(bow: false); Existing(50m); Power<BreakPower>(enemy, 1); Power<DestructionRatePower>(enemy, 1);
         await Play(Card(zeroGrant: true));
-        Check(GainRequests().SequenceEqual(new[] { 2.5m }), "existing off-form halving still applies to complete interval gain");
-        Equal(DamageRequests.Single(), 2.5m, "existing off-form halving still applies to requested damage");
+        Check(GainRequests().SequenceEqual(new[] { 5m }), "off-form play retains the full complete-interval destruction gain");
+        Equal(DamageRequests.Single(), 5m, "off-form play retains its full requested damage");
 
         Reset(); Invoke("Mode", false, 1); Power<BreakPower>(enemy, 1); Power<DestructionRatePower>(enemy, 101);
         await Play(Card());

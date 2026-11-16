@@ -49,12 +49,16 @@ public sealed class SakuraRainHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        SakuraRainPower previous = Owner.Creature.GetPower<SakuraRainPower>();
         await PowerCmd.Apply<SakuraRainPower>(
             choiceContext,
             Owner.Creature,
             1m,
             Owner.Creature,
             this);
+
+        if (previous != null && Owner.Creature.GetPower<SakuraRainPower>() == previous)
+            previous.AddCopy();
 
         if (HasRetaliationUpgrade)
         {

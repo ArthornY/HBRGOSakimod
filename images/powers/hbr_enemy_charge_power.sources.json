@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR Charge icon",
+  "importedPath": "res://images/powers/hbr_enemy_charge_power.png",
+  "sha256": "32d2c6dc135384d4129a0552ebba3fb38158a3cc837849424b8ceaa3e924c2bc",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconCharge.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "8280670972892134344",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_8280670972892134344_IconCharge.png",
+    "sourceSha256": "32d2c6dc135384d4129a0552ebba3fb38158a3cc837849424b8ceaa3e924c2bc",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrEnemyChargePower",
+    "originalEffect": "Charge",
+    "small": "res://images/powers/hbr_enemy_charge_power.png",
+    "big": "res://images/powers/hbr_enemy_charge_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

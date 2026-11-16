@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -16,19 +17,17 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class HbrEffectSkillDamageContextPatch
 {
-    private static MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-        .Where(method => method.Name == nameof(CreatureCmd.Damage))
-        .Where(method => method.GetParameters() is var p && p.Length is 6 or 7 &&
-            p[0].ParameterType == typeof(PlayerChoiceContext) &&
-            p[1].ParameterType == typeof(IEnumerable<Creature>) && p[2].ParameterType == typeof(decimal) &&
-            p[3].ParameterType == typeof(ValueProp) && p[4].ParameterType == typeof(Creature) &&
-            p[5].ParameterType == typeof(CardModel))
-        .OrderByDescending(method => method.GetParameters().Length).First();
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
 
     [HarmonyPriority(Priority.First)]
-    private static void Prefix(ref IEnumerable<Creature> targets, decimal amount, ValueProp props,
-        Creature dealer, CardModel cardSource, out HbrEffectSkillDamageContext.CommandScope __state) =>
+    private static void Prefix(object[] __args, decimal amount, ValueProp props,
+        Creature dealer, CardModel cardSource, out HbrEffectSkillDamageContext.CommandScope __state)
+    {
+        IEnumerable<Creature> originalTargets = NativeDamageApiCompatibility.ReadTargets(__args);
+        IEnumerable<Creature> targets = originalTargets;
         __state = HbrEffectSkillDamageContext.BeginCommand(ref targets, amount, props, dealer, cardSource);
+        NativeDamageApiCompatibility.WriteTargets(__args, originalTargets, targets);
+    }
 
     private static void Postfix(HbrEffectSkillDamageContext.CommandScope __state,
         ref Task<IEnumerable<DamageResult>> __result)

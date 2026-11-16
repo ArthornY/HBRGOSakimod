@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC03ExpMtKinpu01_R02.
+// HBR MC03ExpMtKinpu01_R02; the second doll starts one dp step ahead.
 public sealed class MarionetteKillersWeak : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -21,10 +21,12 @@ public sealed class MarionetteKillersWeak : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var second = (MarionetteKiller)ModelDb.Monster<MarionetteKiller>().ToMutable();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<MarionetteKiller>().ToMutable(), null),
-            (ModelDb.Monster<MarionetteKiller>().ToMutable(), null)
+            (second, null)
         };
     }
 }

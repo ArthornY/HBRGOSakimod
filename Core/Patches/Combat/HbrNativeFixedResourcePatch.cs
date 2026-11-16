@@ -17,8 +17,12 @@ internal static class HbrNativeFixedResourcePatch
     private const BindingFlags Declared = BindingFlags.Instance | BindingFlags.Static |
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
-    private static readonly Dictionary<MethodInfo, MethodInfo> Readers = new()
+    private static readonly Dictionary<MethodInfo, MethodInfo> Readers = CreateReaders();
+
+    private static Dictionary<MethodInfo, MethodInfo> CreateReaders()
     {
+        Dictionary<MethodInfo, MethodInfo> readers = new()
+        {
         [AccessTools.PropertyGetter(typeof(DynamicVar), nameof(DynamicVar.BaseValue))] =
             AccessTools.Method(typeof(HbrNativeFixedResourceHelper), "ReadBase"),
         [AccessTools.PropertyGetter(typeof(DynamicVar), nameof(DynamicVar.IntValue))] =
@@ -27,7 +31,11 @@ internal static class HbrNativeFixedResourcePatch
             AccessTools.Method(typeof(HbrNativeFixedResourceHelper), "ReadPreview"),
         [AccessTools.PropertyGetter(typeof(DynamicVar), nameof(DynamicVar.EnchantedValue))] =
             AccessTools.Method(typeof(HbrNativeFixedResourceHelper), "ReadEnchanted")
-    };
+        };
+        if (AccessTools.PropertyGetter(typeof(DynamicVar), "ShownValue") is { } shown)
+            readers[shown] = AccessTools.Method(typeof(HbrNativeFixedResourceHelper), "ReadShown");
+        return readers;
+    }
 
     private static IEnumerable<MethodBase> TargetMethods()
     {
@@ -48,7 +56,10 @@ internal static class HbrNativeFixedResourcePatch
         // ResetToBase, Clone, serialization and setters are deliberately intact.
         yield return AccessTools.Method(typeof(DynamicVar), nameof(DynamicVar.ToHighlightedString));
         yield return AccessTools.Method(typeof(DynamicVar), nameof(DynamicVar.ToString), Type.EmptyTypes);
-        yield return AccessTools.Method(typeof(DynamicVar), "GetBaseValueForIConvertible");
+        if (AccessTools.Method(typeof(DynamicVar), "GetBaseValueForIConvertible") is { } convertible)
+            yield return convertible;
+        if (AccessTools.PropertyGetter(typeof(DynamicVar), "ShownValue") is { } shown)
+            yield return shown;
 
         // Burn and similar status cards pass DamageVar itself to this adapter;
         // their model method never reads BaseValue. The owner/name guard keeps

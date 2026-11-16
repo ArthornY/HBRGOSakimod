@@ -1,0 +1,809 @@
+{
+  "preview": "ui-concepts/manual-phone-20261104",
+  "script": "ui-concepts/manual-phone-20261104/export_mod_assets.py",
+  "files": [
+    {
+      "file": "DenchoFrame.png",
+      "origin": "hbr-sprite",
+      "sprite": "DenchoFrame",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "dencho",
+      "assetPath": "Assets/UI/Texture/HudMenuList/DenchoFrame.png",
+      "cab": "CAB-d84be43e818e9bf533f0fdee427a7153",
+      "pathId": 1589008579203985213,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 1272.0,
+        "height": 1564.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        1270,
+        1564
+      ],
+      "sha256": "23177049cabb07954c13c79413c27b43cd66cdfe7d4dc89c65b1db87b096b034",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DenchoFrameFlash.png",
+      "origin": "hbr-sprite",
+      "sprite": "DenchoFrameFlash",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "denchoFlash",
+      "assetPath": "Assets/UI/Texture/HudMenuList/DenchoFrameFlash.png",
+      "cab": "CAB-d84be43e818e9bf533f0fdee427a7153",
+      "pathId": -5779898056598369221,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 384.0,
+        "height": 384.0
+      },
+      "border": {
+        "x": 128.0,
+        "y": 128.0,
+        "z": 128.0,
+        "w": 128.0
+      },
+      "size": [
+        384,
+        384
+      ],
+      "sha256": "4fec8c5efd5268e42f60474b0fc693705918fee53874c268f26e918af3c73790",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DenchoRightHand.png",
+      "origin": "hbr-sprite",
+      "sprite": "DenchoRightHand",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "hand",
+      "assetPath": "Assets/UI/Texture/HudMenuList/DenchoRightHand.png",
+      "cab": "CAB-d84be43e818e9bf533f0fdee427a7153",
+      "pathId": -5833251214905956296,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 620.0,
+        "height": 744.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        594,
+        725
+      ],
+      "sha256": "948b0e31d4a12d780f55aec6e88edee5b3262dab868137c9cc352ac5ba3bd8ab",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "ButtonDungeonExitDefault.png",
+      "origin": "hbr-sprite",
+      "sprite": "ButtonDungeonExitDefault",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "normal",
+      "assetPath": "Assets/UI/Texture/ButtonAtlas/ButtonDungeonExitDefault.png",
+      "cab": "CAB-96a187697036adb69e6c64f5a34aee5a",
+      "pathId": 3590046038399317484,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 380.0,
+        "height": 172.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        380,
+        172
+      ],
+      "sha256": "8d43c6fe94553a5a37f641b9eab92cb9b3e6c0db177b6be6d0a60bd1564fa3ba",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "ButtonDungeonExitAvtive.png",
+      "origin": "hbr-sprite",
+      "sprite": "ButtonDungeonExitAvtive",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "active",
+      "assetPath": "Assets/UI/Texture/ButtonAtlas/ButtonDungeonExitAvtive.png",
+      "cab": "CAB-96a187697036adb69e6c64f5a34aee5a",
+      "pathId": 4781098301080181089,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 380.0,
+        "height": 172.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        380,
+        172
+      ],
+      "sha256": "ec5b92dd00539eb52b0ef36ece85750e95b50fb917bd09cfb681eda57654b0fe",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "ButtonDungeonExitDisable.png",
+      "origin": "hbr-sprite",
+      "sprite": "ButtonDungeonExitDisable",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "disable",
+      "assetPath": "Assets/UI/Texture/ButtonAtlas/ButtonDungeonExitDisable.png",
+      "cab": "CAB-96a187697036adb69e6c64f5a34aee5a",
+      "pathId": 4145433444125315055,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 380.0,
+        "height": 172.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        380,
+        172
+      ],
+      "sha256": "0bc4c4f175a7231a462269097170b2b17b60a69d4244369333ca38fc799e693e",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconExitDefault.png",
+      "origin": "hbr-sprite",
+      "sprite": "IconExitDefault",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "icon",
+      "assetPath": "Assets/UI/Texture/Icon/IconExitDefault.png",
+      "cab": "CAB-cd53af882d46d7a6fe16b5735bb95693",
+      "pathId": -7793952960710148742,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 90.0,
+        "height": 90.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        87,
+        80
+      ],
+      "sha256": "876372e1699788c859888c4704bce1e896007b85b9c9792b613561768062394c",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconExitActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "IconExitActive",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "icon",
+      "assetPath": "Assets/UI/Texture/Icon/IconExitActive.png",
+      "cab": "CAB-cd53af882d46d7a6fe16b5735bb95693",
+      "pathId": -743841694860867152,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 90.0,
+        "height": 90.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        90,
+        90
+      ],
+      "sha256": "54d851360a5f6b357dc89cd105e4faa76a2b706da6fd5d0f7c9166ae2471c637",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "LineSlash.png",
+      "origin": "hbr-sprite",
+      "sprite": "LineSlash",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "lineSlash",
+      "assetPath": "Assets/UI/Texture/CommonAtlas/LineSlash.png",
+      "cab": "CAB-fe4445dca06c80e51e3e108d8e180a00",
+      "pathId": 7752476773885123507,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 104.0,
+        "height": 68.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        104,
+        68
+      ],
+      "sha256": "da0d4ebf3248c881dfd0bd247c1a4898c34848a6b46d00a0c328827405368480",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DenchoHeader.png",
+      "origin": "hbr-sprite",
+      "sprite": "DenchoHeader",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "denchoFooter",
+      "assetPath": "Assets/UI/Texture/HudMenuList/DenchoHeader.png",
+      "cab": "CAB-d84be43e818e9bf533f0fdee427a7153",
+      "pathId": -416845910447479642,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 840.0,
+        "height": 228.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        820,
+        202
+      ],
+      "sha256": "639cb87f206f57e7c55f7111da2c4ea9cda6a3d4597565e77c58f5681367aa49",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "BtnDenchoshadow.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnDenchoshadow",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "shadow",
+      "assetPath": "Assets/UI/Texture/HudMenuListAtlas/BtnDenchoshadow.png",
+      "cab": "CAB-2159e00747e51886bc34833b0d9b0196",
+      "pathId": -8299760163633255259,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 240.0,
+        "height": 240.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        173,
+        155
+      ],
+      "sha256": "350fad14eb07367852f037e90881199e6139c9a3e82465c144fcae6bf6c90488",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "BtnDenchoStatusNormal.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnDenchoStatusNormal",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "normal",
+      "assetPath": "Assets/UI/Texture/HudMenuListAtlas/BtnDenchoStatusNormal.png",
+      "cab": "CAB-2159e00747e51886bc34833b0d9b0196",
+      "pathId": 73041988425926950,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 240.0,
+        "height": 240.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        178,
+        195
+      ],
+      "sha256": "e7ba4fb3806c9b771996f6043d93d2bf202d5832dfc29631717eb5412c4f8c2c",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "BtnDenchoStatusActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnDenchoStatusActive",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "active",
+      "assetPath": "Assets/UI/Texture/HudMenuListAtlas/BtnDenchoStatusActive.png",
+      "cab": "CAB-2159e00747e51886bc34833b0d9b0196",
+      "pathId": 4156000217239384675,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 240.0,
+        "height": 240.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        236,
+        236
+      ],
+      "sha256": "0a9a428d79fc6c92596457522001b3ff75a9b17eb078d507e646039f3de1207b",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconBatchNumber.png",
+      "origin": "hbr-sprite",
+      "sprite": "IconBatchNumber",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "badge",
+      "assetPath": "Assets/UI/Texture/Icon/IconBatchNumber.png",
+      "cab": "CAB-cd53af882d46d7a6fe16b5735bb95693",
+      "pathId": -8705346764654089501,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 46.0,
+        "height": 44.0
+      },
+      "border": {
+        "x": 21.0,
+        "y": 0.0,
+        "z": 21.0,
+        "w": 0.0
+      },
+      "size": [
+        46,
+        44
+      ],
+      "sha256": "1a13fe8b3c2748f8bde507ef16f9c67351ad3f1ee93effa299d62ac3aa620817",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DenchoBannerActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "DenchoBannerActive",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "denchoBannerActive",
+      "assetPath": "Assets/UI/Texture/HudMenuListAtlas/DenchoBannerActive.png",
+      "cab": "CAB-2159e00747e51886bc34833b0d9b0196",
+      "pathId": -5535574636671776887,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 448.0,
+        "height": 448.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        448,
+        448
+      ],
+      "sha256": "ab0744b3a47451679d587e4b90a17a82ab4be52995fd6c8cd690f86672ad0bb4",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "BtnDenchoLotteryAdditive.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnDenchoLotteryAdditive",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "normalBtnImageADD",
+      "assetPath": "Assets/UI/Texture/HudMenuList/BtnDenchoLotteryAdditive.png",
+      "cab": "CAB-d84be43e818e9bf533f0fdee427a7153",
+      "pathId": -7802157742908696862,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 376.0,
+        "height": 376.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        374,
+        374
+      ],
+      "sha256": "9e11d73606d84fed830f22f44dcd483d62def2a3509c837ed52296a87c6b4db1",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "Lotteryshadow.png",
+      "origin": "hbr-sprite",
+      "sprite": "Lotteryshadow",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "lotteryShadow",
+      "assetPath": "Assets/UI/Texture/HudMenuList/Lotteryshadow.png",
+      "cab": "CAB-d84be43e818e9bf533f0fdee427a7153",
+      "pathId": 6320517592175993890,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 352.0,
+        "height": 308.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        352,
+        308
+      ],
+      "sha256": "e8e49717346c18a75982a4b005ef255596171d77721174f1dc209cff7c274951",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DenchoGachaTextBox.png",
+      "origin": "hbr-sprite",
+      "sprite": "DenchoGachaTextBox",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "gachaTextBox",
+      "assetPath": "Assets/UI/Texture/HudMenuListAtlas/DenchoGachaTextBox.png",
+      "cab": "CAB-2159e00747e51886bc34833b0d9b0196",
+      "pathId": -4599201473862469979,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 72.0,
+        "height": 48.0
+      },
+      "border": {
+        "x": 24.0,
+        "y": 0.0,
+        "z": 24.0,
+        "w": 0.0
+      },
+      "size": [
+        72,
+        48
+      ],
+      "sha256": "75ea6c5d06995c9dbddbe88cb469c60a2db6d3fbc25f1ac6deb65ee1e402cca1",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "btnPlusNormal.png",
+      "origin": "hbr-sprite",
+      "sprite": "btnPlusNormal",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "normal",
+      "assetPath": "Assets/UI/Texture/CommonAtlas/btnPlusNormal.png",
+      "cab": "CAB-fe4445dca06c80e51e3e108d8e180a00",
+      "pathId": -8006303605866929508,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 80.0,
+        "height": 80.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        63,
+        63
+      ],
+      "sha256": "ebda696d23ba2cc9eabf2d5254d77e78c34a7325148eb0c83c994dd929c2d63c",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "btnPlusActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "btnPlusActive",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "active",
+      "assetPath": "Assets/UI/Texture/CommonAtlas/btnPlusActive.png",
+      "cab": "CAB-fe4445dca06c80e51e3e108d8e180a00",
+      "pathId": 5666812450477001949,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 80.0,
+        "height": 80.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        80,
+        80
+      ],
+      "sha256": "b964c712e845672bcf8876b6fe39a98d958d4922b081543f46dc4ceff80fc335",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "btnPlusDisable.png",
+      "origin": "hbr-sprite",
+      "sprite": "btnPlusDisable",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "disable",
+      "assetPath": "Assets/UI/Texture/CommonAtlas/btnPlusDisable.png",
+      "cab": "CAB-fe4445dca06c80e51e3e108d8e180a00",
+      "pathId": 3990296754876519190,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 80.0,
+        "height": 80.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        64,
+        64
+      ],
+      "sha256": "8980292320d53ca1bcce69220985c4bd6202660a7eed8175077bf8ff24de7b5e",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconHc.png",
+      "origin": "hbr-sprite",
+      "sprite": "IconHc",
+      "prefab": "Assets/UI/AssetBundle/UIHudMenuList.prefab",
+      "node": "IconHc",
+      "assetPath": "Assets/UI/Texture/Icon/IconHc.png",
+      "cab": "CAB-cd53af882d46d7a6fe16b5735bb95693",
+      "pathId": -2593472133698857692,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 44.0,
+        "height": 44.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        40,
+        43
+      ],
+      "sha256": "6a02c4023ec5c125a7f14a04c183368a04cc8c5c97d12a7dcde6e877c7cbe70d",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "icon_glossary.png",
+      "origin": "derived",
+      "texture": "IconCardGameDefault",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconCardGameDefault.png"
+      ],
+      "pathId": 869138747033323497,
+      "sourceSha256": "9e77d95fda04890f101a614a1669f56081873c8676372518646d6f96d23f8db6",
+      "size": [
+        168,
+        168
+      ],
+      "transform": "alpha filled with #eaffff (the preview's CSS mask), trimmed and fitted",
+      "sha256": "9a074a63e85d9849062567ec48c2d6a99dfa0e88229c60ca4a13fb513e60ffd7"
+    },
+    {
+      "file": "icon_equipment.png",
+      "origin": "derived",
+      "texture": "IconjewelPrismDefault",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconjewelPrismDefault.png"
+      ],
+      "pathId": 5136144661376658070,
+      "sourceSha256": "e599c348ff6666f21ac26c2f813a9d07a97a1a459892ca9068d3f59779b76d71",
+      "size": [
+        168,
+        168
+      ],
+      "transform": "alpha filled with #eaffff (the preview's CSS mask), trimmed and fitted",
+      "sha256": "640e1780e6e38f41c2e7d2d45e853e3b07f03de192259ca779f14bce9d7fdfe0"
+    },
+    {
+      "file": "icon_shop.png",
+      "origin": "derived",
+      "texture": "IconHomeShopDefault",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconHomeShopDefault.png"
+      ],
+      "pathId": -2703168089668661609,
+      "sourceSha256": "bdc328bb543875411d9f57ab7445404919500f82344f24188a7a150506d27e5f",
+      "size": [
+        168,
+        168
+      ],
+      "transform": "alpha filled with #eaffff (the preview's CSS mask), trimmed and fitted",
+      "sha256": "e2b27b74503113e6e3776e89efc1afa33fde349816e33126da4063d8ffe88762"
+    },
+    {
+      "file": "icon_cannon.png",
+      "origin": "derived",
+      "modFile": "images/characters/hbrgo_hotaru/cannons/happiness.png",
+      "sourceSha256": "9c9524a299363a4ceb53e5e18af9b27d9191a8bfbf927cd0e1f3ea31ff798912",
+      "size": [
+        336,
+        134
+      ],
+      "transform": "alpha filled with #eaffff (the preview's CSS mask), trimmed and fitted",
+      "sha256": "f6867e9ab6b9ec23c12f7e411c33965a6ab42eafdef27598c4bd6272182148a3"
+    },
+    {
+      "file": "minusNormal.png",
+      "origin": "drawn",
+      "size": [
+        88,
+        88
+      ],
+      "transform": "template.html .pm.minus at 2x (no HBR minus sprite exists)",
+      "sha256": "613d91698813d597f2b03cee537a029291b17fa862b6291e079aaf9f226779de"
+    },
+    {
+      "file": "minusActive.png",
+      "origin": "drawn",
+      "size": [
+        88,
+        88
+      ],
+      "transform": "template.html .pm.minus at 2x (no HBR minus sprite exists)",
+      "sha256": "016fa190f95cc2d8bc8da3806ef3edbfd8412881074bb06475f6466dc88758b7"
+    },
+    {
+      "file": "minusDisable.png",
+      "origin": "drawn",
+      "size": [
+        88,
+        88
+      ],
+      "transform": "template.html .pm.minus at 2x (no HBR minus sprite exists)",
+      "sha256": "6e1883dedfd3670aba69f2cd93628ce7357f3bdb4539495847d5833839431e22"
+    },
+    {
+      "file": "face_31o_normal.png",
+      "origin": "mod-derived",
+      "modFile": "images/characters/hbrgo_saki_normal.png",
+      "sourceSha256": "a7ad3710ebe840a6d1e9902749b675c2d3694cea40748d2562a8a927a580fa6a",
+      "crop": [
+        1250,
+        200,
+        2350,
+        1300
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "transform": "crop (build.py box), Lanczos to 360px wide",
+      "sha256": "62e49774093d76e3194dbbd74ea08a6b8fa01facaab55b4eb2fad0eee2bce603"
+    },
+    {
+      "file": "face_31o_dual.png",
+      "origin": "mod-derived",
+      "modFile": "images/characters/hbrgo_saki_dual_swords.png",
+      "sourceSha256": "9bf2ddd477acc9423892f7ba208bd0d661e82e1d4b2fa003ee8be1b2b57a3419",
+      "crop": [
+        3470,
+        100,
+        4170,
+        800
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "transform": "crop (build.py box), Lanczos to 360px wide",
+      "sha256": "c93c85d49529774c1fc92bb9b30b0078a854a8d98a784983cf84083cf66a3c58"
+    },
+    {
+      "file": "face_31o_bow.png",
+      "origin": "mod-derived",
+      "modFile": "images/characters/hbrgo_saki_bow.png",
+      "sourceSha256": "3a0df90db254d4639056ff806aac31efccfa6e439018d413fda44b86a36dd6e7",
+      "crop": [
+        1612,
+        160,
+        2612,
+        1160
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "transform": "crop (build.py box), Lanczos to 360px wide",
+      "sha256": "4ac3a0e585fc3b0536711af48d8e69408327ba15c680cf3326032d0729433309"
+    },
+    {
+      "file": "face_30a.png",
+      "origin": "mod-derived",
+      "modFile": "images/characters/hbrgo_saki_30a.png",
+      "sourceSha256": "e984d2f12729ef377c8d705cf38bce751139defcf546a2895666354fdb95c9e5",
+      "crop": [
+        1680,
+        138,
+        2680,
+        1138
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "transform": "crop (build.py box), Lanczos to 360px wide",
+      "sha256": "25e977c9e6af996aad91d8a248354899697bfeaafb192e2f2b7f9cb443576984"
+    },
+    {
+      "file": "face_hotaru.png",
+      "origin": "mod-derived",
+      "modFile": "images/characters/hbrgo_hotaru/hotaru_icon.png",
+      "sourceSha256": "786b67d200a5083eae2b1046d4c5011c02a5424de411a65348cb43521bb22442",
+      "crop": null,
+      "size": [
+        360,
+        360
+      ],
+      "transform": "crop (build.py box), Lanczos to 360px wide",
+      "sha256": "1fca5986d45fda06151a1d02089cb92e202cec74f6aaff34cb9ad54a8c4bc03a"
+    },
+    {
+      "file": "font/hbr_manual_ui.otf",
+      "origin": "hbr-font-subset",
+      "font": "hanyizhengyuan_UI",
+      "pathId": "4845511955621444297",
+      "cab": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\unity\\cache\\7e0b0e2014c1ab89d6556255b0349de0\\a803b90d412100a3d9276283df22c3ce\\raw\\CAB-8516020b625d340a4f51e6262852cbcf",
+      "sourceSha256": "12259a8c0d82037288ce59784f14a4c04e012872ae476031160e741899207490",
+      "characters": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~“”…›　、。「」する上不与世中丰之五人他体余作依侧值全六关其具兼册出分则刻剩力千升单即原去只各同启和品售商器回园圈在基塔增备复外子学定对局属川巧帰幅应店庭待得性总情感愿慧战手才按搜效数整斗早时是智未本权条果染柔查正此气污测浮温游源灰灵炮点炼片狂用界疯白的看础确神祥离称等类精索级纯线续能自色芯萤虚袖装要观规解计认记词试详调赖起越身运返连通還配量金长门闭限面页顶项领饰高魅黑（）＋，－：？",
+      "glyphs": 499,
+      "transform": "fontTools subset (desubroutinized, all layout features)",
+      "sha256": "9157e7af20b405b514cbd7dbb9ab741f028f6ff83f19f4f94e55e0a9cb7f8dd3"
+    }
+  ]
+}

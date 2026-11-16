@@ -153,20 +153,17 @@ static partial class PercentDebuffChecks
             Power<NararaNullificationPower>(boss);
             var resistance = Power<SixSenseResistancePower>(boss);
             typeof(SixSenseResistancePower).GetProperty("Resistances", F)!.SetValue(resistance, new[] { 10, 10, 10, 10, 10, 10 });
-            var card = Card<HotaruReplayPain>(); ModelCapabilities.EnsureInitialized();
-            ModelCapabilityRegistry.Register<SixSenseCardCapability>("fixture.percent-debuff.replay");
-            var capability = ModelCapabilityRegistry.Create<SixSenseCardCapability>();
-            Set(capability, "_attribute", SixSenseAttribute.Simplicity); card.Capabilities().Add(capability, false, false);
+            // Narara's nullification is switched off with the six-sense card attributes
+            // (2026-11-09): an older copy captures no card, so Artifact meets Replay as usual.
+            var card = Card<HotaruReplayPain>();
             var scope = Invoke(Helper("NararaNullificationHelper").GetMethod("Begin", F)!, null, card)!;
             try
             {
                 var artifact = Power<ArtifactPower>(boss);
-                Check((bool)Invoke(Helper("NararaNullificationHelper").GetMethod("IsCardNullified", F)!, null, boss, card)!,
-                    "actual Replay card scope captures Narara resistance");
+                Check(!(bool)Invoke(Helper("NararaNullificationHelper").GetMethod("IsCardNullified", F)!, null, boss, card)!,
+                    "the switched-off Narara nullification captures no Replay card");
                 Replay(card);
-                Check(Active<WeakPower>(boss).Length == 1 && ReferenceEquals(Active<WeakPower>(boss)[0], original) && original.Amount == 2,
-                    "unlimited Replay does not bypass active Narara immunity");
-                Check(artifact.Amount == 1, "Narara blocks Replay before native Artifact is consumed");
+                Check(artifact.Amount == 0, "Replay meets Artifact as it would without Narara");
             }
             finally { Invoke(Helper("NararaNullificationHelper").GetMethod("Close", F)!, null, scope); }
         }

@@ -78,6 +78,9 @@ internal static class TemporaryDamageBonusHelper
         bool completed = false;
         try
         {
+            decimal spiritBonus = KozueSpiritHelper.GetDamageAmplificationPercent(creature);
+            if (spiritBonus != 0m)
+                HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + spiritBonus / 100m, null);
             foreach (AbstractModel model in runState.IterateHookListeners(creature.CombatState))
             {
                 if (PhantomHelper.IsSummonerOwnedDamageModifier(model, creature)) continue;

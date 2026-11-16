@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
@@ -91,15 +92,11 @@ public sealed class ThirtyAKeywordCapability :
             yield break;
         }
 
-        yield return new HoverTip(
+        yield return HoverTipCompatibility.CreateKeyword(
             ModKeywordRegistry.GetTitle(KeywordId),
-            new LocString(LocTable, $"{KeywordId}.description"))
-        {
-            Id = KeywordId
-        };
+            new LocString(LocTable, $"{KeywordId}.description"), KeywordId);
         if (CryChicKeywordRules.IsCryChicCard(card))
-            yield return new HoverTip(ModKeywordRegistry.GetTitle(CryChicKeywordRules.KeywordId),
-                new LocString(LocTable, $"{CryChicKeywordRules.KeywordId}.description"))
-                { Id = CryChicKeywordRules.KeywordId };
+            yield return HoverTipCompatibility.CreateKeyword(ModKeywordRegistry.GetTitle(CryChicKeywordRules.KeywordId),
+                new LocString(LocTable, $"{CryChicKeywordRules.KeywordId}.description"), CryChicKeywordRules.KeywordId);
     }
 }

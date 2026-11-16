@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -23,15 +24,7 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class NararaForcedTurnDamageScopePatch
 {
-    private static MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-        .Single(method => method.Name == nameof(CreatureCmd.Damage) &&
-            method.GetParameters() is { Length: 6 or 7 } parameters &&
-            parameters[0].ParameterType == typeof(PlayerChoiceContext) &&
-            parameters[1].ParameterType == typeof(IEnumerable<Creature>) &&
-            parameters[2].ParameterType == typeof(decimal) &&
-            parameters[3].ParameterType == typeof(ValueProp) &&
-            parameters[4].ParameterType == typeof(Creature) &&
-            parameters[5].ParameterType == typeof(CardModel));
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
 
     [HarmonyPriority(Priority.First)]
     private static bool Prefix(Creature dealer, CardModel cardSource,

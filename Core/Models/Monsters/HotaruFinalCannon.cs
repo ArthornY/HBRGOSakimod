@@ -71,6 +71,8 @@ public sealed class HotaruFinalCannon : HotaruCannonModel
                 if (!Relic.WasCannonRetired(kind)) continue;
                 LocString effect = new("monsters", Id.Entry + (positive ? ".positive." : ".negative.") +
                     kind.ToString().ToLowerInvariant());
+                effect.Add("DamagePerPercent", HbrBattleStatsHelper.IsEnabled(Relic.Owner)
+                    ? HotaruEndgameEffectsHelper.RedemptionDamagePerPercent : 1m);
                 effects.Add("• " + effect.GetFormattedText());
             }
         }

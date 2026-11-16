@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
@@ -16,9 +15,6 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class FeintMarkPower : PowerModel
 {
-    private static readonly object _dualSwordsEligibleStrikesLock = new();
-    private static readonly HashSet<CardModel> _dualSwordsEligibleStrikes = new();
-
     private AttackCommand _activeAttackCommand;
     private bool _isIncomingDamageWindowOpen;
     private bool _shouldSpendSwordheart;
@@ -29,14 +25,6 @@ public sealed class FeintMarkPower : PowerModel
     public override PowerStackType StackType => PowerStackType.Counter;
 
     public override Godot.Color AmountLabelColor => new("F8D36A");
-
-    public static bool IsDualSwordsEligibleStrike(CardModel card)
-    {
-        lock (_dualSwordsEligibleStrikesLock)
-        {
-            return _dualSwordsEligibleStrikes.Contains(card);
-        }
-    }
 
     public override async Task BeforeAttack(AttackCommand command)
     {
@@ -72,14 +60,12 @@ public sealed class FeintMarkPower : PowerModel
         strike.UpgradeInternal();
         strike.FinalizeUpgradeInternal();
         strike.ExhaustOnNextPlay = true;
-        AddDualSwordsEligibleStrike(strike);
         try
         {
             await CardCmd.AutoPlay(choiceContext, strike, attacker, AutoPlayType.Default, skipCardPileVisuals: true);
         }
         finally
         {
-            RemoveDualSwordsEligibleStrike(strike);
             await GeneratedStrikeHelper.RemoveGeneratedStrike(strike);
         }
 
@@ -238,19 +224,4 @@ public sealed class FeintMarkPower : PowerModel
         _didNegateDamage = false;
     }
 
-    private static void AddDualSwordsEligibleStrike(CardModel card)
-    {
-        lock (_dualSwordsEligibleStrikesLock)
-        {
-            _dualSwordsEligibleStrikes.Add(card);
-        }
-    }
-
-    private static void RemoveDualSwordsEligibleStrike(CardModel card)
-    {
-        lock (_dualSwordsEligibleStrikesLock)
-        {
-            _dualSwordsEligibleStrikes.Remove(card);
-        }
-    }
 }

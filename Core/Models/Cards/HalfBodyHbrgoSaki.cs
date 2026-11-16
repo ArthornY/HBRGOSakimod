@@ -160,6 +160,8 @@ public sealed class HalfBodyHbrgoSaki : CardModel
         if (targets.Length == 0) return;
         // Native OnTurnEndInHandWrapper moves even retained cards to discard.
         // This passive instead leaves the memory in hand for its other effects.
+        using var skill = HbrBattleStatsHelper.IsEnabled(Owner)
+            ? HbrEffectSkillDamageContext.Begin(null, Owner.Creature, this, damage, ValueProp.Unpowered) : null;
         await CreatureCommandCompatibility.Damage(choiceContext, targets, damage,
             ValueProp.Unpowered, Owner.Creature, this);
     }

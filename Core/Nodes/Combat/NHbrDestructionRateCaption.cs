@@ -27,7 +27,6 @@ internal partial class NHbrDestructionRateCaption : Control
     private float _lastWidth = -1f;
     private PowerModel _rate;
     private PowerModel _cap;
-    private PowerModel _conversion;
     private bool _subscribed;
     private decimal _shownCurrent = -1m;
     private decimal _shownMaximum = -1m;
@@ -190,7 +189,6 @@ internal partial class NHbrDestructionRateCaption : Control
         }
         BindPower(ref _rate, _creature.GetPower<DestructionRatePower>());
         BindPower(ref _cap, _creature.GetPower<DestructionRateCapIncreasePower>());
-        BindPower(ref _conversion, _creature.GetPower<SixSenseResistancePower>());
     }
 
     private void BindPower(ref PowerModel previous, PowerModel next)
@@ -213,6 +211,5 @@ internal partial class NHbrDestructionRateCaption : Control
         _subscribed = false;
         BindPower(ref _rate, null);
         BindPower(ref _cap, null);
-        BindPower(ref _conversion, null);
     }
 }

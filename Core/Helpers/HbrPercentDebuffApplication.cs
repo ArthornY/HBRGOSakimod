@@ -38,28 +38,21 @@ internal static class HbrPercentDebuffApplication
     internal static async Task ApplyAttackDown(PlayerChoiceContext context, IEnumerable<Creature> targets,
         decimal amount, Creature applier, CardModel source = null, bool silent = false)
     {
+        using var batch = HbrDebuffApplicationScope.BeginBatch(applier);
         foreach (Creature target in targets) await ApplyAttackDown(context, target, amount, applier, source, silent);
     }
 
     internal static async Task ApplyDefenseDown(PlayerChoiceContext context, IEnumerable<Creature> targets,
         decimal amount, Creature applier, CardModel source = null, bool silent = false)
     {
+        using var batch = HbrDebuffApplicationScope.BeginBatch(applier);
         foreach (Creature target in targets) await ApplyDefenseDown(context, target, amount, applier, source, silent);
     }
 
     internal static PowerModel Replacement(PowerModel incoming, Creature target, decimal percent)
     {
-        PowerModel weakest = null;
-        int count = 0;
-        foreach (PowerModel existing in target.Powers.Where(p => p.GetType() == incoming.GetType()))
-        {
-            if (existing.Amount <= 0) continue;
-            count++;
-            if (weakest == null || HbrPercentDebuffHelper.GetEffectPercent(existing) < HbrPercentDebuffHelper.GetEffectPercent(weakest) ||
-                HbrPercentDebuffHelper.GetEffectPercent(existing) == HbrPercentDebuffHelper.GetEffectPercent(weakest) && existing.Amount < weakest.Amount)
-                weakest = existing;
-        }
-        return count < 2 ? null : percent >= HbrPercentDebuffHelper.GetEffectPercent(weakest) ? weakest : null;
+        return HbrEffectRules.Select(incoming, target, percent,
+            HbrEffectProfileResolver.Resolve(incoming)).Replaced;
     }
 
     internal static Task Apply(PlayerChoiceContext context, PowerModel power,
@@ -67,6 +60,29 @@ internal static class HbrPercentDebuffApplication
         decimal? resolvedPercent = null, int copiedModifiers = 0) =>
         ApplyCore(context, power, target, modifiers, applier, source, silent,
             resolvedPercent, copiedModifiers, allowExtraInstance: false);
+
+    // Explicit HBR skill strength. Amount remains one independent application;
+    // Artifact, native giving/receiving hooks and the common slot policy remain.
+    internal static Task ApplyBasis<T>(PlayerChoiceContext context, Creature target,
+        decimal basis, Creature applier, CardModel source = null,
+        HbrEffectProfile? profile = null, bool silent = false) where T : PowerModel
+    {
+        PowerModel power = ModelDb.Power<T>().ToMutable();
+        if (!HbrPercentDebuffHelper.Supports(power))
+            throw new ArgumentException("An HBR percentage debuff is required.", nameof(T));
+        return basis <= 0m ? Task.CompletedTask : ApplyCore(context, power, target, 1m,
+            applier, source, silent, null, 1, false, profile, basis);
+    }
+
+    // Resource break is a fixed penalty, not a new skill roll. Keep the native
+    // receiving hooks and ordinary slot policy, but do not scale its potency.
+    internal static Task ApplyDpBreakAttackDown(PlayerChoiceContext context, Creature target)
+    {
+        HbrAttackDownPower power = (HbrAttackDownPower)ModelDb.Power<HbrAttackDownPower>().ToMutable();
+        if (target.CombatState?.CurrentSide == target.Side) power.WaitForNextOwnerTurn();
+        return ApplyCore(context, power, target, 1m, null, null, false, 30m, 1, false,
+            new(HbrEffectLimit.Default, HbrEffectExit.OwnerTurnEnd, 1));
+    }
 
     // This explicit card-only path copies a frozen pre-play snapshot. Ordinary
     // applications, including copies from every other source, retain two slots.
@@ -78,15 +94,21 @@ internal static class HbrPercentDebuffApplication
             !HbrBattleStatsHelper.IsEnabled(target)) return Task.CompletedTask;
         PowerModel copy = ModelDb.GetById<PowerModel>(original.Id).ToMutable();
         return ApplyCore(context, copy, target, 1m, applier, source, silent,
-            percent, modifiers, allowExtraInstance: true);
+            percent, modifiers, allowExtraInstance: true,
+            profileOverride: ((IHbrEffectInstance)original).EffectProfile with { Limit = HbrEffectLimit.None });
     }
 
     private static async Task ApplyCore(PlayerChoiceContext context, PowerModel power,
         Creature target, decimal modifiers, Creature applier, CardModel source, bool silent,
-        decimal? resolvedPercent, int copiedModifiers, bool allowExtraInstance)
+        decimal? resolvedPercent, int copiedModifiers, bool allowExtraInstance,
+        HbrEffectProfile? profileOverride = null, decimal? basisOverride = null)
     {
+        if (ThirtyOneBEnemyActionHelper.TryDeferPower(power, target, modifiers, applier,
+            () => ApplyCore(context, power, target, modifiers, applier, source, silent, resolvedPercent,
+                copiedModifiers, allowExtraInstance, profileOverride, basisOverride))) return;
         if (CombatManager.Instance.IsEnding || modifiers <= 0m || !target.CanReceivePowers ||
             target.CombatState is not { } combat ||
+            ThirtyOneBEnemyActionHelper.BlocksPower(power, target, modifiers, applier) ||
             NararaNullificationHelper.BlocksPowerChange(power, target, modifiers, source)) return;
         bool fast = FragileAutoPlayAnimationHelper.IsSuppressed(source);
         silent |= fast;
@@ -110,13 +132,22 @@ internal static class HbrPercentDebuffApplication
         modified = IntegralStatAmountHelper.Normalize(modified, power);
         int count = (int)Math.Min(int.MaxValue, Math.Max(0m, decimal.Truncate(modified)));
         bool accepted = count > 0 && target.CanReceivePowers;
-        decimal percent = resolvedPercent ?? HbrPercentDebuffHelper.ResolvePercent(power, count,
-            applier ?? source?.Owner?.Creature, target);
+        Creature caster = applier ?? source?.Owner?.Creature;
+        HbrDebuffApplicationScope.Claim bonus = accepted && resolvedPercent == null
+            ? HbrDebuffApplicationScope.GetClaim(caster, power.GetType(), target, source) : null;
+        decimal boost = bonus?.Multiplier ?? 1m;
+        decimal percent = resolvedPercent ?? HbrPercentDebuffHelper.ResolveBasis(power,
+            (basisOverride ?? HbrEnemyDebuffDurationHelper.BasisForTableMonster(power, caster) ??
+                (power is FragilePower ? HbrFragilePowerHelper.BasePercent(count)
+                : HbrPercentDebuffHelper.BasePercent(count))) * boost, caster, target);
+        HbrEffectProfile profile = profileOverride ?? HbrEnemyDebuffDurationHelper.ForTableMonster(power, caster) ??
+            HbrEffectProfileResolver.Resolve(power, source);
+        if (allowExtraInstance) profile = profile with { Limit = HbrEffectLimit.None };
         if (accepted && !allowExtraInstance)
         {
-            int occupied = target.Powers.Count(p => p.GetType() == power.GetType() && p.Amount > 0);
-            PowerModel replaced = Replacement(power, target, percent);
-            accepted = occupied < 2 || replaced != null;
+            HbrEffectSlotDecision slot = HbrEffectRules.Select(power, target, percent, profile);
+            PowerModel replaced = slot.Replaced;
+            accepted = slot.Accepted;
             if (replaced != null)
             {
                 if (!fast) await PowerCmd.Remove(replaced);
@@ -133,9 +164,10 @@ internal static class HbrPercentDebuffApplication
         if (accepted && target.CanReceivePowers && !CombatManager.Instance.IsEnding)
         {
             HbrPercentDebuffHelper.Configure(power, percent, copiedModifiers > 0 ? copiedModifiers : count);
-            await power.BeforeApplied(target, 2m, applier, source);
-            power.ApplyInternal(target, 2m, silent);
-            CombatManager.Instance.History.PowerReceived(combat, power, 2m, applier);
+            HbrPercentDebuffHelper.ConfigureProfile(power, profile);
+            await power.BeforeApplied(target, profile.DefaultRemaining, applier, source);
+            power.ApplyInternal(target, profile.DefaultRemaining, silent);
+            CombatManager.Instance.History.PowerReceived(combat, power, profile.DefaultRemaining, applier);
             if (power.IsVisible && CombatManager.Instance.IsInProgress)
                 await FragileAutoPlayAnimationHelper.WaitForPowerAnimation(
                     0.1f, 0.25f, false, default, power, source);
@@ -143,9 +175,11 @@ internal static class HbrPercentDebuffApplication
         else accepted = false;
         if (given != null) await Hook.AfterModifyingPowerAmountGiven(combat, given, power);
         await Hook.AfterModifyingPowerAmountReceived(combat, received, power);
-        if (!accepted) return;
+        if (!accepted)
+        { if (bonus is { Batched: false }) bonus.Release(); return; }
+        if (bonus != null) await bonus.Complete();
         await power.AfterApplied(applier, source);
-        await Hook.AfterPowerAmountChanged(combat, context, power, 2m, applier, source);
+        await Hook.AfterPowerAmountChanged(combat, context, power, profile.DefaultRemaining, applier, source);
     }
 
     // A transformation of an existing slot, rather than a new application/copy.
@@ -212,8 +246,9 @@ internal static class HbrPercentDebuffApplication
         Creature applier, CardModel source, bool silent)
     {
         PowerModel copy = ModelDb.GetById<PowerModel>(original.Id).ToMutable();
-        await Apply(context, copy, original.Owner, 1m, applier, source, silent,
-            HbrPercentDebuffHelper.GetEffectPercent(original), HbrPercentDebuffHelper.GetModifierAmount(original));
+        await ApplyCore(context, copy, original.Owner, 1m, applier, source, silent,
+            HbrPercentDebuffHelper.GetEffectPercent(original), HbrPercentDebuffHelper.GetModifierAmount(original),
+            allowExtraInstance: false, profileOverride: ((IHbrEffectInstance)original).EffectProfile);
         return copy.Owner != null ? copy.Amount : original.Amount;
     }
 }

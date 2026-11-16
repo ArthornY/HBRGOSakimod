@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.Json;
+using HBRGOSakiMod.Core.Equipment;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Rooms;
@@ -49,9 +50,10 @@ public partial class ElectronicSoldierManual
         decimal amount = HbrBattleStatsHelper.InitialStat +
             Math.Max(0m, (decimal)HbrBattleLevel - 1m) * HbrBattleStatsHelper.StatGainPerLevel;
         HbrBattleStats senses = HbrBattleStatsHelper.GetSixSenseBonuses(this);
-        return new(amount + senses.Strength, amount + senses.Dexterity,
-            amount + senses.Intelligence, amount + senses.Vitality,
-            amount + senses.Spirit, amount + senses.Luck);
+        HbrEquipmentBonus gear = GetEquipmentBonus();
+        return new(amount + senses.Strength + gear.Strength, amount + senses.Dexterity + gear.Dexterity,
+            amount + senses.Intelligence + gear.Intelligence, amount + senses.Vitality + gear.Vitality,
+            amount + senses.Spirit + gear.Spirit, amount + senses.Luck + gear.Luck);
     }
 
     internal void InitializeHbrBattleNumerics()

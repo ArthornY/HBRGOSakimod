@@ -31,8 +31,7 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int[] UpgradeEffectOrder { get; private set; } = Array.Empty<int>();
 
-    // The fixed-cost discount and X cost are mutually exclusive.
-    public override int MaxUpgradeLevel => UpgradeEffectCount - 1;
+    public override int MaxUpgradeLevel => UpgradeEffectCount;
     protected override bool HasEnergyCostX => HasUpgradeEffect(4);
     public override TargetType TargetType => HasUpgradeEffect(0) ? TargetType.AllEnemies : TargetType.AnyEnemy;
     public override bool CanBeGeneratedByModifiers => false;
@@ -55,7 +54,13 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
                 yield return HoverTipFactory.FromPower<MyLegendNextAttackPower>();
                 yield return HoverTipFactory.FromPower<MyLegendNextAttackDoublePower>();
             }
-            if (HasUpgradeEffect(6)) yield return HoverTipFactory.FromPower<DexterityPower>();
+            if (HasUpgradeEffect(3)) yield return HoverTipFactory.FromPower<HbrComboMediumPower>();
+            if (HasUpgradeEffect(5)) yield return HoverTipFactory.FromPower<MindsEyePower>();
+            if (HasUpgradeEffect(6))
+            {
+                yield return HoverTipFactory.FromPower<HbrCriticalRateUpPower>();
+                yield return HoverTipFactory.FromPower<HbrCriticalDamageUpPower>();
+            }
         }
     }
 
@@ -65,8 +70,7 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
         UpgradeEffectOrder.Take(CurrentUpgradeLevel).Contains(effectId);
 
     private static bool IsEligible(int effectId, IReadOnlyCollection<int> applied) =>
-        effectId >= 0 && effectId < UpgradeEffectCount && !applied.Contains(effectId) &&
-        !(effectId == 3 && applied.Contains(4)) && !(effectId == 4 && applied.Contains(3));
+        effectId >= 0 && effectId < UpgradeEffectCount && !applied.Contains(effectId);
 
     internal IReadOnlyList<int> GetAvailableUpgradeEffects() => Enumerable.Range(0, UpgradeEffectCount)
         .Where(id => IsEligible(id, UpgradeEffectOrder.Take(CurrentUpgradeLevel).ToArray())).ToArray();
@@ -80,32 +84,18 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
 
     internal void CancelPreparedUpgradeEffect() => _preparedUpgradeEffect = null;
 
-    internal static int CalculateHitCount(int baseHits, int dexterity, bool scalesWithDexterity, bool doublesHits)
-    {
-        long hits = Math.Max(0, baseHits);
-        if (scalesWithDexterity) hits += Math.Max(0, dexterity) / 2;
-        if (doublesHits) hits *= 2;
-        return (int)Math.Min(int.MaxValue, hits);
-    }
-
-    private int CurrentDexterity => IsMutable ? Owner?.Creature?.GetPowerAmount<DexterityPower>() ?? 0 : 0;
-
-    internal int GetHitCount(int resolvedXValue) => CalculateHitCount(
-        HasUpgradeEffect(4) ? resolvedXValue : 2, CurrentDexterity, HasUpgradeEffect(6), HasUpgradeEffect(5));
+    internal int GetHitCount(int resolvedXValue) => HasUpgradeEffect(4) ? Math.Max(0, resolvedXValue) : 2;
 
     protected override void AddExtraArgsToDescription(LocString description)
     {
         base.AddExtraArgsToDescription(description);
         description.Add("LegendTarget", HasUpgradeEffect(0) ? "所有敌人" : "目标");
-        int dexterityHits = CalculateHitCount(0, CurrentDexterity, HasUpgradeEffect(6), HasUpgradeEffect(5));
-        string hits = HasUpgradeEffect(4)
-            ? (HasUpgradeEffect(5) ? "2X" : "X") + (dexterityHits > 0 ? "+" + dexterityHits : string.Empty)
-            : GetHitCount(0).ToString();
+        string hits = HasUpgradeEffect(4) ? "X" : GetHitCount(0).ToString();
         description.Add("LegendHits", hits);
         // Cost, target and total hit count are already reflected by their native
         // fields/body. Keep only the additional effects in the appended text.
         string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel)
-            .Where(id => id is 1 or 2 or 6)
+            .Where(id => id is 1 or 2 or 3 or 5 or 6)
             .Select(id => HbrMemoryGardenUpgradeCatalog.GetEffectDescription(this, id.ToString()))
             .ToArray();
         description.Add("UpgradeEffects", effects.Length == 0 ? string.Empty : "\n" + string.Join("\n", effects));
@@ -113,13 +103,15 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        if (HasUpgradeEffect(5) && HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+            await HbrEffectApplication.ApplyMindsEye(choiceContext, Owner.Creature, Owner.Creature, this);
         bool hadVigorBeforeAttack = Owner.Creature.GetPowerAmount<VigorPower>() > 0;
         bool allEnemies = HasUpgradeEffect(0);
         if (!allEnemies) ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
         int resolvedX = 0;
         if (HasUpgradeEffect(4))
         {
-            EnergyCost.CapturedXValue = DualSwordsCopyHelper.TakeXEnergySpent(this, EnergyCost.CapturedXValue);
+            EnergyCost.CapturedXValue = CardCopyContextHelper.TakeXEnergySpent(this, EnergyCost.CapturedXValue);
             resolvedX = ResolveEnergyXValue();
         }
         int hits = GetHitCount(resolvedX);
@@ -146,6 +138,13 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
             foreach (var ally in allies)
                 await LegendNextAttackHelper.Grant(choiceContext, ally, Owner.Creature, this, doubleHits);
         }
+        if (HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+        {
+            if (HasUpgradeEffect(3))
+                await HbrComboPower.Grant<HbrComboMediumPower>(choiceContext, Owner.Creature, Owner.Creature, this);
+            if (HasUpgradeEffect(6))
+                await ThirtyOneAMemoryUpgradeHelper.GrantCriticals(choiceContext, Owner.Creature, Owner.Creature, this);
+        }
     }
 
     protected override void OnUpgrade()
@@ -160,7 +159,6 @@ public sealed class MyLegendBeginsHbrgoSaki : CardModel
         if (index < UpgradeEffectOrder.Length) UpgradeEffectOrder[index] = effectId;
         else UpgradeEffectOrder = UpgradeEffectOrder.Append(effectId).ToArray();
         _preparedUpgradeEffect = null;
-        if (effectId == 3) EnergyCost.UpgradeBy(-1);
         if (effectId == 4)
         {
             EnergyCostField(this) = new CardEnergyCost(this, 2, true);

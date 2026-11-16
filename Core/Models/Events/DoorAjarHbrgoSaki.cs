@@ -130,7 +130,7 @@ public sealed class DoorAjarHbrgoSaki : ModEventTemplate
             Owner,
             new List<Reward>
             {
-                new CardReward(options, 3, Owner),
+                NativeRewardApiCompatibility.Card(options, 3, Owner),
                 new CardRemovalReward(Owner)
             });
     }

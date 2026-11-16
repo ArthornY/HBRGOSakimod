@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Encounters;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Nodes.Events.Story;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.CardSelection;
@@ -26,7 +27,8 @@ namespace HBRGOSakiMod.Core.Story;
 public abstract class HbrStoryEvent : ModEventTemplate
 {
     public const string ReaderScenePath = "res://scenes/events/custom/library_hbrgo_saki.tscn";
-    public const int ExtendedGameplayRuntimeVersion = 1;
+    // Version 2 grants the "All" sense reward.
+    public const int ExtendedGameplayRuntimeVersion = 2;
     public const int MemoryGardenEncounterVersion = 2;
     internal const string ActEndingDoorEventId = "INSIDETHEDOOR_HBRGO_SAKI";
 
@@ -100,6 +102,7 @@ public abstract class HbrStoryEvent : ModEventTemplate
                     paths.AddRange(line.Characters.Select(character => character.Image));
             }
         }
+        paths.AddRange(NLibraryStoryRuntimeResources.Collect(definition, HbrStoryAudioSession.ResolveCueResource));
         return paths.Where(path => !string.IsNullOrEmpty(path)).Distinct(StringComparer.Ordinal);
     }
 
@@ -144,6 +147,20 @@ public abstract class HbrStoryEvent : ModEventTemplate
         _lastResumedCombat = null;
     }
 
+    // JSON writes a fixed DP reward literally; show the amount the reward actually grants.
+    internal string ChoiceTitle(HbrStoryChoice choice) => AdaptFixedRewardText(choice, choice.Text);
+
+    internal string ChoiceDescription(HbrStoryChoice choice) => AdaptFixedRewardText(choice, choice.Description);
+
+    private string AdaptFixedRewardText(HbrStoryChoice choice, string text)
+    {
+        int native = choice.Rewards.MaxDp;
+        if (native <= 0 || Owner?.Creature is not { } owner) return text;
+        int granted = HbrResourceValueHelper.FixedInt(owner, native);
+        return granted == native ? text : HbrFixedAmountText.Replace(text, native,
+            granted.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     private IReadOnlyList<EventOption> CreateOptions(HbrStoryPage page)
     {
         int stateVersion = _stateVersion;
@@ -158,6 +175,7 @@ public abstract class HbrStoryEvent : ModEventTemplate
         _stateVersion++;
         if (Definition.EventPool == HbrMemoryFragmentPoolRules.PoolId)
         {
+            HbrMemoryGarden.CaptureRepeatMemoryEligibility(Owner, this);
             HbrMemoryGarden.RecordEncounters(Owner, page.MetCharacters);
             _memoryEncounteredCharacters.UnionWith(page.MetCharacters);
         }
@@ -276,10 +294,13 @@ public abstract class HbrStoryEvent : ModEventTemplate
         ElectronicSoldierManual manual = Owner.GetRelic<ElectronicSoldierManual>();
         if (manual != null && rewards.SenseAmount > 0)
         {
-            SixSenseAttribute attribute = Enum.Parse<SixSenseAttribute>(rewards.Sense, ignoreCase: false);
+            SixSenseAttribute[] attributes = rewards.Sense == HbrStoryRewards.AllSenses
+                ? Enum.GetValues<SixSenseAttribute>()
+                : [Enum.Parse<SixSenseAttribute>(rewards.Sense, ignoreCase: false)];
             // The synchronized event choice already runs on each peer. Apply directly,
             // without dispatching another network action or awarding allocation points.
-            for (int index = 0; index < rewards.SenseAmount; index++) await manual.ApplySenseIncrease(attribute);
+            foreach (SixSenseAttribute attribute in attributes)
+                for (int index = 0; index < rewards.SenseAmount; index++) await manual.ApplySenseIncrease(attribute);
         }
 
         var offered = new List<Reward>();
@@ -290,7 +311,7 @@ public abstract class HbrStoryEvent : ModEventTemplate
             CardCreationOptions options = rewards.CardRarity == "rare"
                 ? CardCreationOptions.ForNonCombatWithUniformOdds(new[] { Owner.Character.CardPool }, IsEligible).WithFlags(CardCreationFlags.NoRarityModification)
                 : CardCreationOptions.ForNonCombatWithDefaultOdds(new[] { Owner.Character.CardPool }, IsEligible);
-            offered.Add(new CardReward(options, rewards.CardChoices, Owner));
+            offered.Add(NativeRewardApiCompatibility.Card(options, rewards.CardChoices, Owner));
         }
         for (int index = 0; index < rewards.Potions; index++) offered.Add(new PotionReward(Owner));
         for (int index = 0; index < rewards.CardRemovals; index++) offered.Add(new CardRemovalReward(Owner));

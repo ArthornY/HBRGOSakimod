@@ -69,6 +69,17 @@ internal static class HotaruCannonStatsHelper
     internal static bool IsReactionDamage => !IsDamagePreview && Current.Value?.Intent?.IsReaction == true;
     private static readonly ConditionalWeakTable<DamageResult, ReceiptState> Receipts = new();
 
+    // Card-only hit bonuses can reject an ambient cannon command without
+    // searching targets or borrowing the summoner's active card-play token.
+    internal static bool IsCannonAttackSource(Creature dealer, CardModel card)
+    {
+        if (PreviewCannon.Value is { } preview)
+            return ReferenceEquals(preview.PetOwner?.Creature, dealer) && ReferenceEquals(PreviewCard.Value, card);
+        CommandScope scope = Current.Value;
+        return scope?.Active == true && scope.Intent?.Active == true && scope.Cannon != null &&
+            ReferenceEquals(scope.Intent.Dealer, dealer) && ReferenceEquals(scope.Intent.Card, card);
+    }
+
     internal static bool TryGetCurrentCannon(Creature target, Creature dealer, CardModel card,
         ValueProp props, out Creature cannon)
     {
@@ -127,8 +138,9 @@ internal static class HotaruCannonStatsHelper
             {
                 PreviewTarget.Value = target;
                 decimal amount = baseDamage;
+                // Contest: per debuff kind on the target (per lost six-sense resistance before 2026-11-09).
                 if (includeContestBonus && cannon.Monster is HotaruContestCannon)
-                    amount += SixSenseCombatHelper.TargetResistanceBreakCount(target) *
+                    amount += HbrMissingDebuffHelper.DebuffKinds(target) *
                         HotaruCannonSkillPowerHelper.ContestResistanceDamage *
                         ((HotaruCannonModel)cannon.Monster).PhaseMultiplier(HotaruCannonPhase.End);
                 amount = HotaruCannonDamageUpgradeHelper.PrepareBaseDamage(cannon, target, amount,

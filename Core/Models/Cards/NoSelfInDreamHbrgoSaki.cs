@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -42,7 +43,8 @@ public sealed class NoSelfInDreamHbrgoSaki : CardModel
     {
         int startingBlock = Owner.Creature.Block;
         int temporaryStrength =
-            startingBlock / _blockPerTemporaryStrength;
+            startingBlock / (HbrBattleStatsHelper.IsEnabled(Owner)
+                ? _blockPerTemporaryStrength * 100 : _blockPerTemporaryStrength);
         if (startingBlock > 0)
         {
             await CreatureCommandCompatibility.LoseBlock(

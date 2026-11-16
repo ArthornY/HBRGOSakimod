@@ -67,6 +67,7 @@ static class Checks
     {
         var power = Blank<T>(); Set(power, "<IsMutable>k__BackingField", true); Set(power, "_owner", creature);
         Set(power, "<Id>k__BackingField", ModelDb.GetId(typeof(T))); Set(power, "_amount", amount);
+        if (power is HbrCalamityPower) Set(power, "<RemainingTurns>k__BackingField", 2);
         Set(power, "_internalData", AccessTools.Method(typeof(T), "InitInternalData").Invoke(power, null));
         Powers(creature).Add(power); return power;
     }
@@ -157,14 +158,13 @@ static class Checks
     }
     static decimal Outgoing(decimal str, decimal dex, decimal enemy, bool dp = false, decimal raw = 6m)
     {
-        decimal parameter = dp ? (str + dex * 2m) / 3m : (str * 2m + dex) / 3m;
+        decimal parameter = (str + dex) / 2m;
         return decimal.Floor(Math.Max(1m, raw * 1000m * Math.Max(0m, 1m + (parameter - enemy) / 140m)) * 100m) / 100m;
     }
     static decimal Incoming(decimal enemy, decimal vit, decimal spirit, bool magic = false, decimal raw = 10m)
     {
         decimal defense = magic ? (vit + spirit * 2m) / 3m : (vit * 2m + spirit) / 3m;
         decimal delta = enemy - defense;
-        if (delta >= 140m) return raw * 200m;
         if (delta <= -140m) return 1m;
         return Math.Max(1m, raw * 100m * (1m + delta / 140m));
     }
@@ -220,24 +220,24 @@ static class Checks
     {
         Reset(); string saved = Manual.HbrBattleProgressData;
         var strength = Power<StrengthPower>(Hero, 1); var dexterity = Power<DexterityPower>(Hero, 1);
-        StatsEqual(Stats(Hero), [101m, 101m, 101m, 100m, 100m, 100m], "one layer adds only the authored stats");
+        StatsEqual(Stats(Hero), [102m, 102m, 102m, 100m, 100m, 100m], "one layer adds two percent only to the authored stats");
         Equal(NativeAdditive(strength,"ModifyDamageAdditive",Enemy, 6m, ValueProp.Move, Hero, null), 0m, "real native Strength additive is disabled in HBR");
         Equal(NativeAdditive(dexterity,"ModifyBlockAdditive",Hero, 5m, ValueProp.Move, null, null), 0m, "real native Dexterity additive is disabled in HBR");
-        Equal(Convert(Enemy, Hero), Outgoing(101m, 101m, 150m), "adapter uses Strength stats once");
-        EqualFinal(Preview(Enemy, Hero), Outgoing(101m, 101m, 150m), "full native Hook adds no extra1000 flat Strength");
-        Equal(Block(Hero), 505m, "native block converts INT101 rather than raw5 plus Dex1");
+        Equal(Convert(Enemy, Hero), Outgoing(102m, 102m, 150m), "adapter uses Strength stats once");
+        EqualFinal(Preview(Enemy, Hero), Outgoing(102m, 102m, 150m), "full native Hook adds no extra1000 flat Strength");
+        Equal(Block(Hero), 510m, "native block converts INT102 rather than raw5 plus Dex1");
         Equal(Block(Hero, props: ValueProp.Unpowered), 5m, "unpowered block ignores INT and Dexterity");
         Equal(Preview(Enemy, Hero, props: ValueProp.Unpowered), 6m, "unpowered damage ignores Strength stats");
         for (int i = 0; i < 10; i++)
         {
-            EqualFinal(Preview(Enemy, Hero), Outgoing(101m, 101m, 150m), "repeated preview is stable " + i);
+            EqualFinal(Preview(Enemy, Hero), Outgoing(102m, 102m, 150m), "repeated preview is stable " + i);
             Check(Manual.HbrBattleProgressData == saved && strength.Amount == 1 && dexterity.Amount == 1 && Manual.Madness == 0 && Manual.Talent == 0,
                 "preview does not persist stats or mutate raw buff/manual " + i);
         }
         Set(strength, "_amount", -3); Set(dexterity, "_amount", -7);
-        StatsEqual(Stats(Hero), [97m, 97m, 93m, 100m, 100m, 100m], "negative buffs reduce only authored stats");
-        EqualFinal(Preview(Enemy, Hero), Outgoing(97m, 97m, 150m), "negative Strength has no extra native subtraction");
-        Equal(Block(Hero), 465m, "negative Dexterity changes intelligence before block");
+        StatsEqual(Stats(Hero), [94m, 94m, 86m, 100m, 100m, 100m], "negative buffs reduce only authored stats");
+        EqualFinal(Preview(Enemy, Hero), Outgoing(94m, 94m, 150m), "negative Strength has no extra native subtraction");
+        Equal(Block(Hero), 430m, "negative Dexterity changes intelligence before block");
         Set(strength, "_amount", int.MinValue); Set(dexterity, "_amount", int.MinValue);
         StatsEqual(Stats(Hero), [0m, 0m, 0m, 100m, 100m, 100m], "negative layers clamp each effective stat at zero");
         Equal(Block(Hero), 0m, "zero intelligence has zero block");
@@ -245,9 +245,9 @@ static class Checks
         Check(Manual.HbrBattleProgressData == saved, "buff add/change/remove never rewrites saved progression");
         Power<StrengthPower>(Hero,3); Power<FlexPotionPower>(Hero,3);
         Power<DexterityPower>(Hero,5); Power<SpeedPotionPower>(Hero,5);
-        StatsEqual(Stats(Hero),[103m,103m,105m,100m,100m,100m],"temporary duration markers do not double already-applied native Strength Dexterity");
-        EqualFinal(Preview(Enemy,Hero),Outgoing(103m,103m,150m),"temporary Strength marker adds no second stat or damage bonus");
-        Equal(Block(Hero),525m,"temporary Dexterity marker adds no second intelligence or block bonus");
+        StatsEqual(Stats(Hero),[106m,106m,110m,100m,100m,100m],"temporary duration markers do not double already-applied native Strength Dexterity");
+        EqualFinal(Preview(Enemy,Hero),Outgoing(106m,106m,150m),"temporary Strength marker adds no second stat or damage bonus");
+        Equal(Block(Hero),550m,"temporary Dexterity marker adds no second intelligence or block bonus");
         Powers(Hero).Clear();
         var vigor = Power<VigorPower>(Hero, 2); EqualFinal(Preview(Enemy, Hero), Outgoing(100m,100m,150m,raw:8m), "Vigor joins the outgoing base skill coefficient before the attribute curve");
         Check(vigor.Amount == 2, "damage preview does not consume Vigor");
@@ -267,18 +267,18 @@ static class Checks
         object original=Stats(Hero);
         StatsEqual(original,[150m,180m,220m,130m,140m,160m],"non100 saved profile before percentage buffs");
         var strength=Power<StrengthPower>(Hero,1);var dexterity=Power<DexterityPower>(Hero,1);
-        StatsEqual(Stats(Hero),[151.5m,181.8m,222.2m,130m,140m,160m],"one layer scales each non100 base by1percent without truncating stats");
-        EqualFinal(Preview(Enemy,Hero),Outgoing(151.5m,181.8m,150m),"real damage hook uses fractional percentage attributes exactly once");
-        Equal(Block(Hero),1111m,"real block hook uses INT222point2 rather than adding one raw point");
+        StatsEqual(Stats(Hero),[153m,183.6m,224.4m,130m,140m,160m],"one layer scales each non100 base by2percent without truncating stats");
+        EqualFinal(Preview(Enemy,Hero),Outgoing(153m,183.6m,150m),"real damage hook uses fractional percentage attributes exactly once");
+        Equal(Block(Hero),1122m,"real block hook uses INT224point4 rather than adding one raw point");
         Set(strength,"_amount",20);Set(dexterity,"_amount",25);
-        StatsEqual(Stats(Hero),[180m,216m,275m,130m,140m,160m],"20Strength and25Dexterity layers add percentages rather than compound each layer");
+        StatsEqual(Stats(Hero),[210m,252m,330m,130m,140m,160m],"20Strength and25Dexterity layers add percentages rather than compound each layer");
         var calamity=Power<HbrCalamityPower>(Hero,10);
-        StatsEqual(Stats(Hero),[170m,206m,265m,120m,130m,150m],"fixed Calamity subtracts10 after percentage bonuses");
-        EqualFinal(Preview(Enemy,Hero),Outgoing(170m,206m,150m),"post-percentage Calamity reaches actual damage preview");
-        Equal(Block(Hero),1325m,"post-percentage fixed Calamity reaches actual block preview");
+        StatsEqual(Stats(Hero),[200m,242m,320m,120m,130m,150m],"fixed Calamity subtracts10 after percentage bonuses");
+        EqualFinal(Preview(Enemy,Hero),Outgoing(200m,242m,150m),"post-percentage Calamity reaches actual damage preview");
+        Equal(Block(Hero),1600m,"post-percentage fixed Calamity reaches actual block preview");
         Powers(Hero).Remove(calamity);Set(strength,"_amount",-50);Set(dexterity,"_amount",-25);
-        StatsEqual(Stats(Hero),[75m,90m,165m,130m,140m,160m],"negative signed layers scale each original non100 attribute");
-        foreach(int amount in new[]{-100,-101,int.MinValue})
+        StatsEqual(Stats(Hero),[0m,0m,110m,130m,140m,160m],"negative signed layers scale each original non100 attribute");
+        foreach(int amount in new[]{-50,-51,-100,-101,int.MinValue})
         {
             Set(strength,"_amount",amount);Set(dexterity,"_amount",amount);
             StatsEqual(Stats(Hero),[0m,0m,0m,130m,140m,160m],"effective percentage floors at zero for signed amount"+amount);
@@ -286,7 +286,7 @@ static class Checks
         Set(strength,"_amount",20);Set(dexterity,"_amount",25);
         for(int index=0;index<3;index++)
         {
-            StatsEqual(Stats(Hero),[180m,216m,275m,130m,140m,160m],"repeated non100 percentage stat view does not compound"+index);
+            StatsEqual(Stats(Hero),[210m,252m,330m,130m,140m,160m],"repeated non100 percentage stat view does not compound"+index);
             Check(Manual.HbrBattleProgressData==saved&&Manual.Madness==25&&Manual.LeadershipCharm==40&&Manual.Talent==60,
                 "percentage stat read never changes progression or allocated senses"+index);
         }
@@ -303,26 +303,26 @@ static class Checks
         var phantom=Actor(Blank<TestSubject>(),owner:Player);Power<PhantomPower>(phantom,1);
         StatsEqual(Stats(phantom),[150m,180m,220m,130m,140m,160m],"non100 phantom does not inherit owner percentage buffs");
         Power<StrengthPower>(phantom,10);Power<DexterityPower>(phantom,40);
-        StatsEqual(Stats(phantom),[165m,198m,308m,130m,140m,160m],"non100 phantom uses only its own percentage layers");
-        EqualFinal(Preview(Enemy,phantom),Outgoing(165m,198m,150m),"phantom native damage hook applies its own percent once");
-        Equal(Block(phantom),1540m,"phantom native block hook applies its own40percent INT once");
+        StatsEqual(Stats(phantom),[180m,216m,396m,130m,140m,160m],"non100 phantom uses only its own percentage layers");
+        EqualFinal(Preview(Enemy,phantom),Outgoing(180m,216m,150m),"phantom native damage hook applies its own percent once");
+        Equal(Block(phantom),1980m,"phantom native block hook applies its own80percent INT once");
         var millsage=new Millsage();Set(millsage,"<IsMutable>k__BackingField",true);Set(millsage,"_owner",Player);
         Set(Player,"_relics",new List<RelicModel>{Manual,millsage});
         var happy=Actor(Blank<HotaruHappinessCannon>(),owner:Player);var contest=Actor(Blank<HotaruContestCannon>(),owner:Player);
         Set(Combat,"_allies",new List<Creature>{Hero,phantom,happy,contest});
         Power<StrengthPower>(contest,999);Power<DexterityPower>(contest,999);
-        StatsEqual(Stats(contest),[180m,216m,275m,130m,140m,160m],"non100 cannon uses owner percentage buffs once and ignores local native counters");
-        Equal(Block(contest),1375m,"non100 cannon block reads owner INT275 once");
-        EqualFinal(Cannon(contest,()=>Preview(Enemy,Hero)),Outgoing(180m,216m,150m)*.5m,"non100 cannon damage uses owner percentage attributes once before soul factor");
+        StatsEqual(Stats(contest),[210m,252m,330m,130m,140m,160m],"non100 cannon uses owner percentage buffs once and ignores local native counters");
+        Equal(Block(contest),1650m,"non100 cannon block reads owner INT330 once");
+        EqualFinal(Cannon(contest,()=>Preview(Enemy,Hero)),Outgoing(210m,252m,150m)*.5m,"non100 cannon damage uses owner percentage attributes once before soul factor");
         typeof(Millsage).GetProperty("HappinessUpgradeLevel",F)!.SetValue(millsage,3);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(210m,252m,150m),"HappinessLv3 adds a second20percent rather than compounding1point2 twice");
-        StatsEqual(Stats(Hero),[180m,216m,275m,130m,140m,160m],"Happiness percentage copy remains local to its attack");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(270m,324m,150m),"HappinessLv3 adds a second40percent rather than compounding1point4 twice");
+        StatsEqual(Stats(Hero),[210m,252m,330m,130m,140m,160m],"Happiness percentage copy remains local to its attack");
         var ownerCalamity=Power<HbrCalamityPower>(Hero,10);Power<HbrCalamityPower>(happy,3);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(197m,239m,150m),"Happiness extra percentage resolves before owner10 and local3 fixed Calamity");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(257m,311m,150m),"Happiness extra percentage resolves before owner10 and local3 fixed Calamity");
         Set(ownerStrength,"_amount",-20);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(107m,131m,150m),"Happiness does not double negative percentage Strength before fixed Calamity");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(77m,95m,150m),"Happiness does not double negative percentage Strength before fixed Calamity");
         Set(ownerStrength,"_amount",20);Powers(Hero).Remove(ownerCalamity);Powers(happy).Clear();Power<DexterityPower>(Enemy,3);Act(1);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(204m,246m,210m),"enemy flat per-act ignore remains after local percentage Happiness bonus");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(264m,318m,210m),"enemy flat per-act ignore remains after local percentage Happiness bonus");
         Act(0);Powers(Enemy).Clear();
         var state=Blank<PlayerCombatState>();Set(state,"<TurnNumber>k__BackingField",1);Set(Player,"<PlayerCombatState>k__BackingField",state);
         typeof(Millsage).GetProperty("LongingUpgradeLevel",F)!.SetValue(millsage,2);
@@ -330,11 +330,11 @@ static class Checks
         typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryCopies",F)!.SetValue(again,2);
         typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryTurnNumber",F)!.SetValue(again,1);
         Equal(Number("HotaruSeeYouAgainHelper","GetExtraDexterity",Player),6m,"real active copies supply six virtual Dexterity layers");
-        StatsEqual(Stats(Hero),[180m,216m,288.2m,130m,140m,160m],"virtual six layers add to native25percent before non100 INT multiplication");
-        Equal(Block(Hero),1441m,"native block uses220 times1point31 intelligence");
-        Equal(Block(contest),1441m,"cannon virtual Dexterity reads owner percentage once");
-        StatsEqual(Stats(phantom),[165m,198m,308m,130m,140m,160m],"phantom percentage stats remain independent of owner virtual Dexterity");
-        Set(state,"<TurnNumber>k__BackingField",2);Equal(Block(Hero),1375m,"virtual Dexterity expiry immediately removes only its six percent");
+        StatsEqual(Stats(Hero),[210m,252m,356.4m,130m,140m,160m],"virtual six layers add to native25layers before non100 INT multiplication");
+        Equal(Block(Hero),1782m,"native block uses220 times1point62 intelligence");
+        Equal(Block(contest),1782m,"cannon virtual Dexterity reads owner percentage once");
+        StatsEqual(Stats(phantom),[180m,216m,396m,130m,140m,160m],"phantom percentage stats remain independent of owner virtual Dexterity");
+        Set(state,"<TurnNumber>k__BackingField",2);Equal(Block(Hero),1650m,"virtual Dexterity expiry immediately removes only its twelve percent");
         Check(Manual.HbrBattleProgressData==saved,"ownership and virtual percentage effects never rewrite progression");
         Set(Player,"_relics",new List<RelicModel>{Manual});Set(Combat,"_allies",new List<Creature>{Hero});Reset();
     }
@@ -401,26 +401,26 @@ static class Checks
         var ownerStr=Power<StrengthPower>(Hero,10); Power<DexterityPower>(Hero,7);
         StatsEqual(Stats(phantom),[100m,100m,100m,100m,100m,100m],"phantom does not inherit summoner native buffs");
         Power<StrengthPower>(phantom,3); Power<DexterityPower>(phantom,4);
-        StatsEqual(Stats(phantom),[103m,103m,104m,100m,100m,100m],"phantom only uses its own Strength Dexterity");
-        EqualFinal(Preview(Enemy,phantom),Outgoing(103m,103m,150m),"phantom full damage uses its own strength once");
-        Equal(Block(phantom),520m,"phantom full block uses its own Dexterity INT");
+        StatsEqual(Stats(phantom),[106m,106m,108m,100m,100m,100m],"phantom only uses its own Strength Dexterity");
+        EqualFinal(Preview(Enemy,phantom),Outgoing(106m,106m,150m),"phantom full damage uses its own strength once");
+        Equal(Block(phantom),540m,"phantom full block uses its own Dexterity INT");
         var millsage=new Millsage(); Set(millsage,"<IsMutable>k__BackingField",true); Set(millsage,"_owner",Player);
         Set(Player,"_relics",new List<RelicModel>{Manual,millsage});
         var happy=Actor(Blank<HotaruHappinessCannon>(),owner:Player);
         var contest=Actor(Blank<HotaruContestCannon>(),owner:Player);
         Set(Combat,"_allies",new List<Creature>{Hero,phantom,happy,contest});
         Power<StrengthPower>(contest,999); Power<DexterityPower>(contest,999);
-        StatsEqual(Stats(contest),[110m,110m,107m,100m,100m,100m],"cannon stat view uses owner buffs once instead of extra pet counters");
-        Equal(Block(contest),535m,"cannon block uses owner's current INT107 exactly once");
-        EqualFinal(Cannon(contest,()=>Preview(Enemy,Hero)),Outgoing(110m,110m,150m)*0.5m,"ordinary owner-sourced cannon uses hero stats once then soul factor");
+        StatsEqual(Stats(contest),[120m,120m,114m,100m,100m,100m],"cannon stat view uses owner buffs once instead of extra pet counters");
+        Equal(Block(contest),570m,"cannon block uses owner's current INT114 exactly once");
+        EqualFinal(Cannon(contest,()=>Preview(Enemy,Hero)),Outgoing(120m,120m,150m)*0.5m,"ordinary owner-sourced cannon uses hero stats once then soul factor");
         typeof(Millsage).GetProperty("HappinessUpgradeLevel",F)!.SetValue(millsage,3);
         object stats=Stats(Hero);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(120m,120m,150m),"happy Lv3 doubles positive Strength stat contribution only locally");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(140m,140m,150m),"happy Lv3 doubles positive Strength stat contribution only locally");
         Check(stats.Equals(Stats(Hero))&&ownerStr.Amount==10,"happy local upgrade does not persist its doubled stat contribution");
         Set(ownerStr,"_amount",-10);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(90m,90m,150m),"happy Lv3 does not double negative Strength stat contribution");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(80m,80m,150m),"happy Lv3 does not double negative Strength stat contribution");
         Set(ownerStr,"_amount",10); Power<DexterityPower>(Enemy,3); Act(1);
-        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(114m,114m,210m),"happy extra Strength and enemy Dexterity share one local attack snapshot");
+        Equal(Cannon(happy,()=>Convert(Enemy,Hero)),Outgoing(134m,134m,210m),"happy extra Strength and enemy Dexterity share one local attack snapshot");
         Act(0); Powers(Enemy).Clear();
         // Build a real active ordinary-turn copy bucket. GetExtraDexterity and
         // ActiveCopies still run production logic; their return is never mocked.
@@ -431,16 +431,16 @@ static class Checks
         typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryCopies",F)!.SetValue(again,2);
         typeof(HotaruSeeYouAgainPower).GetProperty("OrdinaryTurnNumber",F)!.SetValue(again,1);
         Equal(Number("HotaruSeeYouAgainHelper","GetExtraDexterity",Player),6m,"two real active longing copies expose six virtual Dexterity");
-        StatsEqual(Stats(Hero),[110m,110m,113m,100m,100m,100m],"virtual Dexterity enters current hero intelligence once");
+        StatsEqual(Stats(Hero),[120m,120m,126m,100m,100m,100m],"virtual Dexterity enters current hero intelligence once");
         Equal(NativeAdditive(again,"ModifyBlockAdditive",Hero,5m,ValueProp.Move,null!,null!),0m,"HBR virtual Dexterity no longer adds raw block");
-        Equal(Block(Hero),565m,"real active longing block uses INT113 without additive rescale");
+        Equal(Block(Hero),630m,"real active longing block uses INT126 without additive rescale");
         var defend=new DefendIronclad(); Set(defend,"<IsMutable>k__BackingField",true); Set(defend,"_owner",Player);
-        Equal(Block(Hero,card:defend),565m,"card-sourced native Defend uses current INT113 once");
-        Equal(Block(contest),565m,"cannon receives owner's virtual intelligence once");
-        StatsEqual(Stats(phantom),[103m,103m,104m,100m,100m,100m],"phantom remains independent of owner's virtual Dexterity");
+        Equal(Block(Hero,card:defend),630m,"card-sourced native Defend uses current INT126 once");
+        Equal(Block(contest),630m,"cannon receives owner's virtual intelligence once");
+        StatsEqual(Stats(phantom),[106m,106m,108m,100m,100m,100m],"phantom remains independent of owner's virtual Dexterity");
         Set(playerCombat,"<TurnNumber>k__BackingField",2);
         Equal(Number("HotaruSeeYouAgainHelper","GetExtraDexterity",Player),0m,"expired ordinary-turn virtual Dexterity reads zero");
-        Equal(Block(Hero),535m,"turn expiry immediately restores only native Dexterity intelligence");
+        Equal(Block(Hero),570m,"turn expiry immediately restores only native Dexterity intelligence");
         Set(playerCombat,"<TurnNumber>k__BackingField",1); Mode(false);
         Equal(NativeAdditive(again,"ModifyBlockAdditive",Hero,5m,ValueProp.Move,null!,null!),6m,"legacy virtual Dexterity keeps native raw additive six");
         Equal(Block(Hero),18m,"legacy block stacks raw5 nativeDex7 and virtualDex6 normally");
@@ -494,12 +494,12 @@ static class Checks
             Check((decimal)text.Variables["TestMarker"]==77m,"description preserves original bound variables "+keys[i]);
             Check(!text.GetFormattedText().Contains('{')&&!text.GetFormattedText().Contains("每次攻击造成"),"real SmartFormat renders complete new stat rule "+keys[i]);
         }
-        Check(Rewrite(powers[0],original).GetFormattedText().Contains("[gold]力[/gold]与[gold]器用[/gold]"),"allied Strength description names both stats");
-        Check(Rewrite(powers[1],original).GetFormattedText().Contains("[gold]知性[/gold]"),"allied Dexterity description names intelligence");
+        Check(Rewrite(powers[0],original).GetFormattedText().Contains("[gold]力量属性[/gold]与[gold]灵巧属性[/gold]"),"allied Strength description names both stats");
+        Check(Rewrite(powers[1],original).GetFormattedText().Contains("[gold]智慧属性[/gold]"),"allied Dexterity description names intelligence");
         foreach(PowerModel power in powers.Take(2))
         {
             string text=Rewrite(power,original).GetFormattedText();
-            Check(text.Contains("1%")&&text.Contains("同类层数相加"),"allied percentage description renders one percent and additive layers "+power.GetType().Name);
+            Check(text.Contains("2%")&&text.Contains("同类层数相加"),"allied percentage description renders two percent and additive layers "+power.GetType().Name);
         }
         foreach(int index in new[]{0,1,2,3,4,5,20})
         {
@@ -538,12 +538,12 @@ static class Checks
         EqualFinal(Preview(Enemy,Hero,raw:9m,card:strike),Outgoing(100m,100m,150m,raw:12m),"Dummy adds50points to150percent upgraded Strike rather than multiplying by1point5");
         EqualFinal(Preview(Enemy,Hero,raw:0m,card:strike),Outgoing(100m,100m,150m,raw:3m),"zero base Strike still receives Dummy50percent skill coefficient");
         using((IDisposable)Call("HbrAbsoluteBaseDamageContext","Begin",Hero,strike,Enemy,6m)!)
-            Equal(Preview(Enemy,Hero,card:strike),6m,"absolute world-space Strike skips coefficient and second native flat three");
+            EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m,raw:.006m),"absolute world-space Strike normalizes once and retains the Dummy coefficient exclusion");
         using((IDisposable)Call("PrecalculatedDamageContext","Begin",strike,Enemy,6m)!)
             Equal(Preview(Enemy,Hero,card:strike),6m,"precalculated Strike skips coefficient and second native flat three");
         for(int i=0;i<3;i++) EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(100m,100m,150m,raw:9m),"repeated native preview applies exactly one owned Dummy "+i);
         var strength=Power<StrengthPower>(Hero,20);
-        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(120m,120m,150m,raw:9m),"Dummy coefficient receives current Strength attribute curve");
+        EqualFinal(Preview(Enemy,Hero,card:strike),Outgoing(140m,140m,150m,raw:9m),"Dummy coefficient receives current Strength attribute curve");
         Powers(Hero).Remove(strength);
         var defend = new DefendIronclad(); Set(defend,"<IsMutable>k__BackingField",true); Set(defend,"_owner",Player);
         EqualFinal(Preview(Enemy,Hero,card:defend),Outgoing(100m,100m,150m),"card without Strike tag receives no Dummy coefficient");

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Models;
@@ -24,9 +26,19 @@ internal static class CardPlayContextHelper
         internal CardDamageHistoryHelper.PlayScope History;
         internal HighHitDamageVisualHelper.CardBatchScope Visuals;
         internal HotaruFirstManualCardHelper.PlayScope FirstManual;
+        internal readonly HashSet<HBRGOSakiMod.Core.Models.Powers.MindsEyePower> MindsEyeUses = new();
     }
 
     private static readonly AsyncLocal<PlayScope> Current = new();
+    internal static object CurrentPlayToken
+    {
+        get
+        {
+            for (PlayScope scope = Current.Value; scope != null; scope = scope.Previous)
+                if (scope.Active) return scope;
+            return null;
+        }
+    }
 
     internal static PlayScope Begin(CardModel card, bool isAutoPlay)
     {
@@ -47,6 +59,7 @@ internal static class CardPlayContextHelper
         scope.FirstManual = HotaruFirstManualCardHelper.Begin(card, isAutoPlay);
         HotaruUncommonCardHelper.CapturePlayStart(card, isAutoPlay, scope);
         HotaruRareRollHelper.CapturePlayStart(card, isAutoPlay, scope);
+        ThirtyOneEBondHelper.CapturePlayStart(card, scope);
         return scope;
     }
 
@@ -98,11 +111,25 @@ internal static class CardPlayContextHelper
     internal static async Task Finish(Task original, PlayScope scope)
     {
         try { await original; }
-        finally { Close(scope); }
+        finally
+        {
+            try
+            {
+                if (scope != null)
+                    foreach (var power in scope.MindsEyeUses)
+                    {
+                        power.ConsumedByPlay = null;
+                        if (power.Owner?.Powers.Contains(power) == true && power.Amount > 0)
+                            await MegaCrit.Sts2.Core.Commands.PowerCmd.Decrement(power);
+                    }
+            }
+            finally { Close(scope); }
+        }
     }
 
     internal static void Close(PlayScope scope)
     {
+        HbrDebuffApplicationScope.CloseCard(scope);
         if (scope != null) scope.Active = false;
         RestoreCaller(scope);
         try { HighHitDamageVisualHelper.CloseCard(scope?.Visuals); }

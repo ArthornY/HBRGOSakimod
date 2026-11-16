@@ -1,0 +1,605 @@
+{
+  "schema": 1,
+  "characters": 42,
+  "models": 43,
+  "mappings": [
+    {
+      "card": "AbsolutelyNoEffortHbrgoSaki",
+      "character": "yotsuha",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yotsuha.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "AcePlayerIsNotMeHbrgoSaki",
+      "character": "akari",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/akari.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "AllOrdersConfirmedHbrgoSaki",
+      "character": "mari",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/mari.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "AlwaysKeepYourChinUpHbrgoSaki",
+      "character": "risa",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/risa.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "AsTheYoungLadyCommandsHbrgoSaki",
+      "character": "mion",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/mion.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "ByakkoRoarHbrgoSaki",
+      "character": "byakko",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/byakko.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "CuteIsInvincibleHbrgoSaki",
+      "character": "chie",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/chie.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "DiveAsDeepAsIWantHbrgoSaki",
+      "character": "aina",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/aina.png",
+      "expression": "MiniCutIn03"
+    },
+    {
+      "card": "EldestOshimaIsHereHbrgoSaki",
+      "character": "ichiko",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/ichiko.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "ExorcisingStringResoundHbrgoSaki",
+      "character": "miya",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/miya.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "FollowBehindMeHbrgoSaki",
+      "character": "maki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/maki.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "FreshDeathHbrgoSaki",
+      "character": "seika",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/seika.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "FrozenMistMeowHbrgoSaki",
+      "character": "sumomo",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/sumomo.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "HarvestBountifulGrainsHbrgoSaki",
+      "character": "satomi",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/satomi.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "HellfireBurnHbrgoSaki",
+      "character": "ichigo",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/ichigo.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "IWillNotFallHbrgoSaki",
+      "character": "mua",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/mua.png",
+      "expression": "Chase"
+    },
+    {
+      "card": "ImmortalRecollectionHbrgoSaki",
+      "character": "miko",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/miko.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "InnocentRequiemHbrgoSaki",
+      "character": "kozue",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/kozue.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "ItsNinjaShowtimeHbrgoSaki",
+      "character": "adelheid",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/adelheid.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "LeaveAnyBattlefieldToMeHbrgoSaki",
+      "character": "chiroru",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/chiroru.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "LegacyFlashHbrgoSaki",
+      "character": "inori",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/inori.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "LetMeShowYouClassHbrgoSaki",
+      "character": "kanata",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/kanata.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "LoveCharlottaHbrgoSaki",
+      "character": "charlotta",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/charlotta.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "MakeAChangeKillYourselfHbrgoSaki",
+      "character": "fubuki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/fubuki.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "NarcissismIsFineHbrgoSaki",
+      "character": "nina",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/nina.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "NoblesseObligeHbrgoSaki",
+      "character": "yuina",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yuina.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "NumbersAreTheSourceHbrgoSaki",
+      "character": "vritika",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/vritika.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "OpenTheLockHbrgoSaki",
+      "character": "isuzu",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/isuzu.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "PaintTheWorldMyColorHbrgoSaki",
+      "character": "iroha",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/iroha.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "PeacefulMemoriesHbrgoSaki",
+      "character": "aoi",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/aoi.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "ReadySteadyDieHbrgoSaki",
+      "character": "carol",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/carol.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "RepentanceTimeHbrgoSaki",
+      "character": "maria",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/maria.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "SlashIfCloseHbrgoSaki",
+      "character": "hisame",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/hisame.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "StarsGuideYouHbrgoSaki",
+      "character": "seira",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/seira.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "TengenBrilliantMoveHbrgoSaki",
+      "character": "misato",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/misato.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "ThereIsOnlyOneTruthHbrgoSaki",
+      "character": "irene",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/irene.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "ThisIsMyStageHbrgoSaki",
+      "character": "shiki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/shiki.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "WindForestFireMountainHbrgoSaki",
+      "character": "monaka",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/monaka.png",
+      "expression": "Anger"
+    },
+    {
+      "card": "WitnessMySupremacyHbrgoSaki",
+      "character": "yingxia",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yingxia.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "WorldConquestHbrgoSaki",
+      "character": "yayoi",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yayoi.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "WorldIsMyLaboratoryHbrgoSaki",
+      "character": "wakki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/wakki.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "YingxiaFormationChoiceHbrgoSaki",
+      "character": "yingxia",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yingxia.png",
+      "expression": "Encount"
+    },
+    {
+      "card": "YourCombatDeliveryIsHereHbrgoSaki",
+      "character": "minori",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/minori.png",
+      "expression": "Encount"
+    }
+  ],
+  "assets": [
+    {
+      "character": "adelheid",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/adelheid.png",
+      "sha256": "17119A5BC9A4DE18AA432A41EFA75E8DFDAE375E04C8A68A5AFFBD721DCF962F",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "aina",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/aina.png",
+      "sha256": "82655AA13842B71FF1E116FC2D43EBA77C11C2DD4393D95066DDD82CAD68196F",
+      "expression": "MiniCutIn03",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "akari",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/akari.png",
+      "sha256": "5159F0763B6E93D32DBFBE3A156189C57FAC70A1B7DBEFDF0ED116A5FADE66B5",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "aoi",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/aoi.png",
+      "sha256": "48C80083EFEEB24EB1B315D0298BE8EDFDF2A5EE833C529DDD7377D49B446B3E",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "byakko",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/byakko.png",
+      "sha256": "4BAFE35DB96DD55E7CD1DD7D0B317091A4EBCD86498211248CC6DA0EC5D98FE2",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "carol",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/carol.png",
+      "sha256": "086A1FE549DA34273A839B1017FABF37230F0113A39B47E6453A5F4578495939",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "charlotta",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/charlotta.png",
+      "sha256": "FB014A8A21125891D21831AFB32A104A3F71B5A91AF497C0827717B49C0F87BA",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "chie",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/chie.png",
+      "sha256": "BF15C43340E1D6D5E0C7633361230CDA9566174FEBDB46EEF361D235508A0469",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "chiroru",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/chiroru.png",
+      "sha256": "04395CE91C6277D70E01E4A4BABD20B0271712102AB00868ED9C3B08E0E2A5BD",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "fubuki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/fubuki.png",
+      "sha256": "5847042EE11F692251105A265A495B747B150E081F0851C2893BB05A50315820",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "hisame",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/hisame.png",
+      "sha256": "2ED84C27C6BB31FC3387DA3A98096083A8F5683EC1544094B47A054072C1297C",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "ichigo",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/ichigo.png",
+      "sha256": "A2B5134B5971A1C7961D60B28BEBDB9011EDE407B2A788D17EDBEEC853791A03",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "ichiko",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/ichiko.png",
+      "sha256": "4644F7B946B31CFA0CD6278948F8D8C95CEF45633426019617536C5A21BE82B5",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "inori",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/inori.png",
+      "sha256": "35B7CE115E41C933ED0D868F85D180021B352BC3FA9684EFB8196445AF5BF173",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "irene",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/irene.png",
+      "sha256": "C657270B656CB3CC58EAACCF655280FBEC263E794FD877766F31A828E914807E",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "iroha",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/iroha.png",
+      "sha256": "E435692A3DE16F7319DAA4F101C091D028C7FFE57378F2482FCDCEAC2D54013E",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "isuzu",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/isuzu.png",
+      "sha256": "137012B3CEB1CBD6CEF39DCA73FF08B6259E909B48CA29ADD57034851CD0E19B",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "kanata",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/kanata.png",
+      "sha256": "55790BC2F913714A825E414BAF4B58D53914ECBB539F948D9BF2C67947F4DA21",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "kozue",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/kozue.png",
+      "sha256": "63D05800A48F96E6DD2BC6BE4429C354FAA7FCA8DA733587804197EEEF73D170",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "maki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/maki.png",
+      "sha256": "8E9874DFCBB93C3F0DAFA2DF5410991983D5EDC398B38166BF5E8E147B692076",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "mari",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/mari.png",
+      "sha256": "8BE1968189DD2A8D71BECDA55AE23895EF370D7AC8747113A0DE28241B87CA5C",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "maria",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/maria.png",
+      "sha256": "FB61EA3901E199D317054F406C0EB583ED44C8F577394A3B93BA2B694A9874BB",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "miko",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/miko.png",
+      "sha256": "FFEF683A05024D39A0286C263B632DC01D7AF52E797A8A3EB4C09A29A8BA68E3",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "minori",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/minori.png",
+      "sha256": "C907594FEBE2E81DA9ED836CBA945D7099D43422620003A75DD278454F08530F",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "mion",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/mion.png",
+      "sha256": "415378CE8EED2C15B49FF934F04527B37E9217A1A3E33E249E1704ECB26772C9",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "misato",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/misato.png",
+      "sha256": "3E731EAA8511A8F261E2C72D9E9DB9EF2FC7F26D45715BF3778C39822C6E499E",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "miya",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/miya.png",
+      "sha256": "7C8070A35AFC0791EA223C5F666276459B0E7E2B188129A104EE895AC60B25E2",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "monaka",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/monaka.png",
+      "sha256": "63292FAF8BFDA08FFDCEDB6505D79DC2BD5213A1CD6CF6C0CCE4FE3B1D3491D6",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "mua",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/mua.png",
+      "sha256": "CFCFC2779B99FADF6BEA329A526D62F775831994D48C06088B36862DE97B4E5F",
+      "expression": "Chase",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "nina",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/nina.png",
+      "sha256": "E8B47BECF2A9D7FBD8B2149DFEC363E601C713D3DAA0837DC7216F84928C6D44",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "risa",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/risa.png",
+      "sha256": "BD94935B679E1ED4C7A792022E723676EEB7A636814B2D2F5C13B847D4CFA350",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "satomi",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/satomi.png",
+      "sha256": "3F4326FE2FD453E4BF9041348D6C232788958A931551BC95DA0BF2FBD09DAA63",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "seika",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/seika.png",
+      "sha256": "B7E98D720B0E700FB234330D44CD25F67B1DF5A113587FE3B92AD421A3009A26",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "seira",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/seira.png",
+      "sha256": "AAEF68386E8D4C83A08562B4F8C9305EB7CF150167D4185D3DAC77200A8D79D4",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "shiki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/shiki.png",
+      "sha256": "4FDD0D70818098898F7EC1CB46247D7BC67C3F46AB22FD2234D1A161E6320287",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "sumomo",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/sumomo.png",
+      "sha256": "02867E6D9DB019FA4C5C56357AB78B5995F15928D6A2A6C3E8FB3CB803BE5646",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "vritika",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/vritika.png",
+      "sha256": "AC5B896EF66FBFABAF86E72D3519E908D89E57E02C04C1317DE1D8B5D0930AC3",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "wakki",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/wakki.png",
+      "sha256": "4F8DE610F715E111CECA9F53BCB32F2DEA3F4DD96AEF23AD8AEB35B8BFB8EC52",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "yayoi",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yayoi.png",
+      "sha256": "6AF9B8506E7C40C5F0BDD097CB367EEE0284FEF3C2D58E7F387DA42CB4757CE7",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "yingxia",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yingxia.png",
+      "sha256": "A91F2CF8ED519E588147014102AC6B8BA6697A566E2F34273611C8345016FF21",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "yotsuha",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yotsuha.png",
+      "sha256": "285BA7CD234B7F5A6B21A91A87D6FB16D469847EEB8E0A2E86773744879D0EB9",
+      "expression": "Encount",
+      "width": 300,
+      "height": 300
+    },
+    {
+      "character": "yuina",
+      "path": "images/packed/card_portraits/hbrgo_saki/memory_garden/yuina.png",
+      "sha256": "2F416E801B3A6666A3A98284E3B9FCDDA1A0571CA0C71E9B40796F44AB0CBC0B",
+      "expression": "Anger",
+      "width": 300,
+      "height": 300
+    }
+  ],
+  "sourceSelectionSha256": "2E08E908A4CDF34A4A08273A3D8AB6DC29581E8820F0D2848D732F1B03F870ED",
+  "policy": "Original HBR Encount/Anger/Chase; Aina original battle MiniCutIn03. No AI art or proposal assets."
+}

@@ -184,13 +184,13 @@ public sealed class RedCrimsonBossMonster : HbrgoStaticMonster
             .ToList();
         PlayerChoiceContext choiceContext =
             new ThrowingPlayerChoiceContext();
-        await HbrPercentDebuffApplication.ApplyDefenseDown(
+        await HbrBossDebuffApplication.ApplyDefenseDown(
             choiceContext,
             livingTargets,
             2,
             Creature,
             null);
-        await HbrPercentDebuffApplication.ApplyAttackDown(
+        await HbrBossDebuffApplication.ApplyAttackDown(
             choiceContext,
             livingTargets,
             2,

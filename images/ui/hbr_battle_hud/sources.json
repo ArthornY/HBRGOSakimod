@@ -1,0 +1,686 @@
+{
+  "preview": "ui-concepts/battle-hud-practical-20261104",
+  "script": "ui-concepts/battle-hud-practical-20261104/export_mod_assets.py",
+  "files": [
+    {
+      "file": "BtnCmdStartNormal.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnCmdStartNormal",
+      "prefab": "Assets/UI/AssetBundle/UIBattleAttack.prefab",
+      "node": "btnAttack",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/BtnCmdStartNormal.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": 82858528261050525,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 352.0,
+        "height": 352.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        352,
+        352
+      ],
+      "sha256": "4c8818a721e2f36a3f7f344ed6c88b64e7ed2f540ee3eb1c203aafa89a625500",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "BtnCmdStartActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnCmdStartActive",
+      "prefab": "Assets/UI/AssetBundle/UIBattleAttack.prefab",
+      "node": "active",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/BtnCmdStartActive.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": 1569194811081597334,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 352.0,
+        "height": 352.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        352,
+        352
+      ],
+      "sha256": "f692cb189404a66daad7fb821c06391f0e35d36524106d9c2888916decace9ee",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "BtnCmdStartDisable.png",
+      "origin": "hbr-sprite",
+      "sprite": "BtnCmdStartDisable",
+      "prefab": "Assets/UI/AssetBundle/UIBattleAttack.prefab",
+      "node": "disable",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/BtnCmdStartDisable.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": 8822594092914706201,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 352.0,
+        "height": 352.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        352,
+        352
+      ],
+      "sha256": "33e1e0c0cf205c83b95d622839a828dc303f6d5bfb6367ee10215d5b997c7a47",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "auraCircle.png",
+      "origin": "hbr-sprite",
+      "sprite": "auraCircle",
+      "prefab": "Assets/UI/AssetBundle/UIBattleAttack.prefab",
+      "node": "circle",
+      "assetPath": "Assets/UI/Texture/Common2Atlas/auraCircle.png",
+      "cab": "CAB-11729c19dbdeb8465519f7f375fb455f",
+      "pathId": 917617214593225110,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 256.0,
+        "height": 256.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        242,
+        242
+      ],
+      "sha256": "0a82077eb0fda2bb3d8a1072a28ff484c38c4b3ece2f2f4e51acc255b60805ff",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "circle1.png",
+      "origin": "hbr-sprite",
+      "sprite": "circle1",
+      "prefab": "Assets/UI/AssetBundle/UIBattleAttack.prefab",
+      "node": "circleBase",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/circle1.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": -8719815605352408693,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 48.0,
+        "height": 48.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        48,
+        48
+      ],
+      "sha256": "b7283c507c2803b42f898aabf622d23129cd2ba1ddbde409d670c4a8f688d82b",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "gaugeCircleOff01.png",
+      "origin": "hbr-sprite",
+      "sprite": "gaugeCircleOff01",
+      "prefab": "Assets/UI/AssetBundle/UIBattleAttack.prefab",
+      "node": "circleFrame",
+      "assetPath": "Assets/UI/Texture/DuelAtlas/gaugeCircleOff01.png",
+      "cab": "CAB-c0820fe82b3e9e215ec3328557a1cc3e",
+      "pathId": -3002958976998577121,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 124.0,
+        "height": 124.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        124,
+        124
+      ],
+      "sha256": "4930bab9966682599d90ba968732405f96d2bad05a5249ab745c923b5d21d199",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "StatusEffect.png",
+      "origin": "hbr-sprite",
+      "sprite": "StatusEffect",
+      "prefab": "Assets/UI/AssetBundle/UIBattleHudMenu.prefab",
+      "node": "active",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/StatusEffect.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": 7429519793041354058,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 256.0,
+        "height": 256.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "3bf78499d44703ee49b21829491c827903a5e927d234cda3a75639d395b2f390",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "ButtonBattleAutoOnOffDefault.png",
+      "origin": "hbr-sprite",
+      "sprite": "ButtonBattleAutoOnOffDefault",
+      "prefab": "Assets/UI/AssetBundle/UIBattleHudMenu.prefab",
+      "node": "baseNormal",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonBattleAutoOnOffDefault.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": -8895998152317942447,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 84.0
+      },
+      "border": {
+        "x": 80.0,
+        "y": 0.0,
+        "z": 80.0,
+        "w": 0.0
+      },
+      "size": [
+        192,
+        84
+      ],
+      "sha256": "ae781fedf8421d48f22f5d45832ecfb7cd771ab7501e431e8b340c756767b1c0",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "ButtonBattleAutoOnOffActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "ButtonBattleAutoOnOffActive",
+      "prefab": "Assets/UI/AssetBundle/UIBattleHudMenu.prefab",
+      "node": "frameAutoActive",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonBattleAutoOnOffActive.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": 4015410652242546651,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 84.0
+      },
+      "border": {
+        "x": 80.0,
+        "y": 0.0,
+        "z": 80.0,
+        "w": 0.0
+      },
+      "size": [
+        192,
+        84
+      ],
+      "sha256": "8b58b7ee72f942774dd677994aaaec659f8863a407185aef404ccbf1f2d808d4",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "ButtonBattleAutoOnOffTempActive.png",
+      "origin": "hbr-sprite",
+      "sprite": "ButtonBattleAutoOnOffTempActive",
+      "prefab": "Assets/UI/AssetBundle/UIBattleHudMenu.prefab",
+      "node": "btnOn",
+      "assetPath": "Assets/UI/Texture/BattleAtlas/ButtonBattleAutoOnOffTempActive.png",
+      "cab": "CAB-5181971e7e3e31feac61a8fa925b41fd",
+      "pathId": 512919218873561706,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 192.0,
+        "height": 84.0
+      },
+      "border": {
+        "x": 80.0,
+        "y": 0.0,
+        "z": 80.0,
+        "w": 0.0
+      },
+      "size": [
+        192,
+        84
+      ],
+      "sha256": "f50c7907eb5666a7feb478fb1d191e8bd00119faed8c23c47f10b3d5fdd050ba",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "MordaTitleLineEdge.png",
+      "origin": "hbr-sprite",
+      "sprite": "MordaTitleLineEdge",
+      "prefab": "Assets/UI/AssetBundle/UIBattleHudMenu.prefab",
+      "node": "line (1)",
+      "assetPath": "Assets/UI/Texture/CommonAtlas/MordaTitleLineEdge.png",
+      "cab": "CAB-fe4445dca06c80e51e3e108d8e180a00",
+      "pathId": -3895156756571204233,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 60.0,
+        "height": 10.0
+      },
+      "border": {
+        "x": 2.0,
+        "y": 0.0,
+        "z": 55.0,
+        "w": 0.0
+      },
+      "size": [
+        60,
+        10
+      ],
+      "sha256": "f693eff3cb64e90417249712408e114f1b6a123924a62a53f26a1b4ddcb474ef",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "dot10.png",
+      "origin": "hbr-sprite",
+      "sprite": "dot10",
+      "prefab": "Assets/UI/AssetBundle/UIBattleTurn.prefab",
+      "node": "line",
+      "assetPath": "Assets/UI/Texture/AdvAtlas/dot10.png",
+      "cab": "CAB-aeca28fcad391f47e4625f5b213f4624",
+      "pathId": -8460710601117070449,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 10.0,
+        "height": 10.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        10,
+        10
+      ],
+      "sha256": "5b953a6c52d01968de70e679a170f417ca570f1a7a74780b734445af522918d0",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DuelModalBG.png",
+      "origin": "hbr-sprite",
+      "sprite": "DuelModalBG",
+      "prefab": "Assets/UI/AssetBundle/UIDuelTurnChange.prefab",
+      "node": "baseL",
+      "assetPath": "Assets/UI/Texture/Duel/DuelModalBG.png",
+      "cab": "CAB-05ccbc48a3cbfb1974140f261b30ad89",
+      "pathId": -6018890687980144279,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 552.0,
+        "height": 432.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        552,
+        432
+      ],
+      "sha256": "507c25e789966c326933c1b670c182146ad2008707b7039fde95fd5225174a3e",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "HalftoneBase.png",
+      "origin": "hbr-sprite",
+      "sprite": "HalftoneBase",
+      "prefab": "Assets/UI/AssetBundle/UIDuelTurnChange.prefab",
+      "node": "baseR",
+      "assetPath": "Assets/UI/Texture/Duel/HalftoneBase.png",
+      "cab": "CAB-05ccbc48a3cbfb1974140f261b30ad89",
+      "pathId": 6680912528132663738,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 1044.0,
+        "height": 396.0
+      },
+      "border": {
+        "x": 1026.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        1044,
+        396
+      ],
+      "sha256": "7cb86b320b47a2bcfce4be66481946ae75856235d64b7f7ceca1c7c7561e3ea3",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "vsFaceBaseLinePlayer01.png",
+      "origin": "hbr-sprite",
+      "sprite": "vsFaceBaseLinePlayer01",
+      "prefab": "Assets/UI/AssetBundle/UIDuelTurnChange.prefab",
+      "node": "line01",
+      "assetPath": "Assets/UI/Texture/DuelAtlas/vsFaceBaseLinePlayer01.png",
+      "cab": "CAB-c0820fe82b3e9e215ec3328557a1cc3e",
+      "pathId": 4955791915376893514,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 12.0,
+        "height": 28.0
+      },
+      "border": {
+        "x": 6.0,
+        "y": 0.0,
+        "z": 6.0,
+        "w": 0.0
+      },
+      "size": [
+        12,
+        28
+      ],
+      "sha256": "165c780751322033cf2e8691056c1d32d2a00f3f7835b4697872750b351f692c",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "vsFaceBaseLinePlayer02.png",
+      "origin": "hbr-sprite",
+      "sprite": "vsFaceBaseLinePlayer02",
+      "prefab": "Assets/UI/AssetBundle/UIDuelTurnChange.prefab",
+      "node": "gradationL",
+      "assetPath": "Assets/UI/Texture/DuelAtlas/vsFaceBaseLinePlayer02.png",
+      "cab": "CAB-c0820fe82b3e9e215ec3328557a1cc3e",
+      "pathId": 3267223178428135064,
+      "rect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 272.0,
+        "height": 28.0
+      },
+      "border": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.0
+      },
+      "size": [
+        272,
+        28
+      ],
+      "sha256": "32cadfb8597306202c0960c3719c20560f1611bdcfc75fd0d1078948eb280f5f",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconCardGameDefault.png",
+      "origin": "hbr-texture",
+      "texture": "IconCardGameDefault",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconCardGameDefault.png"
+      ],
+      "bundle": "cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a",
+      "pathId": 869138747033323497,
+      "size": [
+        104,
+        104
+      ],
+      "sha256": "9e77d95fda04890f101a614a1669f56081873c8676372518646d6f96d23f8db6",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconCardGameActive.png",
+      "origin": "hbr-texture",
+      "texture": "IconCardGameActive",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconCardGameActive.png"
+      ],
+      "bundle": "cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a",
+      "pathId": 6876000592356065951,
+      "size": [
+        104,
+        104
+      ],
+      "sha256": "7146c13d251a7c195f13c540d66094c3711b33160e9d052e6582aeb7322a5a69",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconCardGameDisable.png",
+      "origin": "hbr-texture",
+      "texture": "IconCardGameDisable",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconCardGameDisable.png"
+      ],
+      "bundle": "cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a",
+      "pathId": 5625299562749195761,
+      "size": [
+        104,
+        104
+      ],
+      "sha256": "964152602066ee2ee13f08e4d704cff77d0c2549ab7bdcf0a82027879ab7a477",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconExitDefault.png",
+      "origin": "hbr-texture",
+      "texture": "IconExitDefault",
+      "assetPaths": [
+        "Assets/UI/Texture/Icon/IconExitDefault.png"
+      ],
+      "bundle": "cache/cd00fbe9036553502d1aa92dfc70c929/11a66a6f1104706c6c9e1358f1e8f5eb",
+      "pathId": -6810745199976350342,
+      "size": [
+        90,
+        90
+      ],
+      "sha256": "fa266d3d4d6636fc6c7b7e2baa55559efc376e939102b38ed8906818a29a81d7",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconExitActive.png",
+      "origin": "hbr-texture",
+      "texture": "IconExitActive",
+      "assetPaths": [
+        "Assets/UI/Texture/Icon/IconExitActive.png"
+      ],
+      "bundle": "cache/cd00fbe9036553502d1aa92dfc70c929/11a66a6f1104706c6c9e1358f1e8f5eb",
+      "pathId": 3482906475419830704,
+      "size": [
+        90,
+        90
+      ],
+      "sha256": "897cb34ac185c5ee37570ef7d7bb68d2ab2b541ee1e7e92da2407d82791b3def",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconExitDisable.png",
+      "origin": "hbr-texture",
+      "texture": "IconExitDisable",
+      "assetPaths": [
+        "Assets/UI/Texture/Icon/IconExitDisable.png"
+      ],
+      "bundle": "cache/cd00fbe9036553502d1aa92dfc70c929/11a66a6f1104706c6c9e1358f1e8f5eb",
+      "pathId": 2820616206771904776,
+      "size": [
+        90,
+        90
+      ],
+      "sha256": "7f31aa0f1845dae17ac1a4d81b8f10e9245c6fb34fc5b26c944970d5452d7d70",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "IconCemetery.png",
+      "origin": "hbr-texture",
+      "texture": "IconCemetery",
+      "assetPaths": [
+        "Assets/UI/Texture/TerminalIcon/IconCemetery.png"
+      ],
+      "bundle": "cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a",
+      "pathId": 5496049979320936607,
+      "size": [
+        104,
+        104
+      ],
+      "sha256": "0ab14b5678f2505fc7cb650bf0ed8ef61776d5122e4f4571599cbac2f6fd1794",
+      "transform": "none (byte copy)"
+    },
+    {
+      "file": "DuelModalBG_enemy.png",
+      "origin": "derived",
+      "source": "DuelModalBG.png",
+      "sourceSha256": "507c25e789966c326933c1b670c182146ad2008707b7039fde95fd5225174a3e",
+      "transform": "CSS hue-rotate(50deg) saturate(1.2), sRGB, per-step clamp, alpha kept",
+      "size": [
+        552,
+        432
+      ],
+      "sha256": "442783ca8b99688d3682acfacfd26a601398004bfe42cbcf9cd8f1d8d7529169"
+    },
+    {
+      "file": "vsFaceBaseLinePlayer01_enemy.png",
+      "origin": "derived",
+      "source": "vsFaceBaseLinePlayer01.png",
+      "sourceSha256": "165c780751322033cf2e8691056c1d32d2a00f3f7835b4697872750b351f692c",
+      "transform": "CSS hue-rotate(50deg) saturate(1.3), sRGB, per-step clamp, alpha kept",
+      "size": [
+        12,
+        28
+      ],
+      "sha256": "4c2c180a8314b64481f361b927f0383d72886b7c907d7c4d8743783cb0111891"
+    },
+    {
+      "file": "vsFaceBaseLinePlayer02_enemy.png",
+      "origin": "derived",
+      "source": "vsFaceBaseLinePlayer02.png",
+      "sourceSha256": "32cadfb8597306202c0960c3719c20560f1611bdcfc75fd0d1078948eb280f5f",
+      "transform": "CSS hue-rotate(50deg) saturate(1.3), sRGB, per-step clamp, alpha kept",
+      "size": [
+        272,
+        28
+      ],
+      "sha256": "7fd6fedd43f5c118d771e246c385d33e135ea827da0018ce215b547d452217cf"
+    },
+    {
+      "file": "DuelModalBG_extra.png",
+      "origin": "derived",
+      "source": "DuelModalBG.png",
+      "sourceSha256": "507c25e789966c326933c1b670c182146ad2008707b7039fde95fd5225174a3e",
+      "transform": "CSS hue-rotate(-45deg) saturate(0.95), sRGB, per-step clamp, alpha kept",
+      "size": [
+        552,
+        432
+      ],
+      "sha256": "9483c023162d8eb1bc7799bed4cea58744cab49f05dbe81809a6a482481cb0b6"
+    },
+    {
+      "file": "vsFaceBaseLinePlayer01_extra.png",
+      "origin": "derived",
+      "source": "vsFaceBaseLinePlayer01.png",
+      "sourceSha256": "165c780751322033cf2e8691056c1d32d2a00f3f7835b4697872750b351f692c",
+      "transform": "CSS hue-rotate(-45deg) saturate(1.1), sRGB, per-step clamp, alpha kept",
+      "size": [
+        12,
+        28
+      ],
+      "sha256": "7d652b1df816f06dbf069b51354d2210a4eaf6616933c15134493fe4a7d4d619"
+    },
+    {
+      "file": "vsFaceBaseLinePlayer02_extra.png",
+      "origin": "derived",
+      "source": "vsFaceBaseLinePlayer02.png",
+      "sourceSha256": "32cadfb8597306202c0960c3719c20560f1611bdcfc75fd0d1078948eb280f5f",
+      "transform": "CSS hue-rotate(-45deg) saturate(1.1), sRGB, per-step clamp, alpha kept",
+      "size": [
+        272,
+        28
+      ],
+      "sha256": "2149dc3fb99c17d7ce37b1cd1da4d49c257ceeadebf609c396f1e05c946a6511"
+    },
+    {
+      "file": "ButtonBattleAutoOnOffDefault_amnesia.png",
+      "origin": "derived",
+      "source": "ButtonBattleAutoOnOffDefault.png",
+      "sourceSha256": "ae781fedf8421d48f22f5d45832ecfb7cd771ab7501e431e8b340c756767b1c0",
+      "transform": "CSS grayscale(1) brightness(0.72), sRGB, per-step clamp, alpha kept",
+      "size": [
+        192,
+        84
+      ],
+      "sha256": "253864af5829efb5a55fde1eb6dea4458391390c348541dd042c87db119afa59"
+    },
+    {
+      "file": "ButtonBattleAutoOnOffActive_amnesia.png",
+      "origin": "derived",
+      "source": "ButtonBattleAutoOnOffActive.png",
+      "sourceSha256": "8b58b7ee72f942774dd677994aaaec659f8863a407185aef404ccbf1f2d808d4",
+      "transform": "CSS grayscale(1) brightness(0.72), sRGB, per-step clamp, alpha kept",
+      "size": [
+        192,
+        84
+      ],
+      "sha256": "309e5f76ac952c6de2166315a4fe51fdd02ae98af8f0b049dc406cf6bef9728f"
+    },
+    {
+      "file": "ButtonBattleAutoOnOffTempActive_amnesia.png",
+      "origin": "derived",
+      "source": "ButtonBattleAutoOnOffTempActive.png",
+      "sourceSha256": "f50c7907eb5666a7feb478fb1d191e8bd00119faed8c23c47f10b3d5fdd050ba",
+      "transform": "CSS grayscale(1) brightness(0.72), sRGB, per-step clamp, alpha kept",
+      "size": [
+        192,
+        84
+      ],
+      "sha256": "d624309b4f8d87eeba026b5c60c43908a3987981e0489db17b4e54698246420f"
+    },
+    {
+      "file": "font/hbr_hud_ui.otf",
+      "origin": "hbr-font-subset",
+      "font": "hanyizhengyuan_UI",
+      "pathId": "4845511955621444297",
+      "cab": "E:\\stsmod\\HeavenBurnsRedEditor\\extracted\\unity\\cache\\7e0b0e2014c1ab89d6556255b0349de0\\a803b90d412100a3d9276283df22c3ce\\raw\\CAB-8516020b625d340a4f51e6262852cbcf",
+      "sourceSha256": "12259a8c0d82037288ce59784f14a4c04e012872ae476031160e741899207490",
+      "characters": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~仍出历友取可史合回外家待打敌方有束消牌玩的目等结队额？",
+      "glyphs": 330,
+      "transform": "fontTools subset (desubroutinized, all layout features)",
+      "sha256": "8ebf753af353a438ff79124a50acb793240c0ad20023cecec510d26276a36576"
+    }
+  ]
+}

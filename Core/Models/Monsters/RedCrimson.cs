@@ -330,13 +330,13 @@ public sealed class RedCrimson : MonsterModel
         {
             // Delta Scrape weakens its attacked target rather than the
             // whole enemy side. A multi-hit replay can change targets.
-            await HbrPercentDebuffApplication.ApplyAttackDown(context,
+            await HbrBossDebuffApplication.ApplyAttackDown(context,
                 attackedTargets.Where(target => target.IsAlive).Distinct(),
                 2m, Creature, null);
         }
         else if (move.Id == "BLOOD_FALL_MOVE")
         {
-            await HbrPercentDebuffApplication.ApplyDefenseDown(context,
+            await HbrBossDebuffApplication.ApplyDefenseDown(context,
                 targets.Where(target => target.IsAlive),
                 3m, Creature, null);
         }
@@ -457,7 +457,7 @@ public sealed class RedCrimson : MonsterModel
         }
         if (weak > 0 && target.IsAlive)
         {
-            await HbrPercentDebuffApplication.ApplyAttackDown(
+            await HbrBossDebuffApplication.ApplyAttackDown(
                 choiceContext,
                 target,
                 weak,
@@ -509,7 +509,7 @@ public sealed class RedCrimson : MonsterModel
         }
         if (vulnerable > 0)
         {
-            await HbrPercentDebuffApplication.ApplyDefenseDown(
+            await HbrBossDebuffApplication.ApplyDefenseDown(
                 choiceContext,
                 targets.Where(target => target.IsAlive),
                 vulnerable,

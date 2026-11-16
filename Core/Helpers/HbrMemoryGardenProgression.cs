@@ -50,6 +50,8 @@ internal static class HbrMemoryGardenProgression
         CrushYouLikeABugHbrgoSaki c => c.UpgradeEffectOrder,
         SummerGrassDreamHbrgoSaki c => c.UpgradeEffectOrder,
         BoostUpHbrgoSaki c => c.UpgradeEffectOrder,
+        ByakkoRoarHbrgoSaki c => c.UpgradeEffectOrder,
+        ThirtyOneBGardenCard c => c.UpgradeEffectOrder,
         _ => Array.Empty<int>()
     }).Take(card?.CurrentUpgradeLevel ?? 0).ToArray();
 
@@ -136,10 +138,7 @@ internal static class HbrMemoryGardenProgression
                 : Array.Empty<int>()).ToArray();
         return effects.Where(effect =>
             !(card is AnonAidHbrgoSaki && effect == 4 && reserved.Contains(5)) &&
-            !(card is SoyoAidHbrgoSaki && effect == 0 && reserved.Contains(1)) &&
-            !(card is WorldsFinestHbrgoSaki &&
-                (effect == 0 && (reserved.Contains(1) || reserved.Contains(2)) ||
-                 effect == 1 && reserved.Contains(2)))).ToArray();
+            !(card is SoyoAidHbrgoSaki && effect == 0 && reserved.Contains(1))).ToArray();
     }
 
     internal static bool TryDowngrade(CardModel card)

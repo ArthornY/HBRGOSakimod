@@ -1,0 +1,293 @@
+{
+  "schema": 1,
+  "method": "Local model translation of individual characters using the public Unihan17 English definitions as a local reference. No project-character set was transmitted to any external translation service.",
+  "reference": "https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip",
+  "license": "Unicode-3.0 (Unicode-LICENSE.txt)",
+  "contributors": [
+    {
+      "part": 0,
+      "entries": 862,
+      "sha256": "70ebd853cd545a7f0df9ac9e6ab9f63cd5dd7e6cf58c78ac856b1a3e53ce751f"
+    },
+    {
+      "part": 1,
+      "entries": 862,
+      "sha256": "777179b001fe3de50fef89a07430fa7f1914d0f76ba237303b6f5eebe2314e36"
+    },
+    {
+      "part": 2,
+      "entries": 862,
+      "sha256": "ebb9817228e2cb98279d950ac22c890d741b232606fddf78be0ed34848a1cd0e"
+    },
+    {
+      "stage": "89–94",
+      "method": "Local model single-character short glosses; no outbound translation request.",
+      "entries": 11,
+      "sha256": "74ab7efd64e715e47f813331bb2619c5d02214147d505112e8850ed875dde784"
+    },
+    {
+      "stage": "Dread/31X-display-fix-20261115",
+      "method": "Local model short character glosses using the already downloaded public Unihan17 kDefinition reference; no outbound translation request.",
+      "entries": 8,
+      "sha256": "41c8dae0f8a0994386cd005bdd972021b908c6555af05caa253a5ffa986c4bd9",
+      "characters": "冈吕娅梅瑠笠茵菅",
+      "payload": "outputs/dread-mode-1131-20261115/prank-analysis/glossary-additions.json"
+    }
+  ],
+  "characters": 2608,
+  "inventoryCharacters": 2608,
+  "coverage": 1,
+  "missing": [],
+  "sourceInventory": [
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\achievements.json",
+      "sha256": "d07bff2ae6b184bdeb448164aa9f47d5efb7789cfe141ec895d7c00291ac2d99"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\acts.json",
+      "sha256": "2cc4e02e079cefdb75b2de77f58c79243c78b3fa452bf14d87c15d1c48101a33"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\afflictions.json",
+      "sha256": "73f07d77b45e98a8e498cd8833be2bddbf72b8eb3d387eadba3c5fc79114695d"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\ancients.json",
+      "sha256": "64bdf4d88106a222bddd6f3a3fc203216f1ce7d621153fe6535d0a0b8062c336"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\ascension.json",
+      "sha256": "633ed7e03032c323ae82036bad8eea7ddc568a9e215ffa4003b502abcbcbb4e5"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\badges.json",
+      "sha256": "2481a266febdf2c2d62e9346482dad2d5e7f338d0ded748dc56580b364d09c8a"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\bestiary.json",
+      "sha256": "eaa83bb00ec16630bac6a997e1a06ba753ba1f6b18bee314d02e4abd35eae143"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\card_keywords.json",
+      "sha256": "697a5680f24ab8d0acb821ee4442f596f79d875bd9605ab743f64ca42ebb32c3"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\card_library.json",
+      "sha256": "26e34995c51dc234726358e7e2e465b51866d1d9c27abe9ae45794426bd827c2"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\card_reward_ui.json",
+      "sha256": "61b10cd57c1948f278d82b9bada4b87e91d324ff7a580b54a7df534c9e18e4e3"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\card_selection.json",
+      "sha256": "281bf30ea86d33ff9f1f7e2babc06a6e2c2ab46cba7e2605b34961d6c3637f09"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\cards.json",
+      "sha256": "f7f4f74ade9f998c49e2171bbffdc0a4e486f86dc58bd967353a0a6261b95208"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\characters.json",
+      "sha256": "b854b894f2818b7251892b82882fb185da2eb98f3e9e786692b072ddb91bbf10"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\combat_messages.json",
+      "sha256": "0a4eb65733cfc22bc6398ab12e2bc4bfefe6164420e0e69fd9316b25db284d4e"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\credits.json",
+      "sha256": "dad64f4f6c6affbf39703a12018aa787f21b9a74178303b5d802898675b06288"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\enchantments.json",
+      "sha256": "ecb2dc44d852cf1780f4a21f8d823dbd92619a70b535ae20d56e3c3dc5cf0ca4"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\encounters.json",
+      "sha256": "92cfda874da42bcfa1d1519a4537e6490c13290a5250750c9c6b18624fa84183"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\epochs.json",
+      "sha256": "3e5acf3ea76829f6be55695c0a8ab403073b64b10aaaaa3b15636809a1df1c1d"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\eras.json",
+      "sha256": "ae45e3c24d4186da458900f2fc2ecd88710f0e45ca1e0ce9fb32fc4f56e4e820"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\events.json",
+      "sha256": "b177e0e76b98210e12c977dc51dbeae5bee13957d31359ea1f06f4a40120ee49"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\extensions.json",
+      "sha256": "8e8a65afce8b32c4ff38ae430f317656e1de9e3064c54b71bca272e082932573"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\ftues.json",
+      "sha256": "0ff4ef2c633b5fb0296d27742751464b91fe67e763ae7217236baec84b5dba6d"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\game_modes.json",
+      "sha256": "7077e1d53569590f6949fefd55d1a43b833747c4dd6931151bdf7586d19f42a7"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\game_over_screen.json",
+      "sha256": "2d9245727c7ab648713b353d00b25f51d6e6fb0126a497d36c6c61991515a4c7"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\gameplay_ui.json",
+      "sha256": "b1198118b4f170e080b9d2f63387fcaca5420597a68c3a4585d2472db8158d98"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\inspect_relic_screen.json",
+      "sha256": "42d0dd4074c392cc8d3c081264c4e521223134003589cf5ad77c6a602e215eef"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\intents.json",
+      "sha256": "cbf07f66725e34c1193391b1b9c3cc0f07b433866ed671e7140852806fa97bc4"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\main_menu_ui.json",
+      "sha256": "e9ffa4de9cf0749da09f0a034b344261b78a7cf7741ef05e9141b4b714f1d1f1"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\map.json",
+      "sha256": "b504659579ab943d4548ac14234f25f91c21ef043a25c2250322f60a16bfe26b"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\merchant_room.json",
+      "sha256": "648b89d1b83b463443c3830ffea6729b483328ab22ccebc2e4e55e574b87e2a1"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\modifiers.json",
+      "sha256": "0510ff47b9c9f69cb59f81e83217dd2ca2193b603463e1009c91fa94245cebfe"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\monsters.json",
+      "sha256": "d403ab485be9f65c59d176308e4d557854f1acd6ed7d0d412301e8b399b03c7a"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\orbs.json",
+      "sha256": "d212f566af56b5fbc3a0c2ca7b9ad7f18467a17635836f55e5f864b6499d7741"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\potion_lab.json",
+      "sha256": "049d978195b8c5f3e7b87532fff640521668e14c99beae685faf5e58c3c7cb2a"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\potions.json",
+      "sha256": "fecf29afe10f29708ba500fb831ae9934541ed1c41faf1d5acfa2735fc1359e4"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\powers.json",
+      "sha256": "ceca8da26d1490ce0adeb87ce36a716181aa5d0d3da6f153772164fb4ef4b54c"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\relic_collection.json",
+      "sha256": "1711ca535d91c22ef12960003e14956cb3b6ee231f2043a419333153b6f2880a"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\relics.json",
+      "sha256": "4618afb99e96ad01bb8bb564f6ddad18bb9f62c8ae1cb1c8a90d97de9c8e6c4f"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\rest_site_ui.json",
+      "sha256": "02d5e8fa306bb5eedd971b8409453b38ec5e8cda303b6526a01347881377ab1e"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\rich_presence.json",
+      "sha256": "17dc2650a0a69faa5ab486ad4c0561ed8503fe9d371debf88b152fcd4a225f86"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\run_history.json",
+      "sha256": "6a2103a02610b565dc3c831a2aea484f6d3a6b93c55f46e705fc327eda0953a7"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\settings_ui.json",
+      "sha256": "1a337b28c0970a76f816eeeb81e53b6eb0a2d6f31eddf1ef0d97748171f79ce1"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\static_hover_tips.json",
+      "sha256": "a5339058bbf5e53700220db8d6c48b8548f9560abcadcac883d223837563c8f6"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\stats_screen.json",
+      "sha256": "5256e7c01a337f7347e0b3a310f5e5b323e45c193c45c5e131f823fb716e72c8"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\timeline.json",
+      "sha256": "198bdb2136fc416d6d5bd4cd751cba71b8db66628974c7e039165e95f01c5eee"
+    },
+    {
+      "file": "D:\\stsmod\\sts\\localization\\zhs\\vfx.json",
+      "sha256": "d93c105045aa3c94d73e928bfea2607195ea2fa15095a0e4121f532bdccd43d4"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\acts.json",
+      "sha256": "2d192c2178257f02d0a5b468109abc2b1a790c87351277f19f99a80c7b8be54f"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\ancients.json",
+      "sha256": "42579d698edf539c32197c2139be49457541095999548e8fbe80dd005ebccb7c"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\card_keywords.json",
+      "sha256": "b3be1ada65086bffbe10c0f2ab4ed0d4cfd05c1356aa2316a4a786d19ee50bd9"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\card_library.json",
+      "sha256": "fd6ff387039bea2534a4339a57cde546326b9212a630cb8fe4fe968beefad957"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\cards.json",
+      "sha256": "76b9bfda091bb5178c3f201432484bcc6bafb7b993d98afcd49fe381ef63cf3f"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\characters.json",
+      "sha256": "d7994fb3eba65a53c88732e44e29c96faa28d4d89a338a9bd5e4af08aad03c73"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\encounters.json",
+      "sha256": "a48a11bab9aa3be783b6eb5cabd4142322f3a5860daa74b4f0d0add00d3755fd"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\events.json",
+      "sha256": "8b28f46bc84b08aaa013553f6709c793a44498da65227aa32f749e63437acd70"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\intents.json",
+      "sha256": "7ffbad44dcdf2112d2e8f79701564287bfc9e07a9d564ae5787068187b747599"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\monsters.json",
+      "sha256": "e037f9373af42c28df76438d1aed3edbf3853acac525c07eb0f2b8e413b5057f"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\potions.json",
+      "sha256": "1351c655948b01d6f5f0059baf5cf3228798b17efee09d24627aad80809e1e6c"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\powers.json",
+      "sha256": "ec3db7294c1adaedfa3c9c456a75def1420502013ab6154c6efa6ac2d26f954c"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\relics.json",
+      "sha256": "d5700f4453b26b2ef1474184344217f2570b3dd5657970cab341f5e95c2fdcbf"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\rest_site_ui.json",
+      "sha256": "95a50fd41cfd5d0a68b12a0d538c1830f71caa54e77610132ff6178dce4d6f9f"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\settings_ui.json",
+      "sha256": "b090aafd6a3d667ccba07e758756e36f18edefb10db032ddb038576d52deb07f"
+    },
+    {
+      "file": "C:\\Users\\ROG\\.codex\\worktrees\\codex-takeover-20261112\\HBRGOSakiMod\\HBRGOSakiMod\\localization\\zhs\\static_hover_tips.json",
+      "sha256": "7be2101d1d5c4653f4a2860e6821d883d061170969ff5138f17d29c21a5978f8"
+    }
+  ],
+  "sha256": "9eb833747faab1c4d4141b807490e6ae826e20fe75d736a137a0563a3b35dab3",
+  "runtime": "Bundled single-character-to-word data only. No original sentence translations, language setting mutations, or runtime network requests."
+}

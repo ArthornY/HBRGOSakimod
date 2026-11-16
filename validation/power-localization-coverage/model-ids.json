@@ -1,0 +1,265 @@
+{
+  "concretePowerCount": 247,
+  "namespacedPowers": [
+    {
+      "type": "AdvantageDicePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.AdvantageDicePower",
+      "modelId": "HBRGOSAKIMOD-ADVANTAGE_DICE_POWER"
+    },
+    {
+      "type": "AoiInvincibleShieldPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.AoiInvincibleShieldPower",
+      "modelId": "HBRGOSAKIMOD-AOI_INVINCIBLE_SHIELD_POWER"
+    },
+    {
+      "type": "AoiMiracleShieldPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.AoiMiracleShieldPower",
+      "modelId": "HBRGOSAKIMOD-AOI_MIRACLE_SHIELD_POWER"
+    },
+    {
+      "type": "BarrelDemiseCountdownPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.BarrelDemiseCountdownPower",
+      "modelId": "HBRGOSAKIMOD-BARREL_DEMISE_COUNTDOWN_POWER"
+    },
+    {
+      "type": "BeyondProtectionPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.BeyondProtectionPower",
+      "modelId": "HBRGOSAKIMOD-BEYOND_PROTECTION_POWER"
+    },
+    {
+      "type": "BoostUpExtraTurnPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.BoostUpExtraTurnPower",
+      "modelId": "HBRGOSAKIMOD-BOOST_UP_EXTRA_TURN_POWER"
+    },
+    {
+      "type": "BoostUpFormDamagePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.BoostUpFormDamagePower",
+      "modelId": "HBRGOSAKIMOD-BOOST_UP_FORM_DAMAGE_POWER"
+    },
+    {
+      "type": "BreakInsightPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.BreakInsightPower",
+      "modelId": "HBRGOSAKIMOD-BREAK_INSIGHT_POWER"
+    },
+    {
+      "type": "CrushYouLikeABugReplayPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.CrushYouLikeABugReplayPower",
+      "modelId": "HBRGOSAKIMOD-CRUSH_YOU_LIKE_A_BUG_REPLAY_POWER"
+    },
+    {
+      "type": "DestructionRateCapIncreasePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.DestructionRateCapIncreasePower",
+      "modelId": "HBRGOSAKIMOD-DESTRUCTION_RATE_CAP_INCREASE_POWER"
+    },
+    {
+      "type": "DiamondDpCheckPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.DiamondDpCheckPower",
+      "modelId": "HBRGOSAKIMOD-DIAMOND_DP_CHECK_POWER"
+    },
+    {
+      "type": "DodgePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.DodgePower",
+      "modelId": "HBRGOSAKIMOD-DODGE_POWER"
+    },
+    {
+      "type": "FaintnessStormCountdownPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.FaintnessStormCountdownPower",
+      "modelId": "HBRGOSAKIMOD-FAINTNESS_STORM_COUNTDOWN_POWER"
+    },
+    {
+      "type": "FearOfDevilPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.FearOfDevilPower",
+      "modelId": "HBRGOSAKIMOD-FEAR_OF_DEVIL_POWER"
+    },
+    {
+      "type": "HastePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.HastePower",
+      "modelId": "HBRGOSAKIMOD-HASTE_POWER"
+    },
+    {
+      "type": "HbrIntelPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.HbrIntelPower",
+      "modelId": "HBRGOSAKIMOD-HBR_INTEL_POWER"
+    },
+    {
+      "type": "HbrProvokePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.HbrProvokePower",
+      "modelId": "HBRGOSAKIMOD-HBR_PROVOKE_POWER"
+    },
+    {
+      "type": "HotaruDamageAmplificationPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.HotaruDamageAmplificationPower",
+      "modelId": "HBRGOSAKIMOD-HOTARU_DAMAGE_AMPLIFICATION_POWER"
+    },
+    {
+      "type": "ItsMygoProtectionPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.ItsMygoProtectionPower",
+      "modelId": "HBRGOSAKIMOD-ITS_MYGO_PROTECTION_POWER"
+    },
+    {
+      "type": "KozueSpiritPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.KozueSpiritPower",
+      "modelId": "HBRGOSAKIMOD-KOZUE_SPIRIT_POWER"
+    },
+    {
+      "type": "LostStarSongSupportPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.LostStarSongSupportPower",
+      "modelId": "HBRGOSAKIMOD-LOST_STAR_SONG_SUPPORT_POWER"
+    },
+    {
+      "type": "MagicSwordUniversalityPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MagicSwordUniversalityPower",
+      "modelId": "HBRGOSAKIMOD-MAGIC_SWORD_UNIVERSALITY_POWER"
+    },
+    {
+      "type": "MatchaDeferredDpRecoveryPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MatchaDeferredDpRecoveryPower",
+      "modelId": "HBRGOSAKIMOD-MATCHA_DEFERRED_DP_RECOVERY_POWER"
+    },
+    {
+      "type": "MatsuokaBlowAwayPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MatsuokaBlowAwayPower",
+      "modelId": "HBRGOSAKIMOD-MATSUOKA_BLOW_AWAY_POWER"
+    },
+    {
+      "type": "MindsEyePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MindsEyePower",
+      "modelId": "HBRGOSAKIMOD-MINDS_EYE_POWER"
+    },
+    {
+      "type": "MoonlightReplayPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MoonlightReplayPower",
+      "modelId": "HBRGOSAKIMOD-MOONLIGHT_REPLAY_POWER"
+    },
+    {
+      "type": "MyLegendNextAttackDoublePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MyLegendNextAttackDoublePower",
+      "modelId": "HBRGOSAKIMOD-MY_LEGEND_NEXT_ATTACK_DOUBLE_POWER"
+    },
+    {
+      "type": "MyLegendNextAttackPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.MyLegendNextAttackPower",
+      "modelId": "HBRGOSAKIMOD-MY_LEGEND_NEXT_ATTACK_POWER"
+    },
+    {
+      "type": "NararaGiveYouPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.NararaGiveYouPower",
+      "modelId": "HBRGOSAKIMOD-NARARA_GIVE_YOU_POWER"
+    },
+    {
+      "type": "NararaLayeredDpPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.NararaLayeredDpPower",
+      "modelId": "HBRGOSAKIMOD-NARARA_LAYERED_DP_POWER"
+    },
+    {
+      "type": "NararaNullificationPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.NararaNullificationPower",
+      "modelId": "HBRGOSAKIMOD-NARARA_NULLIFICATION_POWER"
+    },
+    {
+      "type": "NararaOverworkPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.NararaOverworkPower",
+      "modelId": "HBRGOSAKIMOD-NARARA_OVERWORK_POWER"
+    },
+    {
+      "type": "NararaPressurePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.NararaPressurePower",
+      "modelId": "HBRGOSAKIMOD-NARARA_PRESSURE_POWER"
+    },
+    {
+      "type": "PhantomCardUpgradeBenefitPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomCardUpgradeBenefitPower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_CARD_UPGRADE_BENEFIT_POWER"
+    },
+    {
+      "type": "PhantomDamageInheritancePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomDamageInheritancePower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_DAMAGE_INHERITANCE_POWER"
+    },
+    {
+      "type": "PhantomDrawBenefitPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomDrawBenefitPower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_DRAW_BENEFIT_POWER"
+    },
+    {
+      "type": "PhantomHandCapacityPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomHandCapacityPower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_HAND_CAPACITY_POWER"
+    },
+    {
+      "type": "PhantomMaxEnergyBenefitPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomMaxEnergyBenefitPower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_MAX_ENERGY_BENEFIT_POWER"
+    },
+    {
+      "type": "PhantomNoExhaustPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomNoExhaustPower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_NO_EXHAUST_POWER"
+    },
+    {
+      "type": "PhantomTenderBenefitPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PhantomTenderBenefitPower",
+      "modelId": "HBRGOSAKIMOD-PHANTOM_TENDER_BENEFIT_POWER"
+    },
+    {
+      "type": "PillarOverdriveDetectionPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PillarOverdriveDetectionPower",
+      "modelId": "HBRGOSAKIMOD-PILLAR_OVERDRIVE_DETECTION_POWER"
+    },
+    {
+      "type": "ProtectiveCharmPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.ProtectiveCharmPower",
+      "modelId": "HBRGOSAKIMOD-PROTECTIVE_CHARM_POWER"
+    },
+    {
+      "type": "PseudoSpaceWarpPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.PseudoSpaceWarpPower",
+      "modelId": "HBRGOSAKIMOD-PSEUDO_SPACE_WARP_POWER"
+    },
+    {
+      "type": "RollBonusPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.RollBonusPower",
+      "modelId": "HBRGOSAKIMOD-ROLL_BONUS_POWER"
+    },
+    {
+      "type": "SaviorGrandEntrancePower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SaviorGrandEntrancePower",
+      "modelId": "HBRGOSAKIMOD-SAVIOR_GRAND_ENTRANCE_POWER"
+    },
+    {
+      "type": "ScreamBlockBoostPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.ScreamBlockBoostPower",
+      "modelId": "HBRGOSAKIMOD-SCREAM_BLOCK_BOOST_POWER"
+    },
+    {
+      "type": "SixSenseGentlenessPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SixSenseGentlenessPower",
+      "modelId": "HBRGOSAKIMOD-SIX_SENSE_GENTLENESS_POWER"
+    },
+    {
+      "type": "SixSenseLeadershipPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SixSenseLeadershipPower",
+      "modelId": "HBRGOSAKIMOD-SIX_SENSE_LEADERSHIP_POWER"
+    },
+    {
+      "type": "SixSenseMentalStrengthPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SixSenseMentalStrengthPower",
+      "modelId": "HBRGOSAKIMOD-SIX_SENSE_MENTAL_STRENGTH_POWER"
+    },
+    {
+      "type": "SkullFeatherPhantomTurnBenefitPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SkullFeatherPhantomTurnBenefitPower",
+      "modelId": "HBRGOSAKIMOD-SKULL_FEATHER_PHANTOM_TURN_BENEFIT_POWER"
+    },
+    {
+      "type": "SpiritTalismanPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SpiritTalismanPower",
+      "modelId": "HBRGOSAKIMOD-SPIRIT_TALISMAN_POWER"
+    },
+    {
+      "type": "SummerGrassGhostPathPower",
+      "fullType": "HBRGOSakiMod.Core.Models.Powers.SummerGrassGhostPathPower",
+      "modelId": "HBRGOSAKIMOD-SUMMER_GRASS_GHOST_PATH_POWER"
+    }
+  ]
+}

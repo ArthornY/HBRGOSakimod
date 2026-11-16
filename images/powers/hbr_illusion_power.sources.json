@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR IllusionRandom icon",
+  "importedPath": "res://images/powers/hbr_illusion_power.png",
+  "sha256": "7f43485a25566e4c8cbd641b820e61e6e922a9642e10713b3ac4f3757473fd36",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation. The original has no separate up/down variant, so no arrow is added.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconIllusion.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "6705910057725895628",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_6705910057725895628_IconIllusion.png",
+    "sourceSha256": "7f43485a25566e4c8cbd641b820e61e6e922a9642e10713b3ac4f3757473fd36",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrIllusionPower",
+    "originalEffect": "IllusionRandom",
+    "small": "res://images/powers/hbr_illusion_power.png",
+    "big": "res://images/powers/hbr_illusion_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

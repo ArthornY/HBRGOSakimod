@@ -1,4 +1,6 @@
 using Godot;
+using System;
+using HBRGOSakiMod.Core.Helpers;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
@@ -20,43 +23,17 @@ public sealed class ShadowDanceExtraTurnPower : PowerModel
 
     public override PowerType Type => PowerType.Buff;
 
-    public override PowerStackType StackType => PowerStackType.Single;
+    public override PowerStackType StackType => PowerStackType.Counter;
+
+    public override LocString Description => HbrgoSakiEnergyIconHelper.Add31OPrefix(base.Description);
 
     public override Color AmountLabelColor => new("9B9DFF");
 
-    public override bool ShouldTakeExtraTurn(Player player)
+    public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        return player == Owner.Player &&
-            Owner.IsAlive &&
-            HasQueuedExtraTurn;
-    }
-
-    public override Task BeforeSideTurnEnd(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IEnumerable<Creature> participants)
-    {
-        if (side == Owner.Side &&
-            participants.Contains(Owner) &&
-            !CombatManager.Instance.PlayersTakingExtraTurn.Contains(Owner.Player))
-        {
-            AssertMutable();
-            HasQueuedExtraTurn = true;
-            Flash();
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public override async Task AfterTakingExtraTurn(Player player)
-    {
-        if (player != Owner.Player)
-        {
-            return;
-        }
-
-        AssertMutable();
-        HasQueuedExtraTurn = false;
+        Player player = Owner?.Player;
+        int count = Math.Max(0, Amount);
+        if (player != null && count > 0) PersonalImmediateTurnCoordinator.Request(player, count);
         await PowerCmd.Remove(this);
     }
 }

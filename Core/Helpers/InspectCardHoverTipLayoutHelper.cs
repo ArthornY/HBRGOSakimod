@@ -41,6 +41,9 @@ internal static class InspectCardHoverTipLayoutHelper
         return new(new Rect2(x, safe.Position.Y, width, safe.Size.Y), width / contentWidth);
     }
 
+    internal static Transform2D InParentFrame(Transform2D tipsToFrame, Vector2 position, float scale) =>
+        HandCardHoverTipLayoutHelper.InParentFrame(tipsToFrame, position, scale);
+
     private static bool ValidRect(Rect2 rect) =>
         rect.Position.IsFinite() && rect.Size.IsFinite() && rect.End.IsFinite() &&
         rect.Size.X > 0f && rect.Size.Y > 0f;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
@@ -18,9 +19,11 @@ internal static class HbrgoSakiDamageMultiplierHelper
         _contexts.Push(new AdditiveDamageContext(dealer, target, hbrNumerics));
     }
 
+    // The original DefenseUp is the same additive defense entry, negative.
     internal static bool IsDefenseDownSource(AbstractModel source, Creature target,
-        Creature dealer, decimal multiplier) => multiplier > 1m && target != null && target != dealer &&
-        source is PowerModel { Type: PowerType.Debuff } power && power.Owner == target;
+        Creature dealer, decimal multiplier) => target != null && target != dealer &&
+        ((multiplier > 1m && source is PowerModel { Type: PowerType.Debuff } power && power.Owner == target) ||
+            (multiplier < 1m && source is HbrDefenseUpPower defenseUp && defenseUp.Owner == target));
 
     internal static decimal Add(decimal multiplier, AbstractModel source)
     {

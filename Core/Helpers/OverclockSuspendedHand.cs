@@ -98,7 +98,7 @@ internal sealed class OverclockSuspendedHand
             throw new InvalidOperationException("OD deck preparation requires a native combat state.");
         try
         {
-            _player.PopulateCombatState(_player.RunState.Rng.Shuffle, combat);
+            _player.PopulateCombatStateCompat(_player.RunState.Rng.Shuffle, combat);
             _overclockDeckCards = _playerCombatState.AllCards.ToArray();
             // A fresh deck must not bring back this battle's played powers or
             // exhausted cards. Match the permanent origin, never the model ID:
@@ -147,7 +147,21 @@ internal sealed class OverclockSuspendedHand
     {
         if (_finished) return false;
         if (!IsCurrentLiveCombat()) { Abandon(); return false; }
-        ClearOverclockCards();
+        // Only request85's explicit boundary receipt can carry a card through
+        // the disposable pool. A deck mirror returns its suspended original;
+        // it never creates a second combat copy of that physical origin.
+        CardModel[] carry = CollectKurosawaCarry();
+        var carried = new HashSet<CardModel>(carry, ReferenceEqualityComparer.Instance);
+        var originalsSet = new HashSet<CardModel>(_cards, ReferenceEqualityComparer.Instance);
+        var preserve = new HashSet<CardModel>(carry.Where(card => !originalsSet.Contains(card)), ReferenceEqualityComparer.Instance);
+        ClearOverclockCards(preserve);
+        foreach (CardModel card in preserve)
+        {
+            if (card.Pile?.IsCombatPile == true) card.RemoveFromCurrentPile(true);
+            // These are actual temporary cards, rather than an ordinary card
+            // whose paused turn-local modifiers must remain untouched.
+            card.EndOfTurnCleanup();
+        }
         CardModel[] originals = _cards;
         // Failed suspension may leave some originals in their piles: remove
         // these before appending the full snapshot in the saved exact order.
@@ -158,6 +172,7 @@ internal sealed class OverclockSuspendedHand
         {
             foreach (CardModel card in _pileCards[index])
             {
+                if (carried.Contains(card) && _piles[index].Type != PileType.Hand) continue;
                 if (card.HasBeenRemovedFromState || !ReferenceEquals(card.Owner, _player) ||
                     !_combatState.ContainsCard(card) || card.Pile != null) continue;
                 // Permanent self-removal during OD also invalidates detached
@@ -176,16 +191,53 @@ internal sealed class OverclockSuspendedHand
                 if (_piles[index].Type != PileType.Hand) _piles[index].InvokeCardAddFinished();
             }
         }
+        var completedHandCarry = new HashSet<CardModel>(ReferenceEqualityComparer.Instance);
+        foreach (CardModel card in carry)
+        {
+            if (card.HasBeenRemovedFromState || !ReferenceEquals(card.Owner, _player) || !_combatState.ContainsCard(card)) continue;
+            if (card.Pile != _playerCombatState.Hand)
+            {
+                card.RemoveFromCurrentPile(true);
+                CardPile target = _playerCombatState.Hand.Cards.Count < CardPile.MaxCardsInHand
+                    ? _playerCombatState.Hand : _playerCombatState.DiscardPile;
+                target.AddInternal(card);
+                target.InvokeCardAddFinished();
+            }
+            else card.Pile.InvokeCardAddFinished();
+            if (card.Pile == _playerCombatState.Hand) completedHandCarry.Add(card);
+        }
         // Direct assignment restores energy without gain modifiers, retaining
         // the native EnergyChanged notification.
         _playerCombatState.Energy = SavedEnergy;
         FinishSnapshot();
         UpdateLocalHand(_player, hand =>
         {
-            foreach (CardModel card in originals)
-                if (ReferenceEquals(card.Pile, _playerCombatState.Hand)) AddHandVisual(hand, card);
+            foreach (CardModel card in originals.Concat(carry).Distinct())
+                if (ReferenceEquals(card.Pile, _playerCombatState.Hand))
+                    AddHandVisual(hand, card, !completedHandCarry.Contains(card));
         });
         return true;
+    }
+
+    private CardModel[] CollectKurosawaCarry()
+    {
+        var result = new List<CardModel>();
+        foreach (CardModel candidate in KurosawaLeaderCombatHelper.ConsumeCarry(_player))
+        {
+            CardModel model = candidate;
+            if (candidate.DeckVersion is { } origin)
+            {
+                if (origin.HasBeenRemovedFromState || origin.Pile?.Type != PileType.Deck || _unavailableDeckCards.Contains(origin)) continue;
+                CardModel[] matches = _cards.Where(card => ReferenceEquals(card.DeckVersion, origin) &&
+                    !card.IsDupe && !CardCopyContextHelper.IsMarkedCopy(card)).ToArray();
+                // An ambiguous copy lineage cannot take another physical card.
+                if (matches.Length != 1) continue;
+                model = matches[0];
+            }
+            if (!model.HasBeenRemovedFromState && ReferenceEquals(model.Owner, _player) &&
+                _combatState.ContainsCard(model) && !result.Contains(model)) result.Add(model);
+        }
+        return result.ToArray();
     }
 
     // Final flush after OD end effects; never repeat active discard/Sly/exhaust
@@ -215,6 +267,7 @@ internal sealed class OverclockSuspendedHand
     {
         if (_finished) return;
         if (!IsSameCombatState()) { FinishSnapshot(); return; }
+        KurosawaLeaderCombatHelper.DiscardCarry(_player);
         ClearOverclockCards();
         foreach (CardModel card in _cards)
             if (!card.HasBeenRemovedFromState && card.Pile == null &&
@@ -230,7 +283,7 @@ internal sealed class OverclockSuspendedHand
     private bool IsCurrentLiveCombat() => IsSameCombatState() &&
         _player.Creature.IsAlive && !CombatManager.Instance.IsOverOrEnding;
 
-    private void ClearOverclockCards()
+    private void ClearOverclockCards(IReadOnlySet<CardModel> preserved = null)
     {
         // Card.Pile resolves through the current owner state. Never inspect or
         // mutate card piles after that owner has switched to another battle.
@@ -249,7 +302,7 @@ internal sealed class OverclockSuspendedHand
         CardModel[] temporary = _overclockDeckCards.Concat(_piles.SelectMany(pile => pile.Cards))
             .Distinct().Where(card => !originals.Contains(card)).ToArray();
         foreach (CardModel card in temporary)
-            if (!card.HasBeenRemovedFromState && ReferenceEquals(card.Owner, _player) &&
+            if (preserved?.Contains(card) != true && !card.HasBeenRemovedFromState && ReferenceEquals(card.Owner, _player) &&
                 _combatState.ContainsCard(card) && (card.Pile == null || card.Pile.IsCombatPile))
                 // Native removal retains combat/network registration and Owner.
                 card.RemoveFromState();
@@ -326,7 +379,7 @@ internal sealed class OverclockSuspendedHand
         }
     }
 
-    private static void AddHandVisual(NPlayerHand hand, CardModel card)
+    private static void AddHandVisual(NPlayerHand hand, CardModel card, bool completeAdd = true)
     {
         if (hand == null || hand.GetCardHolder(card) != null)
         {
@@ -344,6 +397,6 @@ internal sealed class OverclockSuspendedHand
         node.Position = PileType.Hand.GetTargetPosition(node);
         node.Scale = Vector2.One;
         hand.Add(node);
-        card.Pile.InvokeCardAddFinished();
+        if (completeAdd) card.Pile.InvokeCardAddFinished();
     }
 }

@@ -39,7 +39,6 @@ internal static class OverclockImmediateTurnCoordinator
         internal readonly Player[] Players;
         internal readonly Dictionary<Player, OverclockSuspendedHand> Hands = new();
         internal readonly Dictionary<Player, bool> Ready = new();
-        internal readonly Dictionary<NararaNullificationPower, int> NullificationSelections = new();
         internal Phase Phase;
         internal bool EndRequested;
         internal Task Transition = Task.CompletedTask;
@@ -53,6 +52,7 @@ internal static class OverclockImmediateTurnCoordinator
     }
 
     private static Session _current;
+    internal static bool HasSession => _current != null;
     private sealed class ResistanceReward
     {
         internal bool Pending;
@@ -78,8 +78,12 @@ internal static class OverclockImmediateTurnCoordinator
         _current is { } session && IsCurrent(session) &&
         session.Players.Contains(player) && player.Creature.IsAlive;
 
-    internal static object GetTurnToken(Player player) => IsActiveFor(player) ? _current : null;
+    internal static object GetTurnToken(Player player) => IsActiveFor(player) ? _current :
+        PersonalImmediateTurnCoordinator.GetTurnToken(player);
 
+    // Requested by More Than One Truth's 1MORE when an enemy's last six-sense
+    // resistance broke. Nothing requests it since the resistances were removed
+    // (2026-11-09); kept for that effect's redesign.
     internal static void RequestResistanceReward(Player player)
     {
         ICombatState combat = player?.Creature?.CombatState;
@@ -132,7 +136,7 @@ internal static class OverclockImmediateTurnCoordinator
     {
         CombatManager manager = CombatManager.Instance;
         ICombatState combat = owner?.Creature.CombatState;
-        return _current == null && combat != null && manager.IsInProgress &&
+        return _current == null && !PersonalImmediateTurnCoordinator.IsBusy && combat != null && manager.IsInProgress &&
             !manager.IsOverOrEnding && !manager.EndingPlayerTurnPhaseOne &&
             !manager.EndingPlayerTurnPhaseTwo &&
             ReferenceEquals(manager.DebugOnlyGetState(), combat) &&
@@ -149,7 +153,8 @@ internal static class OverclockImmediateTurnCoordinator
                 .All(player => player.PlayerCombatState?.Phase == PlayerTurnPhase.Play);
     }
 
-    // Called only by the existing synchronized OD console action.
+    // Runs on every peer alike: from the OD gauge's managed action
+    // (HbrOverclockNetActions), the typed console subcommand, or the 1MORE reward.
     internal static bool TryBegin(Overclock relic)
     {
         if (!CanBegin(relic.Owner)) return false;
@@ -195,7 +200,7 @@ internal static class OverclockImmediateTurnCoordinator
         foreach (Player player in players)
         {
             player.PlayerCombatState.Phase = PlayerTurnPhase.Start;
-            manager.UndoReadyToEndTurn(player);
+            manager.UndoReadyToEndTurnCompat(player);
         }
         manager.OnEndedTurnLocally();
 
@@ -235,14 +240,6 @@ internal static class OverclockImmediateTurnCoordinator
                 await Hook.AfterCardEnteredCombat(session.Combat, card);
             }
             if (!await CanContinue(session)) return;
-            // OD is its own player turn: suspend the ordinary turn's shared
-            // attribute restrictions and draw a fresh pair before drawing cards.
-            foreach (var creature in session.Combat.Enemies)
-                if (creature.GetPower<NararaNullificationPower>() is { IsActive: true } power)
-                {
-                    session.NullificationSelections.Add(power, power.CaptureSelections());
-                    power.SelectForPlayers(session.Players);
-                }
             foreach (Player player in session.Players)
             {
                 if (!await CanContinue(session)) return;
@@ -270,7 +267,11 @@ internal static class OverclockImmediateTurnCoordinator
 
     private static async Task DealOverclockHand(Session session, Player player, PlayerChoiceContext context)
     {
-        await PlayerCmd.SetEnergy(Overclock.GetExtraTurnEnergy(session.Relic.ActiveLevel), player);
+        // OD builds its own energy pool; include magic sword without replaying native turn setup.
+        await PlayerCmd.SetEnergy(Overclock.GetExtraTurnEnergy(session.Relic.ActiveLevel) +
+            MagicSwordModePower.GetTurnEnergyBonus(player), player);
+        if (!await CanContinue(session) || !player.Creature.IsAlive) return;
+        await HbrInsertedTurnStartHelper.Start(context, player);
         if (!await CanContinue(session) || !player.Creature.IsAlive) return;
         // OD has its own cannon turn boundaries without replaying native turn
         // setup: keep block and the suspended turn's other ability rules intact.
@@ -278,6 +279,7 @@ internal static class OverclockImmediateTurnCoordinator
             await millsage.TriggerOverclockTurnStart(context, session);
         if (!await CanContinue(session) || !player.Creature.IsAlive) return;
         await CardPileCmd.Draw(context, Overclock.GetExtraTurnDraw(session.Relic.ActiveLevel), player, fromHandDraw: true);
+        await MoreThanOneTruthCombatHelper.OnExtraTurnEntered(context, player);
     }
 
     // Keep native ready/undo events and votes; replace only the side transition.
@@ -325,6 +327,17 @@ internal static class OverclockImmediateTurnCoordinator
 
     private static async Task FlushOverclockHand(Session session, Player player, PlayerChoiceContext context)
     {
+        try { await FlushOverclockHandCore(session, player, context); }
+        finally
+        {
+            YanagiButlerCombatHelper.OnTurnEnd(player, session);
+            VritikaCalculationCombatHelper.OnTurnEnd(player, session);
+        }
+    }
+
+    private static async Task FlushOverclockHandCore(Session session, Player player, PlayerChoiceContext context)
+    {
+        await SakuraRainPower.TriggerInsertedTurnEnd(context, player, session);
         // Resolve END cannons against the OD hand before its cleanup. Any END
         // draw belongs to this extra turn, not the suspended ordinary hand.
         if (player.GetRelic<Millsage>() is { } millsage)
@@ -333,6 +346,7 @@ internal static class OverclockImmediateTurnCoordinator
         // Suspended cards neither exhaust nor lose their turn-local modifiers.
         // OD's unplayed hand is discarded before restoring the original hand.
         CardPile hand = player.PlayerCombatState.Hand;
+        KanzakiShowtimeCombatHelper.OnTurnEnd(player, session);
         foreach (CardModel card in hand.Cards.ToArray())
         {
             if (!IsCurrent(session) || !player.Creature.IsAlive) return;
@@ -342,8 +356,14 @@ internal static class OverclockImmediateTurnCoordinator
             else if (card.Keywords.Contains(CardKeyword.Ethereal) && Hook.ShouldEtherealTrigger(session.Combat, card))
                 await OverclockCardCommandHelper.ExhaustEthereal(context, card);
         }
-        if (IsCurrent(session) && player.Creature.IsAlive && !hand.IsEmpty)
-            await CardPileCmd.Add(hand.Cards.ToArray(), PileType.Discard);
+        if (IsCurrent(session) && player.Creature.IsAlive)
+        {
+            KurosawaLeaderCombatHelper.BeforeFlush(player);
+            CardModel[] flushing = hand.Cards.Where(card => !KurosawaLeaderCombatHelper.KeepsForExtraFlush(player, card)).ToArray();
+            if (flushing.Length > 0) await CardPileCmd.Add(flushing, PileType.Discard);
+            if (IsCurrent(session) && player.Creature.IsAlive)
+                await KurosawaLeaderCombatHelper.AfterFlush(context, player);
+        }
         // Hand cleanup may auto-play another copy after the cannon END phase.
         // Its temporary effect still belongs to this inserted turn.
         await HotaruSeeYouAgainHelper.OnTurnEnd(context, player, session);
@@ -358,12 +378,9 @@ internal static class OverclockImmediateTurnCoordinator
     private static void Restore(Session session)
     {
         CombatManager manager = CombatManager.Instance;
-        foreach (var selection in session.NullificationSelections)
-            if (selection.Key.IsActive && ReferenceEquals(selection.Key.Owner.CombatState, session.Combat))
-                selection.Key.RestoreSelections(selection.Value);
-        session.NullificationSelections.Clear();
         foreach (Player player in session.Players)
         {
+            VritikaCalculationCombatHelper.OnTurnEnd(player, session);
             if (!player.Creature.IsAlive)
             {
                 session.Hands[player].Abandon();
@@ -374,7 +391,7 @@ internal static class OverclockImmediateTurnCoordinator
             // preparation may already have restored this player's real hand.
             session.Hands[player].TryRestore();
             player.PlayerCombatState.Phase = PlayerTurnPhase.Play;
-            manager.UndoReadyToEndTurn(player);
+            manager.UndoReadyToEndTurnCompat(player);
         }
         session.Relic.FinishImmediateTurn();
         // Suppress native side transitions while restoring original votes.
@@ -383,6 +400,9 @@ internal static class OverclockImmediateTurnCoordinator
                 manager.SetReadyToEndTurn(player, canBackOut: true);
         _current = null;
         ResumeInput();
+        // Admission must snapshot the restored ordinary input flags, not the
+        // paused OD flags which ResumeInput is about to clear.
+        PersonalImmediateTurnCoordinator.OnOverclockRestored();
         // If the initiator died, every remaining player may already have voted
         // to end the suspended ordinary turn. Reissue its transition once, now
         // that it can no longer be mistaken for ending OD.
@@ -391,7 +411,7 @@ internal static class OverclockImmediateTurnCoordinator
             Player readyPlayer = session.Players.FirstOrDefault(player => player.Creature.IsAlive);
             if (readyPlayer != null)
             {
-                manager.UndoReadyToEndTurn(readyPlayer);
+                manager.UndoReadyToEndTurnCompat(readyPlayer);
                 PlayerCmd.EndTurn(readyPlayer, canBackOut: false);
             }
         }
@@ -483,7 +503,7 @@ internal static class OverclockImmediateTurnCoordinator
         RunManager.Instance.ActionQueueSet.UnpauseAllPlayerQueues();
         Player me = LocalContext.GetMe(CombatManager.Instance.DebugOnlyGetState());
         if (me != null && me.Creature.IsAlive && !CombatManager.Instance.IsPlayerReadyToEndTurn(me))
-            CombatManager.Instance.UndoReadyToEndTurn(me);
+            CombatManager.Instance.UndoReadyToEndTurnCompat(me);
         else
             CombatManager.Instance.OnEndedTurnLocally();
     }

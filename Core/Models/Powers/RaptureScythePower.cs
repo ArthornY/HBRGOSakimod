@@ -37,11 +37,7 @@ public sealed class RaptureScythePower : PowerModel
         }
 
         await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
-        SwiftPower swift = Owner.GetPower<SwiftPower>();
-        if (swift != null)
-        {
-            await swift.RecordModeSwitch();
-        }
+        await ModeTransitionHelper.RecordModeSwitch(Owner);
     }
 
     public override async Task AfterCardPlayed(

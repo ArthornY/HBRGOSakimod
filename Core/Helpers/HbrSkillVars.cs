@@ -33,6 +33,10 @@ internal static class HbrSkillVars
     internal static PowerVar<T> BlockPower<T>(decimal percent, decimal divisor = 1m) where T : PowerModel =>
         new SkillBlockPowerVar<T>(HbrSkillPower.BlockUnits(percent, divisor));
 
+    // A granted power whose stacks later deal its holder's skill, six units to 100%.
+    internal static PowerVar<T> DamagePower<T>(decimal percent, decimal divisor = 1m) where T : PowerModel =>
+        new SkillDamagePowerVar<T>(HbrSkillPower.DamageUnits(percent, divisor));
+
     // Existing cannon growth adds one shared native amount to both ledgers.
     // Express its configuration against damage 100%; presentation can also
     // derive block percent from BaseValue without changing that shared amount.
@@ -84,6 +88,13 @@ internal static class HbrSkillVars
     {
         public HbrSkillPowerKind SkillPowerKind => HbrSkillPowerKind.Block;
         public decimal SkillPowerPercent => HbrSkillPower.BlockPercent(BaseValue);
+    }
+
+    private sealed class SkillDamagePowerVar<T>(decimal units) : PowerVar<T>(units), IHbrSkillPowerVar
+        where T : PowerModel
+    {
+        public HbrSkillPowerKind SkillPowerKind => HbrSkillPowerKind.Damage;
+        public decimal SkillPowerPercent => HbrSkillPower.DamagePercent(BaseValue);
     }
 
     private sealed class SkillBonusVar(string name, decimal units, HbrSkillPowerKind kind)

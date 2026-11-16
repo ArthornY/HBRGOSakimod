@@ -171,7 +171,7 @@ public sealed class TezukaSaki : HbrgoStaticMonster
         }
         else
         {
-            await HbrPercentDebuffApplication.ApplyDefenseDown(
+            await HbrBossDebuffApplication.ApplyDefenseDown(
                 new ThrowingPlayerChoiceContext(),
                 targets,
                 2,

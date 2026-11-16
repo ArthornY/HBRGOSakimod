@@ -15,6 +15,8 @@ namespace HBRGOSakiMod.Core.Nodes.Screens;
 internal sealed partial class NHbrgoSakiGameOverObserver : Node
 {
     private const double PortraitWaitSeconds = 10.0;
+    // NGameOverScreen.OpenSummaryScreen fades the summary backstop in over half a second.
+    private const double SummaryFadeSeconds = 0.5;
 
     private static readonly FieldInfo HistoryField =
         PrivateAccess.Field<NGameOverScreen>("_history");
@@ -30,6 +32,9 @@ internal sealed partial class NHbrgoSakiGameOverObserver : Node
         PrivateAccess.Field<NGameOverScreen>("_summaryContainer");
 
     private double _portraitWaitElapsed;
+    private bool _waitingForPortrait;
+    private Label _runPeak;
+    private ColorRect _summaryBackstop;
 
     internal NGameOverScreen Screen { get; set; }
 
@@ -39,18 +44,18 @@ internal sealed partial class NHbrgoSakiGameOverObserver : Node
         if (Screen == null || LocalPlayerField.GetValue(Screen) is not Player player ||
             !RollKeywordRules.UsesCommonRules(player)) return;
         ShowRunPeak(player);
-        if (!IsSakiLoss())
+        if (IsSakiLoss())
         {
-            return;
+            ApplyText();
+            _waitingForPortrait = !TryShowNarbyPortrait();
         }
 
-        ApplyText();
-        if (!TryShowNarbyPortrait())
-        {
-            SetProcess(true);
-        }
+        SetProcess(_waitingForPortrait || _runPeak != null);
     }
 
+    // The run summary container is visible from the start; vanilla keeps each of its rows transparent
+    // until the player continues to the summary. The peak line waits for that too: shown at once, it
+    // sat on the character standing in the middle of the defeat screen.
     private void ShowRunPeak(Player player)
     {
         if (SummaryContainerField.GetValue(Screen) is not NRunSummary summary ||
@@ -69,21 +74,50 @@ internal sealed partial class NHbrgoSakiGameOverObserver : Node
             HorizontalAlignment = HorizontalAlignment.Center,
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming,
-            MouseFilter = Control.MouseFilterEnum.Pass
+            // Hidden and out of the mouse's way until the summary opens; it keeps its row meanwhile.
+            Modulate = new Color(1f, 1f, 1f, 0f),
+            MouseFilter = Control.MouseFilterEnum.Ignore
         };
         label.AddThemeFontSizeOverride("font_size", 24);
         container.AddChild(label);
         container.MoveChild(label, 0);
+        _runPeak = label;
+        _summaryBackstop = Screen.GetNodeOrNull<ColorRect>("%SummaryBackstop");
     }
 
     public override void _Process(double delta)
     {
-        _portraitWaitElapsed += delta;
-        if (TryShowNarbyPortrait() ||
-            _portraitWaitElapsed >= PortraitWaitSeconds)
+        if (_waitingForPortrait)
+        {
+            _portraitWaitElapsed += delta;
+            if (TryShowNarbyPortrait() || _portraitWaitElapsed >= PortraitWaitSeconds)
+            {
+                _waitingForPortrait = false;
+            }
+        }
+
+        if (_runPeak != null && SummaryOpened())
+        {
+            RevealRunPeak();
+        }
+
+        if (!_waitingForPortrait && _runPeak == null)
         {
             SetProcess(false);
         }
+    }
+
+    // OpenSummaryScreen starts fading the summary backstop in; without that node the line shows at once.
+    private bool SummaryOpened() =>
+        !GodotObject.IsInstanceValid(_summaryBackstop) || _summaryBackstop.Modulate.A > 0.01f;
+
+    private void RevealRunPeak()
+    {
+        Label label = _runPeak;
+        _runPeak = null;
+        if (!GodotObject.IsInstanceValid(label)) return;
+        label.MouseFilter = Control.MouseFilterEnum.Pass;
+        CreateTween().TweenProperty(label, "modulate:a", 1f, SummaryFadeSeconds);
     }
 
     private bool IsSakiLoss()

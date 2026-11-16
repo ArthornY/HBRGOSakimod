@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <StartupObject>NararaBootstrap</StartupObject>
+    <RepositoryRoot Condition="'$(RepositoryRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../..'))</RepositoryRoot>
+    <ModAssemblyPath Condition="'$(ModAssemblyPath)' == ''">$(RepositoryRoot)/.godot/mono/temp/bin/Release/HBRGOSakiMod.dll</ModAssemblyPath>
+    <NativeAssemblyPath Condition="'$(NativeAssemblyPath)' == ''">$(RepositoryRoot)/libs/sts2.dll</NativeAssemblyPath>
+    <NativeRitsuAssemblyPath Condition="'$(NativeRitsuAssemblyPath)' == ''">$(RepositoryRoot)/libs/STS2-RitsuLib.dll</NativeRitsuAssemblyPath>
+    <DefineConstants Condition="'$(BetaNativeChecks)' == 'true'">$(DefineConstants);HBR_BETA_NATIVE</DefineConstants>
+    <BaseLibAssemblyPath Condition="'$(BaseLibAssemblyPath)' == ''">$(RepositoryRoot)/libs/BaseLib.dll</BaseLibAssemblyPath>
+    <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(RepositoryRoot)/libs/0Harmony.dll</HarmonyAssemblyPath>
+    <RitsuDirectory>$([System.IO.Path]::GetDirectoryName('$(NativeRitsuAssemblyPath)'))</RitsuDirectory>
+    <GodotSharpAssemblyPath Condition="'$(GodotSharpAssemblyPath)' == ''">C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll</GodotSharpAssemblyPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(RepositoryRoot)/validation/hbr-effect-skill-damage/*.cs" Link="EffectHost/%(Filename)%(Extension)" />
+    <Compile Include="$(RepositoryRoot)/validation/hbr-stat-powers/Program.cs" Link="StatPowerHost.cs" />
+    <Compile Include="$(RepositoryRoot)/validation/hotaru-overcharge/TelemetryIsolation.cs" Link="TelemetryIsolation.cs" />
+    <Reference Include="HBRGOSakiMod" HintPath="$(ModAssemblyPath)" Private="false" />
+    <Reference Include="sts2" HintPath="$(NativeAssemblyPath)" Private="false" />
+    <Reference Include="BaseLib" HintPath="$(BaseLibAssemblyPath)" Private="false" />
+    <Reference Include="STS2-RitsuLib" HintPath="$(NativeRitsuAssemblyPath)" Private="false" />
+    <Reference Include="$(RitsuDirectory)/STS2-RitsuLib.*.dll" HintPath="%(FullPath)" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(HarmonyAssemblyPath)" />
+    <Reference Include="GodotSharp" HintPath="$(GodotSharpAssemblyPath)" Private="false" />
+  </ItemGroup>
+</Project>

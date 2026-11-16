@@ -14,6 +14,7 @@ internal static class PhantomPowerTransferHelper
         power != null && power switch
         {
             LargeHealthPower => false,
+            NararaLayeredHpPower => false,
             AsleepPower => monster is LagavulinMatriarch,
             SlumberPower => monster is SlumberingBeetle,
             FlutterPower => monster is ThievingHopper,

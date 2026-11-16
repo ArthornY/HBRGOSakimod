@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
@@ -19,6 +19,10 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class ChihayaClassmateHbrgoSaki : CardModel
 {
+    internal bool UsesOnlyTwoModes => IsMutable && Owner != null
+        ? Owner.Character is HbrgoSaki31O
+        : HbrgoSakiCardPortraitContext.LibraryVariant != HbrgoSakiVariant.ThirtyA;
+
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/chihaya_classmate_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
@@ -30,7 +34,7 @@ public sealed class ChihayaClassmateHbrgoSaki : CardModel
             yield return HoverTipFactory.FromPower<NormalStatePower>();
             yield return HoverTipFactory.FromPower<ReptureBowPower>();
             yield return HoverTipFactory.FromPower<ReptureDualSwordsPower>();
-            if (!IsMutable || Owner?.Character is not HbrgoSaki31O)
+            if (!UsesOnlyTwoModes)
             {
                 yield return HoverTipFactory.FromPower<RaptureScythePower>();
             }
@@ -164,9 +168,7 @@ public sealed class AnokoHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new PowerVar<BufferPower>(2m),
-            new PowerVar<StrongestShieldPower>(1m),
-            new PowerVar<SwordheartClarityPower>(1m),
-            new PowerVar<ProtagonistPrivilegePower>(1m)
+            new PowerVar<StrongestShieldPower>(1m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -174,9 +176,6 @@ public sealed class AnokoHbrgoSaki : CardModel
         {
             HoverTipFactory.FromPower<BufferPower>(),
             HoverTipFactory.FromPower<StrongestShieldPower>(),
-            HoverTipFactory.FromPower<SwordheartClarityPower>(),
-            HoverTipFactory.FromPower<SwordheartPower>(),
-            HoverTipFactory.FromPower<ProtagonistPrivilegePower>(),
             HoverTipFactory.FromCard<MeditationHbrgoSaki>()
         };
 
@@ -201,47 +200,6 @@ public sealed class AnokoHbrgoSaki : CardModel
             DynamicVars["StrongestShieldPower"].BaseValue,
             Owner.Creature,
             this);
-        await PowerCmd.Apply<SwordheartClarityPower>(
-            choiceContext,
-            Owner.Creature,
-            DynamicVars["SwordheartClarityPower"].BaseValue,
-            Owner.Creature,
-            this);
-
-        int swordheartToGain = Math.Max(
-            0,
-            SwordheartPower.GetMaxAmount(Owner.Creature) -
-            (Owner.Creature.GetPower<SwordheartPower>()?.Amount ?? 0));
-        if (swordheartToGain > 0)
-        {
-            MagicSwordModePower magicSwordMode =
-                Owner.Creature.GetPower<MagicSwordModePower>();
-            if (magicSwordMode != null)
-            {
-                await magicSwordMode
-                    .GrantSwordheartIgnoringMagicSwordRestriction(
-                        choiceContext,
-                        swordheartToGain,
-                        this);
-            }
-            else
-            {
-                await PowerCmd.Apply<SwordheartPower>(
-                    choiceContext,
-                    Owner.Creature,
-                    swordheartToGain,
-                    Owner.Creature,
-                    this);
-            }
-        }
-
-        await PowerCmd.Apply<ProtagonistPrivilegePower>(
-            choiceContext,
-            Owner.Creature,
-            DynamicVars["ProtagonistPrivilegePower"].BaseValue,
-            Owner.Creature,
-            this);
-
         MeditationHbrgoSaki meditation =
             CombatState.CreateCard<MeditationHbrgoSaki>(Owner);
         if (IsUpgraded || DeckVersion?.IsUpgraded == true)

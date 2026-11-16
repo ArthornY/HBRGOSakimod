@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -5,6 +6,17 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Helpers;
+
+internal readonly record struct SwordheartPaymentQuote(
+    int EnergyDeficit,
+    int EnergyToSpend,
+    int StarsToSpend,
+    decimal SwordheartToSpend,
+    bool HasEnoughSwordheart,
+    bool HasEnoughStars)
+{
+    internal bool CanAfford => HasEnoughSwordheart && HasEnoughStars;
+}
 
 internal static class MagicSwordEnergyPaymentHelper
 {
@@ -16,7 +28,19 @@ internal static class MagicSwordEnergyPaymentHelper
         energyToSpend = 0;
         starsToSpend = 0;
 
-        if (card == null ||
+        if (!TryGetPaymentQuote(card, out SwordheartPaymentQuote quote)) return false;
+        deficit = quote.EnergyDeficit;
+        energyToSpend = quote.EnergyToSpend;
+        starsToSpend = quote.StarsToSpend;
+        return quote.CanAfford;
+    }
+
+    // Pure quotation shared by rendering, resource validation and payment.
+    // An unaffordable Swordheart quote is still useful to render its red cost.
+    internal static bool TryGetPaymentQuote(CardModel card, out SwordheartPaymentQuote quote)
+    {
+        quote = default;
+        if (card?.IsMutable != true ||
             card.Owner?.Character is not HbrgoSaki31O ||
             card.EnergyCost.CostsX ||
             card.Owner.PlayerCombatState == null ||
@@ -32,31 +56,17 @@ internal static class MagicSwordEnergyPaymentHelper
             return false;
         }
 
-        SwordheartPower swordheart = card.Owner.Creature.GetPower<SwordheartPower>();
-        if (swordheart == null || swordheart.Amount <= 0)
-        {
-            return false;
-        }
-
-        energyToSpend = card.EnergyCost.GetAmountToSpend();
-        starsToSpend = int.Max(0, card.GetStarCostWithModifiers());
-
-        int currentEnergy = card.Owner.PlayerCombatState.Energy;
-        if (energyToSpend <= currentEnergy)
-        {
-            return false;
-        }
-
-        deficit = energyToSpend - currentEnergy;
-        decimal swordheartCost = isInMagicSwordMode
-            ? SwordheartClarityPower.GetSwordheartConsumptionAmount(card.Owner.Creature, deficit)
-            : deficit;
-        if (deficit <= 0 || swordheart.Amount < swordheartCost)
-        {
-            return false;
-        }
-
-        return starsToSpend <= card.Owner.PlayerCombatState.Stars;
+        int energyRequired = card.EnergyCost.GetAmountToSpend();
+        int currentEnergy = Math.Max(0, card.Owner.PlayerCombatState.Energy);
+        if (energyRequired <= currentEnergy) return false;
+        int energyToSpend = Math.Min(energyRequired, currentEnergy);
+        int deficit = energyRequired - energyToSpend;
+        int starsToSpend = Math.Max(0, card.GetStarCostWithModifiers());
+        decimal swordheartCost = SwordheartClarityPower.GetSwordheartConsumptionAmount(card.Owner.Creature, deficit);
+        int availableSwordheart = Math.Max(0, card.Owner.Creature.GetPowerAmount<SwordheartPower>());
+        quote = new SwordheartPaymentQuote(deficit, energyToSpend, starsToSpend, swordheartCost,
+            availableSwordheart >= swordheartCost, card.Owner.PlayerCombatState.Stars >= starsToSpend);
+        return true;
     }
 
     public static bool CanPlayUsingSwordheart(CardModel card)

@@ -1,22 +1,81 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Compatibility;
+using MegaCrit.Sts2.Core.Saves.Runs;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using MegaCrit.Sts2.Core.ValueProps;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-// HBR 磐石异蟹 (ShrimpCrabDefault), elite pair. Generated from the act two/three roster table; see
-// docs/hbr-act-rosters.md for the design and calibration.
-public sealed class ShrimpCrab : HbrgoStaticMonster
+// HBR 磐石异蟹, an elite pair: originals ShrimpCrabDefault_01 and _02, which
+// fight together with different tables (MC04ExpKirigamine02_01_BOSS01). Few
+// attack turns, so the single strike is heavy (capped at 1.25x the 11-05 high).
+// Mirage Pulse seals and weakens; Steel Shield cuts damage taken by 75%.
+public sealed class ShrimpCrab : HbrgoMoveTableMonster, IHbrAfterDeathListener
 {
+    internal const int FirstVariant = 0;
+    internal const int SecondVariant = 1;
+
+    internal const string PincerSkill = "ShrimpCrab_AttackSingle01";
+    internal const string MiragePulseSkill = "ShrimpCrab_AttackSingle02";
+    internal const string SteelShieldSkill = "ShrimpCrab_DefenseUp";
+    internal const string HealSkill = "ShrimpCrab_Heal";
+
+    internal const string PincerMoveId = "PINCER_MOVE";
+    internal const string MiragePulseMoveId = "MIRAGE_PULSE_MOVE";
+    internal const string SteelShieldMoveId = "STEEL_SHIELD_MOVE";
+    internal const string HealMoveId = "HEAL_MOVE";
+
+    internal const int SteelShieldPercent = 75;
+
+    // Original HealDp 15000 over the original maximum DP 21500.
+    internal const decimal HealDpRatio = 15000m / 21500m;
+
+    internal static readonly HbrgoMoveTables FirstTables = new(
+        "ShrimpCrabDefault_01",
+        Table("ShrimpCrabDefault_01",
+            Step(PincerSkill),
+            Step(MiragePulseSkill),
+            Step(SteelShieldSkill),
+            Step(PincerSkill),
+            Step(SteelShieldSkill)),
+        Table("ShrimpCrabDefault_01_break",
+            Step(PincerSkill),
+            Step(SteelShieldSkill),
+            Step(PincerSkill),
+            Step(MiragePulseSkill),
+            Step(HealSkill)));
+
+    internal static readonly HbrgoMoveTables SecondTables = new(
+        "ShrimpCrabDefault_02",
+        Table("ShrimpCrabDefault_02",
+            Step(MiragePulseSkill),
+            Pick((PincerSkill, 50), (SteelShieldSkill, 50)),
+            Pick((PincerSkill, 50), (MiragePulseSkill, 50))),
+        Table("ShrimpCrabDefault_02_break",
+            Step(MiragePulseSkill),
+            Pick((PincerSkill, 50), (SteelShieldSkill, 50)),
+            Pick((PincerSkill, 50), (SteelShieldSkill, 50)),
+            Step(MiragePulseSkill),
+            Step(HealSkill)));
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(PincerSkill, PincerMoveId, HbrgoMoveTarget.Single),
+        new(MiragePulseSkill, MiragePulseMoveId, HbrgoMoveTarget.Single),
+        new(SteelShieldSkill, SteelShieldMoveId, HbrgoMoveTarget.Self),
+        new(HealSkill, HealMoveId, HbrgoMoveTarget.Self),
+    };
+
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.ToughEnemies,
@@ -32,49 +91,41 @@ public sealed class ShrimpCrab : HbrgoStaticMonster
     private int PincerDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            18,
-            16);
+            30,
+            26);
 
-    private int HardShellBlock =>
+    // Original AttackDown/DefenseDown 10% (20% on hard) for Mirage Pulse.
+    private int MiragePulseDebuff =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            20,
-            16);
+            2,
+            1);
 
-    // Fixed DP recovery in native units; the HBR resource boundary scales it.
-    internal const decimal HardShellDp = 20m;
+    internal override int MoveTableVariantCount => 2;
 
-    private int CrushDamage =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            8,
-            7);
+    internal override HbrgoMoveTables GetMoveTables(int variant) =>
+        variant == SecondVariant ? SecondTables : FirstTables;
 
-    private int CrushHits =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            3,
-            3);
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState pincer = new(
-            "PINCER_MOVE",
+        yield return new MoveState(
+            PincerMoveId,
             PincerMove,
             new SingleAttackIntent(() => PincerDamage));
-        MoveState hardShell = new(
-            "HARD_SHELL_MOVE",
-            HardShellMove,
-            new DefendIntent(),
+        yield return new MoveState(
+            MiragePulseMoveId,
+            MiragePulseMove,
+            new DebuffIntent(strong: true));
+        yield return new MoveState(
+            SteelShieldMoveId,
+            SteelShieldMove,
+            new DefendIntent());
+        yield return new MoveState(
+            HealMoveId,
+            HealMove,
             new HealIntent());
-        MoveState crush = new(
-            "CRUSH_MOVE",
-            CrushMove,
-            new MultiAttackIntent(CrushDamage, () => CrushHits));
-        return ModMonsterMoveStateMachines.Cycle(
-            pincer,
-            hardShell,
-            crush);
     }
 
     private Task PincerMove(IReadOnlyList<Creature> _)
@@ -82,20 +133,49 @@ public sealed class ShrimpCrab : HbrgoStaticMonster
         return PerformAttack(PincerDamage);
     }
 
-    private async Task HardShellMove(IReadOnlyList<Creature> _)
+    // No damage, so its seal attaches as is (proposal M8).
+    private async Task MiragePulseMove(IReadOnlyList<Creature> targets)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        Creature.GetPower<HighDimensionalShellPower>()?
-            .Restore(HbrResourceValueHelper.Fixed(Creature, HardShellDp));
-        await CreatureCmd.GainBlock(
-            Creature,
-            HardShellBlock,
-            ValueProp.Move,
-            null);
+        Creature[] hit = HbrEnemyEffects.SingleTargets(Creature, targets).ToArray();
+        await HbrEnemyEffects.ApplyImprison(hit, Creature);
+        await HbrPercentDebuffApplication.ApplyAttackDown(
+            new ThrowingPlayerChoiceContext(),
+            hit.Where(target => target.IsAlive).ToArray(),
+            MiragePulseDebuff,
+            Creature);
+        await HbrPercentDebuffApplication.ApplyDefenseDown(
+            new ThrowingPlayerChoiceContext(),
+            hit.Where(target => target.IsAlive).ToArray(),
+            MiragePulseDebuff,
+            Creature);
     }
 
-    private Task CrushMove(IReadOnlyList<Creature> _)
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool RunawayTriggered { get; private set; }
+    public async Task AfterDeath(PlayerChoiceContext context, Creature target, bool wasRemovalPrevented, float deathAnimLength)
     {
-        return PerformAttack(CrushDamage, CrushHits);
+        if (wasRemovalPrevented || RunawayTriggered || !Creature.IsAlive || target == Creature ||
+            target?.Monster is not ShrimpCrab || target.Side != Creature.Side ||
+            !EnemyStatScalingHelper.IsEnemy(Creature) || !EnemyStatScalingHelper.IsEnemy(target) ||
+            !HbrBattleStatsHelper.IsEnabled(Creature)) return;
+        RunawayTriggered = true;
+        await HbrEffectApplication.Apply<ShrimpRunawayPower>(context, Creature, 100m, Creature,
+            profile: new(HbrEffectLimit.Only, HbrEffectExit.Eternal, 1));
+    }
+
+    private async Task SteelShieldMove(IReadOnlyList<Creature> _)
+    {
+        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
+        await HbrEnemyEffects.ApplyTimedBuff<HbrDefenseUpPower>(Creature, SteelShieldPercent);
+        if (EnemyStatScalingHelper.IsEnemy(Creature) && HbrBattleStatsHelper.IsEnabled(Creature))
+            await HbrEffectApplication.Apply<HbrProvokePower>(new ThrowingPlayerChoiceContext(), Creature, 1m, Creature,
+                profile: new(HbrEffectLimit.Default, HbrEffectExit.EnemyTurnEnd, 2));
+    }
+
+    private async Task HealMove(IReadOnlyList<Creature> _)
+    {
+        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
+        RestoreDpRatio(HealDpRatio);
     }
 }

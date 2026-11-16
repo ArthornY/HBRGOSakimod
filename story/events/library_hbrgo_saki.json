@@ -108,6 +108,17 @@
             "senseAmount": 8,
             "cardChoices": 3
           }
+        },
+        {
+          "id": "MORE_MEMORIES",
+          "text": "更多回忆",
+          "description": "选择另一段回忆。",
+          "nextPage": "MORE_MEMORIES_1",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
         }
       ],
       "characters": []
@@ -1096,6 +1107,172 @@
       ],
       "choices": [],
       "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_1",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_MISATO",
+          "text": "二阶堂三乡",
+          "description": "才能+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MISATO",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_NINA",
+          "text": "大岛二以奈",
+          "description": "才能+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_NINA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_MONAKA",
+          "text": "月城最中",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MONAKA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "RETURN_TO_INITIAL",
+          "text": "返回",
+          "description": "返回最初的回忆选项。",
+          "nextPage": "INITIAL",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MEMORY_MISATO",
+      "title": "二阶堂三乡",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了二阶堂三乡。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "才能+8，从3张卡牌中选择1张获得。",
+          "description": "才能+8，从3张卡牌中选择1张获得。",
+          "nextPage": "FINISHED",
+          "rewards": {
+            "sense": "Talent",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "misato"
+      ]
+    },
+    {
+      "id": "MEMORY_NINA",
+      "title": "大岛二以奈",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了大岛二以奈。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "才能+8，从3张卡牌中选择1张获得。",
+          "description": "才能+8，从3张卡牌中选择1张获得。",
+          "nextPage": "FINISHED",
+          "rewards": {
+            "sense": "Talent",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "nina"
+      ]
+    },
+    {
+      "id": "MEMORY_MONAKA",
+      "title": "月城最中",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了月城最中。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "FINISHED",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "monaka"
+      ]
     }
   ]
 }

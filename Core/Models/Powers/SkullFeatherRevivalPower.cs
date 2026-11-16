@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
@@ -8,7 +9,7 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class SkullFeatherRevivalPower : PowerModel
+public sealed class SkullFeatherRevivalPower : PowerModel, IHbrAfterDeathListener
 {
     private sealed class Data
     {
@@ -33,7 +34,7 @@ public sealed class SkullFeatherRevivalPower : PowerModel
         GetInternalData<Data>().IsReviving = false;
     }
 
-    public override async Task AfterDeath(
+    public async Task AfterDeath(
         PlayerChoiceContext choiceContext,
         Creature creature,
         bool wasRemovalPrevented,

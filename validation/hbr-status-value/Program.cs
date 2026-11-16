@@ -43,7 +43,7 @@ foreach (string file in files)
 }
 
 string manual = File.ReadAllText(Path.Combine(root, files[0]));
-Check(manual.Contains("力、器用、知性、体力、精神、运", StringComparison.Ordinal), "Player six-stat terminology remains intact.");
+Check(manual.Contains("力量、灵巧、智慧、体力、精神、运气", StringComparison.Ordinal), "Player six-stat terminology remains intact.");
 Check(manual.Contains("防御参照属性", StringComparison.Ordinal), "Player defense attributes remain attributes.");
 string caption = File.ReadAllText(Path.Combine(root, "Core/Nodes/Combat/NHbrEnemyStatusValueCaption.cs"));
 Check(caption.Contains("HbrEnemyProfileHelper.GetEnemyParameter(_creature)", StringComparison.Ordinal), "Readout must use the live E getter, including temporary reductions.");

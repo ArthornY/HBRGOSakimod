@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC03ExpTraining01Virtual_R02.
+// HBR MC03ExpTraining01Virtual_R02: the heal hopper copies
+// CrestHopperHealVirtual_MC03.
 public sealed class KillerTrainingSquadNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -21,10 +22,12 @@ public sealed class KillerTrainingSquadNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var healer = (HealHopper)ModelDb.Monster<HealHopper>().ToMutable();
+        healer.MoveTableVariant = HealHopper.OmegaVariant;
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<MarionetteKiller>().ToMutable(), null),
-            (ModelDb.Monster<HealHopper>().ToMutable(), null),
+            (healer, null),
             (ModelDb.Monster<CrestHopperKiller>().ToMutable(), null)
         };
     }

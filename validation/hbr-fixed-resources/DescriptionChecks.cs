@@ -38,7 +38,11 @@ static partial class Checks
     static bool True(ref bool __result) { __result = true; return false; }
     static bool PrefixString(ref string __result) { __result = "energy"; return false; }
     static bool CaptureLoseMaximum(decimal amount, ref Task __result)
-    { Maximum.Add(-amount); __result = Task.CompletedTask; return false; }
+    {
+        Maximum.Add(-amount); __result = Task.CompletedTask;
+        if (StopAfterCommand) throw new StopAtEventUi();
+        return false;
+    }
     static T Power<T>(int amount) where T : PowerModel
     {
         var power = Blank<T>(); Set(power, "<IsMutable>k__BackingField", true);
@@ -106,8 +110,11 @@ static partial class Checks
         Check(regenText.GetFormattedText().Contains("[blue]500[/blue] HP") &&
             regenText.GetFormattedText().Contains("by [blue]1[/blue]") && regen.Amount == 5,
             "actual native Regen smart description shows 500 HP; 5 stacks and 1-stack decay stay unchanged");
-        await regen.AfterSideTurnEnd(new ThrowingPlayerChoiceContext(), CombatSide.Player, [Hero]);
-        Check(Heals[^1] == 500, "actual native 5-stack Regen issues fixed 500 heal");
+        // Stable heals in AfterSideTurnEnd; v0.111.0 moved it, with the same arguments, to BeforeSideTurnEndEarly.
+        MethodInfo regenHook = new[] { "AfterSideTurnEnd", "BeforeSideTurnEndEarly" }
+            .Select(name => typeof(RegenPower).GetMethod(name, F | BindingFlags.DeclaredOnly)).Single(method => method != null)!;
+        await (Task)regenHook.Invoke(regen, [new ThrowingPlayerChoiceContext(), CombatSide.Player, new[] { Hero }])!;
+        Check(Heals[^1] == 500, "actual native 5-stack Regen issues fixed 500 heal from its declared " + regenHook.Name);
         PaperCutsPower cuts = Power<PaperCutsPower>(1);
         LocString cutsText = PowerDescription(cuts, "PAPER_CUTS_POWER.smartDescription");
         Check(cutsText.GetFormattedText().Contains("[blue]100[/blue]") && cuts.Amount == 1,

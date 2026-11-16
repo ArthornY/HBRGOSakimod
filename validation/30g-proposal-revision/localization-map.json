@@ -1,0 +1,46 @@
+{
+  "HBRGOSakiMod/localization/zhs/card_keywords.json": {
+    "HBRGO_SAKI_MOD_KEYWORD_GRADUATED.description": "下一次打出能量消耗减少[E]，该次效果无效，随后获得心动。在此之前，手牌与永久牌组效果也无效。桐生美也改为本场战斗无效果，战斗结束后永久获得心动。",
+    "HBRGO_SAKI_MOD_KEYWORD_GRADUATED.instanceDescription": "下一次打出能量消耗减少[E]，该次全部效果无效；随后，下一次打出时额外打出1次。在此之前，手牌与永久牌组效果也无效。",
+    "HBRGO_SAKI_MOD_KEYWORD_GRADUATED.miyaInstanceDescription": "本场战斗全部效果无效。战斗结束后，永久使每次打出额外打出1次。",
+    "HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.description": "下一次打出时额外打出1次，然后解除。桐生美也的心动永久有效，每次打出时均额外打出1次。",
+    "HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.instanceDescription": "下一次打出时额外打出{ExtraPlays}次，然后解除。",
+    "HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.permanentInstanceDescription": "永久使每次打出额外打出{ExtraPlays}次。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_GRADUATED.description": "下一次打出能量消耗减少[E]，该次效果无效，随后获得心动。在此之前，手牌与永久牌组效果也无效。桐生美也改为本场战斗无效果，战斗结束后永久获得心动。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_GRADUATED.instanceDescription": "下一次打出能量消耗减少[E]，该次全部效果无效；随后，下一次打出时额外打出1次。在此之前，手牌与永久牌组效果也无效。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_GRADUATED.miyaInstanceDescription": "本场战斗全部效果无效。战斗结束后，永久使每次打出额外打出1次。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.description": "下一次打出时额外打出1次，然后解除。桐生美也的心动永久有效，每次打出时均额外打出1次。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.instanceDescription": "下一次打出时额外打出{ExtraPlays}次，然后解除。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.permanentInstanceDescription": "永久使每次打出额外打出{ExtraPlays}次。"
+  },
+  "HBRGOSakiMod/localization/zhs/relics.json": {
+    "THIRTY_G_COLLECTION_RELIC.description": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "THIRTY_G_COLLECTION_RELIC.eventDescription": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "THIRTY_G_COLLECTION_RELIC.selectionPrompt": "选择本次被求婚的记忆之庭牌。",
+    "HBRGOSAKIMOD-THIRTY_G_COLLECTION_RELIC.description": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "HBRGOSAKIMOD-THIRTY_G_COLLECTION_RELIC.eventDescription": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "HBRGOSAKIMOD-THIRTY_G_COLLECTION_RELIC.selectionPrompt": "选择本次被求婚的记忆之庭牌。"
+  },
+  "HBRGOSakiMod/localization/eng/card_keywords.json": {
+    "HBRGO_SAKI_MOD_KEYWORD_GRADUATED.description": "下一次打出能量消耗减少[E]，该次效果无效，随后获得心动。在此之前，手牌与永久牌组效果也无效。桐生美也改为本场战斗无效果，战斗结束后永久获得心动。",
+    "HBRGO_SAKI_MOD_KEYWORD_GRADUATED.instanceDescription": "下一次打出能量消耗减少[E]，该次全部效果无效；随后，下一次打出时额外打出1次。在此之前，手牌与永久牌组效果也无效。",
+    "HBRGO_SAKI_MOD_KEYWORD_GRADUATED.miyaInstanceDescription": "本场战斗全部效果无效。战斗结束后，永久使每次打出额外打出1次。",
+    "HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.description": "下一次打出时额外打出1次，然后解除。桐生美也的心动永久有效，每次打出时均额外打出1次。",
+    "HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.instanceDescription": "下一次打出时额外打出{ExtraPlays}次，然后解除。",
+    "HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.permanentInstanceDescription": "永久使每次打出额外打出{ExtraPlays}次。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_GRADUATED.description": "下一次打出能量消耗减少[E]，该次效果无效，随后获得心动。在此之前，手牌与永久牌组效果也无效。桐生美也改为本场战斗无效果，战斗结束后永久获得心动。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_GRADUATED.instanceDescription": "下一次打出能量消耗减少[E]，该次全部效果无效；随后，下一次打出时额外打出1次。在此之前，手牌与永久牌组效果也无效。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_GRADUATED.miyaInstanceDescription": "本场战斗全部效果无效。战斗结束后，永久使每次打出额外打出1次。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.description": "下一次打出时额外打出1次，然后解除。桐生美也的心动永久有效，每次打出时均额外打出1次。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.instanceDescription": "下一次打出时额外打出{ExtraPlays}次，然后解除。",
+    "HBRGOSAKIMOD-HBRGO_SAKI_MOD_KEYWORD_HEARTFELT.permanentInstanceDescription": "永久使每次打出额外打出{ExtraPlays}次。"
+  },
+  "HBRGOSakiMod/localization/eng/relics.json": {
+    "THIRTY_G_COLLECTION_RELIC.description": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "THIRTY_G_COLLECTION_RELIC.eventDescription": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "THIRTY_G_COLLECTION_RELIC.selectionPrompt": "选择本次被求婚的记忆之庭牌。",
+    "HBRGOSAKIMOD-THIRTY_G_COLLECTION_RELIC.description": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "HBRGOSAKIMOD-THIRTY_G_COLLECTION_RELIC.eventDescription": "你的牌组中有至少2种[gold]30G[/gold]牌时，你的每个回合开始时，白河随机向一张记忆之庭牌求婚。被求婚的牌下一次打出能量消耗减少[E]，该次效果无效；随后，下一次打出时额外打出1次。桐生美也改为本场战斗无效果，战斗结束后永久额外打出1次。不会向处于无效或强化中的牌求婚。每次求婚获得1点[gold]人气[/gold]，白河的san减少1d100。\n有至少4种且人气达到10点时，本轮被求婚过的牌各永久升级1次。\n有6种时，每次求婚掷1d3，决定额外反应。\n当前san：{San}；人气：{Popularity}；下一轮人气起点：{NextRoundStart}。",
+    "HBRGOSAKIMOD-THIRTY_G_COLLECTION_RELIC.selectionPrompt": "选择本次被求婚的记忆之庭牌。"
+  }
+}

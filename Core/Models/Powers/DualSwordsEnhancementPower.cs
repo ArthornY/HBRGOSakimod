@@ -15,8 +15,7 @@ public sealed class DualSwordsEnhancementPower : PowerModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public bool HasEnhancedDamage { get; private set; }
 
-    public decimal DamageMultiplier =>
-        HasEnhancedDamage ? 1.1m : 1m;
+    public decimal DamageMultiplier => 1m;
 
     public override LocString Description => HasEnhancedDamage
         ? new LocString(

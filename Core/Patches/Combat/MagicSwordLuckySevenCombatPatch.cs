@@ -1,6 +1,7 @@
 using System.Linq;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Entities.Players;
 
 namespace HBRGOSakiMod.Core.Patches.Combat;
@@ -16,8 +17,7 @@ internal static class MagicSwordLuckySevenPopulateCombatStatePatch
         }
 
         foreach (var card in __instance.PlayerCombatState.DrawPile.Cards
-            .Where(card => card is MagicSwordLuckySevenHbrgoSaki
-                or MagicSwordLuckySevenOpeningHbrgoSaki)
+            .Where(MagicSwordCombatTemplateHelper.IsTemplate)
             .ToList())
         {
             card.RemoveFromState();

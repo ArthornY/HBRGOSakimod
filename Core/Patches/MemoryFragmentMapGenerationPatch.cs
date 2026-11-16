@@ -59,6 +59,7 @@ internal static class MemoryFragmentMapMarkersPatch
     {
         await original;
         MemoryFragmentMapHelper.ConfigureMap(runState, map, actIndex);
+        HbrThirtyOneDScoutingHelper.EnsureScouted(runState, map, actIndex);
     }
 }
 

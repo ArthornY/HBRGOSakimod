@@ -57,12 +57,8 @@ internal static class HbrMemoryGardenDampen
             .Concat(HbrMemoryGardenCombatDowngrade.GetSuppressedEffects(card)).ToArray();
         if (pending.Length == 0) return available;
         return available.Where(effect => !pending.Contains(effect) &&
-            !(card is MyLegendBeginsHbrgoSaki &&
-                (effect == 3 && pending.Contains(4) || effect == 4 && pending.Contains(3))) &&
             !(card is SummerGrassDreamHbrgoSaki &&
-                (effect == 0 && pending.Contains(3) || effect == 3 && pending.Contains(0))) &&
-            !(card is CrushYouLikeABugHbrgoSaki &&
-                (effect == 0 && pending.Contains(4) || effect == 4 && pending.Contains(0))))
+                (effect == 0 && pending.Contains(3) || effect == 3 && pending.Contains(0))))
             .ToArray();
     }
 
@@ -94,7 +90,7 @@ internal static class HbrMemoryGardenDampen
             int separator = segment.LastIndexOf(':');
             if (separator <= 0 ||
                 !int.TryParse(segment.AsSpan(separator + 1), NumberStyles.Integer,
-                    CultureInfo.InvariantCulture, out int effectId) || effectId < 0 || effectId > 6)
+                    CultureInfo.InvariantCulture, out int effectId) || effectId < 0 || effectId > 7)
                 continue;
             PendingEffect entry = new(segment[..separator], effectId);
             if (!pending.Contains(entry)) pending.Add(entry);

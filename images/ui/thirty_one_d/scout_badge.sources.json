@@ -1,0 +1,10 @@
+{
+  "asset": "Assets/Contents/Image/TeamLogo/31D/31DSmallIcon.png",
+  "source": "D:\\stsmod\\.ai-collab\\handoffs\\31d-bond-20261115\\icons\\scout_badge.png",
+  "size": [
+    64,
+    64
+  ],
+  "sha256": "fd9a48ff5323cfac66a2eeb5c2224ebf2d2be0335196440f2ad30e9561a4e015",
+  "transform": "None; byte-for-byte copy of the supplied original-game icon for internal mod use."
+}

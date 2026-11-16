@@ -11,21 +11,17 @@ using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
+// Retired (2026-11-09): it drew a card for each six-sense resistance broken. The
+// resistances are gone, so it is no longer offered; saved runs that still hold it
+// can play it, and it does nothing.
 public sealed class BreakInsightHbrgoSaki : CardModel
 {
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png");
     public override string BetaPortraitPath => PortraitPath;
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-    {
-        new PowerVar<BreakInsightPower>(1m)
-    };
-    protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<BreakInsightPower>() };
 
     public BreakInsightHbrgoSaki() : base(1, CardType.Power, CardRarity.Uncommon, TargetType.Self) { }
 
-    protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay) =>
-        await PowerCmd.Apply<BreakInsightPower>(choiceContext, Owner.Creature,
-            DynamicVars["BreakInsightPower"].BaseValue, Owner.Creature, this);
+    protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay) => Task.CompletedTask;
 
     protected override void OnUpgrade() => EnergyCost.UpgradeBy(-1);
 }

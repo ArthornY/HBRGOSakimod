@@ -17,6 +17,8 @@ internal static class PhantomPlayerBenefitContext
     private static readonly AsyncLocal<Scope> Current = new();
 
     internal static Creature CurrentPhantom => Current.Value?.Phantom;
+    internal static object GetActionToken(Creature dealer) =>
+        Current.Value is { IsActive: true } scope && ReferenceEquals(scope.Phantom, dealer) ? scope : null;
     internal static IReadOnlyList<Player> Beneficiaries =>
         Current.Value?.Beneficiaries ?? Array.Empty<Player>();
 
@@ -66,6 +68,7 @@ internal static class PhantomPlayerBenefitContext
         private int _draw;
         private int _energy;
         private bool _flushed;
+        internal bool IsActive { get; private set; } = true;
 
         internal Creature Phantom { get; }
         internal IReadOnlyList<Player> Beneficiaries => _beneficiaries;
@@ -153,6 +156,6 @@ internal static class PhantomPlayerBenefitContext
         private static int SaturatingAdd(int current, int count) =>
             (int)Math.Min(int.MaxValue, (long)current + Math.Max(0, count));
 
-        public void Dispose() => Current.Value = _previous;
+        public void Dispose() { IsActive = false; Current.Value = _previous; }
     }
 }

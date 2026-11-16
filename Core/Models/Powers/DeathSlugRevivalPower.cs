@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -9,7 +10,7 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class DeathSlugRevivalPower : PowerModel
+public sealed class DeathSlugRevivalPower : PowerModel, IHbrAfterDeathListener
 {
     public override PowerType Type => PowerType.Buff;
 
@@ -20,7 +21,7 @@ public sealed class DeathSlugRevivalPower : PowerModel
     private bool IsReviving =>
         Owner?.Monster is DeathSlug { IsReviving: true };
 
-    public override async Task AfterDeath(
+    public async Task AfterDeath(
         PlayerChoiceContext choiceContext,
         Creature creature,
         bool wasRemovalPrevented,

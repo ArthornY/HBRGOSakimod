@@ -45,6 +45,9 @@ internal static class CreatureDamageBlockInternalPatch
         ref decimal __result,
         out bool __state)
     {
+        // A block redirect below resolves inside this call: the hit tracker
+        // credits the redirected damage to this original receiver too.
+        HbrEnemyHitTracker.EnterBlock(__instance);
         __state = false;
         if (HpOnlyDamageContext.BypassesDpForBlockReceiver(__instance))
         {
@@ -120,10 +123,13 @@ internal static class CreatureDamageBlockInternalPatch
         ref decimal __result,
         bool __state)
     {
+        Creature hitTarget = HbrEnemyHitTracker.ExitBlock(__instance);
         if (!__state)
         {
             return;
         }
+
+        HpOnlyDamageContext.RecordNativeBlockResult(__instance, __result);
 
         decimal remainingDamage = Math.Max(amount - __result, 0m);
         if (remainingDamage <= 0m)
@@ -131,10 +137,20 @@ internal static class CreatureDamageBlockInternalPatch
             return;
         }
 
+        if (ThirtyOneFDefenseCombatHelper.TryProtectDp(__instance, remainingDamage, props))
+        {
+            __result += remainingDamage;
+            return;
+        }
+
+        // Block did not stop this hit; DP or HP takes the rest. Move-table
+        // monsters attach their chance-based statuses only then.
+        HbrEnemyHitTracker.RecordPassThrough(__instance, remainingDamage, hitTarget);
+
         HighDimensionalShellPower shell =
             __instance.GetPower<HighDimensionalShellPower>();
         bool shellCanAbsorb = shell is not
-                PhantomHighDimensionalShellPower ||
+                (PhantomHighDimensionalShellPower or KozueSpiritShellPower) ||
             PhantomHighDimensionalShellPower.CanAbsorb(props);
         if (shellCanAbsorb &&
             shell?.TryAbsorb(remainingDamage) == true)
@@ -166,18 +182,7 @@ internal static class CreatureDamageBlockInternalPatch
             return;
         }
 
-        MagicSwordModePower magicSwordMode = __instance.GetPower<MagicSwordModePower>();
-        if (magicSwordMode != null &&
-            deflectorProtection.WouldDpBeDepletedBy(remainingDamage) &&
-            deflectorProtection.TryUseMagicSwordBreakProtection())
-        {
-            DisabledPower.Clear(__instance);
-            deflectorProtection.RestoreDpToAtLeastMaxPercent(0.5m);
-            __result += remainingDamage;
-            magicSwordMode.MarkDpBrokenByDamage();
-            return;
-        }
-
+        // The magic sword's once-a-game DP immunity was removed on 2026-11-09 (design v3).
         decimal dpAbsorbed = deflectorProtection.AbsorbDp(remainingDamage);
         if (dpAbsorbed > 0m)
         {

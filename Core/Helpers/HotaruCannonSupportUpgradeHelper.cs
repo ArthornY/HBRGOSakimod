@@ -26,6 +26,7 @@ internal static class HotaruCannonSupportUpgradeHelper
         internal Creature Cannon;
         internal HotaruCannonPhase Phase;
         internal bool SuppressCritical;
+        internal object CardPlayToken;
         internal bool Active = true;
         public void Dispose()
         {
@@ -108,12 +109,17 @@ internal static class HotaruCannonSupportUpgradeHelper
     }
 
     private static readonly AsyncLocal<PhaseScope> CurrentPhase = new();
+    internal static object GetActionToken(Creature dealer) =>
+        CurrentPhase.Value is { Active: true } phase &&
+        (ReferenceEquals(phase.Cannon, dealer) || ReferenceEquals(phase.Cannon?.PetOwner?.Creature, dealer)) ? phase : null;
+    internal static bool IsOriginalCardContext => CurrentPhase.Value is { Active: true } phase &&
+        ReferenceEquals(phase.CardPlayToken, CardPlayContextHelper.CurrentPlayToken);
     private static readonly ConditionalWeakTable<HotaruCannonState, ParsedStateCache> ParsedRolls = new();
 
     internal static PhaseScope BeginPhase(Creature cannon, HotaruCannonPhase phase, bool suppressCritical = false)
     {
         PhaseScope scope = new() { Previous = CurrentPhase.Value, Cannon = cannon, Phase = phase,
-            SuppressCritical = suppressCritical };
+            SuppressCritical = suppressCritical, CardPlayToken = CardPlayContextHelper.CurrentPlayToken };
         CurrentPhase.Value = scope;
         return scope;
     }
@@ -375,8 +381,11 @@ internal static class HotaruCannonSupportUpgradeHelper
         int effectAmount = BigCombatNumbers.ToNativeSigned(HotaruSeeYouAgainHelper.GetMultiplier(owner));
         if (relic.HasCannonUpgrade(HotaruCannonKind.Longing, 5))
             await PowerCmd.Apply<DodgePower>(context, owner.Creature, effectAmount, owner.Creature, receipt.CardSource);
+        // Longing Lv.6 cut a random six-sense resistance of the target before
+        // 2026-11-09; it gives a debuff the target does not have yet now.
         if (relic.HasCannonUpgrade(HotaruCannonKind.Longing, 6))
-            await SixSenseCombatHelper.ResolvePhantomAttack(context, owner, receipt.Target, receipt.CardSource, effectAmount);
+            await HbrMissingDebuffHelper.ApplyRandomMissing(context, receipt.Target, receipt.Cannon,
+                receipt.CardSource, effectAmount);
     }
 
     internal static void OnDpRecoveryOverflow(DeflectorProtection deflector, int overflow)

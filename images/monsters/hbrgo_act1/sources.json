@@ -145,7 +145,7 @@
   {
    "file": "images/monsters/hbrgo_act1/target_wire_frame_cutout.png",
    "monster": "TargetWireFrame",
-   "sha256": "48A2E9CF865BB38E626D3310D6A5962B192D9E6A60B145205541E280D6973083",
+   "sha256": "36425E04C441DE65EE6613860EAB05C16F9DBC1FDF61927ED69B0D55D1312CFC",
    "size": [
     477,
     530
@@ -193,6 +193,12 @@
       8
      ]
     ]
+   },
+   "alpha_cleanup": {
+    "date": "2026-11-07",
+    "previous_sha256": "48A2E9CF865BB38E626D3310D6A5962B192D9E6A60B145205541E280D6973083",
+    "note": "Background removed by lowering alpha only (RGB unchanged): two cream fragments and a light speck at the right arc, the brown floor shadow above and below the lower arc, the rail and floor seen through the ring beside the eye and between the claws, and light sky fringe on the arcs' outer contour.",
+    "script": "D:/stsmod/outputs/monster-alpha-cleanup-20261107/cleanup.py"
    }
   },
   {

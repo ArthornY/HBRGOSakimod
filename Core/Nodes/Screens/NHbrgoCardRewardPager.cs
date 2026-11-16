@@ -6,6 +6,7 @@ using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 using STS2RitsuLib.Patching;
@@ -53,6 +54,7 @@ public partial class NHbrgoCardRewardPager : Control
         _previous.Pressed += () => ChangePage(-1);
         _next.Pressed += () => ChangePage(1);
         _ui.Resized += OnUiResized;
+        _row.ChildExitingTree += OnRowChildExiting;
         Hide();
     }
 
@@ -109,6 +111,42 @@ public partial class NHbrgoCardRewardPager : Control
         {
             _ui.Resized -= OnUiResized;
         }
+
+        if (GodotObject.IsInstanceValid(_row))
+        {
+            _row.ChildExitingTree -= OnRowChildExiting;
+            // When the whole screen leaves, this pager (added after the card row) leaves first.
+            foreach (NGridCardHolder holder in _holders)
+            {
+                if (GodotObject.IsInstanceValid(holder) && holder.GetParent() == _row)
+                {
+                    Release(holder);
+                }
+            }
+        }
+    }
+
+    private void OnRowChildExiting(Node node)
+    {
+        if (node is NGridCardHolder holder)
+        {
+            Release(holder);
+        }
+    }
+
+    // Reward holders come from the native node pool and go back to it when the screen rerolls,
+    // takes a card or closes. Undo what ApplyPage set before a holder leaves the row. Otherwise
+    // the next grid to reuse it (the upgrade screen, say) has a card that keyboard and controller
+    // focus skip, with focus paths into this screen.
+    private static void Release(NGridCardHolder holder)
+    {
+        holder.FocusMode = FocusModeEnum.All;
+        holder.FocusNeighborLeft = new NodePath();
+        holder.FocusNeighborRight = new NodePath();
+        holder.FocusNeighborTop = new NodePath();
+        holder.FocusNeighborBottom = new NodePath();
+        holder.FocusPrevious = new NodePath();
+        holder.FocusNext = new NodePath();
     }
 
     private Button CreateButton(string text, string tooltip, float x)
@@ -218,7 +256,13 @@ public partial class NHbrgoCardRewardPager : Control
         if (focused != null &&
             (!focused.IsVisibleInTree() || focused is Button { Disabled: true }))
         {
-            defaultCard.GrabFocus();
+            // The native helper moves onto a card only for controller navigation: a focused
+            // card opens its hover tips, which a mouse page click never asked for.
+            defaultCard.TryGrabFocus();
+            if (!defaultCard.HasFocus())
+            {
+                GetViewport().GuiReleaseFocus();
+            }
         }
     }
 }

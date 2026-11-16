@@ -1,0 +1,41 @@
+{
+  "atlas": "69c7c677bd2f28d5_-482826641158823559_sactx-0-2048x2048-BC7-BattleAtlas-88b70823.png",
+  "sprites": {
+    "machina_button_active": {
+      "x": 977,
+      "y": 618,
+      "w": 138,
+      "h": 132,
+      "touches_window_edge": false
+    },
+    "machina_button_disabled": {
+      "x": 1097,
+      "y": 1166,
+      "w": 117,
+      "h": 117,
+      "touches_window_edge": false
+    },
+    "machina_button_small": {
+      "x": 1419,
+      "y": 1754,
+      "w": 113,
+      "h": 115,
+      "touches_window_edge": false
+    },
+    "fear_of_devil_icon": {
+      "source": "80d7edd0ae4a73d8_-5721144490987224878_IconFearOfDevil.png",
+      "w": 64,
+      "h": 64
+    },
+    "yamawaki_servant_icon": {
+      "source": "80d7edd0ae4a73d8_8868863319058228564_IconBIYamawakiServant.png",
+      "w": 64,
+      "h": 64
+    },
+    "yamawaki_enemy_servant_icon": {
+      "source": "80d7edd0ae4a73d8_-495948891312284381_IconBIYamawakiEnemyServant.png",
+      "w": 64,
+      "h": 64
+    }
+  }
+}

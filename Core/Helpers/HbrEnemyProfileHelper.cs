@@ -23,7 +23,8 @@ internal static class HbrEnemyProfileHelper
         decimal baseline = GetBaseEnemyParameter(creature);
         if (!EnemyStatScalingHelper.IsEnemy(creature) || !HbrBattleStatsHelper.IsEnabled(creature))
             return baseline;
-        return Math.Max(0m, baseline - Math.Max(0, creature.GetPowerAmount<HbrCalamityPower>()));
+        return Math.Max(0m, baseline - HbrCalamityPower.GetTotalReduction(creature) -
+            FearOfDevilPower.GetTotalReduction(creature));
     }
 
     // Progression remains independent of temporary debuffs and resource pools.

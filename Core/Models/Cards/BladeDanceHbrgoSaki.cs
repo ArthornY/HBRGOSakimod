@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Localization;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -42,11 +43,11 @@ public sealed class BladeDanceHbrgoSaki : CardModel
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         ArgumentNullException.ThrowIfNull(cardPlay.Target, nameof(cardPlay.Target));
-        int energySpent = DualSwordsCopyHelper.TakeXEnergySpent(this, cardPlay.Resources.EnergySpent);
+        int energySpent = CardCopyContextHelper.TakeXEnergySpent(this, cardPlay.Resources.EnergySpent);
         int hitCount = (int)base.DynamicVars["Repeat"].BaseValue;
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(
             this,
-            energySpent);
+            GetDamageUnits(energySpent));
         if (damage <= 0m || hitCount <= 0)
         {
             return;
@@ -64,6 +65,23 @@ public sealed class BladeDanceHbrgoSaki : CardModel
     protected override void OnUpgrade()
     {
         base.DynamicVars["Repeat"].UpgradeValueBy(2m);
+    }
+
+    internal decimal GetDamageUnits(int energySpent) =>
+        HbrBattleStatsHelper.IsEnabled(Owner)
+            ? HbrSkillPower.DamageUnits(Math.Max(0, energySpent) * 20m)
+            : Math.Max(0, energySpent);
+
+    protected override void AddExtraArgsToDescription(LocString description)
+    {
+        base.AddExtraArgsToDescription(description);
+        if (!HbrSkillCardDescription.IsEnabled(this)) return;
+        int energy = IsMutable && Owner?.PlayerCombatState != null
+            ? Math.Max(0, EnergyCost.GetAmountToSpend()) : 1;
+        HbrSkillCardDescription.AddDamageParameters(this, description, "BladeDanceDamage",
+            HbrSkillPower.DamageUnits(energy * 20m));
+        HbrSkillCardDescription.AddDamageParameters(this, description, "XDamage",
+            HbrSkillPower.DamageUnits(20m));
     }
 
     private bool CanUseDualSwordsCard()

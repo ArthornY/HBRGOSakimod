@@ -28,6 +28,7 @@ static class Checks
     static readonly List<string> Passed = [];
     static readonly List<(Creature Creature, decimal Amount)> Heals = [];
     static readonly List<decimal> Draws = [];
+    static Fixture? ActiveFixture;
     static Type Helper(string name) => Mod.GetType("HBRGOSakiMod.Core.Helpers." + name, true)!;
     static FieldInfo Field(Type type, string name)
     {
@@ -52,6 +53,33 @@ static class Checks
     }
     static bool Draw(decimal count, ref Task<IEnumerable<CardModel>> __result)
     { Draws.Add(count); __result = Task.FromResult(Enumerable.Empty<CardModel>()); return false; }
+    static bool Listeners(ref IEnumerable<AbstractModel> __result)
+    {
+        __result = ActiveFixture == null ? Enumerable.Empty<AbstractModel>() :
+            ActiveFixture.Hero.Powers.Cast<AbstractModel>().Concat(ActiveFixture.Player.Relics).ToArray();
+        return false;
+    }
+    static HotaruDamageAmplificationPower Bank(Fixture fixture) =>
+        fixture.Hero.Powers.OfType<HotaruDamageAmplificationPower>().Single();
+    static Task ConvertBonus(Fixture fixture, int dp) =>
+        (Task)Call(fixture.Buff, "AddConvertedDp", new ThrowingPlayerChoiceContext(), dp, fixture.Card())!;
+    static void InitializeSavedPropertyCache(IEnumerable<Type> types)
+    {
+        Assembly native = typeof(Creature).Assembly;
+        Type? legacy = native.GetType("MegaCrit.Sts2.Core.Saves.Runs.SavedPropertiesTypeCache");
+        if (legacy != null)
+        {
+            MethodInfo inject = AccessTools.Method(legacy, "InjectTypeIntoCache");
+            foreach (Type type in types) inject.Invoke(null, new object[] { type });
+            return;
+        }
+        // 0.113 moved saved-property registration into the native model-ID cache.
+        native.GetType("MegaCrit.Sts2.Core.Modding.AssemblyInfo", true)!.GetMethod("Init", F)!.Invoke(null, null);
+        Type cache = native.GetType("MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache", true)!;
+        cache.GetMethod("Init", F)!.Invoke(null, null);
+        MethodInfo register = cache.GetMethod("CacheSavedPropertiesForTypeDebug", F)!;
+        foreach (Type type in types) register.Invoke(null, new object[] { type });
+    }
     static AbstractModel Canonical(Type type)
     {
         var content = (Dictionary<ModelId, AbstractModel>)typeof(ModelDb).GetField("_contentById", F)!.GetValue(null)!;
@@ -76,6 +104,7 @@ static class Checks
         internal readonly BeyondProtectionPower Buff;
         internal Fixture(int maxHp = 3500, int hp = 1000, int dp = 1000, bool enabled = true)
         {
+            ActiveFixture = this;
             var run = Blank<RunState>();
             Set(Player, "<Creature>k__BackingField", Hero); Set(Player, "<Character>k__BackingField", Blank<HbrgoSaki>()); Set(Player, "_runState", run);
             Set(run, "_players", new List<Player> { Player }); Set(Combat, "<RunState>k__BackingField", run);
@@ -119,8 +148,18 @@ static class Checks
         Patch(AccessTools.Method(typeof(RelicModel), "Flash"));
         Patch(AccessTools.Method(typeof(CreatureCmd), nameof(CreatureCmd.Heal)), nameof(Heal));
         Patch(typeof(CardPileCmd).GetMethod(nameof(CardPileCmd.Draw), [typeof(PlayerChoiceContext), typeof(decimal), typeof(Player), typeof(bool)])!, nameof(Draw));
-        foreach (Type type in new[] { typeof(ElectronicSoldierManual), typeof(DeflectorProtection), typeof(MomentOfReign), typeof(BeyondProtectionPower), typeof(PhantomPower) })
-            SavedPropertiesTypeCache.InjectTypeIntoCache(type);
+        Patch(AccessTools.Method(typeof(RunState), nameof(RunState.IterateHookListeners)), nameof(Listeners));
+        Patch(AccessTools.Method(typeof(CombatState), nameof(CombatState.IterateHookListeners)), nameof(Listeners));
+        // Recording history needs a full run/player history graph; keep only
+        // that diagnostic leaf out of this resource/exact-bank fixture.
+        Type history = typeof(Creature).Assembly.GetType("MegaCrit.Sts2.Core.Combat.History.CombatHistory", true)!;
+        Patch(AccessTools.Method(history, "PowerReceived"));
+        InitializeSavedPropertyCache(new[] { typeof(ElectronicSoldierManual), typeof(DeflectorProtection), typeof(MomentOfReign), typeof(BeyondProtectionPower), typeof(HotaruDamageAmplificationPower), typeof(PhantomPower) });
+        Canonical(typeof(HotaruDamageAmplificationPower));
+        foreach (Type type in Mod.GetTypes().Where(type => type.IsDefined(typeof(HarmonyPatch), false) &&
+                     (type.Name.StartsWith("ExactDamagePercent", StringComparison.Ordinal) ||
+                      type.Name is "HighDimensionalShellStackAmountPatch" or "DamageAmplificationStackingPatch")))
+            Check(harmony.CreateClassProcessor(type).Patch().Count > 0, "production unified exact-bank adapter installs " + type.Name);
         foreach (string name in new[] { "CreatureSetMaxHpInternalPatch", "MomentOfReignSetMaxHpPatch" })
             Check(harmony.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat." + name, true)!).Patch().Count > 0,
                 "production max-HP adapter installs " + name);
@@ -128,27 +167,42 @@ static class Checks
     static async Task Banks()
     {
         var f = new Fixture();
-        Equal(f.Buff.DamagePercent, 0, "new percentage bank is empty");
+        Equal(f.Buff.DamagePercent, 0, "new Beyond legacy input is empty");
         foreach (var row in new (int Dp, decimal Percent)[] { (0, 0m), (-100, 0m), (1, .005m), (2, .015m), (997, 5m), (1000, 10m) })
         {
-            Call(f.Buff, "AddConvertedDp", row.Dp); Equal(f.Buff.DamagePercent, row.Percent, "real AddConvertedDp accumulates five per mille " + row.Dp);
+            await ConvertBonus(f, row.Dp);
+            Equal(f.Hero.Powers.OfType<HotaruDamageAmplificationPower>().SingleOrDefault()?.DamagePercent ?? 0m,
+                row.Percent, "real AddConvertedDp deposits exact five-per-mille in unified bank " + row.Dp);
+            Equal(f.Buff.DamagePercent, 0m, "Beyond retains no duplicate active damage percentage");
         }
-        Equal(f.Buff.ConvertedDp, 2000, "bank preserves original converted DP rather than reverse-scaled percent");
-        Equal(f.Buff.ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Move, f.Hero, null!), 1.1m, "2000 converted DP gives actual ten-percent damage factor");
-        Equal(f.Buff.ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Unpowered, f.Hero, null!), 1m, "unpowered damage still excludes buff");
-        Equal(f.Buff.ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Move, Blank<Creature>(), null!), 1m, "another dealer still excludes buff");
-        string bank = f.Buff.DamagePercentData;
-        var loaded = Power<BeyondProtectionPower>(f.Hero); Property(loaded, "DamagePercentData", bank);
-        Equal(loaded.DamagePercent, 10, "explicit saved percent reloads without applying per-mille twice");
-        Property(loaded, "ConvertedDp", 9999); Equal(loaded.DamagePercent, 10, "explicit percent bank wins over legacy DP field");
-        var legacy = Power<BeyondProtectionPower>(f.Hero); Property(legacy, "ConvertedDp", 1001);
-        Equal(legacy.DamagePercent, 5.005m, "legacy ConvertedDp without exact bank uses new rate");
-        Call(legacy, "AddConvertedDp", 1); Equal(legacy.DamagePercent, 5.01m, "legacy bank migrates on next real addition");
-        Equal(legacy.ConvertedDp, 1002, "legacy migration retains original DP count");
-        Property(loaded, "DamagePercentData", "2147483648"); Call(loaded, "AddConvertedDp", int.MaxValue);
-        Equal(loaded.DamagePercent, 2147483648m, "exact damage bank saturates without overflow");
-        Property(loaded, "ConvertedDp", int.MaxValue); Call(loaded, "AddConvertedDp", int.MaxValue);
-        Equal(loaded.ConvertedDp, int.MaxValue, "DP compatibility field saturates without overflow");
+        Equal(f.Buff.ConvertedDp, 0, "new conversions do not create legacy migration input");
+        Equal(Bank(f).ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Move, f.Hero, null!), 1.1m,
+            "the unified bank supplies the same ten-percent factor for 2000 converted DP");
+        Equal(f.Buff.ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Move, f.Hero, null!), 1m,
+            "Beyond's compatibility modifier adds no second damage factor");
+        Equal(Bank(f).ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Unpowered, f.Hero, null!), 1m, "unpowered damage still excludes unified buff");
+        Equal(Bank(f).ModifyDamageMultiplicative(f.Hero, 6000m, ValueProp.Move, Blank<Creature>(), null!), 1m, "another dealer still excludes unified buff");
+        await PowerCmd.Apply<HotaruDamageAmplificationPower>(new ThrowingPlayerChoiceContext(), f.Hero, 7.125m, f.Hero, null, true);
+        Equal(Bank(f).DamagePercent, 17.125m, "another source joins the same exact bank without rounding");
+        Check(f.Hero.Powers.OfType<HotaruDamageAmplificationPower>().Count() == 1, "converted DP and other sources use one visible amplification ability");
+
+        var saved = new Fixture(); Property(saved.Buff, "DamagePercentData", "10"); Property(saved.Buff, "ConvertedDp", 9999);
+        await saved.Buff.AfterApplied(saved.Hero, null!);
+        Equal(Bank(saved).DamagePercent, 10, "old explicit percentage wins over old converted DP and migrates without a second conversion");
+        await saved.Buff.BeforeCombatStart();
+        Equal(Bank(saved).DamagePercent, 10, "repeated attachment and combat-start hooks cannot duplicate legacy credit");
+        Check(saved.Buff.DamagePercentData == string.Empty && saved.Buff.ConvertedDp == 0,
+            "successful migration clears old saved percentage and DP inputs");
+
+        var legacy = new Fixture(); Property(legacy.Buff, "ConvertedDp", 1001);
+        await ConvertBonus(legacy, 1);
+        Equal(Bank(legacy).DamagePercent, 5.01m, "integer-only old bank migrates before the next exact addition");
+        Equal(legacy.Buff.ConvertedDp, 0, "DP repayment stays in the relic ledger rather than a duplicate buff bank");
+        var capped = new Fixture(); Property(capped.Buff, "DamagePercentData", "2147483648");
+        await ConvertBonus(capped, int.MaxValue);
+        Equal(Bank(capped).DamagePercent, 2147483648m, "merged exact bank saturates without overflow");
+        await ConvertBonus(capped, int.MaxValue);
+        Equal(Bank(capped).DamagePercent, 2147483648m, "later large additions retain the exact cap");
         await f.Buff.AfterCombatEnd(null!); Equal(f.Buff.DamagePercent, 0, "combat end clears percent");
         Equal(f.Buff.ConvertedDp, 0, "combat end clears old field"); Check(f.Buff.DamagePercentData == "", "combat end clears serialized exact bank");
     }
@@ -203,11 +257,11 @@ static class Checks
         Check(card.CanonicalKeywords.Contains(CardKeyword.Exhaust), "real card canonical keywords includes Exhaust");
         Equal(card.DynamicVars.Cards.BaseValue, 0, "base card draw remains0");
         await (Task)Call(card, "OnPlay", new ThrowingPlayerChoiceContext(), null)!;
-        Equal(f.Buff.DamagePercent, 5, "real card OnPlay converts1000DP to5percent"); Equal(f.Hero.CurrentHp, 1500, "real card OnPlay heals500 actualHP"); Equal(Draws.Count, 0, "base card OnPlay draws no cards");
+        Equal(Bank(f).DamagePercent, 5, "real card OnPlay converts1000DP to5percent in the unified bank"); Equal(f.Buff.DamagePercent, 0, "real card leaves no second Beyond damage factor"); Equal(f.Hero.CurrentHp, 1500, "real card OnPlay heals500 actualHP"); Equal(Draws.Count, 0, "base card OnPlay draws no cards");
         Call(card, "OnUpgrade"); Equal(card.DynamicVars.Cards.BaseValue, 2, "real OnUpgrade retains two-card draw");
         Check(card.CanonicalKeywords.Contains(CardKeyword.Exhaust), "upgrade retains Exhaust");
         await (Task)Call(card, "OnPlay", new ThrowingPlayerChoiceContext(), null)!;
-        Equal(f.Buff.DamagePercent, 5, "zeroDP replay grants no extra percentage"); Equal(Draws.Single(), 2, "real upgraded OnPlay sends draw2");
+        Equal(Bank(f).DamagePercent, 5, "zeroDP replay grants no extra unified percentage"); Equal(Draws.Single(), 2, "real upgraded OnPlay sends draw2");
     }
     public static async Task Run()
     {
@@ -218,7 +272,7 @@ static class Checks
             ok, checks = Passed.Count, passed = Passed, error,
             modSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
-            limits = "Actual card OnPlay/OnUpgrade, exact percentage bank/save readers, relic DP conversion/end ledger, native SetMaxHp/HP setters, and production max-HP ownership/DP adapters execute. The 31O production RedirectMaxHpChange and living-phantom lookup execute. Heal command SFX/VFX/hook traversal is isolated while native HealInternal writes real HP; draw command is captured. Godot StringName, native logger and relic Flash are isolated. No rendered UI, automatic card movement, native save loading, gameplay, package or upload."
+            limits = "Actual card OnPlay/OnUpgrade, native PowerCmd application and exact percentage adapters, exact save readers, relic DP conversion/end ledger, native SetMaxHp/HP setters, and production max-HP ownership/DP adapters execute. The 31O production RedirectMaxHpChange and living-phantom lookup execute. Hook listeners use the fixture's real powers/relics; only the diagnostic CombatHistory.PowerReceived leaf is skipped. Heal command SFX/VFX/hook traversal is isolated while native HealInternal writes real HP; draw command is captured. Godot StringName, native logger and relic Flash are isolated. No rendered UI, automatic card movement, full native save loading, gameplay, package or upload."
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine($"{(ok ? "PASS" : "FAIL")}: {Passed.Count} BeyondProtection checks");
         if (!ok) throw new Exception("BeyondProtection checks failed; inspect report.json");

@@ -1,0 +1,1807 @@
+{
+  "schema": 1,
+  "name": "HBR equipment and shop art",
+  "checkedUtc": "2026-11-04T19:56:51.286511+00:00",
+  "clientPackage": "local client package 6.2.0.0, see HeavenBurnsRedEditor/README.md",
+  "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl",
+  "usage": "Original sprites for the manual's equipment page and shop page. Icon file names match the \"image\" field of the hbr.quest master data rows listed in docs/hbr-equipment.md.",
+  "limits": "Asset identity and provenance only. No Godot importer, package or game run was performed.",
+  "files": [
+    {
+      "file": "icons/SeraphBooster1.png",
+      "sha256": "247529f5579c773c25f2ad57d3f38b3cf7366dc094f66be3dc175c8c23a908e2",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphBooster/SeraphBooster1.png",
+        "bundleKey": "cache/e37ccd4f716fd6894908f31f3f656fbf/c36576c1f0e4b21192dfcb3950cd7ba0",
+        "serializedFile": "CAB-3df5276b1693ebbf1c8a30fe9973169b",
+        "texturePathId": "5319323300143361887",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/e37ccd4f716fd6894908f31f3f656fbf/c36576c1f0e4b21192dfcb3950cd7ba0/1fb7d5cbdc933a97_5319323300143361887_SeraphBooster1.png"
+      }
+    },
+    {
+      "file": "icons/SeraphBooster2.png",
+      "sha256": "6839da0e415704ce899ad5eb6b2a7eafaa4b8d1c2d92f66cc5fa1db6bd77f107",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphBooster/SeraphBooster2.png",
+        "bundleKey": "cache/0d908158f3717ced562913063f6730af/bd6fd51ac7bd3b4b649a9bcea466d5b4",
+        "serializedFile": "CAB-22df8a58d9536da214da634bf0feec05",
+        "texturePathId": "2791337586683215391",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/0d908158f3717ced562913063f6730af/bd6fd51ac7bd3b4b649a9bcea466d5b4/fd78518b2619b16c_2791337586683215391_SeraphBooster2.png"
+      }
+    },
+    {
+      "file": "icons/SeraphBooster3.png",
+      "sha256": "65165e6425de5202035439c00e9e04d9210748e4ab1d908511423447f4331624",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphBooster/SeraphBooster3.png",
+        "bundleKey": "cache/29745320fcfc12f5fb506e5f1198b88c/f22e61f9b010edf0c0d6b4a933b9ef46",
+        "serializedFile": "CAB-c792f9ac2fa4e93cbb8b89b8591f0ec3",
+        "texturePathId": "-1805356335324996309",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/29745320fcfc12f5fb506e5f1198b88c/f22e61f9b010edf0c0d6b4a933b9ef46/636040390cf53f51_-1805356335324996309_SeraphBooster3.png"
+      }
+    },
+    {
+      "file": "icons/SeraphChip1.png",
+      "sha256": "73b72c08a63a192a1e8eb7e0e6d51cda0b7dcff898d8a3943b8790b4a0ad6fe5",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphTip/SeraphChip1.png",
+        "bundleKey": "cache/f140f8795db541e0eb669817560f3485/fde2b83014a698ab7933c7e3e1ef4ef3",
+        "serializedFile": "CAB-802bca42c2249ddddad31f9f3f30e45b",
+        "texturePathId": "-6012315151191430097",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/f140f8795db541e0eb669817560f3485/fde2b83014a698ab7933c7e3e1ef4ef3/042172b2a58e52d1_-6012315151191430097_SeraphChip1.png"
+      }
+    },
+    {
+      "file": "icons/SeraphChip2.png",
+      "sha256": "27e6c7df501cfd00f5b81eef5a7cd06a4c186cc278658d907fd965835a6be01f",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphTip/SeraphChip2.png",
+        "bundleKey": "cache/881ff7417d96f90d0bdf21800b976ded/3e1fb28b8e88a3ee78a8305666325790",
+        "serializedFile": "CAB-279638d3e73a203666a35a250150e0ce",
+        "texturePathId": "-3232617750225977751",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/881ff7417d96f90d0bdf21800b976ded/3e1fb28b8e88a3ee78a8305666325790/15833a877d9d8d33_-3232617750225977751_SeraphChip2.png"
+      }
+    },
+    {
+      "file": "icons/SeraphChip3.png",
+      "sha256": "a305b81f6efc47d5119aefcfb0e34d0fd1563c3daea359635f0f64fb378218c1",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphTip/SeraphChip3.png",
+        "bundleKey": "cache/4ee1e741381346eb97d43c6a72e6f740/483a4c2c70706846933134f4a584cca7",
+        "serializedFile": "CAB-e0b8357f07dfa110e72fc0ee876364dc",
+        "texturePathId": "6603340742735243269",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/4ee1e741381346eb97d43c6a72e6f740/483a4c2c70706846933134f4a584cca7/083eff2d84a2bcab_6603340742735243269_SeraphChip3.png"
+      }
+    },
+    {
+      "file": "icons/SeraphChip4.png",
+      "sha256": "6ba72e099cb721b534c5e5731ce31dc2322048faee0311b560b96cbf82f450de",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphTip/SeraphChip4.png",
+        "bundleKey": "cache/6248bfaaaa2fd8e0383347920363d660/9a29a93df39b10fb023c7777ed04a747",
+        "serializedFile": "CAB-e8ff3ef6ed48d437137b93192c6a7c04",
+        "texturePathId": "2410117968380290026",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/6248bfaaaa2fd8e0383347920363d660/9a29a93df39b10fb023c7777ed04a747/32969a35cca9a293_2410117968380290026_SeraphChip4.png"
+      }
+    },
+    {
+      "file": "icons/SeraphChip5.png",
+      "sha256": "f1639c3862417643361c88950681862a6e6ba7fd2ce6e4307ca58a737d5ae909",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphTip/SeraphChip5.png",
+        "bundleKey": "cache/cf408ccc24cf5f3134122163975c7f83/b36d5ae426434b231404e07f15f9cfb0",
+        "serializedFile": "CAB-ad1d6d561a0bc7f2ccd8c747692a405d",
+        "texturePathId": "6880828129048683927",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/cf408ccc24cf5f3134122163975c7f83/b36d5ae426434b231404e07f15f9cfb0/27dcf9e13ed4a3eb_6880828129048683927_SeraphChip5.png"
+      }
+    },
+    {
+      "file": "icons/SeraphArtifactChip1.png",
+      "sha256": "a19778769efc85f78e48fbf0d7b443781f77301793aec0c985807c9871909b24",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/SeraphTip/SeraphArtifactChip1.png",
+        "bundleKey": "cache/356ee0a4062c395f2cffd46d8e43d75d/ff8cbdbc36588a5c6a1dab36ffa551ee",
+        "serializedFile": "CAB-f226147c82ed30ef51e47e2d52aac2e6",
+        "texturePathId": "-6269758898331878938",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/356ee0a4062c395f2cffd46d8e43d75d/ff8cbdbc36588a5c6a1dab36ffa551ee/ee2bb26d0b13741b_-6269758898331878938_SeraphArtifactChip1.png"
+      }
+    },
+    {
+      "file": "icons/Ringlow1.png",
+      "sha256": "57188ae8c368a7e0f8ca7b34d4fb1031651d6ad4dea805994191977968a06836",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ringlow1.png",
+        "bundleKey": "cache/761c2eb7984d9c8dc11d561f012292c8/c14f63d6579b6267816adfbfcfbf0bab",
+        "serializedFile": "CAB-396c4922c6386506bf68551b96823b0a",
+        "texturePathId": "2109089307962345085",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/761c2eb7984d9c8dc11d561f012292c8/c14f63d6579b6267816adfbfcfbf0bab/b8fffd00bc6b9e5a_2109089307962345085_Ringlow1.png"
+      }
+    },
+    {
+      "file": "icons/Ringloww2.png",
+      "sha256": "0acd17078c90ff6cb8badf124a922df7b88dfd0ead93e5e6be1ebbda44b5832c",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ringloww2.png",
+        "bundleKey": "cache/b06fe52ab0a714adfd6678482ec7860f/38878356cda15d9f29578460c48e42f3",
+        "serializedFile": "CAB-f304736709aa7393098b48ffc0dcc202",
+        "texturePathId": "7058837268228245661",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/b06fe52ab0a714adfd6678482ec7860f/38878356cda15d9f29578460c48e42f3/01faf07117e057e9_7058837268228245661_Ringloww2.png"
+      }
+    },
+    {
+      "file": "icons/RingMedium1.png",
+      "sha256": "e7a801f0bb5493d17f3c1a59f91fdc8ee4abec757921b90b5456d03e2e374ddf",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingMedium1.png",
+        "bundleKey": "cache/c01622fccd626127d91d6fb0571506b7/beeb7897f9f05019d3276c4ef672b7cb",
+        "serializedFile": "CAB-c9752f643586712967e62f6036111fbf",
+        "texturePathId": "-1159651880313371740",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/c01622fccd626127d91d6fb0571506b7/beeb7897f9f05019d3276c4ef672b7cb/7f3495877b15ba2f_-1159651880313371740_RingMedium1.png"
+      }
+    },
+    {
+      "file": "icons/RingMedium2.png",
+      "sha256": "6e0a10b74f1cc754178b1df65a96744eb22a4381e5a53d1c263e0996589ea974",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingMedium2.png",
+        "bundleKey": "cache/80579b4e5f038e679cc4cc0299e2a610/1b0b3d5f62c78a7c10a9d9f16a7dfe95",
+        "serializedFile": "CAB-c6b754678cf679f82aabfacf247a9597",
+        "texturePathId": "8782119941920123568",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/80579b4e5f038e679cc4cc0299e2a610/1b0b3d5f62c78a7c10a9d9f16a7dfe95/2285566eeca8c962_8782119941920123568_RingMedium2.png"
+      }
+    },
+    {
+      "file": "icons/RingMedium3.png",
+      "sha256": "c82399fd54afd2d2d8f9e18325f406d0fe83d1ddc3ff2959aad51e1d9aa46a78",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingMedium3.png",
+        "bundleKey": "cache/deab42362d9d735d695d2d2343756f70/6a416c4e28b76f28986f5a3023faafbe",
+        "serializedFile": "CAB-5d355715ecb4f4149231fd6813a1bf13",
+        "texturePathId": "-8571195463534538403",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/deab42362d9d735d695d2d2343756f70/6a416c4e28b76f28986f5a3023faafbe/28f2cfdea79595c5_-8571195463534538403_RingMedium3.png"
+      }
+    },
+    {
+      "file": "icons/RingMediumw4.png",
+      "sha256": "5805dc6571f80257ffdf3c565ec7ba15247e1969382d2b082dd1aad16095b67a",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingMediumw4.png",
+        "bundleKey": "cache/0738e1f1cfb87f668695295f181036f3/42f39de2c00929b4ce1ae9830aeab90b",
+        "serializedFile": "CAB-a85b791c17c47b9ae35dc457f994d73f",
+        "texturePathId": "-1369384135067045905",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/0738e1f1cfb87f668695295f181036f3/42f39de2c00929b4ce1ae9830aeab90b/d6c55a8c75eee65a_-1369384135067045905_RingMediumw4.png"
+      }
+    },
+    {
+      "file": "icons/RingMediumw3.png",
+      "sha256": "890a36c56d4aa36d86542a1471f7342bd41bae758de54872557d563ee30d65dd",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingMediumw3.png",
+        "bundleKey": "cache/79eab4517efa10e91f7b38bbe30866d1/8686aa519ba829171fbbc7a52b7ccd86",
+        "serializedFile": "CAB-0c94dfa56f09e23167ebe1c1269c9563",
+        "texturePathId": "-695393971531211981",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/79eab4517efa10e91f7b38bbe30866d1/8686aa519ba829171fbbc7a52b7ccd86/1f9be0ee04ab32d7_-695393971531211981_RingMediumw3.png"
+      }
+    },
+    {
+      "file": "icons/RingMediumw1.png",
+      "sha256": "51590223ac76203b8b29776828255476a3baebe881afd9129ed381dfce69974b",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingMediumw1.png",
+        "bundleKey": "cache/a23f8f1e43bbc05bef28697118979f15/2ead43f65d0574b683f7dc9f117b7aeb",
+        "serializedFile": "CAB-2cd166a5089514a7582db1574349adef",
+        "texturePathId": "-8838330137314643093",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/a23f8f1e43bbc05bef28697118979f15/2ead43f65d0574b683f7dc9f117b7aeb/5ecf891111ded2d0_-8838330137314643093_RingMediumw1.png"
+      }
+    },
+    {
+      "file": "icons/RingHigh1.png",
+      "sha256": "4732b3e9c9526de05d9d59590302318cb06a023dfdbe7ac44414775a505336ff",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingHigh1.png",
+        "bundleKey": "cache/090c6c682b875b6dc45712b7762db0d5/465b50aac07f564b313422ec2eda22aa",
+        "serializedFile": "CAB-3a3c79ad19c4114dc62e17112b369f6f",
+        "texturePathId": "-2818432063916336899",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/090c6c682b875b6dc45712b7762db0d5/465b50aac07f564b313422ec2eda22aa/cca3bee091fd4685_-2818432063916336899_RingHigh1.png"
+      }
+    },
+    {
+      "file": "icons/RingHighw2.png",
+      "sha256": "8bcd2f70521e67d9db8f5206be5818cb122274b24dae28b5fe31b6ee3ce83d11",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingHighw2.png",
+        "bundleKey": "cache/fa515a6aa862f5da1a274767bbe58980/b355b915df2cc9f7764a2c5547f32eb2",
+        "serializedFile": "CAB-d66931780a863100ca09162adf22d7f2",
+        "texturePathId": "-5097952222787203298",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/fa515a6aa862f5da1a274767bbe58980/b355b915df2cc9f7764a2c5547f32eb2/c58b31524e04a51a_-5097952222787203298_RingHighw2.png"
+      }
+    },
+    {
+      "file": "icons/RingHighw3.png",
+      "sha256": "2ac7b79c04de0c440a1683d76585199941731799431641ff8b06aefda31f1b20",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingHighw3.png",
+        "bundleKey": "cache/1fab08529c489e4ccb65fa420ca6fb86/d03a20c98e10e5c16494c072403ed957",
+        "serializedFile": "CAB-0341546150fa0c9ed525a9917fab74fe",
+        "texturePathId": "6338152298421103259",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/1fab08529c489e4ccb65fa420ca6fb86/d03a20c98e10e5c16494c072403ed957/e3666a38d1906671_6338152298421103259_RingHighw3.png"
+      }
+    },
+    {
+      "file": "icons/RingHighw4.png",
+      "sha256": "a11bc0ea130c3f3d4599625de82bfc3ead507b22e26e9f3908e5c71e2626cd1a",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingHighw4.png",
+        "bundleKey": "cache/0f6ca416e2b56a17588eefd10728fd69/32aa910f1282f4f73f6fef4c1f6fdbca",
+        "serializedFile": "CAB-e6af2bb262844c44a69572a6f1c4a42b",
+        "texturePathId": "-2253134557077399567",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/0f6ca416e2b56a17588eefd10728fd69/32aa910f1282f4f73f6fef4c1f6fdbca/f5715d2dd15fbbce_-2253134557077399567_RingHighw4.png"
+      }
+    },
+    {
+      "file": "icons/RingHighw5.png",
+      "sha256": "81247f5fd3d8040cf0025ed9c15fba851b92357430e167f29cca370be1a7f12b",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/RingHighw5.png",
+        "bundleKey": "cache/7fdadbc31be46a73aa23669bbc8a2c40/7f6b7b17f97a806f1893367557ddc6dc",
+        "serializedFile": "CAB-460e7b151b0234827e4754fe32245867",
+        "texturePathId": "797783115335582479",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/7fdadbc31be46a73aa23669bbc8a2c40/7f6b7b17f97a806f1893367557ddc6dc/f622e319416e4600_797783115335582479_RingHighw5.png"
+      }
+    },
+    {
+      "file": "icons/EarringsLoww1.png",
+      "sha256": "b6a613e117d7df8c83783fc23bd858b5f5b2d4870eebbff1c88b75c4254a3dee",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsLoww1.png",
+        "bundleKey": "cache/8d1f5025bf94dba859341bd16c9852b0/f6fa851532007ff916e3067597f08cff",
+        "serializedFile": "CAB-675369154b132c37a012a1ba81d89e04",
+        "texturePathId": "8679058435333096943",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8d1f5025bf94dba859341bd16c9852b0/f6fa851532007ff916e3067597f08cff/190815e437d114ec_8679058435333096943_EarringsLoww1.png"
+      }
+    },
+    {
+      "file": "icons/EarringsLoww3.png",
+      "sha256": "aefc2769d186a74015d0f498bdd98774b774d499b75ff791e3ed523fabb937c6",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsLoww3.png",
+        "bundleKey": "cache/68fca15343d33b4bf936c9d3d25a34c5/54616170e6c03bd446326d213e4b1b61",
+        "serializedFile": "CAB-a0321425d4fae5336fc72710dc7c7116",
+        "texturePathId": "-6497469823378402159",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/68fca15343d33b4bf936c9d3d25a34c5/54616170e6c03bd446326d213e4b1b61/82880c127f1a9528_-6497469823378402159_EarringsLoww3.png"
+      }
+    },
+    {
+      "file": "icons/EarringsMedium3.png",
+      "sha256": "7a7c8ac15d4ad42d1a6009e6688275b81a5aa167f72376d6234f2609511d4a0f",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsMedium3.png",
+        "bundleKey": "cache/75413c6e098e0f273f907c9afcfbe17e/1fd9a4de4a637f5e7d466f72938b81c0",
+        "serializedFile": "CAB-4bae7bd4f44ef23ea76ed62c9fe33bf2",
+        "texturePathId": "484004855980876358",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/75413c6e098e0f273f907c9afcfbe17e/1fd9a4de4a637f5e7d466f72938b81c0/470853d35e137c0a_484004855980876358_EarringsMedium3.png"
+      }
+    },
+    {
+      "file": "icons/EarringsMedium5.png",
+      "sha256": "f38df74f08461ce748b69321604a346f2da2e8a82d8fea1c1717bedd1de8c256",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsMedium5.png",
+        "bundleKey": "cache/556001125cb0cd36873f3c9ad6b58821/b7fa5a6008b09a679a5cd19dc4b25fd6",
+        "serializedFile": "CAB-daf6baa2b74be630a630ac37be8cc4bf",
+        "texturePathId": "-8152849712956895818",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/556001125cb0cd36873f3c9ad6b58821/b7fa5a6008b09a679a5cd19dc4b25fd6/8ca4cdb1424f7cf9_-8152849712956895818_EarringsMedium5.png"
+      }
+    },
+    {
+      "file": "icons/EarringsMediumw1.png",
+      "sha256": "bb199f04339bde11cdbda125c8347439eea166a1a4a222d4ac2c3189916da3c0",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsMediumw1.png",
+        "bundleKey": "cache/d47418a8cd67071ac37fae888cc3d0f7/d01d08814f9a25747ea7e1cc567f02f5",
+        "serializedFile": "CAB-57a4492bf54671b0a77003d835d036f9",
+        "texturePathId": "4021574077406800785",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/d47418a8cd67071ac37fae888cc3d0f7/d01d08814f9a25747ea7e1cc567f02f5/a45f7ad61c9dd4ce_4021574077406800785_EarringsMediumw1.png"
+      }
+    },
+    {
+      "file": "icons/EarringsMediumw3.png",
+      "sha256": "72b890d5d20b79b1a37a395e4f7db93315ba38234231648e5142ed06f0533627",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsMediumw3.png",
+        "bundleKey": "cache/bd2c7516f2563221a0efe95c6837fbf1/c5dadaffb2fe7128c0a82a69b019d50b",
+        "serializedFile": "CAB-66a08ed3021aea71ef855d13fef1fb6b",
+        "texturePathId": "-1386438904823970528",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/bd2c7516f2563221a0efe95c6837fbf1/c5dadaffb2fe7128c0a82a69b019d50b/3ab7abca79e2c1a6_-1386438904823970528_EarringsMediumw3.png"
+      }
+    },
+    {
+      "file": "icons/EarringsHigh3.png",
+      "sha256": "e865d07430851593e18414476587a10a4615e28e96879a7b13a0921535326393",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsHigh3.png",
+        "bundleKey": "cache/1f71a5c6aaaa9c431f45d012efbcc329/5cbe782b6f6d157917a1bbcc91a4e846",
+        "serializedFile": "CAB-1a504f7f1c547becdce7fd5a8391f31b",
+        "texturePathId": "-4546885334338321836",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/1f71a5c6aaaa9c431f45d012efbcc329/5cbe782b6f6d157917a1bbcc91a4e846/2d905ad8ac194ae6_-4546885334338321836_EarringsHigh3.png"
+      }
+    },
+    {
+      "file": "icons/EarringsHighw3.png",
+      "sha256": "7d69501246db896cf45b13a3f94d23feb0c89fdb5f44d8b77def3198c2e4d3a4",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsHighw3.png",
+        "bundleKey": "cache/e07c653b0072ad8efc447bc62c4b4765/31f51ccb394a42bbbb9c55a4f85b47a4",
+        "serializedFile": "CAB-e0d508687e4859f72aa0fca7063e66c6",
+        "texturePathId": "975986701171167326",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/e07c653b0072ad8efc447bc62c4b4765/31f51ccb394a42bbbb9c55a4f85b47a4/56ebc0beb8489269_975986701171167326_EarringsHighw3.png"
+      }
+    },
+    {
+      "file": "icons/EarringsHighw4.png",
+      "sha256": "cde1c3647f59ce80d023b63e1a8c0279ff0b9d8bf15b22f3a734c1640d53158a",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/EarringsHighw4.png",
+        "bundleKey": "cache/0053931cd08674d1bc951c6df2aa1737/2e453a0951a0067681c9c95297da1cea",
+        "serializedFile": "CAB-b7be7196cc4645152a506a67224e6787",
+        "texturePathId": "8701852846109708637",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/0053931cd08674d1bc951c6df2aa1737/2e453a0951a0067681c9c95297da1cea/bbb09df4e801b0cc_8701852846109708637_EarringsHighw4.png"
+      }
+    },
+    {
+      "file": "icons/BraceletMedium3.png",
+      "sha256": "10738f9932934f4b033c109ba8bb58734b2bb38b66625ab6ddc5f97ff2f22303",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletMedium3.png",
+        "bundleKey": "cache/d6f76724f7fb668fc9c02fab8137ced0/cda7406ac5a5cbc2ad209f1247660c52",
+        "serializedFile": "CAB-fcf3d275363cdac431d602003ffd6367",
+        "texturePathId": "8189083828812640641",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/d6f76724f7fb668fc9c02fab8137ced0/cda7406ac5a5cbc2ad209f1247660c52/d5d320c999e93f1e_8189083828812640641_BraceletMedium3.png"
+      }
+    },
+    {
+      "file": "icons/BraceletMediumw3.png",
+      "sha256": "bba45d15387f38daf06ebade1decf919d86671d640f6d5703ed9b284cbcc17cb",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletMediumw3.png",
+        "bundleKey": "cache/d46af58f92da8347e8d6642eae80bc5b/fc117948dff1b9ab76379733ec48e979",
+        "serializedFile": "CAB-ee6eca93d586663677bc01aa4574d118",
+        "texturePathId": "8366012187581563488",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/d46af58f92da8347e8d6642eae80bc5b/fc117948dff1b9ab76379733ec48e979/4a6121970b5bf119_8366012187581563488_BraceletMediumw3.png"
+      }
+    },
+    {
+      "file": "icons/BraceletMediumw2.png",
+      "sha256": "71fdeaa0bc86c440c71ae8ef14473db2a21fb74ee97ac5907c81a70175132b17",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletMediumw2.png",
+        "bundleKey": "cache/9a70dfc6f9314b8519fecc903ee4276d/0530dd80c73b9e6dbf07321f94a3db66",
+        "serializedFile": "CAB-17cd50439cbd43a269ab2df34a9cf89d",
+        "texturePathId": "2795596209565983947",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/9a70dfc6f9314b8519fecc903ee4276d/0530dd80c73b9e6dbf07321f94a3db66/03df48765da10dd6_2795596209565983947_BraceletMediumw2.png"
+      }
+    },
+    {
+      "file": "icons/BraceletHigh5.png",
+      "sha256": "3c5e8be31185104a571cc64a9e6d1729b8a4792f9ca4b7b85b0e6f544e3fc20a",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletHigh5.png",
+        "bundleKey": "cache/2622fe7149f52d29f7dddc262c613acd/935451bc54bbbf963ec5f827f935254b",
+        "serializedFile": "CAB-89b4ae68984d5c52d16ec6082ac568d5",
+        "texturePathId": "6873128317056100744",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/2622fe7149f52d29f7dddc262c613acd/935451bc54bbbf963ec5f827f935254b/ca2ef1fcd9824ebe_6873128317056100744_BraceletHigh5.png"
+      }
+    },
+    {
+      "file": "icons/BraceletHigh4.png",
+      "sha256": "27cd00c727fd1d8864978b36091af12fb3c3edb8eea3322382a2583a661eb11b",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletHigh4.png",
+        "bundleKey": "cache/3e980c329afac45ee29916d62a2ade27/878536eb4431100123133476b331bd1d",
+        "serializedFile": "CAB-1f57f2ed04543bd08ce12834887ce096",
+        "texturePathId": "-4453865596642391393",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/3e980c329afac45ee29916d62a2ade27/878536eb4431100123133476b331bd1d/0faf246877f2f808_-4453865596642391393_BraceletHigh4.png"
+      }
+    },
+    {
+      "file": "icons/BraceletHighw3.png",
+      "sha256": "3807604ec2ece94af698b4142db12684f4bd39e295a2825528fc8bd01227c735",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletHighw3.png",
+        "bundleKey": "cache/65871de6d5e7b7289219bf6020e916f6/43824a5a6257f983ed5ba38f37d1a72e",
+        "serializedFile": "CAB-c05ac050bed1b48cd9374724a24045a3",
+        "texturePathId": "-7116335735222789868",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/65871de6d5e7b7289219bf6020e916f6/43824a5a6257f983ed5ba38f37d1a72e/636e2dcffd530159_-7116335735222789868_BraceletHighw3.png"
+      }
+    },
+    {
+      "file": "icons/BraceletHighw2.png",
+      "sha256": "942bc5e2d21e426ed6ac784346dc287d54284df6dc99e05ad9f0209be72983ba",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/BraceletHighw2.png",
+        "bundleKey": "cache/56e8ba36510c0f4a436eff05047c114e/bb17fc1ccd11fac40edd3bcfd0d6e59c",
+        "serializedFile": "CAB-6e6900299d22abd02c6a435f366b276a",
+        "texturePathId": "-554152041789270942",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/56e8ba36510c0f4a436eff05047c114e/bb17fc1ccd11fac40edd3bcfd0d6e59c/eb10dbaaac73507c_-554152041789270942_BraceletHighw2.png"
+      }
+    },
+    {
+      "file": "icons/NecklaceMedium4.png",
+      "sha256": "2f8c15c8c45e1b8db7870d04b7dfb16a7f62d163f924adffac9b60b26d6bfc9e",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/NecklaceMedium4.png",
+        "bundleKey": "cache/fe0a4c39c4030e61edbf85822077f6f2/9a7effd5589cf3a95027ad03b01144e6",
+        "serializedFile": "CAB-c90a675a5334ada82b45dfc0202aadff",
+        "texturePathId": "-4735485739504232167",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/fe0a4c39c4030e61edbf85822077f6f2/9a7effd5589cf3a95027ad03b01144e6/a5c368732ffe50c0_-4735485739504232167_NecklaceMedium4.png"
+      }
+    },
+    {
+      "file": "icons/Necklacemediumw1.png",
+      "sha256": "903dcc0ecf5dce6e274a9d7bc3cb087886e338455cdb9a3127cc295a6738a621",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklacemediumw1.png",
+        "bundleKey": "cache/8717a36676072cb907f150ac70e28b04/3623ec81d903995764dfd93d550fa94e",
+        "serializedFile": "CAB-445ef7ac79c2796f191174f2ae80aaa2",
+        "texturePathId": "-508800733694071261",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8717a36676072cb907f150ac70e28b04/3623ec81d903995764dfd93d550fa94e/7df46dbcd759379e_-508800733694071261_Necklacemediumw1.png"
+      }
+    },
+    {
+      "file": "icons/NecklaceHigh4.png",
+      "sha256": "12dba88921a35bf079bb8aedec6f92d204740b95b16281a3c29820914b45985b",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/NecklaceHigh4.png",
+        "bundleKey": "cache/c12de931c051be2f2990fc1b5bccd237/ab5f2aac5320f3a46cda0e11df2751d4",
+        "serializedFile": "CAB-6489fe1ca0191f7281b04692356484c1",
+        "texturePathId": "-3371497699361991229",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/c12de931c051be2f2990fc1b5bccd237/ab5f2aac5320f3a46cda0e11df2751d4/68c588a2f96a4b5a_-3371497699361991229_NecklaceHigh4.png"
+      }
+    },
+    {
+      "file": "icons/Charm_Power1.png",
+      "sha256": "29615e095b32a7187da8450193d2bf483e9d3dc15acb0f9b50a1e9a785632a30",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Charm_Power1.png",
+        "bundleKey": "cache/3329997657718b12a19882bd9594f06a/14089f687ea34ba19e305284c7c8cfa1",
+        "serializedFile": "CAB-42d960514a5aafa8b55853648dc96433",
+        "texturePathId": "1566031774583953347",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/3329997657718b12a19882bd9594f06a/14089f687ea34ba19e305284c7c8cfa1/204cc589c23801d0_1566031774583953347_Charm_Power1.png"
+      }
+    },
+    {
+      "file": "icons/Charm_Dexterity1.png",
+      "sha256": "7c1b747bcb82358778ed99c0248ae87c79f7335b08d0ed37c047b0bc8c42ed77",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Charm_Dexterity1.png",
+        "bundleKey": "cache/a19e4fd2174e377f3562b06ab8731110/70df8d2b0bf6e68fc5c134f7cde4e8b9",
+        "serializedFile": "CAB-ecadaf33a588ae2ceb7247d153d23a6a",
+        "texturePathId": "3982687945799152116",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/a19e4fd2174e377f3562b06ab8731110/70df8d2b0bf6e68fc5c134f7cde4e8b9/d22b8b22f075fa59_3982687945799152116_Charm_Dexterity1.png"
+      }
+    },
+    {
+      "file": "icons/Charm_Toughness1.png",
+      "sha256": "04883550d2b8b616889519d7cf6c471521ba718768d5e906b12ac00a387b8f16",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Charm_Toughness1.png",
+        "bundleKey": "cache/58929acf2cebf140791312cadda37c46/d53fcc25f9c5b37711d153bb4e80bd1d",
+        "serializedFile": "CAB-018f2cc7f6d31c7b7e8e315789235960",
+        "texturePathId": "7615607809066438457",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/58929acf2cebf140791312cadda37c46/d53fcc25f9c5b37711d153bb4e80bd1d/67296e00fe48fe19_7615607809066438457_Charm_Toughness1.png"
+      }
+    },
+    {
+      "file": "icons/Charm_Spirit1.png",
+      "sha256": "0b76573933049fdb9b27db368bced8ade9dd777b20e71ba8a79196bb00a26554",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Charm_Spirit1.png",
+        "bundleKey": "cache/d40a8456043208c044961cd3ca2f3734/0b2c0e871931b879401d215d90dc2d6c",
+        "serializedFile": "CAB-7f420424c591c17679cc924179d6d873",
+        "texturePathId": "4832250014057135506",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/d40a8456043208c044961cd3ca2f3734/0b2c0e871931b879401d215d90dc2d6c/6dcaa942eb12117a_4832250014057135506_Charm_Spirit1.png"
+      }
+    },
+    {
+      "file": "icons/Charm_Wisdom1.png",
+      "sha256": "b8e121882fbede7ed2b0fdc9cd6368cb4b705d25dfc23624f6062c16e86c85e0",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Charm_Wisdom1.png",
+        "bundleKey": "cache/da02b20521ae7cb0426f3ea6258cd91d/5fccb6cad49fbd7492768444d73e949c",
+        "serializedFile": "CAB-b67a5ec762fc85d0fd7f55a8a362435f",
+        "texturePathId": "-4934521157401281378",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/da02b20521ae7cb0426f3ea6258cd91d/5fccb6cad49fbd7492768444d73e949c/e9fbb64a85d29b32_-4934521157401281378_Charm_Wisdom1.png"
+      }
+    },
+    {
+      "file": "icons/Charm_Luck1.png",
+      "sha256": "9b1a248b53e13ecdc982cf76f37919da10767ce77042b599325cfe1f6b7b0c5a",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Charm_Luck1.png",
+        "bundleKey": "cache/8c033f435c3ebaa52ab36cfbfec4744b/debacf653cda8803ea61f48bd2920f3f",
+        "serializedFile": "CAB-28206596af7669892b177dd0f4460eb5",
+        "texturePathId": "-4837388661881181100",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8c033f435c3ebaa52ab36cfbfec4744b/debacf653cda8803ea61f48bd2920f3f/4c79354a706c2e3b_-4837388661881181100_Charm_Luck1.png"
+      }
+    },
+    {
+      "file": "icons/Earrings_High2_ice_w5.png",
+      "sha256": "8a406f3b5dda09ca86984ef4c6b65b1648720897e98e47413eded4434efe4f8b",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Earrings_High2_ice_w5.png",
+        "bundleKey": "cache/5ae05369f372470b2e539fed78d98436/2ca36f63cc499f29054730f6a2604bcc",
+        "serializedFile": "CAB-f51400e1c0681cd40ab8cc171859120b",
+        "texturePathId": "-2721559226602337462",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/5ae05369f372470b2e539fed78d98436/2ca36f63cc499f29054730f6a2604bcc/1d1e1baa77844510_-2721559226602337462_Earrings_High2_ice_w5.png"
+      }
+    },
+    {
+      "file": "icons/Earrings_High2_thunder_w5.png",
+      "sha256": "6e38420836e38aeee8831bef9680ca243677571695c1c62834898c43f6d5b1ee",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Earrings_High2_thunder_w5.png",
+        "bundleKey": "cache/7813399c4560f27307cffe261c2f985c/0ec7611e38e12376b146e06d1da3d5e5",
+        "serializedFile": "CAB-addf4691c818c278c07975d156153677",
+        "texturePathId": "-2912121267898052035",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/7813399c4560f27307cffe261c2f985c/0ec7611e38e12376b146e06d1da3d5e5/6d85bc9b29093077_-2912121267898052035_Earrings_High2_thunder_w5.png"
+      }
+    },
+    {
+      "file": "icons/Earrings_High3_fire_w1.png",
+      "sha256": "4e6ddd6a9bfe0ce6f692cada17368cf44cd0ad28d4ce172cc81b0fcbf39d9529",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Earrings_High3_fire_w1.png",
+        "bundleKey": "cache/4648e9b9d9ebf02a0b9378703ae751ed/b364a0f6d0e6e13d4736addbfd9f5b28",
+        "serializedFile": "CAB-f170c901832f9a55792ab18053857eae",
+        "texturePathId": "809049828343283492",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/4648e9b9d9ebf02a0b9378703ae751ed/b364a0f6d0e6e13d4736addbfd9f5b28/fed6abd5b14b60a6_809049828343283492_Earrings_High3_fire_w1.png"
+      }
+    },
+    {
+      "file": "icons/Earrings_High3_light_w1.png",
+      "sha256": "72dcb24dc9dad1fd010c41ca92143c4dc065e77ca1f7c61368fc63a6b98ab418",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Earrings_High3_light_w1.png",
+        "bundleKey": "cache/fe5e8b0141eb317940fee8dbfed13f39/d0fc88d65d9b007437e4ba8241335852",
+        "serializedFile": "CAB-1f95ea4071256965545e6337c6167570",
+        "texturePathId": "6679542128899059067",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/fe5e8b0141eb317940fee8dbfed13f39/d0fc88d65d9b007437e4ba8241335852/360fd13729378c4b_6679542128899059067_Earrings_High3_light_w1.png"
+      }
+    },
+    {
+      "file": "icons/NecklaceHighw4.png",
+      "sha256": "490df9143ba77e9b5593692c85bde61b99d8526023b0c74c13f998ffc6428bb7",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/NecklaceHighw4.png",
+        "bundleKey": "cache/3e50b23763de188eabbfd7886ccb677c/3bbc710afb4ca041eac75589f4887133",
+        "serializedFile": "CAB-aba10facf8a8cbe0907d85e367d741c7",
+        "texturePathId": "-5061536584428175169",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/3e50b23763de188eabbfd7886ccb677c/3bbc710afb4ca041eac75589f4887133/fd2a55fd9604c559_-5061536584428175169_NecklaceHighw4.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High1_ice_w5.png",
+      "sha256": "724d7f8d5ba8e10fdcd4ac5827a993598baa1acf9d79ee991881f36e928a8b59",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High1_ice_w5.png",
+        "bundleKey": "cache/b27a9e189fab44e79dbd511010289c59/aae7cb96a44c4cd646c91321e4ef18d9",
+        "serializedFile": "CAB-9c03ae3b225db659637bfecf9dce56b7",
+        "texturePathId": "8338657497543470691",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/b27a9e189fab44e79dbd511010289c59/aae7cb96a44c4cd646c91321e4ef18d9/65533481ff1ba88f_8338657497543470691_Necklace_High1_ice_w5.png"
+      }
+    },
+    {
+      "file": "icons/Ring_High1_fire_w1.png",
+      "sha256": "35141af7503719774502e6adc66bfca001385889fe6a9828be352d26447cacd8",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ring_High1_fire_w1.png",
+        "bundleKey": "cache/b18c9269ccaaa63865054854af2a125b/3badff6d8257d7fc257c4946ee476bb0",
+        "serializedFile": "CAB-b0da3520aabf5e1ea7955adf7b87de0b",
+        "texturePathId": "1966907996680583771",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/b18c9269ccaaa63865054854af2a125b/3badff6d8257d7fc257c4946ee476bb0/7609feee21f8ee55_1966907996680583771_Ring_High1_fire_w1.png"
+      }
+    },
+    {
+      "file": "icons/Ring_High1_ice_w1.png",
+      "sha256": "4904cb26635638067ab880f4ee4cbc539ad7d3996463e3bacb42b5524d473569",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ring_High1_ice_w1.png",
+        "bundleKey": "cache/256134b36ae51385f9653ade02c13c37/02a654a899b16feecaac4cceef325390",
+        "serializedFile": "CAB-3f1ee0cee4348279f00f6fc2571e0c47",
+        "texturePathId": "-3698993952051053765",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/256134b36ae51385f9653ade02c13c37/02a654a899b16feecaac4cceef325390/07f687432db9321a_-3698993952051053765_Ring_High1_ice_w1.png"
+      }
+    },
+    {
+      "file": "icons/Ring_High1_thunder_w1.png",
+      "sha256": "d35d30bf38fd54b0e35d29e9a89966b77787d21ae0d55d76d05ac0fdbebd4749",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ring_High1_thunder_w1.png",
+        "bundleKey": "cache/fa5be574fef96bad05706508ca77fbfc/11ac29602451633b2c4bc9ccc9596a3a",
+        "serializedFile": "CAB-c70007b263c35492257d358e7555869f",
+        "texturePathId": "3356372532075043605",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/fa5be574fef96bad05706508ca77fbfc/11ac29602451633b2c4bc9ccc9596a3a/6602f5b361a8cab3_3356372532075043605_Ring_High1_thunder_w1.png"
+      }
+    },
+    {
+      "file": "icons/Ring_High1_light_w1.png",
+      "sha256": "9b5c45923fa86e8fdc6789301c08898e70479a3742ed1f95aca24e5df9ab84e5",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ring_High1_light_w1.png",
+        "bundleKey": "cache/cd41d7ed9ed62e7d7ab21abd540e4554/60ab4f1d317511a3c0d6712338d38bd6",
+        "serializedFile": "CAB-81b278193e9990ed00986d6228ac5704",
+        "texturePathId": "7904370172272739197",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/cd41d7ed9ed62e7d7ab21abd540e4554/60ab4f1d317511a3c0d6712338d38bd6/f52638f77db521c1_7904370172272739197_Ring_High1_light_w1.png"
+      }
+    },
+    {
+      "file": "icons/Ring_High1_dark_w1.png",
+      "sha256": "58d8393b300ff959ef1c2f3cc8ad459e9c77165766a24fb818d8a246f9bd5988",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Ring_High1_dark_w1.png",
+        "bundleKey": "cache/9e8e10737ffc3580f93823e8894aceb2/aa8518b4f972282e91fe2214ac63dc8c",
+        "serializedFile": "CAB-ba486484e2075bf3493085cad19d89af",
+        "texturePathId": "1249785226985356860",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/9e8e10737ffc3580f93823e8894aceb2/aa8518b4f972282e91fe2214ac63dc8c/004a33ffc56494c4_1249785226985356860_Ring_High1_dark_w1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High1_fire_1.png",
+      "sha256": "b7a37e787337f958f8a94d2f23ddfeea01697b98132966f51f22f80265dfe667",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High1_fire_1.png",
+        "bundleKey": "cache/405454313d3c834b0258989b5aee6171/eef07584ef3d72a4e77ab7dfbd45e08f",
+        "serializedFile": "CAB-750a36b187b8ec60d0e270d6f92511d3",
+        "texturePathId": "8246817409171682327",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/405454313d3c834b0258989b5aee6171/eef07584ef3d72a4e77ab7dfbd45e08f/43d53b572f555d70_8246817409171682327_Bracelet_High1_fire_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High1_ice_1.png",
+      "sha256": "590b847a1d10582da5f711f53f7d8b67226780773ffcb72724a3e30bfe706e9e",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High1_ice_1.png",
+        "bundleKey": "cache/42c269b69cdff2efad80f04ffd532dff/f14b11b06d77e6606e2d49ae31d8b491",
+        "serializedFile": "CAB-01eb0f4caa8a39eda9dc0e7be9de55b7",
+        "texturePathId": "-6923341477407384973",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/42c269b69cdff2efad80f04ffd532dff/f14b11b06d77e6606e2d49ae31d8b491/a70f90dbc53004ba_-6923341477407384973_Bracelet_High1_ice_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High1_thunder_1.png",
+      "sha256": "02c48e1705010ac87d9b26bd088d64ad5331571e6e019de475fc53e8088a1748",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High1_thunder_1.png",
+        "bundleKey": "cache/5b9cad500eed0a954828537777d5ed70/dc649d288b6a8f72e91272c7ba42181c",
+        "serializedFile": "CAB-0bf03ab2efd6ac0c46852a4a1acf823f",
+        "texturePathId": "-1380500412807475068",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/5b9cad500eed0a954828537777d5ed70/dc649d288b6a8f72e91272c7ba42181c/ace9a361e60418b2_-1380500412807475068_Bracelet_High1_thunder_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High1_light_1.png",
+      "sha256": "fcdff424e8dec60cb8518b440cb69f623593225338c1c42564accc13a4dd002d",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High1_light_1.png",
+        "bundleKey": "cache/bd2dc1180c6dae19aabce69564d1ecb3/b9105d9b8fb7060488866bd1daf768f3",
+        "serializedFile": "CAB-5798948fe1290adc645ef034457fdda3",
+        "texturePathId": "-3414960509898642938",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/bd2dc1180c6dae19aabce69564d1ecb3/b9105d9b8fb7060488866bd1daf768f3/4f0b4862414bccad_-3414960509898642938_Bracelet_High1_light_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High1_dark_1.png",
+      "sha256": "facbeb7e598cfad88a2e13b4a8335301d2bdb6eff5f2730c9d34406d8f066098",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High1_dark_1.png",
+        "bundleKey": "cache/eedcc2b444102292b8cd99a5b87d7ade/d0718cb327d59a917b5b73d967029d59",
+        "serializedFile": "CAB-19236abe52a81cf43e01eb9854fbfef6",
+        "texturePathId": "7312153083806521286",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/eedcc2b444102292b8cd99a5b87d7ade/d0718cb327d59a917b5b73d967029d59/4d1304d9740f4ae3_7312153083806521286_Bracelet_High1_dark_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_fire_1.png",
+      "sha256": "5f8a4bc1644228e1c95fc650e4bfb3893f286a6c59c9dae7ff61ac51eb666e77",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_fire_1.png",
+        "bundleKey": "cache/1f393e746833e8f00486432d8f59ad58/1dd1fb0494da5d4b9c271a64fd48737a",
+        "serializedFile": "CAB-f45d9b7500be6e41199f1c08138adb3d",
+        "texturePathId": "3581453089161032697",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/1f393e746833e8f00486432d8f59ad58/1dd1fb0494da5d4b9c271a64fd48737a/cdee2b2f11e687f7_3581453089161032697_Bracelet_High2_fire_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_ice_1.png",
+      "sha256": "332bb6991317ec107b9479e5deeff9f56e158a22ec1f7235601799975213cf47",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_ice_1.png",
+        "bundleKey": "cache/9ed881a603ed018500ab1f2eff6e73ad/e2ecc60568fbf6f3fc9e085e04485dcf",
+        "serializedFile": "CAB-bccbbe4e5e118a68cbf956c7b8387d77",
+        "texturePathId": "-3979391389483411236",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/9ed881a603ed018500ab1f2eff6e73ad/e2ecc60568fbf6f3fc9e085e04485dcf/e91d0d351d589e7c_-3979391389483411236_Bracelet_High2_ice_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_thunder_1.png",
+      "sha256": "735639823d5a51c04a4b363aab2ed05d775d0efd35304afdab156b42d1d0c40c",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_thunder_1.png",
+        "bundleKey": "cache/7f63e7696355a633968ff826fcd3582a/e05ab51301de03cb4c9edb84f74530b0",
+        "serializedFile": "CAB-35c5c6913bc65f3f7388393a3b7a2e5d",
+        "texturePathId": "431464042759123561",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/7f63e7696355a633968ff826fcd3582a/e05ab51301de03cb4c9edb84f74530b0/5d87065fa2b152af_431464042759123561_Bracelet_High2_thunder_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_light_1.png",
+      "sha256": "600a68aa712dc26d5185cecc75dbc23efa443a062ef3c88235a31a0da3eec4b9",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_light_1.png",
+        "bundleKey": "cache/43e8ac52f08494714d34ae61b50eb7b1/cbbba95b89314f0d65d6c418b4358359",
+        "serializedFile": "CAB-aeb4997e7adcd0865eb42dfbcd6f14f6",
+        "texturePathId": "-1656435043921326701",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/43e8ac52f08494714d34ae61b50eb7b1/cbbba95b89314f0d65d6c418b4358359/2023a2c9319b3680_-1656435043921326701_Bracelet_High2_light_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_dark_1.png",
+      "sha256": "fcb8dd3c6e2fd43292e55e122621c6b365feeacf6e1fba8cfb92223007d1e888",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_dark_1.png",
+        "bundleKey": "cache/50ee4e269d682980263e0ee4e2a3c9bb/b92f4933c50e7e484eb503a1d0fb003f",
+        "serializedFile": "CAB-a2c5e60f71e73e0b0f9d2255fe8274fc",
+        "texturePathId": "8155198214367631034",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/50ee4e269d682980263e0ee4e2a3c9bb/b92f4933c50e7e484eb503a1d0fb003f/2319df862b98c280_8155198214367631034_Bracelet_High2_dark_1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_fire_3.png",
+      "sha256": "0c4d5465552211fc58e927afdbc39060f472613a1de9602df164471e29ee1d0a",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_fire_3.png",
+        "bundleKey": "cache/250ce0f07592e5e356ae242b6de7ba85/33eae3f266e195e76cbf50e5e2f1da34",
+        "serializedFile": "CAB-4b81093d1e7e90b80e3dadd3b2a5c17a",
+        "texturePathId": "1621773836722938554",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/250ce0f07592e5e356ae242b6de7ba85/33eae3f266e195e76cbf50e5e2f1da34/9b4c6e439abca0b7_1621773836722938554_Bracelet_High2_fire_3.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_ice_3.png",
+      "sha256": "ccf71c28136be7505e6cba777af9b45e8a609b9417cb2dde089f20812b4ab1f9",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_ice_3.png",
+        "bundleKey": "cache/8480937fe738a2b3acdf9ef8809a6868/a55a04964b95473618c1cfd7c41e5223",
+        "serializedFile": "CAB-516f95667b169b767862a7b8932889cc",
+        "texturePathId": "-3598112194756761650",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8480937fe738a2b3acdf9ef8809a6868/a55a04964b95473618c1cfd7c41e5223/a9af56b02a838b7f_-3598112194756761650_Bracelet_High2_ice_3.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_thunder_3.png",
+      "sha256": "bbf1e405b2e85e0327b1a5d5b7adf77ca35eaf1f352365d496c0c0691fd4bfdd",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_thunder_3.png",
+        "bundleKey": "cache/b028555e84922b66b5a3e8b6d7b86047/7964016763900a7bd731ac7e9f746ea0",
+        "serializedFile": "CAB-163f89eef9995e5676ff0b592b98247a",
+        "texturePathId": "1003490058888850238",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/b028555e84922b66b5a3e8b6d7b86047/7964016763900a7bd731ac7e9f746ea0/a7fd5ba773121bf6_1003490058888850238_Bracelet_High2_thunder_3.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_light_3.png",
+      "sha256": "9e8c9490e44d06a2c46e86b11aa834d512fb65af716682e008b8a020ce688411",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_light_3.png",
+        "bundleKey": "cache/88932d7f1dd5d640fca1ee636b9320c2/23e47d7c22800cf331aa8a7d85bca4cd",
+        "serializedFile": "CAB-67bdfc46315d6e4505f9837de4d76bfa",
+        "texturePathId": "433855322019460215",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/88932d7f1dd5d640fca1ee636b9320c2/23e47d7c22800cf331aa8a7d85bca4cd/f5568b24cfd77c5b_433855322019460215_Bracelet_High2_light_3.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_dark_3.png",
+      "sha256": "abace56a968e6352271e8e4c736bec5d89f73d72ef6f8f90bd311c16c3730378",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_dark_3.png",
+        "bundleKey": "cache/b8af11cb41f37aade93078500daca866/d1d4678d0396ac5b8857313b6bccbd6f",
+        "serializedFile": "CAB-c41d96c00dbb0165ed31d6444cd23b3d",
+        "texturePathId": "4269917086204352540",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/b8af11cb41f37aade93078500daca866/d1d4678d0396ac5b8857313b6bccbd6f/721512b696c65d9e_4269917086204352540_Bracelet_High2_dark_3.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_fire_w1.png",
+      "sha256": "4e4e470e0f92b5b0a5d6656847f086362915cfe5a5dcfd8e68cf6600aea77073",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_fire_w1.png",
+        "bundleKey": "cache/8f941d6f34fc412d70da68771b2be531/0faef0cda155eca10e0a5793e2e412d4",
+        "serializedFile": "CAB-de8a8f4fbf13af3a04592b6abf9ab4f4",
+        "texturePathId": "-8856996176123484109",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8f941d6f34fc412d70da68771b2be531/0faef0cda155eca10e0a5793e2e412d4/08600dc5ee579fd1_-8856996176123484109_Bracelet_High2_fire_w1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_ice_w1.png",
+      "sha256": "3ea8ba6cdac98b2c14fda6dd059c6decb2ff41bb6e2d65835a03d2b624a850bd",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_ice_w1.png",
+        "bundleKey": "cache/d016d0561cb6980b725b49d7654e5e68/743c0e321e0f5d9a5a57ed9ec7a9c087",
+        "serializedFile": "CAB-bafe49831cd40f06b29711d59a693271",
+        "texturePathId": "-3065760994107429479",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/d016d0561cb6980b725b49d7654e5e68/743c0e321e0f5d9a5a57ed9ec7a9c087/aa2a2d127954b073_-3065760994107429479_Bracelet_High2_ice_w1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_thunder_w1.png",
+      "sha256": "cddc01fde9c85c5e72114d2b9736caa06f7d6de86bf729eca1b7f85868b40b92",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_thunder_w1.png",
+        "bundleKey": "cache/674d9cef5c991d6178297b77f55ee4ab/284f4c215480b5b29850ba41943d6339",
+        "serializedFile": "CAB-81d91001248a75495a2d787acf9f19eb",
+        "texturePathId": "5306503520801272628",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/674d9cef5c991d6178297b77f55ee4ab/284f4c215480b5b29850ba41943d6339/05b59ae4a5a73c93_5306503520801272628_Bracelet_High2_thunder_w1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_light_w1.png",
+      "sha256": "a806a6ef2f6d132bde7e6e1af13729fe8f23f36a7ef34609847a82d1cdcea4ab",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_light_w1.png",
+        "bundleKey": "cache/69312639318a4ab4ae4b991b15d33e6e/fda09cb86454da16f99455a4f74db66e",
+        "serializedFile": "CAB-f85431c21eb25a67f776099720a3a7d3",
+        "texturePathId": "4396369221466492983",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/69312639318a4ab4ae4b991b15d33e6e/fda09cb86454da16f99455a4f74db66e/a7c488d73640cd61_4396369221466492983_Bracelet_High2_light_w1.png"
+      }
+    },
+    {
+      "file": "icons/Bracelet_High2_dark_w1.png",
+      "sha256": "7c2781433e2c711bf85314c3bf2a504c6f2b428200954d7eb58f36ff05fb40ba",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Bracelet_High2_dark_w1.png",
+        "bundleKey": "cache/2661c04b63ec2e96afff803034319a70/248cdf6bc6bdbdb4e5f05a9c1b9281ad",
+        "serializedFile": "CAB-f18a2e53c8bead0fec2f25c77f3818da",
+        "texturePathId": "1059855166050961640",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/2661c04b63ec2e96afff803034319a70/248cdf6bc6bdbdb4e5f05a9c1b9281ad/27a3f47d987c1d9b_1059855166050961640_Bracelet_High2_dark_w1.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High2_fire_w5.png",
+      "sha256": "27d3b75a23e89b017403b5fad37b2e477516bb738c5c146866b5e6b46226d844",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High2_fire_w5.png",
+        "bundleKey": "cache/20ee6ba6f4e5e517dbd461bcae8db34f/c96483c800e90d8ea1bc436c588a887a",
+        "serializedFile": "CAB-7fe05c693fc7548d7c39352cc275d541",
+        "texturePathId": "-1610511764467843801",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/20ee6ba6f4e5e517dbd461bcae8db34f/c96483c800e90d8ea1bc436c588a887a/09fd9be13882b5cf_-1610511764467843801_Necklace_High2_fire_w5.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High2_ice_w5.png",
+      "sha256": "30e36f8e38d69d249a82b623f6288bb58f18e961faf79f732c28cdf49294df87",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High2_ice_w5.png",
+        "bundleKey": "cache/f1ca166d9f66f7a0710a76523698e304/3baec9dc91536ebd78146a04556abb52",
+        "serializedFile": "CAB-1f990e3c21b64cf80d0bad606421bdb1",
+        "texturePathId": "-7485887532068820663",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/f1ca166d9f66f7a0710a76523698e304/3baec9dc91536ebd78146a04556abb52/63126fb2c80b2219_-7485887532068820663_Necklace_High2_ice_w5.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High2_thunder_w5.png",
+      "sha256": "298f91bd8ab56baaa61ad2a851f0d9f0dcbc2f388d01427f96cfe9b89c4ea139",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High2_thunder_w5.png",
+        "bundleKey": "cache/5640be8590229c310280937b977ba922/046b0af5714d724147c9ec9ba552344d",
+        "serializedFile": "CAB-6b04815180901c8618003f6cf9208476",
+        "texturePathId": "8693953349661995561",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/5640be8590229c310280937b977ba922/046b0af5714d724147c9ec9ba552344d/30c91cd20d5e79f9_8693953349661995561_Necklace_High2_thunder_w5.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High2_light_w5.png",
+      "sha256": "03e3fb0b66b07c7e21154c433cd3106ca8b2f929c1011793607eb9152b39c42b",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High2_light_w5.png",
+        "bundleKey": "cache/bb657cd6a23b4a3f35a71f7c3d0cf43e/48b513ebce4149faa69531aeef08354c",
+        "serializedFile": "CAB-d6462a72353baa819524887b6dd2c97b",
+        "texturePathId": "-1952874623489436961",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/bb657cd6a23b4a3f35a71f7c3d0cf43e/48b513ebce4149faa69531aeef08354c/0964c9432ef4ba33_-1952874623489436961_Necklace_High2_light_w5.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High2_dark_w5.png",
+      "sha256": "94b3f73f28d5cb586b8c6eca9f90f0fe7cee342d25ed679922d17b36a5da86f9",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High2_dark_w5.png",
+        "bundleKey": "cache/81a6ff6852032e6e6ab1ec387bd71491/5c6df92d7f486ac1a8d2c1246f72662d",
+        "serializedFile": "CAB-3c7d2e8b462c8ee9c7c72db2bf4100a9",
+        "texturePathId": "2117366112633054188",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/81a6ff6852032e6e6ab1ec387bd71491/5c6df92d7f486ac1a8d2c1246f72662d/d25b9697cbbda2c2_2117366112633054188_Necklace_High2_dark_w5.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High4_fire.png",
+      "sha256": "b9891442634c502f136eb3eae73bce3685d3cdb78ba4b12a7700f5aca0d93fb8",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High4_fire.png",
+        "bundleKey": "cache/ae82b057d1b7e926a519ca714df0de41/b458a31c6121e5d78e3792420b41f227",
+        "serializedFile": "CAB-8284755d0e608ce9fc7c7ee8688ab249",
+        "texturePathId": "7124270949798815915",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/ae82b057d1b7e926a519ca714df0de41/b458a31c6121e5d78e3792420b41f227/fb0c4631b1ed29bd_7124270949798815915_Necklace_High4_fire.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High4_ice.png",
+      "sha256": "2512964dea50157b0168a73a275a408050a80e72b348b1a54afe83aa23b09804",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High4_ice.png",
+        "bundleKey": "cache/94a55292b425d31f1abd7626d7974fb2/9d4b36c952bd330a1c6446d5aaaad479",
+        "serializedFile": "CAB-db7d3b899c3663af37e7c3b1a4df0153",
+        "texturePathId": "-7722240865529646866",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/94a55292b425d31f1abd7626d7974fb2/9d4b36c952bd330a1c6446d5aaaad479/f5115c9c5fa3434c_-7722240865529646866_Necklace_High4_ice.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High4_thunder.png",
+      "sha256": "1c7070da95cee75b641eadc9b90a599079c48acdfdb0d56a286e7902fe3c7a82",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High4_thunder.png",
+        "bundleKey": "cache/10057c148674ebd69ee2ccca3429b81b/e21f35aa67a3919b37636bfeba99e116",
+        "serializedFile": "CAB-033648f33d83450a8a3ee8ab2ac734ec",
+        "texturePathId": "-8095033397515509587",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/10057c148674ebd69ee2ccca3429b81b/e21f35aa67a3919b37636bfeba99e116/00c6c8478dff7056_-8095033397515509587_Necklace_High4_thunder.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High4_light.png",
+      "sha256": "0d34886d6e586b30860b78a1a03324afa818ad7b6b28d6f56f6b71d539bb35a8",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High4_light.png",
+        "bundleKey": "cache/65bcf6b408d5c59eef51069699495adf/82b30c2d5063a2aaa6e4ae51435c52fd",
+        "serializedFile": "CAB-a33b0e955dec52c06513f45364ee442f",
+        "texturePathId": "-371493174937839948",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/65bcf6b408d5c59eef51069699495adf/82b30c2d5063a2aaa6e4ae51435c52fd/dd7cedb0bc9f2b4a_-371493174937839948_Necklace_High4_light.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High4_dark.png",
+      "sha256": "10a0f404bd13c1cf9713303517c6c18d6bf6042aa05c3ccc28753a93f2ba813c",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High4_dark.png",
+        "bundleKey": "cache/636b28c23a9e9a392e16611c3a5d02e6/ef4c7ac57e0f2ccbed292d866f08c6ff",
+        "serializedFile": "CAB-56c4a250f86c0bfb07bd720237420bec",
+        "texturePathId": "-873140490242019287",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/636b28c23a9e9a392e16611c3a5d02e6/ef4c7ac57e0f2ccbed292d866f08c6ff/3c2095f59a19d818_-873140490242019287_Necklace_High4_dark.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High3_fire.png",
+      "sha256": "09cd77fe91e786073bc43e9ca0f9188a48c308858945d4660c987b87ac2f6b0d",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High3_fire.png",
+        "bundleKey": "cache/bea26ace39becfdcebb09f1dcf8bc635/e28e05ac8cf685465177cda3555c2fb4",
+        "serializedFile": "CAB-b67387fd2ed9fff31d7e01b4adf57a65",
+        "texturePathId": "5399567074014104176",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/bea26ace39becfdcebb09f1dcf8bc635/e28e05ac8cf685465177cda3555c2fb4/1107be0d603c2255_5399567074014104176_Necklace_High3_fire.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High3_ice.png",
+      "sha256": "c3b38496b298d40655f353078e315d719adab4298a54b2207fd22fe2d3acc2d5",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High3_ice.png",
+        "bundleKey": "cache/09f45a41840211f51d9c7a5da662f57a/84499be464031e9dadad22f10b772330",
+        "serializedFile": "CAB-822e69a3a21f1a581fe3e914e969aba1",
+        "texturePathId": "406555420515790544",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/09f45a41840211f51d9c7a5da662f57a/84499be464031e9dadad22f10b772330/71e3846972dec7d1_406555420515790544_Necklace_High3_ice.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High3_thunder.png",
+      "sha256": "8b6d03375a0a3e3a4dba788d9c5f206af91335657e430fd7e7d142811b4f3767",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High3_thunder.png",
+        "bundleKey": "cache/4bfba51435c37b86895f5a8c1deb01a8/620a72e24f1d5a869cbab0c16e8b4060",
+        "serializedFile": "CAB-a2c5ec5d4e8080ac05ed1eea34137694",
+        "texturePathId": "7825873692373165320",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/4bfba51435c37b86895f5a8c1deb01a8/620a72e24f1d5a869cbab0c16e8b4060/ba944300c3ebd7aa_7825873692373165320_Necklace_High3_thunder.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High3_light.png",
+      "sha256": "813a90d03e8d1d970abef268a72ca72c1471f976cfbe503364e5fe0bce02293c",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High3_light.png",
+        "bundleKey": "cache/4548c80e7cd93d38e90d2f2a07bc88e0/3e1b1659459cd1764fb95feb262cf18e",
+        "serializedFile": "CAB-34cd9db128909105082b489154792b19",
+        "texturePathId": "5155329129281573643",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/4548c80e7cd93d38e90d2f2a07bc88e0/3e1b1659459cd1764fb95feb262cf18e/50992461e7935873_5155329129281573643_Necklace_High3_light.png"
+      }
+    },
+    {
+      "file": "icons/Necklace_High3_dark.png",
+      "sha256": "58d2215df9e79a4d95a0766a9b056dbf0a603ca7809148022687a16cf4bb9180",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Accessory/Necklace_High3_dark.png",
+        "bundleKey": "cache/aa4b5a56e730cfcce254c50a125a75bd/d3dcfa12728fbff3546c46c306590a08",
+        "serializedFile": "CAB-a41081d4c9a6fdedb46a54552e505876",
+        "texturePathId": "-5411987107689331568",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/aa4b5a56e730cfcce254c50a125a75bd/d3dcfa12728fbff3546c46c306590a08/614a483169b10f3a_-5411987107689331568_Necklace_High3_dark.png"
+      }
+    },
+    {
+      "file": "icons/ThumbnailPlusReleaseMaterial.png",
+      "sha256": "58af08aeab7809f68d9cd069016e43002f1acd8986d2446d18dff1d25d758665",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/IconItemL/ThumbnailPlusReleaseMaterial.png",
+        "bundleKey": "cache/337626e4a9381b8ba8cb65e5d6e45618/5fc7be0f7b4b57f64b43cc6b7ff49467",
+        "serializedFile": "CAB-6eb791c536ca219b450375829dab2944",
+        "texturePathId": "6071084222262282363",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/337626e4a9381b8ba8cb65e5d6e45618/5fc7be0f7b4b57f64b43cc6b7ff49467/57275095933bde2b_6071084222262282363_ThumbnailPlusReleaseMaterial.png"
+      }
+    },
+    {
+      "file": "icons/ThumbnailPlusChangeMaterial.png",
+      "sha256": "604460e4fcd6f8442703fb604b9f6afbffe33ebf83a58e4e1837599e5342a168",
+      "dimensions": [
+        184,
+        184
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/IconItemL/ThumbnailPlusChangeMaterial.png",
+        "bundleKey": "cache/33dd7f7f7cd36bdb6cb8614f8afb28ca/086d538214f4dd875524980595875cf7",
+        "serializedFile": "CAB-bb28be4b5422dfc0268d9ec158f96d61",
+        "texturePathId": "-354436188753554860",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/33dd7f7f7cd36bdb6cb8614f8afb28ca/086d538214f4dd875524980595875cf7/33299bdefcb7da63_-354436188753554860_ThumbnailPlusChangeMaterial.png"
+      }
+    },
+    {
+      "file": "FriendStreetShop.png",
+      "sha256": "3044263bdc185ea9cdec4cfaaa1fb441f7a21796cd491fede4ec8043d7c199ac",
+      "dimensions": [
+        2772,
+        1176
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/Contents/Image/Background/FriendStreetShop/Texture/FriendStreetShop.png",
+        "bundleKey": "cache/3f4776095ee9a5a68fb67f7d7e1a96e2/2f6dc856ce2d82813009538f54dab596",
+        "serializedFile": "CAB-d441b0e420119c0212294df7e3ace848",
+        "texturePathId": "5421860444908071403",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/3f4776095ee9a5a68fb67f7d7e1a96e2/2f6dc856ce2d82813009538f54dab596/e753825f82e75a46_5421860444908071403_FriendStreetShop.png"
+      }
+    },
+    {
+      "file": "btnExchangeShopListNomal.png",
+      "sha256": "e6a94b27800ca8fb93dcf0f3ea6d2edf9fd8bae8c58331b387e64a1d7fe9ce35",
+      "dimensions": [
+        324,
+        140
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/ExchangeShop/btnExchangeShopListNomal.png",
+        "bundleKey": "cache/69710ffebbc2c2e9b5355afaa008412a/d0617f9198e3d47935f17bd169fcb7a2",
+        "serializedFile": "CAB-9132e1bfe16b5121699a6a50125c0c45",
+        "texturePathId": "-6332716351105309317",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/69710ffebbc2c2e9b5355afaa008412a/d0617f9198e3d47935f17bd169fcb7a2/332a4abe7aa10135_-6332716351105309317_btnExchangeShopListNomal.png"
+      }
+    },
+    {
+      "file": "btnExchangeShopListActive.png",
+      "sha256": "bd409133d2b9450675b7df0c8adbe0cf8d91631acd1b680bcb50fdc30228fc10",
+      "dimensions": [
+        324,
+        140
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/ExchangeShop/btnExchangeShopListActive.png",
+        "bundleKey": "cache/69710ffebbc2c2e9b5355afaa008412a/d0617f9198e3d47935f17bd169fcb7a2",
+        "serializedFile": "CAB-9132e1bfe16b5121699a6a50125c0c45",
+        "texturePathId": "6631427612465802199",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/69710ffebbc2c2e9b5355afaa008412a/d0617f9198e3d47935f17bd169fcb7a2/332a4abe7aa10135_6631427612465802199_btnExchangeShopListActive.png"
+      }
+    },
+    {
+      "file": "btnExchangeShopListDisable.png",
+      "sha256": "743f71d7e7a7885d976f13d873d2ba341545584fccb0f9cfaa8b946db5d51274",
+      "dimensions": [
+        324,
+        140
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/ExchangeShop/btnExchangeShopListDisable.png",
+        "bundleKey": "cache/69710ffebbc2c2e9b5355afaa008412a/d0617f9198e3d47935f17bd169fcb7a2",
+        "serializedFile": "CAB-9132e1bfe16b5121699a6a50125c0c45",
+        "texturePathId": "-5114160785880352388",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/69710ffebbc2c2e9b5355afaa008412a/d0617f9198e3d47935f17bd169fcb7a2/332a4abe7aa10135_-5114160785880352388_btnExchangeShopListDisable.png"
+      }
+    },
+    {
+      "file": "itemBackground.png",
+      "sha256": "219e6124a1a17e007e2de458902207a8ead098f56b02df5524372700019cd046",
+      "dimensions": [
+        300,
+        196
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/HCShopAtlas/itemBackground.png",
+        "bundleKey": "cache/114a1897f6121503dc763035eb513600/f09e36f20b77e8890832257a1de58548",
+        "serializedFile": "CAB-8aba5eef08be1c1387d04ee094edfc27",
+        "texturePathId": "-1943734545958608531",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/114a1897f6121503dc763035eb513600/f09e36f20b77e8890832257a1de58548/e619c2a5b2967e3c_-1943734545958608531_itemBackground.png"
+      }
+    },
+    {
+      "file": "IconGP.png",
+      "sha256": "6d2ac8190ab3d13bbbab740552b2baed77c54b2d5c2a65c0a1cda1688875a390",
+      "dimensions": [
+        44,
+        44
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/Icon/IconGP.png",
+        "bundleKey": "cache/cd00fbe9036553502d1aa92dfc70c929/11a66a6f1104706c6c9e1358f1e8f5eb",
+        "serializedFile": "CAB-cd53af882d46d7a6fe16b5735bb95693",
+        "texturePathId": "4504625445480402886",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/cd00fbe9036553502d1aa92dfc70c929/11a66a6f1104706c6c9e1358f1e8f5eb/5a5d56d946f860fd_4504625445480402886_IconGP.png"
+      }
+    },
+    {
+      "file": "IconHomeShopDefault.png",
+      "sha256": "bdc328bb543875411d9f57ab7445404919500f82344f24188a7a150506d27e5f",
+      "dimensions": [
+        104,
+        104
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/TerminalIcon/IconHomeShopDefault.png",
+        "bundleKey": "cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a",
+        "serializedFile": "CAB-e2bdae286d93595f0d8730d9c4e1365f",
+        "texturePathId": "-2703168089668661609",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a/6b8084b444f01031_-2703168089668661609_IconHomeShopDefault.png"
+      }
+    },
+    {
+      "file": "IconHomeCatShopDefault.png",
+      "sha256": "74791a067b748d1a7f334e26ecf57fcc871e04c81c83605d69ce43a9e8235f21",
+      "dimensions": [
+        104,
+        104
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/TerminalIcon/IconHomeCatShopDefault.png",
+        "bundleKey": "cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a",
+        "serializedFile": "CAB-e2bdae286d93595f0d8730d9c4e1365f",
+        "texturePathId": "-8330032145280943172",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/8baf1081c01b591794d32b2a312726c7/ced4e2a0799a3ea5ce20225bbbf9517a/6b8084b444f01031_-8330032145280943172_IconHomeCatShopDefault.png"
+      }
+    },
+    {
+      "file": "SelectFlameBaceOff.png",
+      "sha256": "cc140fc82c70eef16b31fb61d0ca764ceecae44b842e921dbe176ea2ce66da09",
+      "dimensions": [
+        68,
+        56
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/AccessoryAbilityEffectLottery/SelectFlameBaceOff.png",
+        "bundleKey": "cache/15aecca6584d3bf614cf7eb967d7ced6/1df34c3bce4b5aad307c4118fafeaf61",
+        "serializedFile": "CAB-321a54e962767bf416b7df47478d6c3c",
+        "texturePathId": "-5932757586517387125",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/15aecca6584d3bf614cf7eb967d7ced6/1df34c3bce4b5aad307c4118fafeaf61/e3059f3219e5f050_-5932757586517387125_SelectFlameBaceOff.png"
+      }
+    },
+    {
+      "file": "SelectFlameBaceOn.png",
+      "sha256": "5d1f83a596dfb5b0da8b82f1cb29577fc2c3f4d11deb03ebe7864d0b304da39b",
+      "dimensions": [
+        68,
+        56
+      ],
+      "transformation": "None. Byte-identical copy of the locally decoded Texture2D.",
+      "original": {
+        "assetPath": "Assets/UI/Texture/AccessoryAbilityEffectLottery/SelectFlameBaceOn.png",
+        "bundleKey": "cache/15aecca6584d3bf614cf7eb967d7ced6/1df34c3bce4b5aad307c4118fafeaf61",
+        "serializedFile": "CAB-321a54e962767bf416b7df47478d6c3c",
+        "texturePathId": "8285292770577041670",
+        "textureFormat": "BC7",
+        "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/15aecca6584d3bf614cf7eb967d7ced6/1df34c3bce4b5aad307c4118fafeaf61/e3059f3219e5f050_8285292770577041670_SelectFlameBaceOn.png"
+      }
+    },
+    {
+      "file": "MSatsukiDefault.png",
+      "sha256": "2a9f7818cf66398b56ad20e388547cabf821e9dd7feacb61462e1df239bb1231",
+      "transformation": "Static render of the original ADV mesh layers by HeavenBurnsRedEditor/tools/render_adv_character.py --character MSatsukiDefault --presets Default --supersample 2, trimmed to the alpha bounds. Not AI generated.",
+      "original": {
+        "character": "MSatsukiDefault",
+        "preset": "Default",
+        "sourceAtlas": "images/cache/6a3784729ade2d66e9343846a8845df9/c16ca953c5c62f6ce9c46ee0e023de36/6fc61f13aa512768_9025180096235048668_MSatsukiDefaultAdv.png",
+        "layers": 4
+      }
+    }
+  ]
+}

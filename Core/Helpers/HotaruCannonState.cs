@@ -34,6 +34,8 @@ public sealed class HotaruCannonState
     [JsonInclude] public decimal BaseBlockBonus { get; internal set; }
     [JsonInclude] public decimal PendingReplyBlock { get; internal set; }
     [JsonInclude] public int PendingReplyDraw { get; internal set; }
+    // Light Points' missing debuffs per enemy after the cannon's next whole action
+    // (cut resistance points before 2026-11-09; the saved name stays).
     [JsonInclude] public int PendingResistanceLoss { get; internal set; }
     [JsonInclude] public int PendingLightVulnerable { get; internal set; }
     [JsonInclude] public int PendingLightFragile { get; internal set; }
@@ -161,7 +163,7 @@ public sealed class HotaruCannonCombatState
         catch (JsonException) { state = null; }
         state ??= new HotaruCannonCombatState();
         state.Rare ??= new HotaruRareCannonState();
-        state.Rare.BrokenResistanceMasks ??= new();
+        state.Rare.FirstDebuffs ??= new();
         state.Rare.InheritedRolls ??= new();
         HotaruCannonState[] saved = state.Cannons ?? Array.Empty<HotaruCannonState>();
         state.Cannons = Enumerable.Range(0, HotaruCannonKinds.Count)

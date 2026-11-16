@@ -4,12 +4,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Patches.Combat;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -19,7 +23,9 @@ public sealed class DodgePower : PowerModel, ICustomPower
 {
     internal const int MaximumAmount = 40;
     internal const int ExpandedMaximumAmount = 80;
-    internal const decimal DamageBonusPerStack = 0.025m;
+    // 31A's Strength and Dexterity from layers; see DodgeCombatHelper.GetStatBonus.
+    internal const int HbrStatsPerLayer = 2;
+    internal const int NativeLayersPerStat = 5;
 
     public override PowerType Type => PowerType.Buff;
 
@@ -33,6 +39,36 @@ public sealed class DodgePower : PowerModel, ICustomPower
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
 
+    [System.ThreadStatic] private static bool? _relicTipHbr;
+
+    // Under HBR each layer stands for 100 points. A live power follows its owner and, with the
+    // 31A relic, states the Strength and Dexterity it grants now; the canonical tip follows
+    // the 31A relic or card whose hover tips are being built.
+    public override LocString Description
+    {
+        get
+        {
+            bool owned = IsMutable && Owner != null;
+            bool hbr = owned ? HbrBattleStatsHelper.IsEnabled(Owner)
+                : _relicTipHbr ?? HbrVigorSkillDescriptionPatch.IsHbrCardHover;
+            bool live = owned && DodgeCombatHelper.GrantsStats(Owner);
+            if (!hbr && !live) return base.Description;
+            LocString text = new("powers", Id.Entry + (hbr
+                ? live ? ".hbrOwnedDescription" : ".hbrDescription"
+                : ".ownedDescription"));
+            if (live) text.Add("DodgeStats", DodgeCombatHelper.GetStatBonus(Owner));
+            return text;
+        }
+    }
+
+    internal static IHoverTip RelicTip(bool hbr)
+    {
+        bool? previous = _relicTipHbr;
+        _relicTipHbr = hbr;
+        try { return HoverTipFactory.FromPower<DodgePower>(); }
+        finally { _relicTipHbr = previous; }
+    }
+
     public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext,
         CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
     {
@@ -43,14 +79,21 @@ public sealed class DodgePower : PowerModel, ICustomPower
             await PowerCmd.ModifyAmount(choiceContext, this, next - Amount, null, null);
     }
 
-    public decimal ModifyDamageMultiplicative(Creature target, decimal amount,
-        ValueProp props, Creature dealer, CardModel cardSource) =>
-        dealer == Owner && target != null && target.Side != Owner.Side && amount > 0m &&
-        DodgeCombatHelper.GrantsDamageBonus(Owner)
-            ? 1m + GetAmountBonus(DodgeCombatHelper.GetAmount(Owner)) : 1m;
+    // Native Strength and Dexterity from the layers, with native Strength's and Dexterity's
+    // eligibility. HBR reads the same amount as attributes in HbrStatPowerHelper instead,
+    // and never as a flat bonus.
+    public decimal ModifyDamageAdditive(Creature target, decimal amount, ValueProp props,
+        Creature dealer, CardModel cardSource) =>
+        dealer == Owner && props.IsPoweredAttack() && !HbrBattleStatsHelper.IsEnabled(Owner)
+            ? DodgeCombatHelper.GetStatBonus(Owner) : 0m;
 
-    internal static decimal GetAmountBonus(int amount) =>
-        System.Math.Clamp(amount, 0, ExpandedMaximumAmount) * DamageBonusPerStack;
+    public override decimal ModifyBlockAdditive(Creature target, decimal block, ValueProp props,
+        CardModel cardSource, CardPlay cardPlay)
+    {
+        if (HbrBattleStatsHelper.IsEnabled(Owner)) return 0m;
+        if (cardSource != null ? cardSource.Owner?.Creature != Owner : target != Owner) return 0m;
+        return props.IsPoweredCardOrMonsterMoveBlock() ? DodgeCombatHelper.GetStatBonus(Owner) : 0m;
+    }
 
     internal void RefreshMaximum()
     {

@@ -18,7 +18,7 @@ internal static class SummerGrassDreamCombatHelper
     // generated combat copies also hear this hook but must not grant it again.
     internal static Task BeforeHandDraw(SummerGrassDreamHbrgoSaki card, Player player)
     {
-        if (card == null || player == null || card.Owner != player ||
+        if (card == null || player == null || card.Owner != player || ThirtyGProposalState.IsDisabled(card) ||
             player.Creature?.IsAlive != true || player.PlayerCombatState == null ||
             !card.HasUpgradeEffect(5) ||
             !player.Deck.Cards.Any(owned => ReferenceEquals(owned, card)))

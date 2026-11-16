@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://skxx4xygkq4p"
-valid=false
+path="res://.godot/imported/multiplayer_hand_hbrgo_saki_paper.png-7c07a88249276bfdd60679419124ebda.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://images/ui/hands/multiplayer_hand_hbrgo_saki_paper.png"
+dest_files=["res://.godot/imported/multiplayer_hand_hbrgo_saki_paper.png-7c07a88249276bfdd60679419124ebda.ctex"]
 
 [params]
 

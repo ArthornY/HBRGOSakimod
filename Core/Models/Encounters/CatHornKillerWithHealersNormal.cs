@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC03ExpTraining01Virtual_S01.
+// HBR MC03ExpTraining01Virtual_S01: both heal hoppers copy
+// CrestHopperHealVirtual_MC03; the second starts one dp step ahead.
 public sealed class CatHornKillerWithHealersNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -20,11 +21,16 @@ public sealed class CatHornKillerWithHealersNormal : EncounterModel, IHbrgoEncou
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var first = (HealHopper)ModelDb.Monster<HealHopper>().ToMutable();
+        first.MoveTableVariant = HealHopper.OmegaVariant;
+        var second = (HealHopper)ModelDb.Monster<HealHopper>().ToMutable();
+        second.MoveTableVariant = HealHopper.OmegaVariant;
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
-            (ModelDb.Monster<HealHopper>().ToMutable(), null),
+            (first, null),
             (ModelDb.Monster<CatHornKiller>().ToMutable(), null),
-            (ModelDb.Monster<HealHopper>().ToMutable(), null)
+            (second, null)
         };
     }
 }

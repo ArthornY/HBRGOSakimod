@@ -20,10 +20,22 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 {
     private int _magicSwordModeHitCount = -1;
+    internal bool HasExecutedForFinisher { get; private set; }
+
+    internal void PrepareForFinisherAttempt()
+    {
+        AssertMutable();
+        HasExecutedForFinisher = false;
+    }
 
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/magic_sword_lucky_seven_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
+
+    protected override bool IsPlayable => false;
+
+    public override bool ShouldPlay(CardModel card, AutoPlayType autoPlayType) =>
+        !ReferenceEquals(card, this) || _magicSwordModeHitCount >= 0;
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
@@ -50,12 +62,22 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     public override void ModifyShuffleOrder(Player player, List<CardModel> cards, bool isInitialShuffle)
     {
-        if (isInitialShuffle || Owner != player)
+        if (Owner != player)
         {
             return;
         }
 
+        foreach (CardModel card in cards.OfType<MagicSwordLuckySevenHbrgoSaki>().ToArray())
+            if (card.Pile?.IsCombatPile == true) card.RemoveFromState();
         cards.RemoveAll(card => card is MagicSwordLuckySevenHbrgoSaki);
+    }
+
+    public override async Task AfterCardChangedPiles(CardModel card,
+        PileType oldPileType, AbstractModel clonedBy)
+    {
+        if (ReferenceEquals(card, this) && _magicSwordModeHitCount < 0 &&
+            card.Pile?.Type is PileType.Hand or PileType.Draw or PileType.Discard)
+            await CardPileCmd.RemoveFromCombat(card);
     }
 
     public void SetMagicSwordModeHitCount(int hitCount)
@@ -66,9 +88,13 @@ public sealed class MagicSwordLuckySevenHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        // Mark this particular generated/clone instance, including a real
+        // zero-hit play. A rejected AutoPlay never reaches this boundary.
+        HasExecutedForFinisher = true;
         CardPlayCompatibility.SetResultPile(cardPlay, PileType.None);
         int hitCount = GetHitCount();
-        if (hitCount > 0 && !CombatManager.Instance.IsOverOrEnding)
+        if ((hitCount > 0 || ThirtyOneOClassRelicHelper.HasLuckySevenBonus(Owner)) &&
+            !CombatManager.Instance.IsOverOrEnding)
         {
             await DamageCmd.Attack(base.DynamicVars.Damage.BaseValue)
                 .FromCardCompat(this, cardPlay)

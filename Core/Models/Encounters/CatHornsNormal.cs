@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC01_05_Battle01: two cat horns.
+// HBR MC01_05_Battle01: two cat horns, both α (CatHornSmallVirtual_first);
+// the second starts one dp step ahead.
 public sealed class CatHornsNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -19,10 +20,19 @@ public sealed class CatHornsNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        CatHorn second = First();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
-            (ModelDb.Monster<CatHorn>().ToMutable(), null),
-            (ModelDb.Monster<CatHorn>().ToMutable(), null)
+            (First(), null),
+            (second, null)
         };
+    }
+
+    private static CatHorn First()
+    {
+        CatHorn horn = (CatHorn)ModelDb.Monster<CatHorn>().ToMutable();
+        horn.MoveTableVariant = CatHorn.FirstVariant;
+        return horn;
     }
 }

@@ -25,7 +25,8 @@ public sealed class MeditationHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new PowerVar<SwordheartPower>(1m),
-            new CardsVar(1)
+            new CardsVar(3),
+            new EnergyVar(1)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
@@ -57,6 +58,7 @@ public sealed class MeditationHbrgoSaki : CardModel
             choiceContext,
             DynamicVars.Cards.BaseValue,
             Owner);
+        await PlayerCmd.GainEnergy(DynamicVars.Energy.IntValue, Owner);
     }
 
     protected override void OnUpgrade()

@@ -1,4 +1,5 @@
 using Godot;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -31,7 +32,7 @@ public partial class NPotionTargetDamagePreview : Control
         try
         {
             NHoverTipSet.shouldBlockHoverTips = false;
-            NHoverTipSet.CreateAndShow(this, Potion.HoverTips, HoverTipAlignment.Center);
+            NativeHoverTipCompatibility.CreateAndShowBelow(this, Potion.HoverTips);
         }
         finally
         {

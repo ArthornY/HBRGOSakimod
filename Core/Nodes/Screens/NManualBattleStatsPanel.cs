@@ -10,13 +10,14 @@ namespace HBRGOSakiMod.Core.Nodes.Screens;
 
 // One set of controls is built per open manual; saved progression changes only
 // update their text. Resizing changes the grid columns, not the control tree.
+// Drawn in the phone manual's page style: stat cards in a 3x2 grid, the rules as
+// collapsible sections (ui-concepts/manual-phone-20261104, 战斗属性).
 public partial class NManualBattleStatsPanel : Control
 {
-    private static readonly Color Accent = new("#ed72aa");
-    private static readonly Color Muted = new("#a7afb7");
     private ElectronicSoldierManual _manual;
     private ScrollContainer _scroll;
     private GridContainer _statsGrid;
+    private readonly PanelContainer[] _cards = new PanelContainer[6];
     private readonly Label[] _values = new Label[6];
     private readonly Label[] _senseGrowth = new Label[6];
     private Label _status;
@@ -24,6 +25,7 @@ public partial class NManualBattleStatsPanel : Control
     private Label _growth;
     private string _lastState;
     private HbrBattleStats _lastStats;
+    private int _highlight = -1;
 
     internal Control DefaultFocusedControl => _scroll ?? (Control)this;
 
@@ -40,6 +42,14 @@ public partial class NManualBattleStatsPanel : Control
     public override void _Notification(int what)
     {
         if (what == NotificationResized) LayoutContent();
+    }
+
+    // The stat dock on the manual's home opens this page with its stat lit; -1 clears it.
+    internal void Highlight(int index)
+    {
+        _highlight = index;
+        if (_scroll != null) _scroll.ScrollVertical = 0;
+        StyleCards();
     }
 
     internal void Refresh(ElectronicSoldierManual manual)
@@ -66,7 +76,7 @@ public partial class NManualBattleStatsPanel : Control
             ? $"HBR 战斗等级  Lv.{manual.HbrBattleLevel}"
             : "本局未启用 HBR 数值测试";
         _growth.Text = enabled
-            ? $"初始六维基础各 {HbrBattleStatsHelper.InitialStat}；普通战、精英战、Boss 战胜利分别提升 1、2、3 级，每级六维各 +4。\n已确认的六感每级使对应战斗属性 +2，按有效等级结算；未确认的分配不改变此处数值。等级本身不再直接增加掷骰出目，原有六感出牌效果仍保留。\n此处显示包含当前力量、敏捷效果的实时属性。浮游炮沿用本体属性及本体增益；幻影继承基础六维，并保留自身等级加成，只计算自身的力量、敏捷。"
+            ? $"初始六维基础各 {HbrBattleStatsHelper.InitialStat}；普通战、精英战、Boss 战胜利分别提升 1、2、3 级，每级六维各 +4。\n已确认的六感每级使对应战斗属性 +2，按有效等级结算；未确认的分配不改变此处数值。\n此处显示包含当前力量、敏捷效果的实时属性。浮游炮沿用本体属性及本体增益；幻影继承基础六维，并保留自身等级加成，只计算自身的力量、敏捷。"
             : "旧存档继续使用原有数值，不会在读档或打开手册时自动转换。\n使用此测试版本新开一局，才会启用 HBR 数值系统。";
         _enemy.Visible = enabled;
         if (!enabled) return;
@@ -106,61 +116,70 @@ public partial class NManualBattleStatsPanel : Control
         _scroll.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _scroll.GuiInput += ScrollInput;
         _scroll.GetVScrollBar().FocusMode = FocusModeEnum.All;
+        HbrManualPhoneStyle.Scroll(_scroll);
 
         VBoxContainer content = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         content.AddThemeConstantOverride("separation", 14);
         _scroll.AddChild(content);
-        content.AddChild(MakeLabel("战斗属性", 26, Colors.White));
-        content.AddChild(MakeLabel("力、器用、知性、体力、精神、运用于战斗计算。启用测试数值后，由战斗等级与已确认六感共同成长。", 18, Muted));
-        _status = MakeLabel("", 21, Accent);
+        // #stats-head: 32px with the cyan glow.
+        _status = HbrManualPhoneStyle.Heading("", 32, Colors.White, glow: true);
+        _status.CustomMinimumSize = new Vector2(0f, 44f);
         content.AddChild(_status);
         _statsGrid = new GridContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _statsGrid.AddThemeConstantOverride("h_separation", 10);
-        _statsGrid.AddThemeConstantOverride("v_separation", 10);
+        _statsGrid.AddThemeConstantOverride("h_separation", 14);
+        _statsGrid.AddThemeConstantOverride("v_separation", 14);
         content.AddChild(_statsGrid);
-        string[] names = ["力", "器用", "知性", "体力", "精神", "运"];
+        string[] names = ["力量", "灵巧", "智慧", "体力", "精神", "运气"];
         string[] uses = ["HP 攻击的主要参照", "DP 攻击的主要参照", "格挡倍率的参照", "防御参照属性", "防御参照属性", "自然暴击概率的参照"];
         for (int i = 0; i < names.Length; i++)
         {
-            PanelContainer card = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            card.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+            PanelContainer card = new()
             {
-                BgColor = new Color("#25282e"),
-                ContentMarginLeft = 14, ContentMarginRight = 14,
-                ContentMarginTop = 10, ContentMarginBottom = 10,
-                CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6,
-                CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6
-            });
+                SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0f, 168f),
+                MouseFilter = MouseFilterEnum.Ignore
+            };
+            _cards[i] = card;
             _statsGrid.AddChild(card);
-            VBoxContainer cell = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            cell.AddThemeConstantOverride("separation", 4);
+            VBoxContainer cell = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore };
+            cell.AddThemeConstantOverride("separation", 2);
             card.AddChild(cell);
-            cell.AddChild(MakeLabel(names[i], 19, Colors.White));
-            _values[i] = MakeLabel("—", 25, Accent);
-            cell.AddChild(_values[i]);
-            cell.AddChild(MakeLabel(uses[i], 15, Muted));
-            _senseGrowth[i] = MakeLabel("", 15, Muted);
+            HBoxContainer top = new() { MouseFilter = MouseFilterEnum.Ignore };
+            cell.AddChild(top);
+            Label name = HbrManualPhoneStyle.Heading(names[i], 24, HbrManualPhoneArt.Cyan);
+            name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            top.AddChild(name);
+            _values[i] = HbrManualPhoneStyle.Heading("—", 48, Colors.White);
+            _values[i].HorizontalAlignment = HorizontalAlignment.Right;
+            top.AddChild(_values[i]);
+            cell.AddChild(HbrManualPhoneStyle.Label(uses[i], 19, HbrManualPhoneArt.Muted));
+            cell.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore });
+            _senseGrowth[i] = HbrManualPhoneStyle.Label("", 18, HbrManualPhoneStyle.Text);
             cell.AddChild(_senseGrowth[i]);
         }
-        _growth = MakeLabel("", 18, Muted);
+        StyleCards();
+        content.AddChild(HbrManualPhoneStyle.Label(
+            "力量、灵巧、智慧、体力、精神、运气用于战斗计算。启用测试数值后，由战斗等级与已确认六感共同成长。",
+            19, HbrManualPhoneArt.Muted, wrap: true));
+        _growth = HbrManualPhoneStyle.Label("", 20, HbrManualPhoneStyle.Paragraph, wrap: true);
+        _growth.AddThemeConstantOverride("line_spacing", 6);
         content.AddChild(_growth);
-        _enemy = MakeLabel("", 18, Muted);
+        _enemy = HbrManualPhoneStyle.Label("", 20, HbrManualPhoneArt.Muted, wrap: true);
         content.AddChild(_enemy);
         AddSection(content, "技能威力",
-            "对 DP：参照属性 A =（2 × 器用 + 力）÷ 3。\n对 HP：参照属性 A =（2 × 力 + 器用）÷ 3。\n力与器用参与攻击；知性参与格挡的倍率换算。\n" +
+            "对 DP：参照属性 A =（2 × 灵巧 + 力量）÷ 3。\n对 HP：参照属性 A =（2 × 力量 + 灵巧）÷ 3。\n力量与灵巧参与攻击；智慧参与格挡的倍率换算。\n" +
             $"伤害 100% 对应基础威力 6000，其他技能倍率同比换算。属性系数 = max（0，1 +（A − 状态值）÷{HbrSkillPower.AttackAttributeScale}）。\n" +
             "基础威力乘属性系数，正倍率最低 1，截断到小数点后 2 位；属性优势持续线性增长，不再配置技能威力上下端。");
         AddSection(content, "增减益与暴击",
             "基础威力 × 攻击增益区 × 防御减益区 × DP／HP 特攻 × 物理与元素相性 × 破坏率 × 其他倍率。\n" +
             "原作参考：同类普通增益取最高两层相加；攻击与元素攻击、心眼、场地等合入攻击区，防御下降与脆弱合入减益区。现有卡牌效果仍保留各自的持续和消耗规则。\n" +
-            "自然暴击率 = 1.5% + max（0，运 − 状态值）× 0.04%，自然部分最高 15%；暴击率增益另加。\n" +
+            "自然暴击率 = 1.5% + max（0，运气 − 状态值）× 0.04%，自然部分最高 15%；暴击率增益另加。\n" +
             "暴击先按状态值 −50 重新计算威力，状态值最低为 0；随后乘（1.5 + 暴伤增益）。暴击判定独立于现有掷骰大成功。");
         AddSection(content, "破坏率与格挡",
             "破坏率以 100% 为起点。DP 击破后，按敌方与技能各自的破坏系数增长；增量与本次实际伤害量分别计算。\n" +
-            $"我方格挡 100% 对应基础 500，再乘知性÷{HbrSkillPower.BlockReferenceIntelligence}，向下取整。卡牌、幻影、浮游炮及明确的固定技能格挡共用此规则；按实际伤害比例派生的格挡不重复换算。");
+            $"我方格挡 100% 对应基础 500，再乘智慧÷{HbrSkillPower.BlockReferenceIntelligence}，向下取整。卡牌、幻影、浮游炮及明确的固定技能格挡共用此规则；按实际伤害比例派生的格挡不重复换算。");
         AddSection(content, "力量与敏捷",
-            "我方每层力量使力与器用各提高 1%；每层敏捷使知性提高 1%，同类层数相加。负层数按相同比例降低对应属性，属性最低为 0。灾厄在百分比加成后按点数扣除。力量、敏捷不再额外提供固定伤害或格挡。\n" +
-            "敌方每层力量在攻击时无视目标一定数值的体力、精神；每层敏捷在受击时无视攻击者一定数值的力、器用。第一至第五幕每层依次为 1、2、3、4、8 点，第六幕起保持 8 点。负层数反向修正，仅对本次攻击有效；参照属性最低为 0。");
+            "我方每层力量使力量属性与灵巧属性各提高 2%；每层敏捷使智慧属性提高 2%，同类层数相加。负层数按相同比例降低对应属性，属性最低为 0。灾厄在百分比加成后按点数扣除。绯刀流最后使力量、灵巧翻倍，体力、精神归零。力量、敏捷不再额外提供固定伤害或格挡。\n" +
+            "敌方每层力量在攻击时无视目标一定数值的体力、精神属性；每层敏捷在受击时无视攻击者一定数值的力量、灵巧属性。第一至第五幕每层依次为 1、2、3、4、8 点，第六幕起保持 8 点。负层数反向修正，仅对本次攻击有效；参照属性最低为 0。");
         AddSection(content, "敌方状态值与受击",
             "敌人使用独立状态值 E、HP 和 DP；不会由玩家的体力、精神推导生命上限，也没有复制出来的六维。\n" +
             $"第一幕第 1 层普通房间 E 为 {HbrEnemyProfileHelper.InitialEnemyParameter}，每深入 1 层 +{HbrEnemyProfileHelper.GainPerFloor}；换幕保留此前各幕的楼层成长，再额外 +{HbrEnemyProfileHelper.GainPerAct}。精英当前房间再 +{HbrEnemyProfileHelper.EliteBonus}，Boss 当前房间再 +{HbrEnemyProfileHelper.BossBonus}；房间修正不跨幕累计。Hopper 同样成长。\n" +
@@ -175,23 +194,45 @@ public partial class NManualBattleStatsPanel : Control
             "卡牌、OD、掷骰与六感玩法继续保留。完整参数与来源见测试分支文档 docs/hbr-numerics-test.md。");
     }
 
-    private static void AddSection(VBoxContainer content, string title, string description)
+    private void StyleCards()
     {
-        content.AddChild(new HSeparator());
-        content.AddChild(MakeLabel(title, 21, Accent));
-        content.AddChild(MakeLabel(description, 18, new Color("#d7dce1")));
+        for (int i = 0; i < _cards.Length; i++)
+        {
+            if (_cards[i] == null) continue;
+            _cards[i].AddThemeStyleboxOverride("panel", i == _highlight ? HbrManualPhoneStyle.Picked() : HbrManualPhoneStyle.Panel());
+        }
     }
 
-    private static Label MakeLabel(string text, int size, Color color)
+    // details/summary: a "＋ title" row that opens its text; "－" while open.
+    private static void AddSection(VBoxContainer content, string title, string description)
     {
-        Label label = new()
+        PanelContainer section = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        section.AddThemeStyleboxOverride("panel", HbrManualPhoneStyle.Panel(16, 16f, 2f));
+        content.AddChild(section);
+        VBoxContainer layout = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        layout.AddThemeConstantOverride("separation", 0);
+        section.AddChild(layout);
+        Button summary = new()
         {
-            Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore
+            Text = "＋  " + title, Alignment = HorizontalAlignment.Left,
+            CustomMinimumSize = new Vector2(0f, 52f), FocusMode = FocusModeEnum.All,
+            MouseDefaultCursorShape = CursorShape.PointingHand, SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color);
-        return label;
+        HbrManualPhoneStyle.ListEntry(summary, false, 24, 12);
+        foreach (string color in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color" })
+            summary.AddThemeColorOverride(color, HbrManualPhoneArt.Cyan);
+        layout.AddChild(summary);
+        Label text = HbrManualPhoneStyle.Label(description, 20, HbrManualPhoneStyle.Paragraph, wrap: true);
+        text.AddThemeConstantOverride("line_spacing", 6);
+        MarginContainer body = new() { Visible = false, MouseFilter = MouseFilterEnum.Ignore };
+        body.AddThemeConstantOverride("margin_bottom", 14);
+        body.AddChild(text);
+        layout.AddChild(body);
+        summary.Pressed += () =>
+        {
+            body.Visible = !body.Visible;
+            summary.Text = (body.Visible ? "－  " : "＋  ") + title;
+        };
     }
 
     private void LayoutContent()

@@ -15,7 +15,13 @@ internal static class HbrFragileCardDescription
     {
         foreach (DynamicVar variable in card.DynamicVars.Values)
             if (variable is PowerVar<FragilePower>)
+            {
                 text.Add(variable.Name + "Percent", Format(card, variable.BaseValue, variable.WasJustUpgraded));
+                text.Add(variable.Name + "Duration", HbrCardFaceDescription.Duration(
+                    HbrEffectProfileResolver.ForType(typeof(FragilePower), card)));
+            }
+        text.Add("FragileDuration", HbrCardFaceDescription.Duration(
+            HbrEffectProfileResolver.ForType(typeof(FragilePower), card)));
 
         if (card is MimicIceFlowerThousandArrowsHbrgoSaki)
         {

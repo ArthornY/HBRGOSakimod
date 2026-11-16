@@ -27,12 +27,12 @@ public sealed class HotaruEchoingWounds : HotaruCannonCard
     public override bool GainsBlock => true;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new IntVar("ResistanceLoss", 2m), HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m), HbrSkillVars.Block(200m, ValueProp.Move)
+        new PowerVar<ChargePower>(2m), HbrSkillVars.Damage(500m, ValueProp.Move, divisor: 3m), HbrSkillVars.Block(200m, ValueProp.Move)
     };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<WeakPower>(), HoverTipFactory.FromPower<VulnerablePower>(),
-        HoverTipFactory.FromPower<FragilePower>(), HoverTipFactory.FromPower<SixSenseResistancePower>(),
+        HoverTipFactory.FromPower<FragilePower>(), HoverTipFactory.FromPower<ChargePower>(),
         HoverTipFactory.Static(StaticHoverTip.Block)
     };
 
@@ -40,13 +40,14 @@ public sealed class HotaruEchoingWounds : HotaruCannonCard
     {
         ArgumentNullException.ThrowIfNull(play.Target);
         // All three conditions describe the target when this card resolves;
-        // a break/debuff caused by the first branch cannot enable another one.
+        // nothing caused by one branch can enable another one. The attack-down
+        // branch cut a six-sense resistance before 2026-11-09; it charges now.
         bool weak = HotaruContestVulnerabilityHelper.HasAttackDown(play.Target);
         bool vulnerable = HotaruContestVulnerabilityHelper.HasDefenseDown(play.Target);
         bool fragile = play.Target.HasPower<FragilePower>();
         if (weak)
-            await SixSenseCombatHelper.ReduceHighestResistance(context, Owner, play.Target,
-                this, DynamicVars["ResistanceLoss"].IntValue);
+            await PowerCmd.Apply<ChargePower>(context, Owner.Creature,
+                DynamicVars["ChargePower"].BaseValue, Owner.Creature, this);
         if (vulnerable && play.Target.IsAlive && HotaruCommonUtilityCardHelper.CanContinue(this))
             await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, play)
                 .Targeting(play.Target).WithHitFx("vfx/vfx_attack_slash").Execute(context);
@@ -56,7 +57,7 @@ public sealed class HotaruEchoingWounds : HotaruCannonCard
 
     protected override void OnUpgrade()
     {
-        DynamicVars["ResistanceLoss"].UpgradeValueBy(1m);
+        DynamicVars["ChargePower"].UpgradeValueBy(1m);
         DynamicVars.Damage.UpgradeDamageByPercent(200m, divisor: 3m);
         DynamicVars.Block.UpgradeBlockByPercent(80m);
     }
@@ -165,16 +166,16 @@ public sealed class HotaruMissingOutline : HotaruCannonCard
 {
     public HotaruMissingOutline() : base(1, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { HbrSkillVars.Damage(50m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("BreakDamage", 50m) };
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
+        new DynamicVar[] { HbrSkillVars.Damage(50m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("DebuffDamage", 50m) };
 
+    // Counted per broken six-sense resistance before 2026-11-09; per debuff kind
+    // on the target now, read before this attack.
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         ArgumentNullException.ThrowIfNull(play.Target);
         var combat = Owner.Creature.CombatState;
-        int broken = SixSenseCombatHelper.TargetResistanceBreakCount(play.Target);
-        await DamageCmd.Attack(DynamicVars.Damage.BaseValue + broken * DynamicVars["BreakDamage"].BaseValue)
+        int broken = HbrMissingDebuffHelper.DebuffKinds(play.Target);
+        await DamageCmd.Attack(DynamicVars.Damage.BaseValue + broken * DynamicVars["DebuffDamage"].BaseValue)
             .FromCardCompat(this, play).Targeting(play.Target)
             .WithHitFx("vfx/vfx_attack_slash").Execute(context);
         for (int i = 0; i < broken; i++)
@@ -187,7 +188,7 @@ public sealed class HotaruMissingOutline : HotaruCannonCard
         }
     }
 
-    protected override void OnUpgrade() => DynamicVars["BreakDamage"].UpgradeDamageByPercent(100m, divisor: 3m);
+    protected override void OnUpgrade() => DynamicVars["DebuffDamage"].UpgradeDamageByPercent(100m, divisor: 3m);
 }
 
 [CustomID("HOTARU_WARM_EMPTY_SEAT")]

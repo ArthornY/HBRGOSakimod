@@ -13,7 +13,6 @@ using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
-using MegaCrit.Sts2.Core.Models.Singleton;
 using MegaCrit.Sts2.Core.Nodes.RestSite;
 using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rooms;
@@ -30,11 +29,18 @@ internal static class HbrgoActFourRegistration
     }
 }
 
-[HarmonyPatch(
-    typeof(MultiplayerScalingModel),
-    nameof(MultiplayerScalingModel.GetMultiplayerScaling))]
+[HarmonyPatch]
 internal static class HbrgoActFourMultiplayerScalingPatch
 {
+    private static MethodBase TargetMethod()
+    {
+        Assembly game = typeof(ModelDb).Assembly;
+        System.Type model = game.GetType("MegaCrit.Sts2.Core.Models.MultiplayerScalingModel") ??
+            game.GetType("MegaCrit.Sts2.Core.Models.Singleton.MultiplayerScalingModel", throwOnError: true);
+        return AccessTools.Method(model, "GetMultiplayerScaling",
+            [typeof(EncounterModel), typeof(int)]);
+    }
+
     private static bool Prefix(
         EncounterModel encounter,
         int actIndex,
@@ -136,10 +142,7 @@ internal static class HbrgoActFourDoubleBossPatch
 
         foreach (ActModel act in runState.Acts)
         {
-            act.GenerateRooms(
-                runState.Rng.UpFront,
-                runState.UnlockState,
-                runState.Players.Count > 1);
+            act.GenerateRoomsCompat(runState);
             if (__instance.ShouldApplyTutorialModifications())
             {
                 act.ApplyDiscoveryOrderModifications(runState.UnlockState);
@@ -170,9 +173,14 @@ internal static class HbrgoActFourDoubleBossPatch
     }
 }
 
-[HarmonyPatch(typeof(ActModel), nameof(ActModel.GenerateRooms))]
+[HarmonyPatch]
 internal static class HbrgoActFourFirstSkullFeatherBossPatch
 {
+    private static MethodBase TargetMethod() => typeof(ActModel)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(method => method.Name == nameof(ActModel.GenerateRooms) &&
+            method.GetParameters()[0].ParameterType == typeof(Rng));
+
     private static void Postfix(ActModel __instance)
     {
         if (__instance is not HbrgoActFour actFour ||

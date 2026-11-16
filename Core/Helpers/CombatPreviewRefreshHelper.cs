@@ -36,6 +36,15 @@ internal static class CombatPreviewRefreshHelper
             return Task.CompletedTask;
         }
 
+        // Native NCreature.UpdateIntent only accepts monster entities. Player
+        // buffs still affect cards and opposing/allied monster previews, so
+        // use the game's coalesced state notification before any node lookup.
+        if (creature.Monster == null)
+        {
+            RefreshCombatState(creature, nameof(RefreshCreatureIntent));
+            return Task.CompletedTask;
+        }
+
         NCreature creatureNode = NCombatRoom.Instance?
             .GetCreatureNode(creature);
         if (creatureNode == null ||

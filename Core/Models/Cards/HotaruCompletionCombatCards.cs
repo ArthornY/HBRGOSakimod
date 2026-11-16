@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 using STS2RitsuLib.Models.Capabilities;
+using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -119,14 +120,15 @@ public sealed class HotaruGentleTouch : HotaruCannonCard
 {
     public HotaruGentleTouch() : base(2, CardType.Skill, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new CardsVar(1) };
-    protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
+    // It broke the target's lowest six-sense resistance before 2026-11-09.
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new CardsVar(1), new PowerVar<WeakPower>(1m), new PowerVar<VulnerablePower>(1m), new PowerVar<FragilePower>(1m) };
+    protected override IEnumerable<IHoverTip> ExtraHoverTips => HbrMissingDebuffHelper.HoverTips();
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         ArgumentNullException.ThrowIfNull(play.Target);
         var combat = Owner.Creature.CombatState;
-        await SixSenseCombatHelper.BreakLowestResistance(context, Owner, play.Target, this);
+        await HbrMissingDebuffHelper.ApplyAllMissing(context, play.Target, Owner.Creature, this);
         if (HotaruCommonUtilityCardHelper.CanContinue(this, combat))
             await CardPileCmd.Draw(context, DynamicVars.Cards.BaseValue, Owner);
     }

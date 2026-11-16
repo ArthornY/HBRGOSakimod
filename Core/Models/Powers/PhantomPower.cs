@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Monsters;
@@ -24,7 +25,7 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class PhantomPower : PowerModel
+public sealed class PhantomPower : PowerModel, IHbrAfterDeathListener
 {
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ActionsPerformed { get; private set; }
@@ -99,6 +100,43 @@ public sealed class PhantomPower : PowerModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int PendingNativeThorns { get; private set; }
 
+    // The main phantom's damage against an enemy grows by 15% for each earlier
+    // attack it made on that enemy this combat, at most six (replacing the six-sense
+    // resistance cuts removed on 2026-11-09). Enemy combat id and count pairs; the
+    // array is replaced, never written in place, so clones never share a change.
+    internal const decimal TargetAttackBonusPercent = 15m;
+    internal const int MaximumTargetAttackBonuses = 6;
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int[] TargetAttackCounts { get; private set; } = Array.Empty<int>();
+
+    internal int GetTargetAttackCount(Creature target)
+    {
+        if (target?.CombatId is not uint id || TargetAttackCounts == null) return 0;
+        for (int i = 0; i + 1 < TargetAttackCounts.Length; i += 2)
+            if (unchecked((uint)TargetAttackCounts[i]) == id)
+                return Math.Clamp(TargetAttackCounts[i + 1], 0, MaximumTargetAttackBonuses);
+        return 0;
+    }
+
+    private void RecordAttackOn(Creature target)
+    {
+        if (target?.CombatId is not uint id) return;
+        int[] counts = TargetAttackCounts ?? Array.Empty<int>();
+        for (int i = 0; i + 1 < counts.Length; i += 2)
+        {
+            if (unchecked((uint)counts[i]) != id) continue;
+            if (counts[i + 1] >= MaximumTargetAttackBonuses) return;
+            AssertMutable();
+            int[] next = counts.ToArray();
+            next[i + 1]++;
+            TargetAttackCounts = next;
+            return;
+        }
+        AssertMutable();
+        TargetAttackCounts = counts.Concat(new[] { unchecked((int)id), 1 }).ToArray();
+    }
+
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Single;
@@ -146,7 +184,7 @@ public sealed class PhantomPower : PowerModel
             decimal temporaryPercent = GetTemporaryDamageBonusPercent();
             if (!IsSummonedMinion && props.IsPoweredAttack())
             {
-                temporaryPercent += 15m * SixSenseCombatHelper.TargetResistanceBreakCount(target);
+                temporaryPercent += TargetAttackBonusPercent * GetTargetAttackCount(target);
             }
 
             if (target != Owner)
@@ -334,6 +372,18 @@ public sealed class PhantomPower : PowerModel
         PlayerChoiceContext choiceContext,
         AttackCommand command)
     {
+        // One count per attack on each enemy it hit, whatever its number of hits;
+        // the attack itself counts from the next attack on.
+        if (!IsSummonedMinion && command.Attacker == Owner &&
+            command.DamageProps.IsPoweredAttack())
+        {
+            foreach (Creature enemy in command.Results.SelectMany(results => results)
+                         .Select(result => result.Receiver)
+                         .Where(receiver => receiver != null && receiver.Side != Owner.Side)
+                         .Distinct().ToArray())
+                RecordAttackOn(enemy);
+        }
+
         CurlUpPower curlUp = Owner.GetPower<CurlUpPower>();
         if (curlUp == null ||
             !command.DamageProps.IsPoweredAttack() ||
@@ -367,12 +417,6 @@ public sealed class PhantomPower : PowerModel
         Creature target,
         CardModel cardSource)
     {
-        if (!IsSummonedMinion && dealer == Owner && props.IsPoweredAttack())
-        {
-            await SixSenseCombatHelper.ResolvePhantomAttack(
-                choiceContext, Owner.PetOwner, target, cardSource);
-        }
-
         await PhantomHelper.ApplyFusionEffectsAfterDamageGiven(
             Owner,
             this,
@@ -409,7 +453,7 @@ public sealed class PhantomPower : PowerModel
             delta);
     }
 
-    public override async Task AfterDeath(
+    public async Task AfterDeath(
         PlayerChoiceContext choiceContext,
         Creature creature,
         bool wasRemovalPrevented,

@@ -15,6 +15,7 @@ static class Bootstrap
             Environment.SetEnvironmentVariable("HBR_ENEMY_SKILLS_REPORT",report);
             Environment.SetEnvironmentVariable("HBR_SKIP_HOPPER_CALIBRATION",args.Contains("--skip-hopper-calibration")?"1":"0");
             Environment.SetEnvironmentVariable("HBR_SKIP_ACT_CARRYOVER",args.Contains("--skip-act-carryover")?"1":"0");
+            Environment.SetEnvironmentVariable("HBR_HOPPER_ONLY",args.Contains("--hopper-calibration-only")?"1":"0");
             string manifestPath=Path.Combine(dependencies,"profile-manifest.json");
             if(File.Exists(manifestPath))
             {

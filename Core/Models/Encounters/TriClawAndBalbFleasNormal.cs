@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC04ExpMtKumotori01_R02.
+// HBR MC04ExpMtKumotori01_R02; the second balb flea starts one dp step ahead.
 public sealed class TriClawAndBalbFleasNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -20,11 +20,13 @@ public sealed class TriClawAndBalbFleasNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var second = (BalbFlea)ModelDb.Monster<BalbFlea>().ToMutable();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<BalbFlea>().ToMutable(), null),
             (ModelDb.Monster<TriClaw>().ToMutable(), null),
-            (ModelDb.Monster<BalbFlea>().ToMutable(), null)
+            (second, null)
         };
     }
 }

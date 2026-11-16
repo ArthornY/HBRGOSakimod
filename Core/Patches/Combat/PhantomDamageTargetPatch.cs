@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
@@ -29,33 +30,13 @@ internal static class PhantomAttackTargetPatch
 [HarmonyPatch]
 internal static class PhantomDamageTargetPatch
 {
-    private static System.Reflection.MethodBase TargetMethod()
-    {
-        return AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-            .Where(method => method.Name == nameof(CreatureCmd.Damage))
-            .Where(method =>
-            {
-                System.Reflection.ParameterInfo[] parameters =
-                    method.GetParameters();
-                return parameters.Length is 6 or 7 &&
-                    parameters[0].ParameterType ==
-                        typeof(PlayerChoiceContext) &&
-                    parameters[1].ParameterType ==
-                        typeof(IEnumerable<Creature>) &&
-                    parameters[2].ParameterType == typeof(decimal) &&
-                    parameters[3].ParameterType == typeof(ValueProp) &&
-                    parameters[4].ParameterType == typeof(Creature) &&
-                    parameters[5].ParameterType == typeof(CardModel);
-            })
-            .OrderBy(method => method.GetParameters().Length)
-            .FirstOrDefault() ?? throw new MissingMethodException(
-                typeof(CreatureCmd).FullName,
-                nameof(CreatureCmd.Damage));
-    }
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
 
-    private static void Prefix(ref IEnumerable<Creature> targets)
+    private static void Prefix(object[] __args)
     {
-        targets = RedirectTargets(targets);
+        IEnumerable<Creature> targets = NativeDamageApiCompatibility.ReadTargets(__args);
+        NativeDamageApiCompatibility.WriteTargets(__args, targets, RedirectTargets(targets),
+            target => PhantomHelper.GetDamageDefender(target?.Player) ?? target);
     }
 
     internal static IReadOnlyList<Creature> RedirectTargets(
@@ -98,6 +79,7 @@ internal static class PhantomBeforeDamageReceivedPatch
 {
     private static void Prefix(Creature target)
     {
+        HpOnlyDamageContext.RecordPhysicalTarget(target);
         PhantomDamageContext.Push(target);
     }
 }

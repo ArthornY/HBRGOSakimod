@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using HBRGOSakiMod.Core.FateDice;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.CardPools;
@@ -49,6 +50,7 @@ internal static class RollKeywordRules
             CommandStrikeHbrgoSaki or
             PhantomChoiceHbrgoSaki or
             HalfBodyHbrgoSaki or
+            AllOrdersConfirmedHbrgoSaki or
             DistantPrayerHbrgoSaki or
             EcstaticCorridorHbrgoSaki)
         {
@@ -114,7 +116,7 @@ internal static class RollKeywordRules
     internal static bool IsCopiedCard(CardModel card)
     {
         return card?.IsDupe == true ||
-               DualSwordsCopyHelper.IsDualSwordsCopy(card);
+               CardCopyContextHelper.IsMarkedCopy(card);
     }
 
     internal static bool IsMimicTechniqueCard(CardModel card)
@@ -206,9 +208,11 @@ internal static class RollKeywordRules
     internal static bool IsCriticalRoll(Player player, SoulRollBreakdown roll) =>
         GetRollTier(player, roll) == SoulRollTier.Critical;
 
+    // Fate fragments (宽刃、绝境、狂骰) lower the minimum like Charge does.
     internal static int GetCriticalMinimum(Player player) => (int)Math.Max(RollMinimum,
         (long)GetCriticalMinimumForCharge(player?.Creature?.GetPower<ChargePower>()?.Amount ?? 0) -
-        SaviorGrandEntranceCombatHelper.GetRawCriticalMinimumReduction(player?.Creature));
+        SaviorGrandEntranceCombatHelper.GetRawCriticalMinimumReduction(player?.Creature) -
+        HbrFateDiceRollHelper.CriticalRangeBonus(player));
 
     internal static int GetCriticalMinimumForCharge(int charge) => (int)Math.Max(
         RollMinimum, RollMaximum - (long)Math.Max(0, charge) * ChargePower.RangeShiftPerStack);
@@ -247,8 +251,7 @@ internal static class RollKeywordRules
             SoulRollTier.Critical => CriticalValueBonus,
             _ => 0m
         };
-        return 1m + bonus * GetEffectMultiplier(player, roll) *
-            MindsEyeCombatHelper.GetRollEffectMultiplier(player?.Creature, cardType);
+        return 1m + bonus * GetEffectMultiplier(player, roll);
     }
 
     internal static (int DrawAmount, int EnergyAmount) GetPowerCardEffect(
@@ -304,27 +307,44 @@ internal static class RollKeywordRules
         return GetRegularSwordheartAmount(player, SoulRollBreakdown.FromFinalRoll(roll));
     }
 
+    // Swordheart from rolls (design v3, section 2): a raw roll that is a multiple of
+    // seven gives one; 七之刻印 gives two for those and one for any raw roll with a 7 in it.
+    // A critical success gives its own amount (GetCriticalSwordheartAmount).
     internal static int GetRegularSwordheartAmount(Player player, SoulRollBreakdown roll)
     {
         if (player?.Character is not HbrgoSaki31O ||
             roll == null ||
-            roll.FinalRoll <= 0 ||
+            roll.BaseRoll <= 0 ||
             IsCriticalRoll(player, roll))
         {
             return 0;
         }
 
-        int sevenCount = roll.FinalRoll.ToString().Count(digit => digit == '7');
-        if (sevenCount > 0)
+        int raw = roll.BaseRoll;
+        bool sevenSeal = HbrFateDiceRollHelper.Has(player, HbrFateDiceCatalog.SevenSeal);
+        if (raw % 7 == 0)
         {
-            return sevenCount;
+            return sevenSeal ? 2 : 1;
         }
 
-        return roll.FinalRoll % 7 == 0 &&
-               player?.Creature?.HasPower<SwordheartClarityPower>() == true
-            ? 1
-            : 0;
+        return sevenSeal && raw.ToString().Contains('7') ? 1 : 0;
     }
+
+    // A critical success gives two swordheart (剑鸣 two more); it no longer fills them.
+    internal static int GetCriticalSwordheartAmount(Player player)
+    {
+        if (player?.Character is not HbrgoSaki31O)
+        {
+            return 0;
+        }
+
+        return CriticalSwordheartAmount +
+            (HbrFateDiceRollHelper.Has(player, HbrFateDiceCatalog.SwordSong)
+                ? HbrFateDiceCatalog.SwordSongSwordheart
+                : 0);
+    }
+
+    internal const int CriticalSwordheartAmount = 2;
 
     internal static bool UsesHotaruRules(CardModel card) =>
         card?.IsMutable == true && card.Owner != null

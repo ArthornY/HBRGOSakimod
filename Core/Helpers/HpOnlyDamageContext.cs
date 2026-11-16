@@ -6,9 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Helpers;
@@ -38,9 +40,16 @@ internal static class HpOnlyDamageContext
         internal bool CaptureDp;
         internal bool CaptureMagic;
         internal bool CaptureSavior;
+        internal bool CaptureHit;
+        internal bool CaptureBlockBreak;
+        internal bool PendingNativeBlockObserved;
+        internal bool PendingNativeBlockBroken;
+        internal bool HealthCost;
+        internal HashSet<Creature> PendingDodges;
         internal Creature Target;
         internal Creature Dealer;
         internal CardModel Card;
+        internal Creature PhysicalTarget;
         internal Creature PendingDpReceiver;
         internal decimal PendingDpSpent;
     }
@@ -61,6 +70,21 @@ internal static class HpOnlyDamageContext
     private static readonly AsyncLocal<PendingIntent> Pending = new();
     private static readonly AsyncLocal<CommandScope> Current = new();
     private static readonly ConditionalWeakTable<DamageResult, DpReceipt> Receipts = new();
+    private sealed record NativeBlockBreakReceipt(bool Observed, bool Broken);
+    private static readonly ConditionalWeakTable<DamageResult, NativeBlockBreakReceipt> NativeBlockBreaks = new();
+
+    internal static bool IsCurrentCommandFrom(Creature dealer) =>
+        Current.Value is { Active: true } scope && ReferenceEquals(scope.Dealer, dealer);
+
+    internal static bool IsCurrentHealthCost => Current.Value is { Active: true, HealthCost: true };
+
+    internal static Creature CurrentPhysicalTarget =>
+        Current.Value is { Active: true } scope ? scope.PhysicalTarget : null;
+
+    internal static void RecordPhysicalTarget(Creature target)
+    {
+        if (Current.Value is { Active: true } scope) scope.PhysicalTarget = target;
+    }
 
     internal static async Task<IEnumerable<DamageResult>> Damage(
         PlayerChoiceContext choiceContext, Creature target, decimal amount,
@@ -114,13 +138,18 @@ internal static class HpOnlyDamageContext
             dealer?.HasPower<MagicSwordEnhancementPower>() == true && dealer.HasPower<MagicSwordModePower>();
         bool captureSavior = !enabled && !props.HasFlag(ValueProp.Unblockable) &&
             SaviorGrandEntranceCombatHelper.CanConsumeDpFollowup(dealer);
+        bool captureHit = props.IsPoweredAttack() && dealer != null;
+        bool captureBlockBreak = (dealer?.Player ?? dealer?.PetOwner)?.GetRelic<HandDrill>() != null;
         CommandScope scope = new()
         {
             Previous = Current.Value,
             Enabled = enabled,
-            CaptureDp = captureMagic || captureSavior,
+            CaptureDp = captureMagic || captureSavior || captureHit || captureBlockBreak,
             CaptureMagic = captureMagic,
             CaptureSavior = captureSavior,
+            CaptureHit = captureHit,
+            CaptureBlockBreak = captureBlockBreak,
+            HealthCost = HbrHealthCostContext.TryClaim(ref targets, amount, props, dealer, cardSource),
             Target = enabled ? intent.Target : null,
             Dealer = dealer,
             Card = cardSource
@@ -167,8 +196,11 @@ internal static class HpOnlyDamageContext
     {
         if (scope == null) return;
         scope.Active = false;
+        scope.PhysicalTarget = null;
         scope.PendingDpReceiver = null;
         scope.PendingDpSpent = 0m;
+        scope.PendingNativeBlockObserved = scope.PendingNativeBlockBroken = false;
+        scope.PendingDodges?.Clear();
         RestoreCaller(scope);
     }
 
@@ -179,7 +211,37 @@ internal static class HpOnlyDamageContext
         CommandScope scope = Current.Value;
         if (scope?.Active != true || !scope.CaptureDp || receiver == null || spent <= 0m) return;
         scope.PendingDpReceiver = receiver;
-        scope.PendingDpSpent = spent;
+        scope.PendingDpSpent = DamageAmplificationLimits.AddSaturated(scope.PendingDpSpent, spent);
+    }
+
+    internal static void RecordDodge(Creature receiver)
+    {
+        CommandScope scope = Current.Value;
+        if (scope?.Active != true || !(scope.CaptureHit || scope.CaptureBlockBreak) || receiver == null) return;
+        scope.PendingDodges ??= new HashSet<Creature>(ReferenceEqualityComparer.Instance);
+        scope.PendingDodges.Add(receiver);
+    }
+
+    // Called before the DP/31F additions to DamageBlockInternal's return value.
+    // Redirected physical calls share this hit; a true break on any of them
+    // preserves the native notification instead of inferring it from DP loss.
+    internal static void RecordNativeBlockResult(Creature receiver, decimal nativeBlocked)
+    {
+        CommandScope scope = Current.Value;
+        if (scope?.Active != true || !scope.CaptureBlockBreak || receiver == null) return;
+        scope.PendingNativeBlockObserved = true;
+        scope.PendingNativeBlockBroken |= nativeBlocked > 0m &&
+            DodgeCombatHelper.GetNativeBlock(receiver) == 0 &&
+            scope.PendingDodges?.Contains(receiver) != true;
+    }
+
+    internal static bool TryGetNativeBlockBreak(DamageResult result, out bool broken)
+    {
+        broken = false;
+        if (result == null || !NativeBlockBreaks.TryGetValue(result, out NativeBlockBreakReceipt receipt) ||
+            !receipt.Observed) return false;
+        broken = receipt.Broken;
+        return true;
     }
 
     internal static void BindDpReceipts(IReadOnlyList<DamageResult> hitResults)
@@ -187,12 +249,29 @@ internal static class HpOnlyDamageContext
         CommandScope scope = Current.Value;
         if (scope?.Active != true || !scope.CaptureDp) return;
 
+        if (scope.CaptureBlockBreak && hitResults != null)
+        {
+            foreach (DamageResult hit in hitResults)
+            {
+                if (hit == null) continue;
+                NativeBlockBreaks.Remove(hit);
+                NativeBlockBreaks.Add(hit, new(scope.PendingNativeBlockObserved, scope.PendingNativeBlockBroken));
+            }
+        }
+        scope.PendingNativeBlockObserved = scope.PendingNativeBlockBroken = false;
+
         Creature receiver = scope.PendingDpReceiver;
+        Creature physicalTarget = scope.PhysicalTarget;
+        scope.PhysicalTarget = null;
         decimal spent = scope.PendingDpSpent;
         // One append belongs to one original target, including its redirected
         // results. Clear before binding so this cannot be reused by a later hit.
         scope.PendingDpReceiver = null;
         scope.PendingDpSpent = 0m;
+        if (scope.CaptureHit)
+            CombatAttackHitHelper.BindPhysical(hitResults, scope.Dealer, scope.Card, receiver, spent, scope.PendingDodges, physicalTarget);
+        scope.PendingDodges?.Clear();
+        if (!scope.CaptureMagic && !scope.CaptureSavior) return;
         if (receiver == null || spent <= 0m || hitResults?.Count is not > 0) return;
 
         DamageResult result = null;

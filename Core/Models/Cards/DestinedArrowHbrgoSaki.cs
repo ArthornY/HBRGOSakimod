@@ -39,7 +39,7 @@ public sealed class DestinedArrowHbrgoSaki : CardModel
 
     public DestinedArrowHbrgoSaki()
         : base(
-            0,
+            1,
             CardType.Attack,
             CardRarity.Common,
             TargetType.AllEnemies)

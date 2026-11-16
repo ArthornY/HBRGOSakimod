@@ -5,6 +5,7 @@ using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -70,8 +71,10 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
                 return;
             }
 
+            int previousLevel = Level;
             _charge = nextCharge;
             InvokeDisplayAmountChanged();
+            RefreshEnemyDetection(previousLevel);
         }
     }
 
@@ -112,10 +115,18 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
                 return;
             }
 
+            int previousLevel = Level;
             _charge = nextWhole;
             _chargeFractionHundredths = nextFraction;
             InvokeDisplayAmountChanged();
+            RefreshEnemyDetection(previousLevel);
         }
+    }
+
+    private void RefreshEnemyDetection(int previousLevel)
+    {
+        if (previousLevel != Level)
+            HbrEnemyFlavorSchedulingHelper.OnOverclockLevelChanged(Owner?.Creature?.CombatState);
     }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -228,9 +239,12 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
 
     // Ending locally locks ordinary input while waiting for teammates. OD
     // can still suspend that idle turn and restore its ready vote afterwards.
+    // Both belong to the local player, who need not own this relic: in co-op
+    // anyone opens the party's OD from the gauge (user, 2026-11-09).
     private bool CanActivateInput =>
         !CombatManager.Instance.PlayerActionsDisabled ||
-        (Owner != null && CombatManager.Instance.IsPlayerReadyToEndTurn(Owner));
+        (Owner?.RunState is { } run && LocalContext.GetMe(run.Players) is { } me &&
+            CombatManager.Instance.IsPlayerReadyToEndTurn(me));
 
     private bool CanActivateState =>
         ActiveLevel == 0 &&
@@ -265,6 +279,17 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         GainCharge(ChargePerLevel * percentage / 100m);
     }
 
+    // Enemy OverDrivePointDown: the gauge loses a share of one level.
+    internal void LoseLevelProgress(decimal percentage)
+    {
+        if (percentage <= 0m || PreciseCharge <= 0m)
+        {
+            return;
+        }
+
+        PreciseCharge -= ChargePerLevel * percentage / 100m;
+    }
+
     public bool TryActivate(int requestedLevel)
     {
         // Synchronized actions run while player input is paused. Validate the
@@ -293,7 +318,8 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         return ActiveLevel > 0 && OverclockImmediateTurnCoordinator.IsActiveFor(player);
     }
 
-    // Resistance completion rewards use the same OD turn without consuming
+    // Resistance completion rewards (More Than One Truth's 1MORE, unused since the
+    // six-sense resistances were removed on 2026-11-09) use the same OD turn without consuming
     // charge or the party's shared act allowance.
     internal bool TryActivateRewardLevel(int level)
     {
@@ -432,7 +458,8 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         if (dealer?.CombatState == null ||
             ownerCreature == null ||
             dealer.Side != ownerCreature.Side ||
-            !ReferenceEquals(dealer.CombatState, ownerCreature.CombatState))
+            !ReferenceEquals(dealer.CombatState, ownerCreature.CombatState) ||
+            IsPassiveChargeSuppressedFor(dealer, card))
         {
             return Task.CompletedTask;
         }
@@ -483,21 +510,26 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         CardModel cardSource)
     {
         if (PreciseCharge >= ChargeCapacity ||
-            result.TotalDamage <= 0 ||
+            !props.IsPoweredAttack() ||
             dealer == null ||
             dealer.Side != Owner.Creature.Side ||
             target == null ||
-            target.Side == Owner.Creature.Side)
+            target.Side == Owner.Creature.Side ||
+            IsPassiveChargeSuppressedFor(dealer, cardSource) ||
+            !CombatAttackHitHelper.TryClaim(this, result, dealer, cardSource))
         {
             return Task.CompletedTask;
         }
 
+        // Each connected attack segment/target is worth the same amount,
+        // including ordinary block. Poison, HP supplements and dodges do not count.
         decimal gainMultiplier =
             MaidCultivationPower.GetOverclockMultiplier(
                 dealer,
-                cardSource);
+                cardSource) *
+            ElectronicSoldierManual.GetEquipmentOverdriveMultiplier(dealer, cardSource);
         decimal gainedCharge = decimal.Round(
-            result.TotalDamage * 0.001m * gainMultiplier,
+            2.5m * gainMultiplier,
             2,
             MidpointRounding.AwayFromZero);
         if (gainedCharge > 0)
@@ -506,6 +538,15 @@ public sealed class Overclock : RelicModel, IModRelicVisibility
         }
 
         return Task.CompletedTask;
+    }
+
+    // Only OD itself suspends passive accumulation. Personal/native extra turns
+    // charge normally; attribute summons to their owner rather than the relic
+    // holder because this relic also listens to teammates' actions.
+    internal static bool IsPassiveChargeSuppressedFor(Creature dealer, CardModel cardSource)
+    {
+        Player actor = dealer?.Player ?? dealer?.PetOwner ?? cardSource?.Owner;
+        return actor != null && OverclockImmediateTurnCoordinator.IsActiveFor(actor);
     }
 
     // The selection screen reads the same values used by the combat hooks.

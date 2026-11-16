@@ -173,6 +173,7 @@ static partial class Checks
         await DescriptionChecks(h);
         await EventStorageChecks(h);
         await NativeEventChecks(h);
+        await NativeModelChecks(h);
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "report.json"), JsonSerializer.Serialize(new
         {
             checks = Passed.Count, passed = Passed, registeredVariables,

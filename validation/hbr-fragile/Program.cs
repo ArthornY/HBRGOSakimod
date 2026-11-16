@@ -516,38 +516,25 @@ static class Checks
         Reset();var boss=Actor(Blank<NararaShibaBossMonster>());Set(Combat,"_enemies",new List<Creature>{boss});
         try
         {
+            // Nullification is switched off with the six-sense card attributes (2026-11-09).
+            // A copy from an older combat state, even beside full old resistances, captures
+            // and blocks nothing.
             var nullification=Power<NararaNullificationPower>(boss,1);var resistance=Power<SixSenseResistancePower>(boss,1);
             typeof(SixSenseResistancePower).GetProperty("Resistances",F)!.SetValue(resistance,new[]{10,10,10,10,10,10});
-            Check((bool)typeof(NararaNullificationPower).GetProperty("IsActive",F)!.GetValue(nullification)!,"real Narara boss nullification is active");
-            var card=TestCard();ModelCapabilities.EnsureInitialized();ModelCapabilityRegistry.Register<SixSenseCardCapability>("fixture.fragile.six-sense");
-            var capability=ModelCapabilityRegistry.Create<SixSenseCardCapability>();Set(capability,"_attribute",SixSenseAttribute.Simplicity);
-            card.Capabilities().Add(capability,false,false);
-            Check(ReferenceEquals(card.Capability<SixSenseCardCapability>(),capability),"real Ritsu capability is attached to source card");
+            Check(!(bool)typeof(NararaNullificationPower).GetProperty("IsActive",F)!.GetValue(nullification)!,"Narara nullification is switched off: an older copy is inactive");
+            var card=TestCard();
             var weak=Apply(2,Hero,boss,card)!;var strong=Apply(3,Hero,boss,card)!;
-            Check(Active(boss).Length==2,"status application outside a real card scope retains normal behavior despite preview nullification");
+            Check(Active(boss).Length==2,"status application keeps its normal two slots");
             var scope=Call("NararaNullificationHelper","Begin",card)!;
             try
             {
                 var targets=(HashSet<Creature>)scope.GetType().GetField("Targets",F)!.GetValue(scope)!;
-                Check(targets.Contains(boss),"real Begin CaptureTargets records active boss from real SixSense capability and resistance");
-                Check((bool)Call("NararaNullificationHelper","IsCardNullified",boss,card)!,"actual active scope nullifies its captured card target");
-                var artifact=Power<ArtifactPower>(boss,1);
-                Transform(weak,true,card);
-                Check(weak.Amount==2&&Percent(weak)==37.5m&&artifact.Amount==1,"real Narara scope blocks existing-effect Double before either value changes or Artifact is consumed");
-                Transform(strong,false,card);
-                Check(strong.Amount==2&&Percent(strong)==46.875m&&artifact.Amount==1,"real Narara scope also blocks effect-only transform");
+                Check(targets.Count==0,"Begin captures no Narara target: cards carry no attribute and enemies no resistance");
+                Check(!(bool)Call("NararaNullificationHelper","IsCardNullified",boss,card)!,"no card is nullified inside its own play");
                 Apply(6,Hero,boss,card);
-                Check(Active(boss).Length==2&&Powers(boss).Contains(weak)&&Powers(boss).Contains(strong),"blocked strong application leaves both previous instances intact");
-                Check(weak.Amount==2&&strong.Amount==2&&artifact.Amount==1,"nullification blocks before durations reset or Artifact is consumed");
-                Apply(6,Hero,boss);
-                Check(Active(boss).Length==2&&Powers(boss).Contains(weak)&&Powers(boss).Contains(strong),"source-less command in active card scope is also nullified");
-                Powers(boss).Remove(artifact);
-                var unrelated=TestCard();Apply(6,Hero,boss,unrelated);
-                Check(Active(boss).Length==2&&!Powers(boss).Contains(weak)&&Powers(boss).Contains(strong),"unrelated card source does not inherit active outer card nullification");
+                Check(Active(boss).Length==2&&!Powers(boss).Contains(weak)&&Powers(boss).Contains(strong),"inside the card's play a stronger application replaces the weakest instance as usual");
             }
             finally{Call("NararaNullificationHelper","Close",scope);}
-            Apply(6,Hero,boss,card);
-            Check(Active(boss).Length==2&&!Powers(boss).Contains(strong),"closing actual scope restores originating card status application");
         }
         finally{Set(Combat,"_enemies",new List<Creature>{Enemy});Reset();}
     }

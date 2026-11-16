@@ -4,11 +4,15 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using HBRGOSakiMod.Core.Models.Capabilities;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 
@@ -17,12 +21,7 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class WorldsFinestDamageScopePatch
 {
-    private static MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-        .Where(method => method.Name == nameof(CreatureCmd.Damage))
-        .Where(method => method.GetParameters() is var parameters && parameters.Length is 6 or 7 &&
-            parameters[1].ParameterType == typeof(IEnumerable<Creature>) &&
-            parameters[2].ParameterType == typeof(decimal) && parameters[5].ParameterType == typeof(CardModel))
-        .OrderByDescending(method => method.GetParameters().Length).First();
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
     [HarmonyPriority(Priority.First)]
     private static void Prefix(out WorldsFinestCombatHelper.DamageScope __state) =>
         __state = WorldsFinestCombatHelper.BeginDamage();
@@ -77,5 +76,20 @@ internal static class SpiritTalismanAmountPatch
     {
         if (__instance is SpiritTalismanPower && __instance.IsMutable)
             amount = Math.Clamp(amount, 0, SpiritTalismanPower.MaximumAmount);
+    }
+}
+
+[HarmonyPatch(typeof(Hook), nameof(Hook.AfterCardPlayed))]
+internal static class WorldsFinestThirtyOneACardPatch
+{
+    private static void Postfix(CardPlay cardPlay, ref Task __result)
+    {
+        if (ThirtyOneAKeywordRules.IsThirtyOneACard(cardPlay?.Card))
+            __result = Finish(__result, cardPlay);
+    }
+    private static async Task Finish(Task original, CardPlay play)
+    {
+        await original;
+        await WorldsFinestCombatHelper.AfterThirtyOneACardPlayed(new ThrowingPlayerChoiceContext(), play);
     }
 }

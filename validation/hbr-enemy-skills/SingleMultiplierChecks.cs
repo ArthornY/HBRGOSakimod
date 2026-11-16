@@ -57,8 +57,7 @@ static partial class Checks
         foreach (CardModel upgraded in new CardModel[] { strike, modStrike })
         {
             decimal amount = upgraded.DynamicVars.Damage.BaseValue;
-            Equal(Hook.ModifyDamage(RunState, Combat, Enemy, Hero, amount, ValueProp.Move, upgraded,
-                ModifyDamageHookType.All, CardPreviewMode.None, out _), decimal.Floor(5785.71m),
+            Equal(Preview(Hero, Enemy, amount, ValueProp.Move, upgraded), decimal.Floor(5785.71m),
                 upgraded.GetType().Name + " upgraded preview uses 150 percent with one linear attribute factor");
             Equal(ActualDamage(Hero, Enemy, amount, card: upgraded), decimal.Floor(5785.71m),
                 upgraded.GetType().Name + " upgraded actual agrees with native preview without critical scope");
@@ -79,11 +78,11 @@ static partial class Checks
         }
         decimal cannonActual = WithCannon(cannon, 6m, () => ActualDamage(Hero, Enemy, 6m));
         Equal(cannonActual, decimal.Floor(1928.57m), "owner-sourced cannon applies its default 50 percent Soul Power exactly once then floors");
-        int beforePreviewRng = RunState.Rng.Niche.Counter;
+        int beforePreviewRng = RngCount(RunState.Rng.Niche);
         Equal(Number(Helper("HotaruCannonStatsHelper"), "PreviewDamage", cannon, 6m, false, null,
             Enum.Parse(Helper("HotaruCannonPhase"), "End")), decimal.Floor(cannonActual),
             "real cannon intent preview is the displayed floor of actual owner-sourced damage");
-        Check(beforePreviewRng == RunState.Rng.Niche.Counter, "real cannon preview never consumes a critical sample");
+        Check(beforePreviewRng == RngCount(RunState.Rng.Niche), "real cannon preview never consumes a critical sample");
         Check(!((bool)Helper("HotaruCannonStatsHelper").GetProperty("IsDamagePreview", F)!.GetValue(null)!),
             "real cannon preview restores its preview identity after evaluation");
 
@@ -125,14 +124,14 @@ static partial class Checks
             Equal(Hook.ModifyBlock(Combat, dealer, 5m, ValueProp.Move, null, null, out _), 500m,
                 dealer.Monster?.GetType().Name + " 100 percent block at INT100 is500");
         object critical = Call(Context, "Begin", Hero, null, ValueProp.Move)!;
-        Set(critical, "Sample", 0); int criticalRng = RunState.Rng.Niche.Counter;
+        Set(critical, "Sample", 0); int criticalRng = RngCount(RunState.Rng.Niche);
         try
         {
             Equal(Preview(Hero, Enemy, 6m), decimal.Floor(3857.14m), "forced actual critical scope does not affect floored preview");
             Equal(ActualDamage(Hero, Enemy, 6m), 9000m,
                 "critical reduces E150 to100 before attributes then multiplies6000 by1.5");
             Equal(ActualDamage(Hero, Enemy, 6m), 9000m, "critical repeat reuses the same deterministic sampled hit");
-            Check(RunState.Rng.Niche.Counter == criticalRng && Sample(critical) == 0,
+            Check(RngCount(RunState.Rng.Niche) == criticalRng && Sample(critical) == 0,
                 "controlled replay sample is reused without extra RNG draws");
             Equal(WithCannon(cannon, 6m, () => ActualDamage(Hero, Enemy, 6m)), 4500m,
                 "critical cannon retains E reduction then1.5 critical and a single50 percent Soul factor");

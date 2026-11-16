@@ -22,6 +22,48 @@ internal static class HbrMemoryGardenCardCatalog
         typeof(MoreThanOneTruthHbrgoSaki),
         typeof(CrushYouLikeABugHbrgoSaki),
         typeof(SummerGrassDreamHbrgoSaki),
+        typeof(ByakkoRoarHbrgoSaki),
+        typeof(PeacefulMemoriesHbrgoSaki),
+        typeof(HellfireBurnHbrgoSaki),
+        typeof(FrozenMistMeowHbrgoSaki),
+        typeof(InnocentRequiemHbrgoSaki),
+        typeof(FreshDeathHbrgoSaki),
+        typeof(WorldIsMyLaboratoryHbrgoSaki),
+        typeof(WorldConquestHbrgoSaki),
+        typeof(ItsNinjaShowtimeHbrgoSaki),
+        typeof(ImmortalRecollectionHbrgoSaki),
+        typeof(StarsGuideYouHbrgoSaki),
+        typeof(AllOrdersConfirmedHbrgoSaki),
+        typeof(TengenBrilliantMoveHbrgoSaki),
+        typeof(PaintTheWorldMyColorHbrgoSaki),
+        typeof(MakeAChangeKillYourselfHbrgoSaki),
+        typeof(AlwaysKeepYourChinUpHbrgoSaki),
+        typeof(AcePlayerIsNotMeHbrgoSaki),
+        typeof(DiveAsDeepAsIWantHbrgoSaki),
+        typeof(EldestOshimaIsHereHbrgoSaki),
+        typeof(NarcissismIsFineHbrgoSaki),
+        typeof(YourCombatDeliveryIsHereHbrgoSaki),
+        typeof(AbsolutelyNoEffortHbrgoSaki),
+        typeof(OpenTheLockHbrgoSaki),
+        typeof(IWillNotFallHbrgoSaki),
+        typeof(NoblesseObligeHbrgoSaki),
+        typeof(ExorcisingStringResoundHbrgoSaki),
+        typeof(WindForestFireMountainHbrgoSaki),
+        typeof(HarvestBountifulGrainsHbrgoSaki),
+        typeof(CuteIsInvincibleHbrgoSaki),
+        typeof(SlashIfCloseHbrgoSaki),
+        typeof(AsTheYoungLadyCommandsHbrgoSaki),
+        typeof(LetMeShowYouClassHbrgoSaki),
+        typeof(ThisIsMyStageHbrgoSaki),
+        typeof(LeaveAnyBattlefieldToMeHbrgoSaki),
+        typeof(LegacyFlashHbrgoSaki),
+        typeof(FollowBehindMeHbrgoSaki),
+        typeof(ReadySteadyDieHbrgoSaki),
+        typeof(ThereIsOnlyOneTruthHbrgoSaki),
+        typeof(RepentanceTimeHbrgoSaki),
+        typeof(NumbersAreTheSourceHbrgoSaki),
+        typeof(WitnessMySupremacyHbrgoSaki),
+        typeof(LoveCharlottaHbrgoSaki),
         typeof(BoostUpHbrgoSaki)
     });
 
@@ -44,5 +86,7 @@ internal static class HbrMemoryGardenCardCatalog
         type == typeof(MoreThanOneTruthHbrgoSaki) ||
         type == typeof(CrushYouLikeABugHbrgoSaki) ||
         type == typeof(SummerGrassDreamHbrgoSaki) ||
+        type == typeof(ByakkoRoarHbrgoSaki) ||
+        typeof(ThirtyOneBGardenCard).IsAssignableFrom(type) ||
         type == typeof(BoostUpHbrgoSaki);
 }

@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "HBR IconWilding original icon",
+  "importedPath": "res://images/powers/shrimp_runaway_power.png",
+  "sha256": "407d4daea9932b6528d3c1879f822dacc491a885e71f09d30cdd0ccf4d1d0488",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconWilding.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "1858818413313235177",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:\\stsmod\\.ai-collab\\handoffs\\monster-req-20261114\\icons\\IconWilding.png",
+    "sourceSha256": "407d4daea9932b6528d3c1879f822dacc491a885e71f09d30cdd0ccf4d1d0488"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.ShrimpRunawayPower",
+    "small": "res://images/powers/shrimp_runaway_power.png",
+    "big": "res://images/powers/shrimp_runaway_power.png"
+  },
+  "limits": "Source asset provenance only. No Godot importer, package or in-game visual run."
+}

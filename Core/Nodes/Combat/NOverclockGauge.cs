@@ -1,14 +1,12 @@
 using System;
 using Godot;
-using HBRGOSakiMod.Core.DevConsole;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
-using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.addons.mega_text;
 
 namespace HBRGOSakiMod.Core.Nodes.Combat;
@@ -36,7 +34,6 @@ public partial class NOverclockGauge : Control
     private ShaderMaterial _disabledMaterial;
     private NHbrOverdriveButtonEffects _buttonEffects;
     private NHbrOverdriveFloorBudget _floorBudget;
-    private MegaLabel _floorLabel;
     private MegaLabel _chargeLabel;
     private float _displayCharge;
     private float _targetCharge;
@@ -200,13 +197,13 @@ public partial class NOverclockGauge : Control
 
     private void ActivateSelectedLevel(int level)
     {
-        // Recheck at selection time; the synchronized command rechecks again
+        // Recheck at selection time; the synchronized action rechecks again
         // when executed if another player or queued action changed combat.
         if (_relic?.CanActivateLevel(level) != true) return;
-        string command =
-            $"hbrgosakimod {FixedSoulRollConsoleCmd.ActivateOverclockSubcommand} {level}";
-        RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
-            new ConsoleCmdGameAction(_relic.Owner, command, CombatManager.Instance.IsInProgress));
+        // A managed action, not a console command, so pressing the gauge never
+        // excludes the run from the upload (only typed console commands do). It opens
+        // the OD this gauge shows, which the party shares in co-op, whoever presses.
+        HbrOverclockNetActions.Request(_relic, level);
     }
 
     private void RestoreSavedPosition()
@@ -374,11 +371,9 @@ public partial class NOverclockGauge : Control
             Position = new Vector2(HbrOverdriveGaugeVisuals.BarX, 43f),
             MouseFilter = MouseFilterEnum.Ignore
         };
+        // The battle HUD preview drops the "全队本幕剩余 N / 12 级" caption: the token row
+        // already shows the remaining levels (filled) and the used ones (empty).
         artwork.AddChild(_floorBudget);
-        _floorLabel = CreateLabel("FloorBudget", string.Empty,
-            new Vector2(22f, -1f), new Vector2(240f, 23f), 14,
-            HorizontalAlignment.Left, new Color("F1D7F4"));
-        AddChild(_floorLabel);
 
         // Keep the existing numerical inspection readout outside the source
         // artwork. It appears only while hovered, along with the native tip.
@@ -464,7 +459,6 @@ public partial class NOverclockGauge : Control
         if (_observedRemainingFloorLevels == remaining) return;
         _observedRemainingFloorLevels = remaining;
         _floorBudget?.SetRemaining(remaining);
-        _floorLabel?.SetTextAutoSize($"全队本幕剩余 {remaining} / {Overclock.FloorLevelLimit} 级");
     }
 
     private void RefreshButtonReadiness()

@@ -59,7 +59,7 @@ public sealed class RecallHbrgoSaki : CardModel
         {
             if (choice != selected)
             {
-                DualSwordsCopyHelper.Clear(choice);
+                CardCopyContextHelper.Clear(choice);
                 choice.RemoveFromState();
             }
         }
@@ -83,7 +83,7 @@ public sealed class RecallHbrgoSaki : CardModel
         CardModel copy = CardModel.FromSerializable(
             source.ToSerializable());
         Owner.Creature.CombatState.AddCard(copy, Owner);
-        DualSwordsCopyHelper.RecordCopy(copy);
+        CardCopyContextHelper.RecordCopy(copy);
         copy.AfterCreated();
         return copy;
     }

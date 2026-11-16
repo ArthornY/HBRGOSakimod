@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
@@ -237,7 +238,7 @@ public partial class NPhantomMinionPlacement : Node
                     placement.Node.GlobalPosition);
                 PhantomMinionPositionStore.Save(placement.ModelId, placement.Ordinal, placement.RelativePosition);
                 // Rebuild controller/keyboard target navigation for the new visual order.
-                _room.SetCreatureIsInteractable(placement.Node.Entity, placement.Node.IsInteractable);
+                _room.SetCreatureIsInteractableCompat(placement.Node.Entity, placement.Node.IsInteractable);
             }
             else if (_hasDragged)
             {

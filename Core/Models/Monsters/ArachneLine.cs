@@ -10,16 +10,65 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using MegaCrit.Sts2.Core.ValueProps;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-// HBR 阿拉克尼巨蛛 (ArachneLineDefault), act-three boss. Generated from the act two/three roster table; see
-// docs/hbr-act-rosters.md for the design and calibration.
-public sealed class ArachneLine : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
+// HBR 阿拉克尼巨蛛, act-three boss: original ArachneLineDefault
+// (MC04ExpPatrol02_BOSS01). The original summons nothing
+// (docs/hbr-monster-mechanics-proposal.md).
+public sealed class ArachneLine : HbrgoMoveTableMonster, IHbrgoPhantomAttackResults
 {
-    internal const string SilkBindMoveId = "SILK_BIND_MOVE";
+    internal const string EightSlashSkill = "ArachneLine_AttackSingle01";
+    internal const string AbsorbWhipSkill = "ArachneLine_AttackSingle02";
+    internal const string PiercingFlashSkill = "ArachneLine_AttackAll01";
+    internal const string AttackUpSkill = "ArachneLine_AttackUp";
+    internal const string HealSkill = "ArachneLine_Heal";
+
+    internal const string EightSlashMoveId = "EIGHT_SLASH_MOVE";
+    internal const string AbsorbWhipMoveId = "ABSORB_WHIP_MOVE";
+    internal const string PiercingFlashMoveId = "PIERCING_FLASH_MOVE";
+    internal const string AttackUpMoveId = "ATTACK_UP_MOVE";
+    internal const string HealMoveId = "HEAL_MOVE";
+
+    internal const int AttackUpPercent = 20;
+    internal const int EightSlashHits = 2;
+    internal const int AbsorbWhipHits = 2;
+    internal const int PiercingFlashHits = 8;
+
+    // Original HealDp 15000 over the original maximum DP 41000.
+    internal const decimal HealDpRatio = 15000m / 41000m;
+
+    internal static readonly HbrgoMoveTables Tables = new(
+        "ArachneLineDefault",
+        Table("ArachneLineDefault",
+            Step(EightSlashSkill),
+            Pick((PiercingFlashSkill, 60), (AbsorbWhipSkill, 40)),
+            Pick((PiercingFlashSkill, 40), (AbsorbWhipSkill, 60)),
+            Pick((EightSlashSkill, 40), (AttackUpSkill, 60)),
+            Step(PiercingFlashSkill),
+            Step(AttackUpSkill),
+            Step(AbsorbWhipSkill),
+            Step(HealSkill)),
+        Table("ArachneLineDefault_break",
+            Step(PiercingFlashSkill),
+            Pick((EightSlashSkill, 70), (AttackUpSkill, 30)),
+            Step(PiercingFlashSkill),
+            Pick((EightSlashSkill, 60), (AttackUpSkill, 40)),
+            Step(AbsorbWhipSkill),
+            Pick((EightSlashSkill, 40), (AttackUpSkill, 60)),
+            Step(AbsorbWhipSkill),
+            Pick((AttackUpSkill, 100), (HealSkill, 100)),
+            Step(AbsorbWhipSkill)));
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(EightSlashSkill, EightSlashMoveId, HbrgoMoveTarget.Single),
+        new(AbsorbWhipSkill, AbsorbWhipMoveId, HbrgoMoveTarget.Single),
+        new(PiercingFlashSkill, PiercingFlashMoveId, HbrgoMoveTarget.All, SpiritDefense: true),
+        new(AttackUpSkill, AttackUpMoveId, HbrgoMoveTarget.Self),
+        new(HealSkill, HealMoveId, HbrgoMoveTarget.Self),
+    };
 
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
@@ -29,81 +78,59 @@ public sealed class ArachneLine : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
 
     public override int MaxInitialHp => MinInitialHp;
 
-    private int SilkBindDamage =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            14,
-            12);
-
-    internal const int SilkBindAttackDown = 2;
-
     private int EightSlashDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            7,
-            6);
+            15,
+            13);
 
-    private int EightSlashHits =>
+    private int AbsorbWhipDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            6,
-            6);
+            18,
+            16);
 
-    private int WebWeaveBlock =>
+    private int PiercingFlashDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            30,
-            25);
+            4,
+            4);
 
-    // Fixed DP recovery in native units; the HBR resource boundary scales it.
-    internal const decimal WebWeaveDp = 40m;
-
-    private int SeverDamage =>
+    // Original DefenseDown 20% (30% on hard): 2 modifier layers, 3 on hard.
+    private int PiercingFlashDefenseDown =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            40,
-            36);
+            3,
+            2);
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override HbrgoMoveTables GetMoveTables(int variant) => Tables;
+
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
+
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState silkBind = new(
-            SilkBindMoveId,
-            SilkBindMove,
-            new SingleAttackIntent(() => SilkBindDamage),
-            new DebuffIntent());
-        MoveState eightSlash = new(
-            "EIGHT_SLASH_MOVE",
+        yield return new MoveState(
+            EightSlashMoveId,
             EightSlashMove,
             new MultiAttackIntent(EightSlashDamage, () => EightSlashHits));
-        MoveState webWeave = new(
-            "WEB_WEAVE_MOVE",
-            WebWeaveMove,
-            new DefendIntent(),
+        yield return new MoveState(
+            AbsorbWhipMoveId,
+            AbsorbWhipMove,
+            new MultiAttackIntent(AbsorbWhipDamage, () => AbsorbWhipHits),
             new HealIntent());
-        MoveState sever = new(
-            "SEVER_MOVE",
-            SeverMove,
-            new SingleAttackIntent(() => SeverDamage));
-        return ModMonsterMoveStateMachines.Cycle(
-            silkBind,
-            eightSlash,
-            webWeave,
-            sever);
-    }
-
-    private async Task SilkBindMove(IReadOnlyList<Creature> targets)
-    {
-        await PerformAttack(SilkBindDamage);
-        await ApplySilkBind(targets);
-    }
-
-    private Task ApplySilkBind(IEnumerable<Creature> targets)
-    {
-        return HbrPercentDebuffApplication.ApplyAttackDown(
-            new ThrowingPlayerChoiceContext(),
-            targets.Where(target => target.IsAlive).ToArray(),
-            SilkBindAttackDown,
-            Creature);
+        yield return new MoveState(
+            PiercingFlashMoveId,
+            PiercingFlashMove,
+            new MultiAttackIntent(PiercingFlashDamage, () => PiercingFlashHits),
+            new DebuffIntent());
+        yield return new MoveState(
+            AttackUpMoveId,
+            AttackUpMove,
+            new BuffIntent());
+        yield return new MoveState(
+            HealMoveId,
+            HealMove,
+            new HealIntent());
     }
 
     private Task EightSlashMove(IReadOnlyList<Creature> _)
@@ -111,31 +138,57 @@ public sealed class ArachneLine : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
         return PerformAttack(EightSlashDamage, EightSlashHits);
     }
 
-    private async Task WebWeaveMove(IReadOnlyList<Creature> _)
+    // Original HealDpByDamage: DP back from the DP and HP the hits took.
+    private async Task AbsorbWhipMove(IReadOnlyList<Creature> targets)
+    {
+        HbrgoAttackHits hits = await PerformTrackedAttack(AbsorbWhipDamage, AbsorbWhipHits, targets);
+        HbrEnemyEffects.AbsorbDp(Creature, hits.PassedDamage);
+    }
+
+    // Original all-unit attack: every player-side unit, summons included, and
+    // each takes defense down.
+    private async Task PiercingFlashMove(IReadOnlyList<Creature> targets)
+    {
+        await PerformAttackOn(PiercingFlashDamage, PiercingFlashHits, HbrgoAttackTargets.AllUnits);
+        await ApplyPiercingFlash(UnitsInRange(targets, HbrgoAttackTargets.AllUnits));
+    }
+
+    private Task ApplyPiercingFlash(IEnumerable<Creature> targets)
+    {
+        return HbrPercentDebuffApplication.ApplyDefenseDown(
+            new ThrowingPlayerChoiceContext(),
+            targets.Where(target => target.IsAlive).ToArray(),
+            PiercingFlashDefenseDown,
+            Creature);
+    }
+
+    private async Task AttackUpMove(IReadOnlyList<Creature> _)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        Creature.GetPower<HighDimensionalShellPower>()?
-            .Restore(HbrResourceValueHelper.Fixed(Creature, WebWeaveDp));
-        await CreatureCmd.GainBlock(
-            Creature,
-            WebWeaveBlock,
-            ValueProp.Move,
-            null);
+        await HbrEnemyEffects.ApplyTimedBuff<HbrAttackUpPower>(Creature, AttackUpPercent);
     }
 
-    private Task SeverMove(IReadOnlyList<Creature> _)
+    private async Task HealMove(IReadOnlyList<Creature> _)
     {
-        return PerformAttack(SeverDamage);
+        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
+        RestoreDpRatio(HealDpRatio);
     }
 
-    Task IHbrgoPhantomAttackEffects.AfterPhantomAttackIntent(
+    Task IHbrgoPhantomAttackResults.AfterPhantomAttack(
         MoveState move,
-        IReadOnlyList<Creature> targets)
+        IReadOnlyList<Creature> attackedTargets,
+        IReadOnlyList<Creature> passedTargets,
+        decimal passedDamage)
     {
-        return move?.Id switch
+        switch (move?.Id)
         {
-            SilkBindMoveId => ApplySilkBind(targets),
-            _ => Task.CompletedTask
-        };
+            case AbsorbWhipMoveId:
+                HbrEnemyEffects.AbsorbDp(Creature, passedDamage);
+                return Task.CompletedTask;
+            case PiercingFlashMoveId:
+                return ApplyPiercingFlash(attackedTargets);
+            default:
+                return Task.CompletedTask;
+        }
     }
 }

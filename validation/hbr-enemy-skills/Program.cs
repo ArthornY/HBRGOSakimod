@@ -110,8 +110,16 @@ static partial class Checks
     static decimal Parameter(Creature creature) => Number(Helper("HbrEnemyProfileHelper"), "GetEnemyParameter", creature);
     static object Skill(Creature creature) => Call(Helper("HbrEnemySkillProfiles"), "Get", creature)!;
     static string Reference(Creature creature) => Skill(creature).GetType().GetProperty("DefenseReference", F)!.GetValue(Skill(creature))!.ToString()!;
-    static decimal Preview(Creature dealer, Creature target, decimal amount = 10m, ValueProp props = ValueProp.Move) =>
-        Hook.ModifyDamage(RunState, Combat, target, dealer, amount, props, null, ModifyDamageHookType.All, CardPreviewMode.None, out _);
+    static int RngCount(Rng rng) => (int)(typeof(Rng).GetProperty("Counter", F)?.GetValue(rng) ??
+        typeof(Rng).GetField("_counter", F)!.GetValue(rng))!;
+    static readonly MethodInfo PreviewHook = typeof(Hook).GetMethods(F).Single(method => method.Name == nameof(Hook.ModifyDamage) &&
+        method.GetParameters().Any(parameter => parameter.ParameterType == typeof(CardPreviewMode)));
+    static decimal Preview(Creature dealer, Creature target, decimal amount = 10m, ValueProp props = ValueProp.Move, CardModel? card = null)
+    {
+        object?[] stable = [RunState, Combat, target, dealer, amount, props, card, ModifyDamageHookType.All, CardPreviewMode.None, null];
+        object?[] beta = [RunState, Combat, target, dealer, amount, props, card, null, ModifyDamageHookType.All, CardPreviewMode.None, null];
+        return (decimal)PreviewHook.Invoke(null, PreviewHook.GetParameters().Length == 10 ? stable : beta)!;
+    }
     static decimal ActualDamage(Creature dealer, Creature target, decimal amount = 10m, ValueProp props = ValueProp.Move, CardModel? card = null)
     {
         object?[] stable = [RunState, Combat, target, dealer, amount, props, card, ModifyDamageHookType.All, CardPreviewMode.None, null];
@@ -158,18 +166,18 @@ static partial class Checks
         else if (InNested) Check(!ReferenceEquals(scope, ParentScope), "nested command owns distinct critical scope");
         foreach (Creature target in snapshot)
         {
-            int before = RunState.Rng.Niche.Counter;
+            int before = RngCount(RunState.Rng.Niche);
             decimal preview = Preview(dealer, target);
-            Check(RunState.Rng.Niche.Counter == before && !ActualFlag, "preview inside command never consumes RNG or marks actual damage");
+            Check(RngCount(RunState.Rng.Niche) == before && !ActualFlag, "preview inside command never consumes RNG or marks actual damage");
             decimal actual = ActualDamage(dealer, target);
             int? sample = scope == null ? null : Sample(scope);
             decimal repeated = ActualDamage(dealer, target);
             if (dealer == Enemy)
             {
                 Equal(actual, preview, "enemy same-move preview and actual share pipeline");
-                Check(RunState.Rng.Niche.Counter == before && Current == null, "enemy actual hit never samples natural critical RNG");
+                Check(RngCount(RunState.Rng.Niche) == before && Current == null, "enemy actual hit never samples natural critical RNG");
             }
-            else Check(sample.HasValue && Sample(scope!) == sample && RunState.Rng.Niche.Counter <= before + 1,
+            else Check(sample.HasValue && Sample(scope!) == sample && RngCount(RunState.Rng.Niche) <= before + 1,
                 "player repeated actual calculation reuses one bounded critical sample");
             Equal(actual, repeated, "repeated actual hook returns same result"); LastActual.Add(actual);
         }
@@ -400,6 +408,12 @@ static partial class Checks
             Check(harmony.CreateClassProcessor(PatchType(patch)).Patch().Count > 0, "production patch installs " + patch);
         Canonical = (MethodInfo)Call(PatchType("HbrNumericCriticalScopePatch"), "TargetMethod")!;
         Wrapper = Actual.GetMethods(F).Single(m => m.Name == "ModifyDamageWithStrongestShield" && m.GetParameters().Length == (Canonical.GetParameters().Length == 6 ? 10 : 11));
+        if (System.Environment.GetEnvironmentVariable("HBR_HOPPER_ONLY") == "1")
+        {
+            await HopperCalibration(harmony);
+            HopperOpeningAttack();
+            return;
+        }
         new Harmony("hbr.enemy.skills.native.terminal").Patch(Canonical, prefix: new HarmonyMethod(
             typeof(Checks).GetMethod(nameof(Terminal), F)!) { priority = Priority.Last, after = [harmony.Id] });
         await EnemyGrowthChecks();
@@ -432,10 +446,10 @@ static partial class Checks
             decimal defense = spirit ? 350m / 3m : 400m / 3m;
             decimal expected = 1000m * (1m + (150m - defense) / 140m);
             Equal(Convert(Enemy, Hero), expected, move + " uses normalized fixed defense weights");
-            decimal preview = Preview(Enemy, Hero); int rng = RunState.Rng.Niche.Counter;
+            decimal preview = Preview(Enemy, Hero); int rng = RngCount(RunState.Rng.Niche);
             await Command(Enemy);
             Equal(LastActual[^1], preview, move + " intent Hook and actual wrapper agree");
-            Check(RunState.Rng.Niche.Counter == rng && Current == null && !ActualFlag, move + " enemy command leaves no critical scope or RNG usage");
+            Check(RngCount(RunState.Rng.Niche) == rng && Current == null && !ActualFlag, move + " enemy command leaves no critical scope or RNG usage");
         }
         Move(Enemy, "UNKNOWN_MOVE"); decimal single = Convert(Enemy, Hero);
         ((List<Creature>)Field(typeof(CombatState), "_allies").GetValue(Combat)!).Add(phantom);
@@ -465,6 +479,7 @@ static partial class Checks
         finally { FailListeners = false; }
         Check(Current == null && !ActualFlag, "faulted player command closes critical and actual scopes");
         SingleMultiplierChecks();
+        HopperOpeningAttack();
         if(System.Environment.GetEnvironmentVariable("HBR_SKIP_HOPPER_CALIBRATION")!="1")await HopperCalibration(harmony);
     }
     public static async Task Run()
@@ -477,12 +492,14 @@ static partial class Checks
         File.WriteAllText(ReportPath,JsonSerializer.Serialize(new
         {
             passed=ok,checks=Passed.Count,cases=Passed,error,hopperCalibrationSkipped=skipHopper,actCarryoverSkipped=skipCarryover,
-            hopperCalibration=CalibrationReport,actCarryover=CarryoverTraces,
+            hopperOnly=System.Environment.GetEnvironmentVariable("HBR_HOPPER_ONLY")=="1",
+            hopperCalibration=CalibrationReport,hopperOpeningAttack=OpeningAttackReport,actCarryover=CarryoverTraces,
             modSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),
             nativeGameSha256=System.Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
             boundary="Existing saved-manual actor/map/scope/single-coefficient native Hook regression. Actual calls use production StrongestShield wrapper; canonical Damage terminal is an asynchronous actual-hook driver. "
                 +(skipCarryover?"New act-carryover cases explicitly excluded. ":"Act-carryover native history/getter and real CurrentActIndex setter cases included, with native incoming preview/actual/support-block checks. ")
-                +(skipHopper?"Obsolete Hopper destruction/card-budget calibration explicitly excluded: this is a stable segment, not the full prior suite. ":"Original Hopper HP/DP/calibration segment attempted with unchanged existing assertions; report error identifies any pre-existing failure. ")
+                +(System.Environment.GetEnvironmentVariable("HBR_HOPPER_ONLY")=="1"?"Focused current SmallHopper resource/card-budget and opening-attack checks only; older unrelated actor/growth assertions are not executed. ":"Full actor/growth segment requested. ")
+                +(skipHopper?"Hopper card-budget calibration explicitly excluded. ":"Current Hopper HP/DP and skill-coefficient destruction trajectory checked. ")
                 +"No rendered game, complete room transition, save deserialization, replay, Godot process, package or installed-file changes."
         },new JsonSerializerOptions{WriteIndented=true}));
         Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" enemy skill native checks");if(!ok)throw new Exception("Inspect "+ReportPath);

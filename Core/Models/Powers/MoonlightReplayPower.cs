@@ -24,13 +24,33 @@ public sealed class MoonlightReplayPower : PowerModel, ICustomPower
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
 
+    // The retired source may still exist in an older combat. Spend the new
+    // counter first so two saved sources never add two replays to one card.
+    private static PowerModel GetReplaySource(Creature owner)
+    {
+        MoonlightReplayPower moonlight = owner?.GetPower<MoonlightReplayPower>();
+        if (moonlight?.Amount > 0) return moonlight;
+        CrushYouLikeABugReplayPower legacy = owner?.GetPower<CrushYouLikeABugReplayPower>();
+        return legacy?.Amount > 0 ? legacy : null;
+    }
+
+    internal static bool CanReplay(CardModel card) =>
+        card?.IsMutable == true && card.Owner?.Creature is { } owner && GetReplaySource(owner) != null &&
+        !CardPlayContextHelper.IsAutoPlay(card);
+
+    internal static bool CanReplay(PowerModel source, CardModel card) =>
+        source != null && card?.IsMutable == true && card.Owner?.Creature == source.Owner &&
+        ReferenceEquals(GetReplaySource(source.Owner), source) &&
+        !CardPlayContextHelper.IsAutoPlay(card);
+
+    internal static int GetReplayCountBonus(CardModel card) => CanReplay(card) ? 1 : 0;
+
     public override int ModifyCardPlayCount(
         CardModel card,
         Creature target,
         int playCount)
     {
-        if (card?.Owner?.Creature != Owner || Amount <= 0 ||
-            CardPlayContextHelper.IsAutoPlay(card))
+        if (!CanReplay(this, card))
         {
             return playCount;
         }
@@ -41,6 +61,7 @@ public sealed class MoonlightReplayPower : PowerModel, ICustomPower
 
     public override async Task AfterModifyingCardPlayCount(CardModel card)
     {
+        if (!CanReplay(this, card)) return;
         await PowerCmd.Decrement(this);
     }
 }

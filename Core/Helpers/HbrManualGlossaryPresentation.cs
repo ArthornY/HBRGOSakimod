@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HBRGOSakiMod.Core.Models.Capabilities;
-using HBRGOSakiMod.Core.Models.Relics;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
@@ -16,12 +15,17 @@ internal static class HbrManualGlossaryPresentation
     private static readonly Regex EnergyCount = new(@"energyIcons\((\d+)\)", RegexOptions.Compiled);
     private static readonly Regex SimpleEnergy = new(@"\[(E{1,3})\]", RegexOptions.Compiled);
 
-    internal static string FormatDescription(string raw, string sourceId)
+    internal static string FormatDescription(string raw, string sourceId) => Format(raw, sourceId, null);
+
+    // A manual entry, with the notes its static wording supplies after the formatter's own.
+    internal static string FormatEntry(string raw, string sourceId, IEnumerable<string> extraNotes) =>
+        Format(raw, sourceId, extraNotes);
+
+    private static string Format(string raw, string sourceId, IEnumerable<string> extraNotes)
     {
         if (string.IsNullOrWhiteSpace(raw)) return "暂无说明。";
         string text = Regex.Replace(raw.Trim(), @"(?m)^\s*#", string.Empty).Trim();
         var notes = new List<string>();
-        SixSenseAttribute? sense = SenseFromId(sourceId);
 
         // These templates are shared with combat hover tips. The manual explains the rule,
         // so use formulas or named amounts instead of inventing a player's current values.
@@ -37,37 +41,32 @@ internal static class HbrManualGlossaryPresentation
             if (name == "singleStarIcon")
                 return "[img=28x28]res://images/packed/sprite_fonts/star_icon.png[/img]";
             if (name == "singleEnergyIcon") return EnergyIcon;
-            if (sense is { } attribute)
-            {
-                if (attribute == SixSenseAttribute.Simplicity &&
-                    name is "normalSkill" or "enhancedSkill" or "normalBlock" or "enhancedBlock")
-                {
-                    AddNote("L 表示单纯的有效等级；K(I) 表示按角色已确认知性计算的格挡加成系数。");
-                    bool enhanced = name.StartsWith("enhanced", StringComparison.Ordinal);
-                    return name.EndsWith("Skill", StringComparison.Ordinal)
-                        ? SenseFormula(attribute, enhanced, skillPercent: true)
-                        : $"⌊{SenseFormula(attribute, enhanced)}×100×K(I)⌋";
-                }
-                if (name is "normal" or "enhanced")
-                {
-                    if (attribute != SixSenseAttribute.Talent) AddNote("L 表示该项六感的等级。");
-                    return SenseFormula(attribute, name == "enhanced");
-                }
-                if (name == "loss") return Number(SixSenseCombatHelper.ResistanceLoss(attribute));
-            }
             switch (name)
             {
+                case "DualSwordsCount" when sourceId.EndsWith("SYNERGY_POWER", StringComparison.Ordinal):
+                    AddNote("D 为双剑计数，B 为弓计数；分别计数，到 3 抽另一形态牌并清零。");
+                    return "D";
+                case "BowCount" when sourceId.EndsWith("SYNERGY_POWER", StringComparison.Ordinal):
+                    return "B";
+                case "Value" when sourceId.EndsWith("ROLL_BONUS_POWER", StringComparison.Ordinal) ||
+                                       sourceId.EndsWith("ADVANTAGE_DICE_POWER", StringComparison.Ordinal):
+                    AddNote("V 表示本份能力的数值；不同数值分别显示，同数值叠加剩余次数。");
+                    return "V";
+                case "RemainingUses" when sourceId.EndsWith("ROLL_BONUS_POWER", StringComparison.Ordinal) ||
+                                               sourceId.EndsWith("ADVANTAGE_DICE_POWER", StringComparison.Ordinal):
+                    AddNote("N 表示本份能力剩余的掷骰次数，显示在图标右上角；每次完整掷骰消耗 1 次，包含最强之盾判定。");
+                    return "N";
                 case "amountSkill":
                     AddNote("B 表示本次生效的格挡原值：能力层数、当前生效账本值，或每份奖励的原值。");
                     return "（20×B）";
                 case "amountBlock":
-                    AddNote("B 表示本次生效的格挡原值，K(I) 为获得者知性的格挡加成系数。");
+                    AddNote("B 表示本次生效的格挡原值，K(I) 为获得者智慧的格挡加成系数。");
                     return "向下取整（B×100×K(I)）";
                 case "blockPreview":
-                    AddNote("实际格挡为向下取整（B×100×K(I)）；K(I) 根据获得者知性计算。");
-                    return "（按获得者知性结算）";
+                    AddNote("实际格挡为向下取整（B×100×K(I)）；K(I) 根据获得者智慧计算。");
+                    return "（按获得者智慧结算）";
                 case "BlockRewardsText" when sourceId.EndsWith("HOTARU_BREATH_AFTER_MISS_POWER", StringComparison.Ordinal):
-                    AddNote("每份效果分别保存触发次数、充能、格挡原值与抽牌数；格挡原值 B 对应 20×B% 倍率，实际按知性结算。");
+                    AddNote("每份效果分别保存触发次数、充能、格挡原值与抽牌数；格挡原值 B 对应 20×B% 倍率，实际按智慧结算。");
                     return "每份效果：每回合指定次数内未大成功，获得该份效果的充能和（20×B）%倍率格挡；首次大成功时，抽取该份效果指定的张数。";
                 case "RollBonus" when sourceId.EndsWith("HOTARU_IRIDESCENCE", StringComparison.Ordinal):
                     AddNote("C 表示虹光自身的永久充能计数，初始 1 层，上限 6 层。");
@@ -82,6 +81,9 @@ internal static class HbrManualGlossaryPresentation
                 case "value":
                     AddNote("N 表示该能力的层数或累计数值。");
                     return "N";
+                case "DamageSkill":
+                    // A damage power's HBR skill from its stacks, written as its card-hover tip writes it.
+                    return $"（层数×{HbrNativeEffectSkillHelper.FormatPercent(1m)}）";
                 case "threshold":
                 case "absoluteThreshold":
                     AddNote("C 表示充能层数，门槛最低为 1。");
@@ -90,13 +92,8 @@ internal static class HbrManualGlossaryPresentation
                     AddNote("C 表示充能层数，普通大成功的原始出目下限最低为 1。");
                     return $"max（1，{RollKeywordRules.GetCriticalMinimumForCharge(0)}−{RollKeywordRules.GetCriticalMinimumForCharge(0) - RollKeywordRules.GetCriticalMinimumForCharge(1)}×C）";
                 case "damagePerStack":
-                    AddNote("B 表示该目标已被击破的六感抗性种类数（0～6）。");
-                    return $"（{Number(SixSenseCombatHelper.DestructionConversion(0))}×1.1^B）";
-                case "conversion":
-                    AddNote("B 表示该目标已被击破的六感抗性种类数（0～6）。");
-                    return $"（{Number(SixSenseCombatHelper.DestructionConversion(0) * 100m)}×1.1^B）";
-                case "resistances":
-                    return "六感抗性：领袖魅力、才能、温柔、精神力、单纯、疯狂。";
+                    // Native numerics: a flat 0.5% per stack.
+                    return "0.5";
                 case "InheritedDamageBonus":
                     AddNote("D 表示本场战斗已经继承的伤害增幅。");
                     return "D";
@@ -130,6 +127,7 @@ internal static class HbrManualGlossaryPresentation
         // Raw description entries normally have no conditions; tolerate an added nested
         // placeholder without sending incomplete SmartFormat text into LocManager.
         while (Variable.IsMatch(text)) text = Variable.Replace(text, "（对应数值）");
+        foreach (string note in extraNotes ?? Array.Empty<string>()) AddNote(note);
         if (notes.Count > 0)
             text += "\n\n[color=#b9bbc5]" + string.Join("\n", notes) + "[/color]";
         return text;
@@ -139,28 +137,6 @@ internal static class HbrManualGlossaryPresentation
             if (!notes.Contains(note, StringComparer.Ordinal)) notes.Add(note);
         }
     }
-
-    private static SixSenseAttribute? SenseFromId(string sourceId)
-    {
-        const string prefix = "card_keywords:HBRGO_SIX_SENSE.";
-        return sourceId?.StartsWith(prefix, StringComparison.Ordinal) == true &&
-            Enum.TryParse(sourceId[prefix.Length..], out SixSenseAttribute sense) && Enum.IsDefined(sense)
-                ? sense : null;
-    }
-
-    private static string SenseFormula(SixSenseAttribute sense, bool enhanced, bool skillPercent = false)
-    {
-        decimal scale = sense == SixSenseAttribute.Madness ? 100m :
-            skillPercent && sense == SixSenseAttribute.Simplicity
-                ? 100m / HbrSkillPower.LegacyBlockAt100Percent : 1m;
-        decimal baseline = SixSenseCombatHelper.EffectValue(sense, 0m, enhanced) * scale;
-        decimal perLevel = SixSenseCombatHelper.EffectValue(sense, 1m, enhanced) * scale - baseline;
-        if (perLevel == 0m) return Number(baseline);
-        string levelTerm = perLevel == 1m ? "L" : Number(perLevel) + "×L";
-        return baseline == 0m ? "（" + levelTerm + "）" : $"（{Number(baseline)}＋{levelTerm}）";
-    }
-
-    private static string Number(decimal value) => value.ToString("0.####", CultureInfo.InvariantCulture);
 
     private static string RepeatEnergy(int count) => count is >= 1 and <= 3
         ? string.Concat(Enumerable.Repeat(EnergyIcon, count)) : count.ToString(CultureInfo.InvariantCulture) + EnergyIcon;

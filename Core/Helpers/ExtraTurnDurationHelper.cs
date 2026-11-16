@@ -12,12 +12,9 @@ internal static class ExtraTurnDurationHelper
 {
     public static bool ShouldSuppressDurationTick(Creature owner)
     {
-        // Preserve Shadow Dance's original protection, including custom turn-end costs.
-        // An owner alone cannot distinguish an OD buff duration from a debuff or cost.
-        Player player = owner?.Player ?? owner?.PetOwner;
-        return player != null &&
-            CombatManager.Instance.PlayersTakingExtraTurn.Contains(player) &&
-            player.Creature.HasPower<ShadowDanceExtraTurnPower>();
+        // Custom costs/trigger consumption are not durations. The two authored
+        // sources now use personal inserted turns instead of native extra turns.
+        return false;
     }
 
     public static bool ShouldSuppressDurationTick(PowerModel power)
@@ -35,8 +32,9 @@ internal static class ExtraTurnDurationHelper
         // OD protects only positive durations; trigger-based stack consumption still runs.
         // Pets share the protection of their participating summoner.
         Player player = power.Owner?.Player ?? power.Owner?.PetOwner;
-        return power.Type == PowerType.Buff &&
+        return power.TypeForCurrentAmount == PowerType.Buff &&
             player != null &&
-            OverclockImmediateTurnCoordinator.IsActiveFor(player);
+            (OverclockImmediateTurnCoordinator.IsActiveFor(player) ||
+             PersonalImmediateTurnCoordinator.IsActiveFor(player));
     }
 }

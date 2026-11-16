@@ -7,7 +7,6 @@ using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
@@ -16,57 +15,55 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 
 namespace HBRGOSakiMod.Core.Nodes.Screens;
 
+// The Electronic Soldier Manual, drawn as HBR's terminal phone (ui-concepts/manual-phone-20261104):
+// a home screen with the terminal buttons, then one page at a time inside the phone. Esc and the
+// back button step back a page (home closes the manual); the left plate always closes it.
+// Allocation, network confirmation and the reward entry's deferred close are unchanged.
 public partial class NSixSenseStatusScreen : Control, IOverlayScreen
 {
-    private static readonly Color Accent = new("#ed72aa");
-    private static readonly Color Muted = new("#a7afb7");
+    private enum ManualPage { Home, Senses, CannonUpgrades, BattleStats, Equipment, Shop, Glossary, FateDice }
+
     private static NSixSenseStatusScreen _activeScreen;
     private ElectronicSoldierManual _manual;
     private SixSenseAttribute _selected = SixSenseAttribute.LeadershipCharm;
-    private readonly Dictionary<SixSenseAttribute, Button> _buttons = new();
-    private PanelContainer _panel;
-    private Control _body;
-    private GridContainer _sections;
-    private Button _sensesTab;
-    private Button _glossaryTab;
-    private Button _battleStatsTab;
-    private Control _pageHost;
-    private Control _sensesPage;
+    private ManualPage _page = ManualPage.Home;
+    private readonly Stack<ManualPage> _history = new();
+    private bool _statsView;
+    private int _statHighlight = -1;
     private NManualGlossaryPanel _glossaryPage;
     private NManualBattleStatsPanel _battleStatsPage;
-    private HBoxContainer _footer;
-    private enum ManualPage { Senses, CannonUpgrades, BattleStats, Glossary }
-    private ManualPage _page;
-    private Button _cannonsTab;
     private NManualCannonUpgradesPanel _cannonsPage;
+    private NManualEquipmentPanel _equipmentPage;
+    private NManualShopPanel _shopPage;
+    private NManualFateDicePanel _fateDicePage;
     private bool SupportsCannonUpgrades => _manual?.Owner?.Character is HbrgoHotaru;
-    private ScrollContainer _sidebar;
-    private GridContainer _navigation;
-    private VBoxContainer _main;
-    private ScrollContainer _mainScroll;
+    // Equipment belongs to the HBR numerics layer; old runs keep the old manual.
+    private bool SupportsEquipment => _manual?.IsHbrNumericsEnabled == true;
+    private bool SupportsFateDice => _manual?.UsesFateDice == true;
     private SixSenseAllocationDraft _draft;
-    private Label _points;
-    private Button _confirm;
-    private Label _summary;
-    private Label _selectionTitle;
-    private RichTextLabel _details;
-    private Button _closeButton;
-    private SixSenseRadar _radar;
     private Tween _fadeTween;
     private string _lastState;
     private double _refreshTimer;
     private Action _afterUserClosed;
     private bool _closeRequested;
     private int? _autoCloseAllocationRevision;
+    private bool _relicsHidden;
 
     public NetScreenType ScreenType => NetScreenType.Room;
-    public bool UseSharedBackstop => true;
+    // The phone draws its own blurred, dimmed backdrop; the 85% black shared backstop would leave
+    // nothing to blur. The stack still keeps the (transparent) backstop catching clicks.
+    public bool UseSharedBackstop => false;
     public Control DefaultFocusedControl => _page switch
     {
-        ManualPage.Glossary => _glossaryPage?.DefaultFocusedControl ?? (Control)_glossaryTab ?? this,
-        ManualPage.CannonUpgrades => _cannonsPage?.DefaultFocusedControl ?? (Control)_cannonsTab ?? this,
-        ManualPage.BattleStats => _battleStatsPage?.DefaultFocusedControl ?? (Control)_battleStatsTab ?? this,
-        _ => (Control)_closeButton ?? this
+        ManualPage.Home => _home?.DefaultFocusedControl ?? this,
+        ManualPage.Senses => _sensesPage?.DefaultFocusedControl ?? this,
+        ManualPage.Glossary => _glossaryPage?.DefaultFocusedControl ?? (Control)_back ?? this,
+        ManualPage.CannonUpgrades => _cannonsPage?.DefaultFocusedControl ?? (Control)_back ?? this,
+        ManualPage.BattleStats => _battleStatsPage?.DefaultFocusedControl ?? (Control)_back ?? this,
+        ManualPage.Equipment => _equipmentPage?.DefaultFocusedControl ?? (Control)_back ?? this,
+        ManualPage.Shop => _shopPage?.DefaultFocusedControl ?? (Control)_back ?? this,
+        ManualPage.FateDice => _fateDicePage?.DefaultFocusedControl ?? (Control)_back ?? this,
+        _ => this
     };
 
     public static void Show(ElectronicSoldierManual manual) => TryShow(manual);
@@ -81,7 +78,12 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             _activeScreen._afterUserClosed += afterUserClosed;
             return true;
         }
-        _activeScreen = new NSixSenseStatusScreen { Name = "SixSenseStatusScreen", _manual = manual, _afterUserClosed = afterUserClosed };
+        _activeScreen = new NSixSenseStatusScreen
+        {
+            Name = "SixSenseStatusScreen", _manual = manual, _afterUserClosed = afterUserClosed,
+            // The six-sense reward opens straight onto the senses page.
+            _page = afterUserClosed != null ? ManualPage.Senses : ManualPage.Home
+        };
         NOverlayStack.Instance.Push(_activeScreen);
         return true;
     }
@@ -91,13 +93,16 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         MouseFilter = MouseFilterEnum.Stop;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         BuildUi();
-        LayoutPanel();
+        LayoutRig();
+        ManualPage start = _page;
+        _page = ManualPage.Home;
         Refresh(_manual);
+        if (start != ManualPage.Home) SelectPage(start, animate: false);
     }
 
     public override void _Notification(int what)
     {
-        if (what == NotificationResized) LayoutPanel();
+        if (what == NotificationResized) LayoutRig();
     }
 
     public override void _Process(double delta)
@@ -118,6 +123,10 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         // Combat buffs do not change saved six-sense progression. Give the
         // visible stat panel its own small, cached refresh for live attributes.
         if (_page == ManualPage.BattleStats) _battleStatsPage?.Refresh(_manual);
+        // Gold, network results and combat start/end change these pages too.
+        if (_page == ManualPage.Equipment) _equipmentPage?.Refresh(_manual);
+        if (_page == ManualPage.Shop) _shopPage?.Refresh(_manual);
+        if (_page == ManualPage.FateDice) _fateDicePage?.Refresh(_manual);
         string state = $"{_manual.SixSensePoints}:{_manual.MemoryGardenUpgradePoints}:{_manual.SixSenseAllocationRevision}:{_manual.IsAllocationPending}|battle:{_manual.HbrBattleProgressData}|" + string.Join("|", ElectronicSoldierManual.AllSixSenseAttributes.Select(
             attribute => $"{_manual.GetSenseAmount(attribute)}:{_manual.GetEffectiveSenseAmount(attribute)}"));
         if (SupportsCannonUpgrades)
@@ -141,11 +150,12 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
         {
             GetViewport().SetInputAsHandled();
-            Close();
+            Back();
         }
-        else if (_page == ManualPage.Glossary && input is InputEventKey
-                 { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.F })
+        else if (input is InputEventKey { Pressed: true, Echo: false, CtrlPressed: true, Keycode: Key.F })
         {
+            // Ctrl+F opens the glossary from any page and focuses its search box.
+            if (_page != ManualPage.Glossary) SelectPage(ManualPage.Glossary);
             _glossaryPage?.FocusSearch();
             GetViewport().SetInputAsHandled();
         }
@@ -159,17 +169,44 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             GetViewport().SetInputAsHandled();
     }
 
+    public override void _ExitTree() => RestoreRelics();
+
+    // The relic row draws above overlays and would cover the top of the phone in a long run. Slide it
+    // away while the manual is up, as the vanilla capstone screens do, and bring back only what was moved.
+    private void HideRelics()
+    {
+        if (_relicsHidden || MegaCrit.Sts2.Core.Nodes.NRun.Instance?.GlobalUi?.RelicInventory is not { } relics) return;
+        relics.AnimHide();
+        _relicsHidden = true;
+    }
+
+    private void RestoreRelics()
+    {
+        if (!_relicsHidden) return;
+        _relicsHidden = false;
+        MegaCrit.Sts2.Core.Nodes.NRun.Instance?.GlobalUi?.RelicInventory?.AnimShow();
+    }
+
     public void AfterOverlayOpened()
     {
+        HideRelics();
         Modulate = Colors.Transparent;
         _fadeTween?.Kill();
-        _fadeTween = CreateTween();
+        _fadeTween = CreateTween().SetParallel();
         _fadeTween.TweenProperty(this, "modulate:a", 1f, 0.15);
+        // The phone rises 70px (at the rig's scale) into place, as the preview's #rig does.
+        if (_rig != null)
+        {
+            _rig.Position = RigOrigin() + new Vector2(0f, HbrManualPhoneLayout.RigRise * _rig.Scale.Y);
+            _fadeTween.TweenProperty(_rig, "position", RigOrigin(), HbrManualPhoneLayout.RigRiseDuration)
+                .SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quart);
+        }
     }
 
     public void AfterOverlayClosed()
     {
-        _radar?.StopRepeating();
+        RestoreRelics();
+        _sensesPage?.StopRepeating();
         _draft?.Clear();
         _fadeTween?.Kill();
         if (ReferenceEquals(_activeScreen, this)) _activeScreen = null;
@@ -180,249 +217,78 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         if (continuation != null) Callable.From(continuation).CallDeferred();
     }
 
-    public void AfterOverlayShown() { Visible = true; Refresh(_manual); }
+    public void AfterOverlayShown() { Visible = true; HideRelics(); Refresh(_manual); }
+
     public void AfterOverlayHidden()
     {
-        _radar?.StopRepeating();
+        RestoreRelics();
+        _sensesPage?.StopRepeating();
         _glossaryPage?.ReleaseSearchFocus();
         Visible = false;
     }
 
-    private void BuildUi()
+    // Back one page: pages opened from another page return to it, the rest return home; home closes.
+    private void Back()
     {
-        _panel = new PanelContainer { Name = "SixSensePanel" };
-        _panel.AddThemeStyleboxOverride("panel", PanelStyle());
-        AddChild(_panel);
-        VBoxContainer layout = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        layout.AddThemeConstantOverride("separation", 16);
-        _panel.AddChild(layout);
-
-        HBoxContainer header = new();
-        header.AddThemeConstantOverride("separation", 14);
-        layout.AddChild(header);
-        header.AddChild(new TextureRect
+        if (_page == ManualPage.Home)
         {
-            Texture = PreloadManager.Cache.GetTexture2D(
-                ImageHelper.GetImagePath("relics/electronic_soldier_manual.png")),
-            CustomMinimumSize = new Vector2(42, 42),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            MouseFilter = MouseFilterEnum.Ignore
-        });
-        Label title = MakeLabel("电子军人手册", 26);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        header.AddChild(title);
-        _summary = MakeLabel("", 18, Muted);
-        header.AddChild(_summary);
-        _closeButton = new Button
-        {
-            Text = "×", TooltipText = "关闭", CustomMinimumSize = new Vector2(44, 44),
-            FocusMode = FocusModeEnum.All
-        };
-        _closeButton.AddThemeFontSizeOverride("font_size", 28);
-        StyleButton(_closeButton, false);
-        _closeButton.Pressed += Close;
-        header.AddChild(_closeButton);
-        layout.AddChild(new HSeparator());
-
-        _body = new Control { SizeFlagsVertical = SizeFlags.ExpandFill, ClipContents = true };
-        _body.Resized += LayoutBody;
-        layout.AddChild(_body);
-        _sections = new GridContainer { Columns = 1 };
-        _sections.AddThemeConstantOverride("v_separation", 8);
-        _sections.AddThemeConstantOverride("h_separation", 8);
-        _body.AddChild(_sections);
-        Button MakeSection(string text, ManualPage page)
-        {
-            Button button = new()
-            {
-                Text = text, CustomMinimumSize = new Vector2(0, 48),
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                FocusMode = FocusModeEnum.All
-            };
-            button.AddThemeFontSizeOverride("font_size", 18);
-            button.Pressed += () => SelectPage(page);
-            StyleButton(button, page == ManualPage.Senses);
-            _sections.AddChild(button);
-            return button;
+            Close();
+            return;
         }
-        _sensesTab = MakeSection("六感", ManualPage.Senses);
-        _cannonsTab = MakeSection("浮游炮", ManualPage.CannonUpgrades);
-        _cannonsTab.Visible = SupportsCannonUpgrades;
-        _battleStatsTab = MakeSection("战斗属性", ManualPage.BattleStats);
-        _glossaryTab = MakeSection("词条全解", ManualPage.Glossary);
-        _pageHost = new Control { ClipContents = true, MouseFilter = MouseFilterEnum.Pass };
-        _body.AddChild(_pageHost);
-        _sensesPage = new Control { MouseFilter = MouseFilterEnum.Pass };
-        _pageHost.AddChild(_sensesPage);
-        _sensesPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        _sidebar = new ScrollContainer
-        {
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled
-        };
-        _sensesPage.AddChild(_sidebar);
-        _navigation = new GridContainer
-        {
-            Columns = 1, SizeFlagsHorizontal = SizeFlags.ExpandFill
-        };
-        _navigation.AddThemeConstantOverride("v_separation", 8);
-        _navigation.AddThemeConstantOverride("h_separation", 8);
-        _sidebar.AddChild(_navigation);
-        foreach (SixSenseAttribute attribute in ElectronicSoldierManual.AllSixSenseAttributes)
-        {
-            Button button = new()
-            {
-                Name = $"Sense{attribute}",
-                CustomMinimumSize = new Vector2(0, 54),
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                Alignment = HorizontalAlignment.Left,
-                TooltipText = _manual.GetSenseShortDescriptionForOwner(attribute)
-            };
-            button.AddThemeFontSizeOverride("font_size", 19);
-            button.Pressed += () => { _selected = attribute; Refresh(_manual); };
-            _navigation.AddChild(button);
-            _buttons.Add(attribute, button);
-        }
-
-        _mainScroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        _sensesPage.AddChild(_mainScroll);
-        _main = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
-        _main.AddThemeConstantOverride("separation", 8);
-        _mainScroll.AddChild(_main);
-        HBoxContainer chartHeader = new();
-        _main.AddChild(chartHeader);
-        Label overview = MakeLabel("六感总览", 22);
-        overview.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        chartHeader.AddChild(overview);
-        chartHeader.AddChild(MakeLabel($"{ElectronicSoldierManual.SixSenseBonusThreshold}级兼具 · {ElectronicSoldierManual.MaxSixSense}级上限", 17, Accent));
-        _points = MakeLabel("", 20, Accent);
-        _main.AddChild(_points);
-        _radar = new SixSenseRadar
-        {
-            Name = "SixSenseRadar", Manual = _manual,
-            CustomMinimumSize = new Vector2(0, 340),
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            MouseFilter = MouseFilterEnum.Pass,
-            Adjust = AdjustPoint
-        };
-        _main.AddChild(_radar);
-        _main.AddChild(new HSeparator());
-        _selectionTitle = MakeLabel("", 22);
-        _main.AddChild(_selectionTitle);
-        _details = new RichTextLabel
-        {
-            BbcodeEnabled = true, ScrollActive = true, FitContent = false,
-            CustomMinimumSize = new Vector2(0, 118),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
-        };
-        _details.AddThemeFontSizeOverride("normal_font_size", 19);
-        _details.AddThemeFontSizeOverride("bold_font_size", 19);
-        _details.AddThemeColorOverride("default_color", new Color("#d7dce1"));
-        _main.AddChild(_details);
-
-        _footer = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
-        layout.AddChild(_footer);
-        _confirm = new Button { Text = "确定", CustomMinimumSize = new Vector2(112, 44), Disabled = true };
-        _confirm.AddThemeFontSizeOverride("font_size", 20);
-        StyleButton(_confirm, false);
-        _confirm.Pressed += ConfirmAllocation;
-        _footer.AddChild(_confirm);
+        if (_history.Count > 0) SelectPage(_history.Pop(), remember: false);
+        else SelectPage(ManualPage.Home, remember: false);
     }
 
-    private void LayoutPanel()
-    {
-        if (_panel == null || Size.X <= 0 || Size.Y <= 0) return;
-        _panel.Size = new Vector2(Math.Min(1200, Math.Max(0, Size.X - 48)),
-            Math.Min(820, Math.Max(0, Size.Y - 48)));
-        _panel.Position = (Size - _panel.Size) / 2f;
-        LayoutBody();
-    }
-
-    private void LayoutBody()
-    {
-        if (_body == null || _main == null) return;
-        bool stackSections = _body.Size.X < 640;
-        int sectionCount = SupportsCannonUpgrades ? 4 : 3;
-        _sections.Columns = stackSections ? Math.Clamp((int)(_body.Size.X / 128f), 1, sectionCount) : 1;
-        _sections.Position = Vector2.Zero;
-        if (stackSections)
-        {
-            int rows = (sectionCount + _sections.Columns - 1) / _sections.Columns;
-            float sectionHeight = rows * 48 + (rows - 1) * 8;
-            _sections.Size = new Vector2(_body.Size.X, sectionHeight);
-            _pageHost.Position = new Vector2(0, sectionHeight + 12);
-            _pageHost.Size = new Vector2(_body.Size.X, Math.Max(0, _body.Size.Y - sectionHeight - 12));
-        }
-        else
-        {
-            _sections.Size = new Vector2(120, _body.Size.Y);
-            _pageHost.Position = new Vector2(136, 0);
-            _pageHost.Size = new Vector2(Math.Max(0, _body.Size.X - 136), _body.Size.Y);
-        }
-        Vector2 contentSize = _pageHost.Size;
-        bool narrow = contentSize.X < 760;
-        _navigation.Columns = narrow ? 2 : 1;
-        if (narrow)
-        {
-            float sidebarHeight = Math.Min(184, contentSize.Y * 0.32f);
-            _sidebar.Position = Vector2.Zero;
-            _sidebar.Size = new Vector2(contentSize.X, sidebarHeight);
-            _mainScroll.Position = new Vector2(0, sidebarHeight + 12);
-            _mainScroll.Size = new Vector2(contentSize.X, Math.Max(0, contentSize.Y - sidebarHeight - 12));
-        }
-        else
-        {
-            _sidebar.Position = Vector2.Zero;
-            _sidebar.Size = new Vector2(224, contentSize.Y);
-            _mainScroll.Position = new Vector2(248, 0);
-            _mainScroll.Size = new Vector2(Math.Max(0, contentSize.X - 248), contentSize.Y);
-        }
-    }
-
-    private void SelectPage(ManualPage page)
+    private void SelectPage(ManualPage page, bool animate = true, bool remember = true)
     {
         if (page == ManualPage.CannonUpgrades && !SupportsCannonUpgrades) return;
-        _radar?.StopRepeating();
+        if (page is ManualPage.Equipment or ManualPage.Shop && !SupportsEquipment) return;
+        if (page == ManualPage.FateDice && !SupportsFateDice) return;
+        _sensesPage?.StopRepeating();
         _glossaryPage?.ReleaseSearchFocus();
+        if (remember && _page != ManualPage.Home && _page != page) _history.Push(_page);
+        if (page == ManualPage.Home) _history.Clear();
         if (page == ManualPage.Glossary && _glossaryPage == null)
-        {
-            _glossaryPage = new NManualGlossaryPanel
+            _glossaryPage = HostPanel(new NManualGlossaryPanel
             {
-                Name = "ManualGlossary", HbrNumericsEnabled = _manual?.IsHbrNumericsEnabled == true
-            };
-            _pageHost.AddChild(_glossaryPage);
-            _glossaryPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        }
+                Name = "ManualGlossary", HbrNumericsEnabled = _manual?.IsHbrNumericsEnabled == true,
+                CountChanged = RefreshHeader
+            });
         if (page == ManualPage.CannonUpgrades && _cannonsPage == null)
-        {
-            _cannonsPage = new NManualCannonUpgradesPanel { Name = "ManualCannonUpgrades" };
-            _pageHost.AddChild(_cannonsPage);
-            _cannonsPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        }
+            _cannonsPage = HostPanel(new NManualCannonUpgradesPanel { Name = "ManualCannonUpgrades" });
         if (page == ManualPage.BattleStats && _battleStatsPage == null)
-        {
-            _battleStatsPage = new NManualBattleStatsPanel { Name = "ManualBattleStats" };
-            _pageHost.AddChild(_battleStatsPage);
-            _battleStatsPage.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        }
+            _battleStatsPage = HostPanel(new NManualBattleStatsPanel { Name = "ManualBattleStats" });
+        if (page == ManualPage.Equipment && _equipmentPage == null)
+            _equipmentPage = HostPanel(new NManualEquipmentPanel { Name = "ManualEquipment" });
+        if (page == ManualPage.Shop && _shopPage == null)
+            _shopPage = HostPanel(new NManualShopPanel { Name = "ManualShop" });
+        if (page == ManualPage.FateDice && _fateDicePage == null)
+            _fateDicePage = HostPanel(new NManualFateDicePanel { Name = "ManualFateDice" });
+
+        ManualPage previous = _page;
         _page = page;
+        // The stat picked on the home dock or the senses page stays lit until home is reached again.
+        if (page == ManualPage.Home) _statHighlight = -1;
+        if (page == ManualPage.BattleStats) _battleStatsPage.Highlight(_statHighlight);
         _sensesPage.Visible = page == ManualPage.Senses;
         if (_glossaryPage != null) _glossaryPage.Visible = page == ManualPage.Glossary;
         if (_cannonsPage != null) _cannonsPage.Visible = page == ManualPage.CannonUpgrades;
         if (_battleStatsPage != null) _battleStatsPage.Visible = page == ManualPage.BattleStats;
-        _footer.Visible = page == ManualPage.Senses;
-        StyleButton(_sensesTab, page == ManualPage.Senses);
-        StyleButton(_cannonsTab, page == ManualPage.CannonUpgrades);
-        StyleButton(_battleStatsTab, page == ManualPage.BattleStats);
-        StyleButton(_glossaryTab, page == ManualPage.Glossary);
+        if (_equipmentPage != null) _equipmentPage.Visible = page == ManualPage.Equipment;
+        if (_shopPage != null) _shopPage.Visible = page == ManualPage.Shop;
+        if (_fateDicePage != null) _fateDicePage.Visible = page == ManualPage.FateDice;
+        ShowPage(previous, page, animate);
         // Reuse the same draft and controls while switching reference pages.
         Refresh(_manual);
-        LayoutBody();
         if (page == ManualPage.Glossary) _glossaryPage.FocusSearch();
-        else if (page == ManualPage.CannonUpgrades) _cannonsPage.DefaultFocusedControl?.GrabFocus();
-        else if (page == ManualPage.BattleStats) _battleStatsPage.DefaultFocusedControl?.GrabFocus();
-        else _sensesTab.GrabFocus();
+        else DefaultFocusedControl?.GrabFocus();
+    }
+
+    private T HostPanel<T>(T panel) where T : Control
+    {
+        _body.AddChild(panel);
+        panel.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        return panel;
     }
 
     private void Refresh(ElectronicSoldierManual manual)
@@ -430,49 +296,34 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
         if (_draft == null || !ReferenceEquals(_manual, manual))
         {
             _autoCloseAllocationRevision = null;
-            _radar?.StopRepeating();
+            _sensesPage?.StopRepeating();
             _draft = manual == null ? null : new SixSenseAllocationDraft(manual);
         }
         _manual = manual;
-        if (_manual == null || _summary == null) return;
-        bool sectionChanged = _cannonsTab.Visible != SupportsCannonUpgrades;
-        _cannonsTab.Visible = SupportsCannonUpgrades;
-        if (!SupportsCannonUpgrades && _page == ManualPage.CannonUpgrades)
+        if (_manual == null || _home == null) return;
+        if ((!SupportsCannonUpgrades && _page == ManualPage.CannonUpgrades) ||
+            (!SupportsEquipment && _page is ManualPage.Equipment or ManualPage.Shop) ||
+            (!SupportsFateDice && _page == ManualPage.FateDice))
         {
-            SelectPage(ManualPage.Senses);
+            SelectPage(ManualPage.Home, remember: false);
             return;
         }
         _cannonsPage?.Refresh(SupportsCannonUpgrades ? _manual.Owner.GetRelic<Millsage>() : null);
         _battleStatsPage?.Refresh(_manual);
+        _equipmentPage?.Refresh(_manual);
+        _shopPage?.Refresh(_manual);
+        _fateDicePage?.Refresh(_manual);
         _glossaryPage?.Refresh(_manual.IsHbrNumericsEnabled);
         _draft.Reconcile();
-        int total = ElectronicSoldierManual.AllSixSenseAttributes.Sum(_draft.Level);
-        int unlocked = ElectronicSoldierManual.AllSixSenseAttributes.Count(sense => _draft.Level(sense) >= ElectronicSoldierManual.SixSenseBonusThreshold);
         bool editable = !_closeRequested && SixSenseNetActions.CanAllocate(_manual) && !_manual.IsAllocationPending;
-        _points.Text = $"六感点数  {_draft.Remaining}" + (_draft.Total > 0
-            ? $"   {(_manual.IsAllocationPending ? "正在确认" : "待确认")} +{_draft.Total}" : "");
-        _confirm.Disabled = !editable || _draft.Total == 0;
-        _summary.Text = $"总等级 {total}\n兼具 {unlocked}/6\n庭园升级点 {_manual.MemoryGardenUpgradePoints}";
-        foreach ((SixSenseAttribute attribute, Button button) in _buttons)
-        {
-            int level = _draft.Level(attribute);
-            button.Text = $"{ElectronicSoldierManual.GetSenseTitle(attribute)}  {level}/99";
-            button.TooltipText = _manual.GetSenseShortDescriptionForOwner(attribute);
-            StyleButton(button, attribute == _selected);
-        }
-        string name = ElectronicSoldierManual.GetSenseTitle(_selected);
-        int amount = _draft.Level(_selected);
-        _selectionTitle.Text = $"{name}   Lv.{amount}" + (_draft.Added(_selected) > 0 ? $"  (+{_draft.Added(_selected)})" : "");
-        _details.Text = BuildBattleGrowthDescription(_selected) + BuildEffectDescription(_selected,
-            _manual.GetEffectiveSenseAmount(_selected, amount), _manual.Owner,
-            _manual.IsHbrNumericsEnabled).GetFormattedText();
-        _radar.Manual = _manual;
-        _radar.Draft = _draft;
-        _radar.Editable = editable && _page == ManualPage.Senses;
-        _radar.Selected = _selected;
-        _radar.RefreshButtons();
-        _radar.QueueRedraw();
-        if (sectionChanged) LayoutBody();
+        _home.Refresh(_manual, _draft,
+            HbrManualPhoneLayout.HomeButtons(SupportsEquipment, SupportsCannonUpgrades, SupportsFateDice));
+        string detail = _statsView && _manual.IsHbrNumericsEnabled
+            ? BuildStatDescription(_selected)
+            : BuildBattleGrowthDescription(_selected) + BuildSenseRule(_selected, _manual.IsHbrNumericsEnabled);
+        _sensesPage.Refresh(_manual, _draft, _selected, _statsView, editable && _page == ManualPage.Senses, detail);
+        RefreshHeader();
+        SetExitState(_manual.IsAllocationPending ? ExitState.Disabled : _exitHovered ? ExitState.Active : ExitState.Normal);
     }
 
     private string BuildBattleGrowthDescription(SixSenseAttribute attribute)
@@ -488,36 +339,33 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
             decimal planned = _manual.GetEffectiveSenseAmount(attribute, _draft.Level(attribute)) * perLevel;
             text += $"待确认：此项加成将为 +{planned.ToString("0.##", CultureInfo.InvariantCulture)}；确认前战斗属性不变。\n";
         }
-        return text + "等级不直接增加掷骰出目；以下为出牌效果" +
-            (_draft.Added(attribute) > 0 ? "预览。\n\n" : "。\n\n");
+        return text;
     }
 
-    private static LocString BuildEffectDescription(SixSenseAttribute attribute, decimal level,
-        Player player, bool hbrNumericsEnabled)
+    // The battle stat view's description of the stat on the selected sense's axis.
+    private string BuildStatDescription(SixSenseAttribute attribute)
     {
-        bool skillBlock = hbrNumericsEnabled && attribute == SixSenseAttribute.Simplicity;
-        LocString description = new("card_keywords", $"HBRGO_SIX_SENSE.{attribute}." +
-            (hbrNumericsEnabled && attribute is SixSenseAttribute.Simplicity or SixSenseAttribute.Madness
-                ? "hbrMenuDescription" : "menuDescription"));
-        decimal normal = SixSenseCombatHelper.EffectValue(attribute, level, false);
-        decimal enhanced = SixSenseCombatHelper.EffectValue(attribute, level, true);
-        if (skillBlock)
-        {
-            description.Add("normalSkill", HbrSkillPower.BlockPercent(normal).ToString("0.##", CultureInfo.InvariantCulture));
-            description.Add("enhancedSkill", HbrSkillPower.BlockPercent(enhanced).ToString("0.##", CultureInfo.InvariantCulture));
-            description.Add("normalBlock", HbrSkillBlockHelper.ResolveUnpowered(player?.Creature, normal));
-            description.Add("enhancedBlock", HbrSkillBlockHelper.ResolveUnpowered(player?.Creature, enhanced));
-        }
-        if (attribute == SixSenseAttribute.Madness)
-        {
-            normal *= 100m;
-            enhanced *= 100m;
-        }
-        description.Add("normal", normal.ToString("0.############################", CultureInfo.InvariantCulture));
-        description.Add("enhanced", enhanced.ToString("0.############################", CultureInfo.InvariantCulture));
-        description.Add("loss", SixSenseCombatHelper.ResistanceLoss(attribute));
-        return description;
+        int index = HbrManualPhoneData.StatIndex(attribute);
+        string stat = HbrBattleStatsHelper.GetBattleStatTitle(attribute);
+        decimal value = HbrManualPhoneData.StatValue(HbrManualPhoneData.Stats(_manual), index);
+        decimal effective = _manual.GetEffectiveSenseAmount(attribute);
+        string text = $"{stat}：{HbrManualPhoneData.StatUses[index]}。\n" +
+            $"来自六感：{ElectronicSoldierManual.GetSenseTitle(attribute)} Lv.{_manual.GetSenseAmount(attribute)} → " +
+            $"+{HbrManualPhoneData.Number(HbrManualPhoneData.SenseBonus(_manual, attribute))}" +
+            $"（有效等级 {HbrManualPhoneData.Number(effective)} × {HbrBattleStatsHelper.SenseStatGainPerLevel}）。\n" +
+            $"战斗等级 Lv.{_manual.HbrBattleLevel}：基础值 {HbrManualPhoneData.Number(HbrManualPhoneData.BaseStat(_manual))}" +
+            $"（初始 {HbrManualPhoneData.Number(HbrBattleStatsHelper.InitialStat)}，每级 +{HbrBattleStatsHelper.StatGainPerLevel}）。\n";
+        decimal gain = HbrManualPhoneData.PendingGain(_manual, _draft, attribute);
+        if (gain > 0)
+            text += $"待确认：确认后为 {HbrManualPhoneData.Number(value + gain)}；确认前战斗属性不变。\n";
+        return text;
     }
+
+    // Six senses are level points only (2026-11-09): cards carry no attribute and
+    // enemies no resistance. What a level still does besides the battle stat above.
+    private static string BuildSenseRule(SixSenseAttribute attribute, bool hbrNumericsEnabled) =>
+        new LocString("card_keywords", $"HBRGO_SIX_SENSE.{attribute}." +
+            (hbrNumericsEnabled ? "hbrMenuDescription" : "menuDescription")).GetFormattedText();
 
     private bool AdjustPoint(SixSenseAttribute attribute, int direction)
     {
@@ -530,7 +378,7 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
 
     private void ConfirmAllocation()
     {
-        _radar.StopRepeating();
+        _sensesPage?.StopRepeating();
         _draft.Reconcile();
         int revision = _manual.SixSenseAllocationRevision;
         if (SixSenseNetActions.RequestAllocation(_manual, _draft.Snapshot()))
@@ -552,184 +400,9 @@ public partial class NSixSenseStatusScreen : Control, IOverlayScreen
     private void Close()
     {
         _closeRequested = true;
-        _radar?.StopRepeating();
+        _sensesPage?.StopRepeating();
         _draft?.Clear();
         if (_manual?.IsAllocationPending != true) NOverlayStack.Instance?.Remove(this);
         else Refresh(_manual);
-    }
-
-    private static Label MakeLabel(string text, int size, Color? color = null)
-    {
-        Label label = new() { Text = text, VerticalAlignment = VerticalAlignment.Center };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color ?? Colors.White);
-        return label;
-    }
-
-    private static StyleBoxFlat PanelStyle() => new()
-    {
-        BgColor = new Color("#191b20"), BorderColor = new Color("#645562"),
-        BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
-        ContentMarginLeft = 24, ContentMarginRight = 24, ContentMarginTop = 20, ContentMarginBottom = 20,
-        CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-        CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8
-    };
-
-    private static void StyleButton(Button button, bool selected)
-    {
-        foreach (string state in new[] { "normal", "hover", "pressed", "focus" })
-        {
-            Color background = selected ? Colors.White :
-                state == "normal" ? new Color("#25282e") : new Color("#3c303b");
-            button.AddThemeStyleboxOverride(state, new StyleBoxFlat
-            {
-                BgColor = background, BorderColor = Accent,
-                BorderWidthLeft = selected || state == "focus" ? 3 : 0,
-                ContentMarginLeft = 12, ContentMarginRight = 12,
-                CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-                CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4
-            });
-        }
-        foreach (string color in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
-            button.AddThemeColorOverride(color, selected ? new Color("#7c3058") : Colors.White);
-    }
-
-    private partial class SixSenseRadar : Control
-    {
-        public ElectronicSoldierManual Manual { get; set; }
-        internal SixSenseAllocationDraft Draft { get; set; }
-        public SixSenseAttribute Selected { get; set; }
-        public bool Editable { get; set; }
-        public Func<SixSenseAttribute, int, bool> Adjust { get; set; }
-        private readonly Dictionary<SixSenseAttribute, (PointButton Minus, PointButton Plus)> _adjusters = new();
-
-        public override void _Ready()
-        {
-            foreach (SixSenseAttribute sense in ElectronicSoldierManual.AllSixSenseAttributes)
-            {
-                PointButton Make(int direction)
-                {
-                    var button = new PointButton
-                    {
-                        Name = $"{sense}{(direction > 0 ? "Plus" : "Minus")}",
-                        Text = direction > 0 ? "+" : "−",
-                        TooltipText = (direction > 0 ? "增加" : "撤回") + ElectronicSoldierManual.GetSenseTitle(sense),
-                        Size = new Vector2(28, 28), CustomMinimumSize = new Vector2(28, 28),
-                        Attempt = () => Adjust?.Invoke(sense, direction) == true
-                    };
-                    button.AddThemeFontSizeOverride("font_size", 22);
-                    StyleButton(button, false);
-                    foreach (string state in new[] { "normal", "hover", "pressed", "focus" })
-                    {
-                        var style = (StyleBoxFlat)button.GetThemeStylebox(state).Duplicate();
-                        style.ContentMarginLeft = 0;
-                        style.ContentMarginRight = 0;
-                        button.AddThemeStyleboxOverride(state, style);
-                    }
-                    AddChild(button);
-                    return button;
-                }
-                _adjusters[sense] = (Make(-1), Make(1));
-            }
-            RefreshButtons();
-        }
-
-        public void StopRepeating()
-        {
-            foreach (var pair in _adjusters.Values) { pair.Minus.Stop(); pair.Plus.Stop(); }
-        }
-
-        private float Radius => SixSenseRadarGeometry.Radius(Size);
-
-        public void RefreshButtons()
-        {
-            foreach ((SixSenseAttribute sense, var pair) in _adjusters)
-            {
-                bool draft = Draft?.Added(sense) > 0;
-                pair.Minus.Visible = Editable && draft;
-                pair.Plus.Visible = Editable && (Draft?.Remaining > 0 || draft);
-                pair.Plus.Disabled = Draft == null || Draft.Remaining == 0 || Draft.Level(sense) >= ElectronicSoldierManual.MaxSixSense;
-                if (!pair.Minus.Visible) pair.Minus.Stop();
-                if (!pair.Plus.Visible || pair.Plus.Disabled) pair.Plus.Stop();
-                Vector2 center = SixSenseRadarGeometry.LabelCenter(Size, (int)sense);
-                float halfWidth = GetThemeDefaultFont().GetStringSize(ElectronicSoldierManual.GetSenseTitle(sense), fontSize: 18).X / 2f;
-                pair.Minus.Position = center + new Vector2(-halfWidth - 34, -24);
-                pair.Plus.Position = center + new Vector2(halfWidth + 6, -24);
-            }
-        }
-
-        public override void _Notification(int what)
-        {
-            if (what == NotificationResized) { RefreshButtons(); QueueRedraw(); }
-        }
-
-        public override void _Draw()
-        {
-            if (Manual == null || Size.X < 200 || Size.Y < 120) return;
-            Vector2 center = Size / 2f;
-            float radius = Radius;
-            if (radius <= 0) return;
-            foreach (int level in new[] { 20, 40, 60, 80, 99 })
-            {
-                Vector2[] ring = SixSenseRadarGeometry.Ring(center, radius * level / 99f);
-                DrawPolyline(CloseLoop(ring), level == 20
-                    ? new Color("#956078") : new Color("#454b55"), level == 20 ? 2f : 1f, true);
-            }
-            for (int i = 0; i < 6; i++)
-                DrawLine(center, center + SixSenseRadarGeometry.Direction(i) * radius, new Color("#454b55"), 1, true);
-
-            int[] values = ElectronicSoldierManual.AllSixSenseAttributes.Select(sense => Draft?.Level(sense) ?? Manual.GetSenseAmount(sense)).ToArray();
-            Vector2[] points = SixSenseRadarGeometry.Values(center, radius, values, ElectronicSoldierManual.MaxSixSense);
-            // Draw separate sectors so zero-valued adjacent axes never produce a degenerate polygon.
-            for (int i = 0; i < 6; i++)
-            {
-                Vector2 a = points[i] - center, b = points[(i + 1) % 6] - center;
-                if (Math.Abs(a.Cross(b)) > 0.01f)
-                    DrawColoredPolygon(new[] { center, points[i], points[(i + 1) % 6] }, new Color(0.93f, 0.45f, 0.67f, 0.28f));
-            }
-            DrawPolyline(CloseLoop(points), Accent, 2f, true);
-            Font font = GetThemeDefaultFont();
-            for (int i = 0; i < 6; i++)
-            {
-                SixSenseAttribute attribute = ElectronicSoldierManual.AllSixSenseAttributes[i];
-                Vector2 labelCenter = SixSenseRadarGeometry.LabelCenter(Size, i);
-                string title = ElectronicSoldierManual.GetSenseTitle(attribute);
-                string value = $"{values[i]}/99";
-                Color color = attribute == Selected ? Accent : Colors.White;
-                DrawCircle(points[i], 3f, color);
-                float width = font.GetStringSize(title, fontSize: 18).X;
-                DrawString(font, labelCenter + new Vector2(-width / 2f, -2), title, fontSize: 18, modulate: color);
-                width = font.GetStringSize(value, fontSize: 16).X;
-                DrawString(font, labelCenter + new Vector2(-width / 2f, 20), value, fontSize: 16, modulate: Muted);
-            }
-        }
-
-        private static Vector2[] CloseLoop(Vector2[] points) => points.Concat(new[] { points[0] }).ToArray();
-    }
-
-    private partial class PointButton : Button
-    {
-        internal Func<bool> Attempt { get; set; }
-        private readonly SixSensePointRepeat _repeat = new();
-        private bool _holding;
-
-        public override void _Ready()
-        {
-            ButtonDown += () => { _repeat.Reset(); _holding = !Disabled && Attempt?.Invoke() == true; };
-            ButtonUp += Stop;
-            MouseExited += Stop;
-            FocusExited += Stop;
-        }
-
-        internal void Stop() => _holding = false;
-
-        public override void _Process(double delta)
-        {
-            if (!_holding) return;
-            if (!IsVisibleInTree() || Disabled || !IsPressed() || !GetWindow().HasFocus()) { Stop(); return; }
-            int count = _repeat.Advance(delta);
-            for (int i = 0; i < count && _holding; i++)
-                if (Attempt?.Invoke() != true) Stop();
-        }
     }
 }

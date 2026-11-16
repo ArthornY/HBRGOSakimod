@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
-using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
-using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Unlocks;
 
 namespace HBRGOSakiMod.Core.Patches;
@@ -33,32 +27,10 @@ internal static class SixSenseNewPlayerSeedPatch
     private static void Postfix(Player __result) => SixSenseStartingSeedState.AwaitRunSeed(__result);
 }
 
-[HarmonyPatch]
-internal static class SixSenseCardAttributePatch
-{
-    private static IEnumerable<MethodBase> TargetMethods()
-    {
-        foreach (Type scope in new[] { typeof(RunState), typeof(CombatState) })
-        {
-            // Both creation and cloning reach the owner-ready, one-argument overload.
-            yield return AccessTools.DeclaredMethod(scope, nameof(RunState.AddCard),
-                new[] { typeof(CardModel) })
-                ?? throw new MissingMethodException(scope.FullName, "AddCard(CardModel)");
-        }
-    }
-
-    private static void Postfix(CardModel __0)
-    {
-        // New players already have a seed-0 placeholder RNG when CreateShared adds
-        // their starting deck. Wait for InitializeSeed to supply the actual run seed.
-        if (SixSenseStartingSeedState.IsAwaitingRunSeed(__0.Owner)) return;
-
-        // Ritsu copies capabilities before a clone reaches AddCard. Persisted and
-        // inherited attributes are retained without another random draw.
-        SixSenseCardCapability.AssignIfMissing(__0, __0.Owner);
-    }
-}
-
+// New players already have a seed-0 placeholder RNG when CreateShared builds
+// them; the run seed arrives with InitializeSeed. Starting numerics and the
+// fifteen starting six-sense points wait for it. Cards no longer receive a
+// six-sense attribute (removed 2026-11-09).
 [HarmonyPatch(typeof(Player), nameof(Player.InitializeSeed))]
 internal static class SixSenseStartingInventoryPatch
 {
@@ -73,12 +45,6 @@ internal static class SixSenseStartingInventoryPatch
                 __instance.GetRelic<ElectronicSoldierManual>()?.InitializeHbrBattleNumerics();
             __instance.GetRelic<HotaruElectronicSoldierManual>()?.InitializeStartingHealth();
         }
-        // Starting cards enter RunState before its real player RNG is initialized.
         __instance.GetRelic<ElectronicSoldierManual>()?.GrantStartingSixSense();
-        if (__instance.Deck == null) return;
-        foreach (CardModel card in __instance.Deck.Cards)
-        {
-            SixSenseCardCapability.AssignIfMissing(card, __instance);
-        }
     }
 }

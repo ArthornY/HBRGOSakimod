@@ -9,6 +9,7 @@ using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 
@@ -45,7 +46,9 @@ public sealed class HotaruRareCannonState
 {
     public int TurnNumber { get; set; } = -1;
     public HotaruRareTurnState Ordinary { get; set; } = new();
-    public Dictionary<uint, int> BrokenResistanceMasks { get; set; } = new();
+    // Debuff kinds each enemy (by combat id) has gained this combat, for Six Sense
+    // Remnants. They replaced the per-enemy broken resistance masks (2026-11-09).
+    public Dictionary<uint, List<string>> FirstDebuffs { get; set; } = new();
     public List<HotaruInheritedCannonRoll> InheritedRolls { get; set; } = new();
     [JsonIgnore] public Dictionary<object, HotaruRareTurnState> Inserted { get; } = new(ReferenceEqualityComparer.Instance);
 }
@@ -141,16 +144,23 @@ internal static class HotaruRareCannonHelper
         return Task.CompletedTask;
     }
 
-    internal static async Task OnResistanceBroken(PlayerChoiceContext context, Player player, Creature enemy,
-        SixSenseAttribute attribute, CardModel source)
+    // Six Sense Remnants rewards an enemy's first gain of each debuff kind this
+    // combat, from any source (it rewarded each broken six-sense resistance before
+    // 2026-11-09). Gains are recorded even before the power is held, so a kind an
+    // enemy already had never counts later.
+    internal static async Task OnEnemyDebuffGained(PlayerChoiceContext context, Player player,
+        PowerModel power, decimal amount, CardModel source)
     {
-        if (State(player) is not { } state || enemy?.CombatId is not { } id) return;
-        int bit = 1 << (int)attribute;
-        state.BrokenResistanceMasks.TryGetValue(id, out int mask);
-        if ((mask & bit) != 0) return;
-        // The first break is recorded even before this power is obtained.
-        state.BrokenResistanceMasks[id] = mask | bit;
-        if (player.Creature.GetPower<HotaruSixSenseRemnantsPower>() is { } power)
-            await power.OnBreak(context, source);
+        if (State(player) is not { } state || power?.Owner is not { } enemy || enemy.CombatId is not { } id ||
+            power.Amount == 0 || amount == 0m || Math.Sign(power.Amount) != Math.Sign(amount) ||
+            power.GetTypeForAmount(power.Amount) != PowerType.Debuff || !Millsage.IsEnemy(enemy, player)) return;
+        state.FirstDebuffs ??= new();
+        if (!state.FirstDebuffs.TryGetValue(id, out List<string> kinds) || kinds == null)
+            state.FirstDebuffs[id] = kinds = new();
+        string kind = power.GetType().FullName;
+        if (kinds.Contains(kind)) return;
+        kinds.Add(kind);
+        if (player.Creature.GetPower<HotaruSixSenseRemnantsPower>() is { } remnants)
+            await remnants.OnFirstEnemyDebuff(context, source);
     }
 }

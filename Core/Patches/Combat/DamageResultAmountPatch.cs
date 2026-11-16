@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -17,30 +18,7 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class DamageResultAmountPatch
 {
-    private static MethodBase TargetMethod()
-    {
-        MethodInfo damageMethod = AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-            .Where(method => method.Name == nameof(CreatureCmd.Damage))
-            .Where(method =>
-            {
-                ParameterInfo[] parameters = method.GetParameters();
-                return parameters.Length is 6 or 7 &&
-                    parameters[0].ParameterType == typeof(PlayerChoiceContext) &&
-                    parameters[1].ParameterType == typeof(IEnumerable<Creature>) &&
-                    parameters[2].ParameterType == typeof(decimal) &&
-                    parameters[3].ParameterType == typeof(ValueProp) &&
-                    parameters[4].ParameterType == typeof(Creature) &&
-                    parameters[5].ParameterType == typeof(CardModel);
-            })
-            .OrderBy(method => method.GetParameters().Length)
-            .FirstOrDefault() ?? throw new MissingMethodException(
-                typeof(CreatureCmd).FullName, nameof(CreatureCmd.Damage));
-
-        AsyncStateMachineAttribute stateMachine =
-            damageMethod.GetCustomAttribute<AsyncStateMachineAttribute>() ??
-            throw new MissingMethodException("Missing damage command state machine.");
-        return AccessTools.Method(stateMachine.StateMachineType, "MoveNext");
-    }
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.MoveNext;
 
     private static IEnumerable<CodeInstruction> Transpiler(
         IEnumerable<CodeInstruction> instructions)
@@ -60,6 +38,7 @@ internal static class DamageResultAmountPatch
         int replacements = 0;
         int blockedDamageConversions = 0;
         int unblockedDamageZeroChecks = 0;
+        int intendedHpLossConversions = 0;
         for (int index = 0; index < result.Count; index++)
         {
             CodeInstruction instruction = result[index];
@@ -92,6 +71,16 @@ internal static class DamageResultAmountPatch
             {
                 unblockedDamageZeroChecks++;
             }
+            else if (NativeDamageApiCompatibility.UsesTargetData &&
+                field.Name.StartsWith("<damageRemaining>", StringComparison.Ordinal) &&
+                result[index + 1].operand is MethodInfo intendedSetter &&
+                intendedSetter.DeclaringType == typeof(DamageResult) &&
+                intendedSetter.Name == "set_IntendedHpLoss")
+            {
+                // 0.113 records the intended pre-HP loss on three paths. This
+                // extra integer receipt must saturate just like blocked damage.
+                intendedHpLossConversions++;
+            }
             else
                 throw new InvalidOperationException(
                     $"Unexpected damage-result integer conversion context at instruction {index}.");
@@ -102,13 +91,16 @@ internal static class DamageResultAmountPatch
             if (result[index].opcode != OpCodes.Nop)
                 result[index] = new CodeInstruction(instruction) { operand = safeConversion };
         }
-        // One conversion checks whether HP damage truncates to zero, and two
-        // populate DamageResult.BlockedDamage (normal and redirected targets).
-        if (replacements != 3 || blockedDamageConversions != 2 ||
-            unblockedDamageZeroChecks != 1)
+        // The legacy three projections remain. 0.113 adds three independent
+        // IntendedHpLoss receipts; validate their exact shape rather than
+        // weakening the transpiler to accept an arbitrary conversion count.
+        int expectedIntended = NativeDamageApiCompatibility.UsesTargetData ? 3 : 0;
+        if (replacements != 3 + expectedIntended || blockedDamageConversions != 2 ||
+            unblockedDamageZeroChecks != 1 || intendedHpLossConversions != expectedIntended)
             throw new InvalidOperationException(
-                $"Expected two BlockedDamage conversions and one unblocked-damage zero check; " +
-                $"found {blockedDamageConversions}, {unblockedDamageZeroChecks} " +
+                $"Expected two BlockedDamage conversions, one unblocked-damage zero check " +
+                $"and {expectedIntended} IntendedHpLoss conversions; " +
+                $"found {blockedDamageConversions}, {unblockedDamageZeroChecks}, {intendedHpLossConversions} " +
                 $"({replacements} total).");
         return result;
     }

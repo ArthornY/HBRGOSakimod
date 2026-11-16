@@ -165,10 +165,16 @@ internal static class HotaruUncommonCannonHelper
                 if (scope.LightFragile > 0 && Millsage.IsEnemy(target, player))
                     await PowerCmd.Apply<FragilePower>(context, target, scope.LightFragile, scope.Cannon, null);
             }
+        // Light Points: one missing debuff per queued point on every enemy (it cut
+        // their highest six-sense resistance before 2026-11-09).
         if (scope.ResistanceLoss > 0)
             foreach (Creature target in player.Creature.CombatState.Enemies.ToArray())
+            {
+                if (!HotaruCommonCannonHelper.CanAct(player)) return;
                 if (Millsage.IsEnemy(target, player))
-                    await SixSenseCombatHelper.ReduceHighestResistance(context, player, target, scope.Source, scope.ResistanceLoss);
+                    await HbrMissingDebuffHelper.ApplyRandomMissing(context, target, scope.Cannon, scope.Source,
+                        scope.ResistanceLoss);
+            }
         if (!HotaruCommonCannonHelper.CanAct(player)) return;
         if (scope.DidDamage && scope.ReplyBlock > 0m)
             await CreatureCmd.GainBlock(player.Creature, scope.ReplyBlock, ValueProp.Move, null);

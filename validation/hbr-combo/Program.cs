@@ -64,7 +64,7 @@ static class ComboChecks
         var power = (PowerModel)ModelDb.GetById<PowerModel>(ModelDb.GetId(type)).ToMutable();
         Creature target = owner ?? Hero;
         PowerCmd.Apply(null!, power, target, amount, Hero, null, true).GetAwaiter().GetResult();
-        return target.GetPower(power.Id)!;
+        return Powers(target).Contains(power) ? power : target.GetPower(power.Id)!;
     }
     static CardModel Card() => (CardModel)Invoke(Fixture.GetMethod("OwnedCard", F)!.MakeGenericMethod(typeof(HelloWorldHbrgoSaki)), null)!;
     static CardModel OwnedCard(Type type) => (CardModel)Invoke(Fixture.GetMethod("OwnedCard", F)!.MakeGenericMethod(type), null)!;
@@ -104,18 +104,16 @@ static class ComboChecks
     static Task<IEnumerable<DamageResult>> NativeDamage(PlayerChoiceContext context, Creature[] targets, decimal damage,
         Creature dealer, CardModel card, ValueProp props = ValueProp.Move)
     {
-        MethodInfo method = typeof(CreatureCmd).GetMethods(F).Where(method => method.Name == nameof(CreatureCmd.Damage))
-            .Where(method => method.GetParameters() is var args && args.Length is 6 or 7 && args[1].ParameterType == typeof(IEnumerable<Creature>) && args[2].ParameterType == typeof(decimal))
-            .OrderBy(method => method.GetParameters().Length).First();
-        object?[] arguments = method.GetParameters().Length == 6
-            ? [context, targets, damage, props, dealer, card]
-            : [context, targets, damage, props, dealer, card, null];
-        return (Task<IEnumerable<DamageResult>>)Invoke(method, null, arguments)!;
+        Type wrapper=Mod.GetType("HBRGOSakiMod.Core.Compatibility.CreatureCommandCompatibility",true)!;
+        MethodInfo method=wrapper.GetMethods(F).Single(candidate=>candidate.Name=="Damage"&&candidate.GetParameters() is var p&&p.Length==7&&p[1].ParameterType==typeof(IEnumerable<Creature>));
+        return (Task<IEnumerable<DamageResult>>)Invoke(method,null,context,targets,damage,props,dealer,card,null)!;
     }
-    static bool StubDamage(IEnumerable<Creature> targets, decimal amount, ValueProp props, Creature dealer, CardModel cardSource,
-        ref Task<IEnumerable<DamageResult>> __result)
+    static bool StubDamage(object[] __args, ref Task<IEnumerable<DamageResult>> __result)
     {
-        Creature[] copy = targets.ToArray();
+        Type api=Mod.GetType("HBRGOSakiMod.Core.Compatibility.NativeDamageApiCompatibility",true)!;
+        Creature[] copy=((IEnumerable<Creature>)Invoke(api.GetMethod("ReadTargets",F)!,null,new object?[]{__args})!).ToArray();
+        decimal amount=(decimal)__args[2];ValueProp props=(ValueProp)__args[3];
+        Creature dealer=(Creature)__args[4];CardModel cardSource=(CardModel)__args[5];
         bool absolute = copy.Length > 0 && (bool)Invoke(Helper("HbrAbsoluteBaseDamageContext").GetMethod("Matches", F)!, null, copy[0], dealer, cardSource, amount)!;
         DamageCalls.Add((amount, copy, absolute));
         AfterRecordedDamage?.Invoke(DamageCalls.Count);
@@ -133,9 +131,13 @@ static class ComboChecks
         }
         foreach (Type type in Mod.GetTypes().Where(type => type.IsDefined(typeof(HarmonyPatch), false) && type.Name.StartsWith("LegendAttackContext", StringComparison.Ordinal)))
             Check(harmony.CreateClassProcessor(type).Patch().Count > 0, "installs actual " + type.Name);
+        Check(harmony.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat.HbrComboVirtualHitPatch", true)!).Patch().Count > 0,
+            "installs actual native virtual combo prefix");
+        Check(harmony.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.Combat.HighHitDamageAttackScopePatch", true)!).Patch().Count > 0,
+            "installs actual native Execute scope for distinguishing play from preview");
         MethodInfo stub = typeof(ComboChecks).GetMethod(nameof(StubDamage), F)!;
-        foreach (MethodInfo method in typeof(CreatureCmd).GetMethods(F).Where(method => method.Name == nameof(CreatureCmd.Damage) && method.GetParameters() is var args && args.Length is 6 or 7 && args[1].ParameterType == typeof(IEnumerable<Creature>) && args[2].ParameterType == typeof(decimal)))
-            harmony.Patch(method, prefix: new HarmonyMethod(stub) { priority = Priority.Last });
+        MethodInfo canonical=(MethodInfo)Mod.GetType("HBRGOSakiMod.Core.Compatibility.NativeDamageApiCompatibility",true)!.GetField("Command",F)!.GetValue(null)!;
+        harmony.Patch(canonical, prefix: new HarmonyMethod(stub) { priority = Priority.Last });
         Reset();
     }
     static void FuturePreviewCases()
@@ -197,14 +199,20 @@ static class ComboChecks
             PowerModel power = Powers(Hero).Single(power => power.GetType() == type);
             Check(power.Amount == charges, type.Name + " actual Grant applies default charges per acquisition");
             ((Task)Invoke(method, null, null, Hero, Hero, null, 1)!).GetAwaiter().GetResult();
-            Check(power.Amount == charges * 2 && Powers(Hero).Count(power => power.GetType() == type) == 1,
-                type.Name + " repeated Grant accumulates remaining charges in one native power");
+            PowerModel[] instances = Powers(Hero).Where(power => power.GetType() == type).ToArray();
+            Check(power.Amount == charges && instances.Length == 2 && instances[1].Amount == charges,
+                type.Name + " repeated Grant creates a second independent native instance");
             ((Task)Invoke(method, null, null, Hero, Hero, null, 2)!).GetAwaiter().GetResult();
-            Check(power.Amount == charges * 4, type.Name + " multi-application Grant multiplies acquisition count by default charges");
+            PowerModel[] replaced = Powers(Hero).Where(power => power.GetType() == type).ToArray();
+            PowerModel third = replaced.Single(candidate => !instances.Contains(candidate));
+            Check(!Powers(Hero).Contains(power) && Powers(Hero).Contains(instances[1]) &&
+                third.Amount == charges * 2 && instances[1].Amount == charges && replaced.Length == 2,
+                type.Name + " a full equal-strength pair replaces the earliest shortest instance and resets to the new acquisition duration");
             var attack = Attack(); Begin(attack); Hit(attack, Enemy); End(attack);
-            Check(power.Amount == charges * 4 - 1, type.Name + " acquired duration still spends one per completed attack");
-            PowerCmd.ModifyAmount(null!, power, 1, Hero, null, true).GetAwaiter().GetResult();
-            Check(power.Amount == charges * 4, type.Name + " ordinary stack mutation adds one charge without multiplying duration");
+            Check(third.Amount == charges * 2 - 1 && instances[1].Amount == charges - 1,
+                type.Name + " each acquired instance spends one per complete attack");
+            PowerCmd.ModifyAmount(null!, third, 1, Hero, null, true).GetAwaiter().GetResult();
+            Check(third.Amount == charges * 2, type.Name + " ordinary stack mutation adds one charge without creating or replacing an instance");
         }
         Reset();
     }
@@ -228,6 +236,112 @@ static class ComboChecks
         Hit(otherCommand, Enemy); End(otherCommand);
         Check(legacyDouble.Amount == 0 && medium.Amount == 2, "old doubling and new medium preserve separate consumption contracts");
     }
+    static void InstancePairCases()
+    {
+        Reset(); var first = Apply(Medium, 7); var second = Apply(Medium, 3);
+        var third = Apply(Medium, 5);
+        Check(first.Amount == 7 && third.Amount == 5 && !Powers(Hero).Contains(second) && Powers(Hero).Count(power => power.GetType() == Medium) == 2,
+            "third medium acquisition replaces the least-remaining equal-strength instance with five uses instead of adding five");
+        var fourth = Apply(Medium, 2);
+        Check(first.Amount == 7 && fourth.Amount == 2 && !Powers(Hero).Contains(third),
+            "the next acquisition re-evaluates the shortest instance and resets it even when the new duration is shorter");
+        Check(first.InstanceType == MegaCrit.Sts2.Core.Entities.Powers.PowerInstanceType.Instanced &&
+            !ReferenceEquals(first, fourth), "each combo group has independent native instanced identity");
+        Reset(); first = Apply(Medium, 3); second = Apply(Medium, 3); third = Apply(Medium, 1);
+        Check(!Powers(Hero).Contains(first) && Powers(Hero).Contains(second) && third.Amount == 1,
+            "equal strength and equal remaining uses replace the earliest acquired combo deterministically");
+        Equal(Preview(Attack(), 1), 7, "replacement changes only remaining uses and preserves both fixed medium hit bonuses");
+        Reset();
+        PowerModel[] six = [Apply(Small, 5), Apply(Small, 4), Apply(Medium, 3), Apply(Medium, 2), Apply(Large, 2), Apply(Large, 3)];
+        Equal(Preview(Attack(), 1), 36, "two instances of each kind use (1+1+1+3+3)*2*2");
+        var attack = Attack(); Begin(attack); Hit(attack, Enemy, Hero); Hit(attack, Enemy, Hero); End(attack);
+        Check(six.Select(power => power.Amount).SequenceEqual(new[] { 4, 3, 2, 1, 1, 2 }),
+            "multi-hit AoE spends exactly one use from every participating instance");
+        Play(OwnedCard(typeof(DoublePowersHbrgoSaki)));
+        Check(six.Select(power => power.Amount).SequenceEqual(new[] { 8, 6, 4, 2, 2, 4 }) &&
+            Powers(Hero).OfType<HbrComboPower>().Count() == 6,
+            "actual Double doubles each instance's remaining uses without merging pairs or doubling hit bonuses");
+        Equal(Preview(Attack(), 1), 36, "Double changes durations while paired hit bonuses stay fixed");
+        Reset();
+    }
+    static AttackCommand CardAttack(CardModel card)
+    {
+        var command = new AttackCommand(1m);
+        MethodInfo fromCard = typeof(AttackCommand).GetMethods(F).Single(method => method.Name == "FromCard");
+        Invoke(fromCard, command, fromCard.GetParameters().Length == 1 ? [card] : [card, null]);
+        return command.Targeting(Enemy);
+    }
+    static void VirtualFormCases()
+    {
+        Reset(); var dual = RawPower<ReptureDualSwordsPower>(Hero); CardModel card = Card();
+        Equal(Preview(CardAttack(card), 1), 4, "dual form adds virtual medium without any real combo instance");
+        Equal(Preview(CardAttack(card), 0), 0, "dual form does not create a hit from an empty attack");
+        Equal((int)Call("PreviewHitCountAfterAttacks", Hero, 1, 100)!, 4,
+            "virtual medium persists through arbitrary prior attacks and does not reserve a slot");
+        var first = Apply(Medium, 3); var second = Apply(Medium, 2); Apply(Large, 2); Apply(Large, 3);
+        Equal(Preview(CardAttack(card), 1), 40, "virtual medium stacks with two real mediums before both large doublings");
+        Check(Powers(Hero).OfType<HbrComboPower>().Count() == 4 && dual.Amount == 1,
+            "virtual medium creates no counted power and consumes no form amount");
+        var attack = CardAttack(card); Begin(attack); Hit(attack, Enemy); End(attack);
+        Check(first.Amount == 2 && second.Amount == 1 && dual.Amount == 1,
+            "real instances consume once while virtual form remains unlimited");
+        Reset(); RawPower<ReptureDualSwordsPower>(Hero); card = Card();
+        object scope = Call("BeginCardAttack", card) ?? throw new Exception("virtual-only form did not create direct scope");
+        Check(true, "virtual-only form creates card-owned scope for direct hit loops");
+        try
+        {
+            Equal((int)On(scope, "HitCount", 1)!, 4, "direct card scope snapshots virtual medium once");
+            Equal(Preview(CardAttack(card), 4), 4, "native children of expanded direct card loop do not add virtual medium twice");
+            var segments = (IReadOnlyList<decimal>)Call("TransformSegments", Hero, new decimal[] { 5, 9 })!;
+            Check(segments.SequenceEqual(new decimal[] { 5, 9, 9, 9, 9 }), "direct segments append virtual medium hits before real doubling");
+        }
+        finally { ((IDisposable)scope).Dispose(); }
+        Equal(Preview(CardAttack(card), 1), 4, "closing direct scope restores native virtual medium calculation");
+        var context = Context(card);
+        context.AddHit(NativeDamage(null!, [Enemy], 10m, Hero, card).GetAwaiter().GetResult());
+        context.AddHit(NativeDamage(null!, [Enemy], 99m, Hero, card, ValueProp.Move | ValueProp.Unpowered).GetAwaiter().GetResult());
+        context.DisposeAsync().GetAwaiter().GetResult();
+        Check(DamageCalls.Select(call => call.Damage).SequenceEqual(new decimal[] { 10, 99, 10, 10, 10 }),
+            "virtual-only AttackContext replays three powered hits while leaving unpowered segment unchanged");
+        Reset();
+    }
+    static IDisposable ChaseScope(CardModel card, bool automatic = false) =>
+        (IDisposable)Invoke(Helper("DualSwordsChaseHelper").GetMethod("BeginPlay", F)!, null, card, automatic)!;
+    static void ChaseComboCases()
+    {
+        Reset(); var dual = RawPower<ReptureDualSwordsPower>(Hero); CardModel card = OwnedCard(typeof(StrikeHbrgoSaki));
+        Set(dual, "<NextAttackHasChase>k__BackingField", true);
+        using (ChaseScope(card))
+        {
+            Equal(Preview(CardAttack(card), 1), 5, "physical chase adds one transient hit alongside virtual medium");
+            Apply(Medium, 3); Apply(Medium, 3); Apply(Large, 2); Apply(Large, 2);
+            Equal(Preview(CardAttack(card), 1), 44, "chase and virtual medium add before both real medium instances and both large doublings");
+            using (ChaseScope(card, automatic: true))
+                Equal(Preview(CardAttack(card), 1), 40, "nested automatic scope masks chase while preserving form and real combo bonuses");
+            Equal(Preview(CardAttack(card), 1), 44, "exiting automatic scope restores enclosing manual chase");
+            Check(Powers(Hero).OfType<HbrComboSmallPower>().Count() == 0,
+                "physical chase never creates a five-use small instance or consumes its quota");
+        }
+        Reset();
+    }
+    static void ProjectedModeCases()
+    {
+        Reset(); RawPower<ReptureBowPower>(Hero); CardModel dualCard = OwnedCard(typeof(BladeDanceHbrgoSaki));
+        Equal(Preview(CardAttack(dualCard), 4), 7, "bow-to-dual native preview includes virtual medium from the impending mode switch");
+        using ((IDisposable)Invoke(Helper("ModeTransitionHelper").GetMethod("SuppressModeTransition", F)!, null, dualCard)!)
+            Equal(Preview(CardAttack(dualCard), 4), 4, "suppressed mode transition leaves bow preview without virtual medium");
+        Equal(Preview(CardAttack(dualCard), 4), 7, "preview projection resumes after transition suppression closes");
+        Reset(); RawPower<ReptureDualSwordsPower>(Hero); CardModel bowCard = OwnedCard(typeof(StrongShotHbrgoSaki));
+        Equal(Preview(CardAttack(bowCard), 3), 3, "dual-to-bow preview removes the departing form's virtual medium");
+        using ((IDisposable)Invoke(Helper("ModeTransitionHelper").GetMethod("SuppressModeTransition", F)!, null, bowCard)!)
+            Equal(Preview(CardAttack(bowCard), 3), 6, "suppressed bow card preserves the actual dual form's virtual medium");
+        using (ChaseScope(bowCard, automatic: true))
+            Equal(Preview(CardAttack(bowCard), 3), 6, "a resolving card command uses its live form instead of projecting a second switch");
+        FixtureCall("Mode", false, 1);
+        CardAttack(bowCard).WithHitCount(3).Execute(null!).GetAwaiter().GetResult();
+        Check(DamageCalls.Count == 6, "real native Execute with a reactive bow card source still uses current dual form rather than preview projection");
+        Reset();
+    }
     static void ReservationCases()
     {
         foreach (Type type in new[] { Small, Medium, Large })
@@ -246,7 +360,8 @@ static class ComboChecks
         Equal(Preview(outer, 2), 3, "outer reservation remains valid after nested attack"); Hit(outer, Enemy); End(outer);
         Check(combo.Amount == 2, "outer completion spends its one reserved layer");
         Reset(); combo = Apply(Small, 1); outer = Attack(); Begin(outer); Apply(Small, 2); Hit(outer, Enemy); End(outer);
-        Check(combo.Amount == 2, "layers granted during reserved attack are retained after one-layer consumption");
+        Check(combo.Amount == 0 && Powers(Hero).Single(power => power.GetType() == Small).Amount == 2,
+            "second instance acquired during reserved attack is not consumed by the earlier attack");
         Reset(); combo = Apply(Small); outer = Attack(); Begin(outer);
         var clone = (PowerModel)combo.ClonePreservingMutability();
         var reserved = typeof(MyLegendNextAttackBasePower).GetProperty("ReservedAttack", F)!;
@@ -387,8 +502,10 @@ static class ComboChecks
         typeof(SixSenseResistancePower).GetProperty("Resistances", F)!.SetValue(resistance, new int[] { 1, 1, 1, 1, 1, 1 });
         AfterRecordedDamage = hit => { if (hit == 1) resistance.Resistances[0] = 0; };
         Play(OwnedCard(typeof(ConsecutiveSlashHbrgoSaki)), Enemy);
-        Check(DamageCalls.Count == 3 && DamageCalls[1].Damage > DamageCalls[0].Damage,
-            "ConsecutiveSlash recalculates damage after resistance changes between real native hits");
+        // The per-lost-resistance bonus left with the six-sense resistances (2026-11-09):
+        // an older resistance power that changes between hits no longer changes the damage.
+        Check(DamageCalls.Count == 3 && DamageCalls.All(call => call.Damage == DamageCalls[0].Damage),
+            "ConsecutiveSlash deals the same damage on every native hit, whatever an old resistance power holds");
         Check(dynamicSmall.Amount == 4, "dynamic ConsecutiveSlash retains one-charge whole-card consumption");
         Reset(); FixtureCall("Mode", false, 1);
         var second = (Creature)FixtureCall("Actor", Blank<SmallHopper>(), null, null)!;
@@ -442,7 +559,7 @@ static class ComboChecks
     public static void Run(string reportPath)
     {
         bool ok = false; string? error = null;
-        try { Install(); BasicCases(); GrantCases(); CombinedCases(); ReservationCases(); HolderCases(); DirectCases(); FuturePreviewCases(); FailureCases(); ContextCases(); MixedContextCases(); PhantomCases(); ActualCardCases(); FactoryReplayCases(); ok = true; }
+        try { Install(); BasicCases(); GrantCases(); CombinedCases(); InstancePairCases(); ReservationCases(); HolderCases(); DirectCases(); FuturePreviewCases(); FailureCases(); ContextCases(); MixedContextCases(); PhantomCases(); ActualCardCases(); FactoryReplayCases(); VirtualFormCases(); ChaseComboCases(); ProjectedModeCases(); ok = true; }
         catch (Exception failure) { error = failure.ToString(); Console.Error.WriteLine(failure); }
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         File.WriteAllText(reportPath, JsonSerializer.Serialize(new

@@ -121,7 +121,7 @@ public sealed class ChihayaAnonTogawaSakiko : ModAncientEventTemplate
         }
 
         candidates.Add(OptionKind.ChooseCard);
-        Rng.Shuffle(candidates);
+        Rng.ShuffleCompat(candidates);
 
         List<EventOption> options = new(MaxOptionCount);
         foreach (OptionKind candidate in candidates)

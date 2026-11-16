@@ -47,7 +47,7 @@ static class DestructionBudgetChecks
     {
         var card = (CardModel)Invoke(Fixture.GetMethod("OwnedCard", F)!.MakeGenericMethod(type), null)!;
         if (card is DragonArrowHbrgoSaki)
-            Call("DualSwordsCopyHelper", "RecordXEnergySpent", card, hits);
+            Call("CardCopyContextHelper", "RecordXEnergySpent", card, hits);
         else if (card is MagicSwordLuckySevenHbrgoSaki lucky)
             lucky.SetMagicSwordModeHitCount(hits);
         else card.DynamicVars.Repeat.BaseValue = hits;

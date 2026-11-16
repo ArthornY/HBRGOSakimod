@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Compatibility;
 using BaseLib.Abstracts;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -11,7 +12,7 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class PhantomNoExhaustPower : PowerModel, ICustomPower
+public sealed class PhantomNoExhaustPower : PowerModel, ICustomPower, IHbrAfterDeathListener
 {
     public string CustomPackedIconPath => ModelDb.Power<FeelNoPainPower>().IconPath;
     public string CustomBigIconPath => CustomPackedIconPath;
@@ -25,7 +26,7 @@ public sealed class PhantomNoExhaustPower : PowerModel, ICustomPower
         Owner.Player != null && card.Owner == Owner.Player &&
         card.CombatState == Owner.CombatState && keywords.Remove(CardKeyword.Exhaust);
 
-    public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature creature,
+    public async Task AfterDeath(PlayerChoiceContext choiceContext, Creature creature,
         bool wasRemovalPrevented, float deathAnimLength)
     {
         if (!wasRemovalPrevented && creature == Applier)

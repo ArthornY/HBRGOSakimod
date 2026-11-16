@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -22,7 +23,16 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
 {
     private const string OverclockVar = "Overclock";
 
-    private int _consumedSwordheartAmount;
+    // A permanent/library template has no resolved expenditure yet. It shows
+    // the per-heart basis; an explicitly configured zero remains a real zero.
+    private int _consumedSwordheartAmount = -1;
+    internal bool HasExecutedForFinisher { get; private set; }
+
+    internal void PrepareForFinisherAttempt()
+    {
+        AssertMutable();
+        HasExecutedForFinisher = false;
+    }
 
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/magic_sword_lucky_seven_opening_hbrgo_saki.png");
@@ -59,8 +69,10 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
         List<CardModel> cards,
         bool isInitialShuffle)
     {
-        if (!isInitialShuffle && Owner == player)
+        if (Owner == player)
         {
+            foreach (CardModel card in cards.OfType<MagicSwordLuckySevenOpeningHbrgoSaki>().ToArray())
+                if (card.Pile?.IsCombatPile == true) card.RemoveFromState();
             cards.RemoveAll(card =>
                 card is MagicSwordLuckySevenOpeningHbrgoSaki);
         }
@@ -91,10 +103,15 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
         base.AddExtraArgsToDescription(description);
         if (HbrSkillCardDescription.IsEnabled(this))
         {
+            int previewHearts = _consumedSwordheartAmount < 0 ? 1 : _consumedSwordheartAmount;
             description.Add("ConsumedSwordheartFragilePercent",
-                HbrFragileCardDescription.Format(this, _consumedSwordheartAmount));
+                HbrFragileCardDescription.Format(this, previewHearts));
             description.Add("ConsumedSwordheartVulnerablePercent",
-                HbrPercentDebuffCardDescription.Format(this, ModelDb.Power<VulnerablePower>(), _consumedSwordheartAmount));
+                HbrPercentDebuffCardDescription.Format(this, ModelDb.Power<VulnerablePower>(), previewHearts));
+            HbrSkillCardDescription.AddDamageParameters(this, description, "OpeningDamage",
+                HbrSkillPower.DamageUnits(previewHearts * 20m));
+            HbrSkillCardDescription.AddDamageParameters(this, description, "PerSwordheartDamage",
+                HbrSkillPower.DamageUnits(20m));
         }
     }
 
@@ -102,6 +119,7 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
+        HasExecutedForFinisher = true;
         CardPlayCompatibility.SetResultPile(cardPlay, PileType.None);
         ArgumentNullException.ThrowIfNull(
             cardPlay.Target,
@@ -113,7 +131,9 @@ public sealed class MagicSwordLuckySevenOpeningHbrgoSaki : CardModel
         decimal amount = Math.Max(0, _consumedSwordheartAmount);
         if (amount > 0m)
         {
-            await DamageCmd.Attack(amount)
+            decimal damage = HbrBattleStatsHelper.IsEnabled(Owner)
+                ? HbrSkillPower.DamageUnits(amount * 20m) : amount;
+            await DamageCmd.Attack(damage)
                 .FromCardCompat(this, cardPlay)
                 .Targeting(cardPlay.Target)
                 .WithHitFx("vfx/vfx_attack_slash")

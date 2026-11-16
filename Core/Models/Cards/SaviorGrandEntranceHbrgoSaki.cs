@@ -17,20 +17,23 @@ namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class SaviorGrandEntranceHbrgoSaki : CardModel
 {
-    private const int UpgradeEffectCount = 7;
+    private const int UpgradeEffectCount = 8;
     private int? _preparedUpgradeEffect;
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int[] UpgradeEffectOrder { get; private set; } = Array.Empty<int>();
 
-    public override int MaxUpgradeLevel => UpgradeEffectCount;
+    public override int MaxUpgradeLevel => 7;
     public override bool CanBeGeneratedByModifiers => false;
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/savior_grand_entrance_hbrgo_saki.png");
     public override string BetaPortraitPath => PortraitPath;
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[]
     {
-        HoverTipFactory.FromPower<SaviorGrandEntrancePower>()
+        HoverTipFactory.FromPower<SaviorGrandEntrancePower>(),
+        HoverTipFactory.FromPower<HbrDefenseDownPower>(),
+        HoverTipFactory.FromPower<FragilePower>(),
+        HoverTipFactory.FromPower<BreakPower>()
     };
 
     public SaviorGrandEntranceHbrgoSaki()
@@ -61,12 +64,23 @@ public sealed class SaviorGrandEntranceHbrgoSaki : CardModel
         SaviorGrandEntrancePower power = await PowerCmd.Apply<SaviorGrandEntrancePower>(
             context, Owner.Creature, 1m, Owner.Creature, this);
         power?.RegisterCardSource(this);
+        if (HasUpgradeEffect(6) && HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+        {
+            var profile = new HbrEffectProfile(HbrEffectLimit.None, HbrEffectExit.Eternal, 1);
+            foreach (var enemy in CombatState.GetOpponentsOf(Owner.Creature).Where(enemy => enemy.IsAlive).ToArray())
+            {
+                await HbrPercentDebuffApplication.ApplyBasis<HbrDefenseDownPower>(context, enemy, 20m,
+                    Owner.Creature, this, profile);
+                await HbrPercentDebuffApplication.ApplyBasis<FragilePower>(context, enemy, 20m,
+                    Owner.Creature, this, profile);
+            }
+        }
     }
 
     protected override void OnUpgrade()
     {
         int index = CurrentUpgradeLevel - 1;
-        if (index < 0 || index >= UpgradeEffectCount) return;
+        if (index < 0 || index >= MaxUpgradeLevel) return;
         int[] applied = UpgradeEffectOrder.Take(index).ToArray();
         bool Eligible(int id) => id >= 0 && id < UpgradeEffectCount && !applied.Contains(id);
         int id = index < UpgradeEffectOrder.Length && Eligible(UpgradeEffectOrder[index])
@@ -83,7 +97,7 @@ public sealed class SaviorGrandEntranceHbrgoSaki : CardModel
     {
         base.AfterDeserialized();
         UpgradeEffectOrder = (UpgradeEffectOrder ?? Array.Empty<int>()).Where(id => id >= 0 && id < UpgradeEffectCount)
-            .Distinct().Take(UpgradeEffectCount).ToArray();
+            .Distinct().Take(MaxUpgradeLevel).ToArray();
         _preparedUpgradeEffect = null;
     }
     protected override void AfterCloned()

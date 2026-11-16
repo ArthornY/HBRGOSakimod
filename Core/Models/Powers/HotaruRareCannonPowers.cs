@@ -77,7 +77,7 @@ public sealed class HotaruSixSenseRemnantsPower : HotaruUncommonCardPower
         power.GrowthReward = BigCombatNumbers.ToNativeSigned((decimal)power.GrowthReward + (decimal)growth * copies);
         power.ChargeReward = BigCombatNumbers.ToNativeSigned((decimal)power.ChargeReward + (decimal)charge * copies);
     }
-    internal async Task OnBreak(PlayerChoiceContext context, CardModel source)
+    internal async Task OnFirstEnemyDebuff(PlayerChoiceContext context, CardModel source)
     {
         if (!HotaruCommonCannonHelper.CanAct(Owner?.Player) || Amount <= 0) return;
         int charge = ChargeReward;

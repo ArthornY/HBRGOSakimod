@@ -69,6 +69,9 @@ internal static class HbrgoSakiCardLibraryVariantSelector
 
         // Both variants intentionally share one visible character filter.
         cardPoolFilters[thirtyA] = visibleSakiFilter;
+        // The retired 人造救世主 has no filter of its own; an old run on it opens
+        // the library on this one (as 31O) instead of failing the native lookup.
+        cardPoolFilters.TryAdd(ModelDb.Character<HbrgoSaki>(), visibleSakiFilter);
         poolFilters[visibleSakiFilter] = card =>
             HbrgoSakiVariantPreference
                 .GetCharacter(state.SelectedVariant)

@@ -78,6 +78,16 @@ static class LayoutChecks
         Check(removes.Length>0&&removes.All(method=>Harmony.GetPatchInfo(method)?.Owners.Contains(Owner)!=true),"native hover-tip Remove lifecycle receives no replacement patch from this feature");
         Type attachment=Mod.GetTypes().Single(type=>type.Name=="NHandCardHoverTips");
         Check(typeof(Node).IsAssignableFrom(attachment),"production attachment remains a Godot child-node type; no node is instantiated by fixture");
+        Type inspectScreen=typeof(ModelDb).Assembly.GetType("MegaCrit.Sts2.Core.Nodes.Screens.NInspectCardScreen",true)!;
+        Type inspectPatch=Mod.GetType("HBRGOSakiMod.Core.Patches.InspectCardHoverTipLayoutPatch",true)!;
+        MethodInfo inspectUpdate=inspectScreen.GetMethod("UpdateCardDisplay",F)!;
+        Check(harmony.CreateClassProcessor(inspectPatch).Patch().Count==1,"real production inspect-hover transpiler installs on actual native UpdateCardDisplay");
+        Check(Harmony.GetPatchInfo(inspectUpdate)!.Transpilers.Any(item=>item.owner==Owner&&item.PatchMethod.DeclaringType==inspectPatch),
+            "native inspect UpdateCardDisplay really owns the production layout adapter");
+        Type label=typeof(ModelDb).Assembly.GetType("MegaCrit.Sts2.addons.mega_text.MegaLabel",true)!;
+        Type rich=typeof(ModelDb).Assembly.GetType("MegaCrit.Sts2.addons.mega_text.MegaRichTextLabel",true)!;
+        Check(typeof(Godot.Label).IsAssignableFrom(label)&&typeof(RichTextLabel).IsAssignableFrom(rich),
+            "native tip Title/Description classes match both real wrapping-control casts");
         var parameters=Compute.GetParameters();
         Check(parameters.Select(parameter=>parameter.ParameterType).SequenceEqual(new[]{typeof(Rect2),typeof(Rect2),typeof(float),typeof(float),typeof(float)})&&
             Convert.ToSingle(parameters[3].DefaultValue)==12f&&Convert.ToSingle(parameters[4].DefaultValue)==16f,"geometry helper keeps explicit viewport/card/width/gap/margin contract");
@@ -122,6 +132,62 @@ static class LayoutChecks
             Check(Place(viewport,card)==screenshot,"reentered geometry call does not inherit prior placement state"+index);
         }
     }
+    static void StableFrameCases()
+    {
+        Type inspect=Mod.GetType("HBRGOSakiMod.Core.Helpers.InspectCardHoverTipLayoutHelper",true)!;
+        MethodInfo inspectCompute=inspect.GetMethod("ComputePlacement",F)!;
+        MethodInfo handAnchor=Compute.DeclaringType!.GetMethod("InParentFrame",F)!;
+        MethodInfo inspectAnchor=inspect.GetMethod("InParentFrame",F)!;
+        Rect2 viewport=new(0,0,1920,1080),reserved=new(1050,90,600,940);
+        object inspectValue=inspectCompute.Invoke(null,[viewport,reserved,380f,12f,16f])!;
+        Rect2 inspectBounds=(Rect2)inspectValue.GetType().GetProperty("Bounds",F)!.GetValue(inspectValue)!;
+        Check(!Overlap(inspectBounds,reserved.Grow(12f)),"inspect column reserves the full card/arrows area");
+        Check(viewport.Grow(-16f).Encloses(inspectBounds),"inspect column remains inside safe reading area");
+        Vector2 anchor=Place(viewport,new Rect2(985,630,340,500)).Bounds.Position;
+        for(int cycle=0;cycle<40;cycle++)
+        {
+            // Same card/viewport, but native re-alignment may assign a new root
+            // translation after each compact/full rebuild or delayed measure.
+            Vector2 shift=new((cycle%2==0?740:-310)+cycle*13,(cycle%3)*61-180);
+            Transform2D tipToParent=new(0f,new Vector2(cycle%2==0?1f:1.25f,cycle%2==0?1f:1.25f),0f,shift);
+            foreach(MethodInfo method in new[]{handAnchor,inspectAnchor})
+            {
+                Transform2D local=(Transform2D)method.Invoke(null,[tipToParent,anchor,1f])!;
+                Transform2D actual=tipToParent*local;
+                Near(actual.Origin.X,anchor.X,method.DeclaringType!.Name+" cancels native Shift-root displacement X "+cycle);
+                Near(actual.Origin.Y,anchor.Y,method.DeclaringType!.Name+" cancels native Shift-root displacement Y "+cycle);
+                Near(actual.X.X,1f,"stable parent width does not compound root scale "+cycle);
+                Near(actual.Y.Y,1f,"stable parent height does not compound root scale "+cycle);
+            }
+        }
+        Transform2D movedRoot=new(0f,new Vector2(500,220));
+        Check((movedRoot*new Transform2D(0f,anchor)).Origin!=anchor,
+            "negative control: treating absolute bounds as root-local genuinely drifts after native root movement");
+        string root=FindRoot();
+        foreach(string node in new[]{"Core/Nodes/Cards/NHandCardHoverTips.cs","Core/Nodes/Screens/NInspectCardHoverTips.cs"})
+        {
+            string source=File.ReadAllText(Path.Combine(root,node));
+            Check(source.Contains("_tips.ItemRectChanged +=")&&source.Contains("_tips.ItemRectChanged -="),node+" tracks native root movement and releases the event subscription");
+            Check(source.Contains("GetParent() as CanvasItem")&&source.Contains("InParentFrame(tipsToFrame"),node+" derives its actual transform from the stable parent frame");
+            Check(!source.Contains("NeedsSidebar(")&&!source.Contains("GetCombinedMinimumSize().X"),node+" cannot gate first layout on stale native columns or widen on each translated rebuild");
+            Check(source.Contains("WrapText(entry)")&&source.Contains("entry.Reparent(_column, false)"),node+" retains all native entries in the wrapping scroll column");
+        }
+        string helper=File.ReadAllText(Path.Combine(root,"Core/Helpers/HandCardHoverTipLayoutHelper.cs"));
+        Check(helper.Contains("title.AutowrapMode = TextServer.AutowrapMode.WordSmart")&&helper.Contains("body.AutowrapMode = TextServer.AutowrapMode.WordSmart")&&
+            helper.Contains("TextServer.OverrunBehavior.NoTrimming"),"mixed-language long titles and bodies wrap without truncating their text");
+        Check(!helper.Contains(".Text =")&&!helper.Contains(".Hide("),"wrapping leaves text content and visibility unchanged");
+        foreach(string text in new[]{"攻击力提升／защита／aumento／आक्रमण",new string('界',120),"difendereуправлятьсильныйसुरक्षा"})
+        {
+            _=text; Check(Place(viewport,new Rect2(985,630,340,500),380f).Bounds.Position==anchor,
+                "fixed native column anchor is independent of compact/full mixed-language title length");
+        }
+    }
+    static string FindRoot()
+    {
+        for(DirectoryInfo? directory=new(AppContext.BaseDirectory);directory!=null;directory=directory.Parent)
+            if(File.Exists(Path.Combine(directory.FullName,"HBRGOSakiMod.csproj")))return directory.FullName;
+        throw new Exception("Repository root missing");
+    }
     static void InvalidCases()
     {
         Rect2 viewport=new(0,0,1920,1080),card=new(985,630,340,500);
@@ -140,12 +206,12 @@ static class LayoutChecks
     public static void Run(string reportPath)
     {
         bool ok=false;string? error=null;
-        try{MetadataCases();GeometryCases();InvalidCases();ok=true;}catch(Exception e){error=e.ToString();Console.Error.WriteLine(e);}
+        try{MetadataCases();GeometryCases();StableFrameCases();InvalidCases();ok=true;}catch(Exception e){error=e.ToString();Console.Error.WriteLine(e);}
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         File.WriteAllText(reportPath,JsonSerializer.Serialize(new{ok,checks=Passed.Count,passed=Passed,error,cases=Cases,
             modSha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Mod.Location))),nativeSha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(ModelDb).Assembly.Location))),
             sourceNativeSha256=System.Environment.GetEnvironmentVariable("HBR_NATIVE_SOURCE_SHA256"),runtimeProfile=System.Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE"),telemetryIsolation=System.Environment.GetEnvironmentVariable("HBR_TELEMETRY_ISOLATION"),
-            boundary="Pure production placement geometry and real Harmony installation/native method metadata only. Covers viewport/card AABB inputs, safe bounds, side selection, readable fallback, one width scale, invalid inputs and repeatability. StringName/editor detection leaves isolated. No Godot nodes instantiated, no native alignment body or input event dispatched, no rendered tooltip/scroll/wheel/lifecycle/gameplay claim, no screenshots, package or installed-file changes."},new JsonSerializerOptions{WriteIndented=true}));
+            boundary="Pure production placement geometry and real Harmony installation/native method metadata only. Covers viewport/card AABB inputs, safe bounds, side selection, readable fallback, one width scale, invalid inputs and repeatability. StringName/editor detection leaves isolated. No Godot nodes instantiated, no native alignment body or input event dispatched; the parent-frame transform is executed as pure Godot geometry, event/entry wiring is checked from production source. No rendered tooltip/scroll/wheel/lifecycle/gameplay claim, no screenshots, package or installed-file changes."},new JsonSerializerOptions{WriteIndented=true}));
         Console.WriteLine((ok?"PASS ":"FAIL ")+Passed.Count+" hand-card hover layout checks");if(!ok)throw new Exception("Inspect "+reportPath);
     }
 }

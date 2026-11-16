@@ -46,12 +46,9 @@ internal static class HbrPercentDebuffDescriptionHelper
         display.Original = original;
         display.Converted = Grant.Replace(original, match => display.Names.Contains(match.Groups["name"].Value)
             ? "{" + match.Groups["name"].Value + "Percent}" + match.Groups["closing"].Value +
-                "%的" + match.Groups["power"].Value + "（2回合）"
+                "%的" + match.Groups["power"].Value + "（{" + match.Groups["name"].Value + "Duration}）"
             : match.Value);
         // Meteor Shower uses one native variable for both grants.
-        display.Converted = display.Converted.Replace(
-            "[gold]虚弱[/gold]（2回合）和[gold]易伤[/gold]",
-            "[gold]虚弱[/gold]和[gold]易伤[/gold]（各2回合）", StringComparison.Ordinal);
         display.Converted = display.Converted.Replace("虚弱", "攻击力下降", StringComparison.Ordinal)
             .Replace("易伤", "防御力下降", StringComparison.Ordinal);
         return display.Converted;

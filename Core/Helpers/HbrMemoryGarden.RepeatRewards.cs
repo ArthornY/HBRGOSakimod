@@ -38,11 +38,40 @@ internal static partial class HbrMemoryGarden
         (manual.MemoryGardenRepeatRewardClaims ?? string.Empty).Split('|', StringSplitOptions.RemoveEmptyEntries),
         StringComparer.Ordinal);
 
+    // Save this node's entry knowledge before RecordEncounters unlocks its
+    // newly chosen character. The existing per-owner receipt field survives
+    // event replay/SL, so reloading cannot turn a first encounter into a repeat.
+    internal static void CaptureRepeatMemoryEligibility(Player player, HbrStoryEvent story)
+    {
+        if (player == null || !HbrMemoryFragmentPool.IsMemoryFragment(story)) return;
+        IEnumerable<Player> participants = story.IsShared ? player.RunState.Players : new[] { player };
+        foreach (Player participant in participants)
+        {
+            if (!CanAccess(participant)) continue;
+            ElectronicSoldierManual manual = participant.GetRelic<ElectronicSoldierManual>();
+            HashSet<string> claims = ReadRepeatClaims(manual);
+            string prefix = RepeatVisitKey(participant, story) + "@met:";
+            if (claims.Any(claim => claim.StartsWith(prefix, StringComparison.Ordinal))) continue;
+            claims.Add(prefix + string.Join(",", ReadEncounters(manual.MemoryGardenMetCharacters)
+                .OrderBy(id => id, StringComparer.Ordinal)));
+            manual.SetMemoryGardenRepeatRewardClaims(string.Join("|", claims.Order(StringComparer.Ordinal)));
+        }
+    }
+
+    private static HashSet<string> RepeatEligibleCharacters(Player player, HbrStoryEvent story)
+    {
+        string prefix = RepeatVisitKey(player, story) + "@met:";
+        string stored = ReadRepeatClaims(player.GetRelic<ElectronicSoldierManual>())
+            .FirstOrDefault(claim => claim.StartsWith(prefix, StringComparison.Ordinal));
+        return stored == null ? new HashSet<string>(StringComparer.Ordinal) : ReadEncounters(stored[prefix.Length..]);
+    }
+
     private static CharacterEntry[] PendingRepeatCharacters(Player player, HbrStoryEvent story,
         IEnumerable<string> encountered)
     {
         if (!IsRepeatMemoryEvent(player, story)) return Array.Empty<CharacterEntry>();
         HashSet<string> met = new(encountered, StringComparer.Ordinal);
+        met.IntersectWith(RepeatEligibleCharacters(player, story));
         HashSet<string> claims = ReadRepeatClaims(player.GetRelic<ElectronicSoldierManual>());
         string visit = RepeatVisitKey(player, story);
         return Characters.Where(character => met.Contains(character.Id) && !claims.Contains(visit + character.Id)).ToArray();
@@ -57,9 +86,7 @@ internal static partial class HbrMemoryGarden
         if (!story.IsShared) return HasRepeatMemoryRewards(player, story, encountered);
         // Shared event options must match for every player, including teammates
         // without the manual and players who already claimed this node's reward.
-        HashSet<string> met = new(encountered, StringComparer.Ordinal);
-        return Characters.Any(character => met.Contains(character.Id)) &&
-            player.RunState.Players.Any(teammate => IsRepeatMemoryEvent(teammate, story));
+        return player.RunState.Players.Any(teammate => HasRepeatMemoryRewards(teammate, story, encountered));
     }
 
     internal static async Task<bool> ClaimRepeatMemoryRewards(Player player, HbrStoryEvent story,

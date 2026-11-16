@@ -27,8 +27,8 @@ public sealed class PhantomHighDimensionalShellPower :
         decimal baseAmount = CalculatePlayerAmount(LargeCreatureHealthHelper.GetMaxHp(creature));
         decimal bonus = BigCombatNumbers.ClampStat(HbrResourceValueHelper.Fixed(creature,
             PhantomHelper.GetExtraMaximumDp(creature)));
-        return PhantomHelper.ApplyMaximumDpLoss(creature,
-            BigCombatNumbers.ClampStat(baseAmount + bonus));
+        return ThirtyOneXBondHelper.ScaleMaximumDp(creature, PhantomHelper.ApplyMaximumDpLoss(creature,
+            BigCombatNumbers.ClampStat(baseAmount + bonus)));
     }
 
     internal static bool CanAbsorb(ValueProp props)

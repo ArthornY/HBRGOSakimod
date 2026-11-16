@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "HBR IconHacking original icon",
+  "importedPath": "res://images/powers/pillar_overdrive_detection_power.png",
+  "sha256": "20b2ba0ea98879fad835c417d5528d8c50b53bd72d998f9e1984c53741f95976",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconHacking.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-5514810182117988686",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:\\stsmod\\.ai-collab\\handoffs\\monster-req-20261114\\icons\\IconHacking.png",
+    "sourceSha256": "20b2ba0ea98879fad835c417d5528d8c50b53bd72d998f9e1984c53741f95976"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.PillarOverdriveDetectionPower",
+    "small": "res://images/powers/pillar_overdrive_detection_power.png",
+    "big": "res://images/powers/pillar_overdrive_detection_power.png"
+  },
+  "limits": "Source asset provenance only. No Godot importer, package or in-game visual run."
+}

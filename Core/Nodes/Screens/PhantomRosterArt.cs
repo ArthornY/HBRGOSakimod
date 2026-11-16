@@ -59,6 +59,8 @@ internal static class PhantomRosterArt
     private static GradientTexture2D _soulFlame;
     private static GradientTexture2D _skyVignette;
     private static GradientTexture2D _skyShade;
+    private static GradientTexture2D _portraitBackdrop;
+    private static GradientTexture2D _featuredPortraitBackdrop;
 
     // Azure glow just inside a portrait circle's rim; the full alpha is the summoned phantom's peak.
     internal static Texture2D SoulFlame => Cached(ref _soulFlame, () => Gradient2D(
@@ -83,6 +85,21 @@ internal static class PhantomRosterArt
         new Vector2(0f, 1f),
         new[] { 0f, 0.3f, 0.7f, 1f },
         new[] { new Color(0.024f, 0.016f, 0.055f, 0.55f), new Color(0.024f, 0.016f, 0.055f, 0f), new Color(0.024f, 0.016f, 0.055f, 0f), new Color(0.024f, 0.016f, 0.055f, 0.7f) }));
+
+    // Dark violet behind the portrait cutouts, the v2 preview's radial-gradient(circle at 50% 40%, centre, #160e2c 70%).
+    // A CSS circle reaches the farthest corner, √(0.5² + 0.6²) of the side away, so the outer colour starts at 0.7 of
+    // that and holds to the rim. Medallions in the grids use #3b2a62 at the centre; the detail portrait and the
+    // fusion preview the lighter #46306f.
+    internal static Texture2D PortraitBackdrop => Cached(ref _portraitBackdrop, () => PortraitGradient(new Color("#3b2a62")));
+
+    internal static Texture2D FeaturedPortraitBackdrop => Cached(ref _featuredPortraitBackdrop, () => PortraitGradient(new Color("#46306f")));
+
+    private static GradientTexture2D PortraitGradient(Color centre) => Gradient2D(
+        GradientTexture2D.FillEnum.Radial,
+        new Vector2(0.5f, 0.4f),
+        new Vector2(0.5f, 0.4f + 0.7f * Mathf.Sqrt(0.61f)),
+        new[] { 0f, 1f },
+        new[] { centre, new Color("#160e2c") });
 
     private static Texture2D Cached(ref GradientTexture2D texture, Func<GradientTexture2D> create)
     {
@@ -116,7 +133,8 @@ internal static class PhantomRosterArt
     }
 
     // Red Crimson and FlatHand are painted into their boss scenes, so their portrait is a
-    // square crop of the scene instead of a rendered creature.
+    // square crop of the scene instead of a rendered creature. Every other phantom is the renderer's cutout, laid
+    // over the circle's dark backdrop; the white behind the same render stays on the phantom cards.
     internal static Texture2D GetPortrait(ModelId monsterId)
     {
         if (SceneCrops.TryGetValue(monsterId, out Texture2D crop) && GodotObject.IsInstanceValid(crop))
@@ -133,7 +151,7 @@ internal static class PhantomRosterArt
                     : null;
         if (source is not { } value)
         {
-            return PhantomPortraitHelper.GetPortrait(monsterId);
+            return PhantomPortraitHelper.GetCutout(monsterId);
         }
 
         crop = new AtlasTexture { Atlas = Load(value.scene), Region = value.region };
@@ -141,15 +159,18 @@ internal static class PhantomRosterArt
         return crop;
     }
 
+    // Initializers run in order, and Size is clamped to the minimum size at the moment it is set. Under the
+    // default KeepSize the minimum is the texture's own size, so ExpandMode has to come first; set after Size,
+    // it left every medallion layer at its source size (mask 356, frame 396 instead of 190 and 212).
     internal static TextureRect Image(string path, Vector2 position, Vector2 size)
     {
         return new TextureRect
         {
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
             Texture = Load(path),
             Position = position,
             Size = size,
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
     }

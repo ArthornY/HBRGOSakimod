@@ -6,208 +6,162 @@ using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
-using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Saves.Runs;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
 public sealed class MatchaParfaitHbrgoSaki : CardModel
 {
+    internal const int InterestingWoman = 0, WhiteGun = 1, WildCat = 2,
+        PawPrint = 3, Improvisation = 4, BlackGun = 5, ILoveIt = 6;
     private const int UpgradeEffectCount = 7;
     private int? _preparedUpgradeEffect;
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int[] UpgradeEffectOrder { get; private set; } = Array.Empty<int>();
-
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-    public bool PendingFirstDpLossReturn { get; private set; }
+    public bool WhiteGunUsedThisCombat { get; private set; }
+    [SavedProperty]
+    public int ImprovisationEffect { get; private set; } = -1;
 
     public override int MaxUpgradeLevel => UpgradeEffectCount;
-
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/matcha_parfait_hbrgo_saki.png");
-
     public override string BetaPortraitPath => PortraitPath;
-
     public override bool CanBeGeneratedByModifiers => false;
-
     internal bool UsesThirtyAEffects => IsMutable && Owner != null
         ? Owner.Character is HbrgoSaki30A
         : HbrgoSakiCardPortraitContext.LibraryVariant == HbrgoSakiVariant.ThirtyA;
-
-    protected override IEnumerable<IHoverTip> ExtraHoverTips
-    {
-        get
-        {
-            if (HasUpgradeEffect(1)) yield return HoverTipFactory.FromPower<MatchaDeferredDpRecoveryPower>();
-            if (HasUpgradeEffect(2)) yield return HoverTipFactory.Static(StaticHoverTip.Block);
-            if (HasUpgradeEffect(3))
-            {
-                yield return HoverTipFactory.FromPower<StrengthPower>();
-                yield return HoverTipFactory.FromPower<DexterityPower>();
-            }
-        }
-    }
-
-    public override bool GainsBlock => HasUpgradeEffect(2);
+    internal int HitCount => HasUpgradeEffect(BlackGun) ? 4 : 2;
 
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[]
-        {
-            new IntVar("DpPercent", 10m),
-            new CardsVar(1)
-        };
-
-    public MatchaParfaitHbrgoSaki()
-        : base(
-            1,
-            CardType.Skill,
-            CardRarity.Rare,
-            TargetType.Self)
+        new[] { HbrSkillVars.Damage(100m, ValueProp.Move) };
+    protected override IEnumerable<IHoverTip> ExtraHoverTips => new[]
     {
-    }
+        HoverTipFactory.FromPower<FragilePower>(),
+        HoverTipFactory.FromPower<HighDimensionalShellPower>(),
+        HoverTipFactory.FromPower<DestructionRatePower>()
+    };
+
+    public MatchaParfaitHbrgoSaki() : base(1, CardType.Attack, CardRarity.Rare, TargetType.RandomEnemy) { }
 
     internal IReadOnlyList<int> GetAvailableUpgradeEffects() =>
         Enumerable.Range(0, UpgradeEffectCount).Where(id => !HasUpgradeEffect(id)).ToArray();
-
-    internal bool HasUpgradeEffect(int effectId) =>
-        UpgradeEffectOrder.Take(CurrentUpgradeLevel).Contains(effectId);
-
-    internal bool PrepareUpgradeEffect(int effectId)
+    internal bool HasUpgradeEffect(int id) => UpgradeEffectOrder.Take(CurrentUpgradeLevel).Contains(id);
+    internal bool PrepareUpgradeEffect(int id)
     {
-        if (!IsMutable || !IsUpgradable || effectId < 0 || effectId >= UpgradeEffectCount ||
-            HasUpgradeEffect(effectId)) return false;
-        _preparedUpgradeEffect = effectId;
+        if (!IsMutable || !IsUpgradable || !GetAvailableUpgradeEffects().Contains(id)) return false;
+        _preparedUpgradeEffect = id;
         return true;
     }
-
     internal void CancelPreparedUpgradeEffect() => _preparedUpgradeEffect = null;
-
-    internal void QueueFirstDpLossReturn()
-    {
-        AssertMutable();
-        PendingFirstDpLossReturn = true;
-    }
-
-    internal bool ConsumeFirstDpLossReturn()
-    {
-        AssertMutable();
-        bool pending = PendingFirstDpLossReturn;
-        PendingFirstDpLossReturn = false;
-        return pending;
-    }
 
     public override Task BeforeCombatStart()
     {
-        PendingFirstDpLossReturn = false;
+        WhiteGunUsedThisCombat = false;
+        ImprovisationEffect = -1;
+        if (HasUpgradeEffect(Improvisation))
+            ImprovisationEffect = Owner.RunState.Rng.Niche.NextInt(3);
+        RanaByakkoCombatHelper.InitializeMatchaBattle(this);
         return Task.CompletedTask;
+    }
+
+    internal void SetImprovisation(int effect) => ImprovisationEffect = effect;
+    internal void MarkWhiteGunUsed() => WhiteGunUsedThisCombat = true;
+    internal void SetBattleState(bool whiteGunUsed, int improvisation)
+    {
+        WhiteGunUsedThisCombat = whiteGunUsed;
+        ImprovisationEffect = improvisation;
     }
 
     protected override void AddExtraArgsToDescription(LocString description)
     {
         base.AddExtraArgsToDescription(description);
-        string suffix = UsesThirtyAEffects ? ".30a" : string.Empty;
-        description.Add("RecoveryPrefix", new LocString("cards", Id.Entry + ".recovery_prefix" + suffix));
-        description.Add("RecoveryFallback", new LocString("cards", Id.Entry + ".recovery_fallback" + suffix));
-        description.Add("DrawPrefix", new LocString("cards", Id.Entry + ".draw_prefix" + suffix));
+        description.Add("MatchaHits", HitCount);
         string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel)
-            .Where(id => id != 4)
-            .Select(id => HbrMemoryGardenUpgradeCatalog.GetEffectDescription(this, id.ToString()))
-            .ToArray();
+            .Where(id => id != BlackGun)
+            .Select(id => HbrMemoryGardenUpgradeCatalog.GetEffectDescription(this, id.ToString())).ToArray();
         description.Add("UpgradeEffects", effects.Length == 0 ? string.Empty : "\n" + string.Join("\n", effects));
+        string improvisation = HasUpgradeEffect(Improvisation) && ImprovisationEffect is >= 0 and <= 2
+            ? "\n" + new LocString("cards", Id.Entry + ".improvisation." + ImprovisationEffect).GetFormattedText()
+            : string.Empty;
+        description.Add("ImprovisationEffect", improvisation);
+        decimal basis = DynamicVars.Damage.BaseValue;
+        decimal bonus = IsMutable && Owner != null
+            ? HBRGOSakiMod.Core.Models.Relics.TigersMouthSnackBond.GetDamageBonusUnits(Owner.Creature, this) : 0m;
+        HbrSkillCardDescription.AddDamageParameters(this, description, "Damage", basis + bonus, previewUnits: basis);
     }
 
-    protected override async Task OnPlay(
-        PlayerChoiceContext choiceContext,
-        CardPlay cardPlay)
+    public decimal ModifyDamageMultiplicative(Creature target, decimal amount,
+        ValueProp props, Creature dealer, CardModel cardSource)
     {
-        await HbrMatchaDpHelper.Restore(choiceContext, Owner,
-            DynamicVars["DpPercent"].BaseValue / 100m, HasUpgradeEffect(2), this);
-        await CardPileCmd.Draw(
-            choiceContext,
-            DynamicVars.Cards.BaseValue,
-            Owner);
-
-        if (HasUpgradeEffect(0))
+        if (!ReferenceEquals(cardSource, this) || dealer != Owner?.Creature || !props.IsPoweredAttack()) return 1m;
+        decimal multiplier = 1m;
+        if (HasUpgradeEffect(Improvisation))
         {
-            int handCount = PileType.Hand.GetPile(Owner).Cards.Count;
-            if (handCount > 0)
-            {
-                CardModel[] discarded = (await CardSelectCmd.FromHandForDiscard(
-                        choiceContext, Owner,
-                        new CardSelectorPrefs(CardSelectorPrefs.DiscardSelectionPrompt, 0, handCount),
-                        null, this))
-                    .Where(card => card.Owner == Owner && card.Pile?.Type == PileType.Hand)
-                    .Distinct().ToArray();
-                // Keep vanilla's discard/draw ordering, including Sly cards.
-                await CardCmd.DiscardAndDraw(choiceContext, discarded, discarded.Length);
-            }
+            if (ImprovisationEffect == 0) multiplier *= 1.3m;
+            if (ImprovisationEffect == 1 && RanaByakkoCombatHelper.HasDp(target)) multiplier *= 1.5m;
         }
+        if (HasUpgradeEffect(ILoveIt) && target?.Powers.Any(power => power.Type == PowerType.Buff && power.Amount > 0) == true)
+            multiplier *= 1.5m;
+        return multiplier;
+    }
 
-        if (HasUpgradeEffect(1))
-            await MatchaDeferredDpRecoveryPower.Queue(choiceContext, Owner, HasUpgradeEffect(2), this);
-
-        if (HasUpgradeEffect(3))
+    protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
+    {
+        RanaByakkoCombatHelper.SynchronizeMatchaBattleState(this);
+        using (RanaByakkoCombatHelper.BeginPawPrint(this))
         {
-            await PowerCmd.Apply<StrengthPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
-            await PowerCmd.Apply<DexterityPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
+            await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, play)
+                .TargetingRandomOpponents(CombatState).WithHitCount(HitCount)
+                .WithHitFx("vfx/vfx_attack_slash").Execute(context);
         }
-
-        if (HasUpgradeEffect(5)) await PlayerCmd.GainEnergy(1m, Owner);
+        if (HasUpgradeEffect(WhiteGun) && RanaByakkoCombatHelper.TryUseWhiteGun(this))
+            await HbrMatchaDpHelper.Restore(context, Owner, 0.2m, false, this);
     }
 
     protected override void OnUpgrade()
     {
         int index = CurrentUpgradeLevel - 1;
-        if (index >= UpgradeEffectCount) return;
-
-        int effectId;
-        if (index < UpgradeEffectOrder.Length)
-        {
-            effectId = UpgradeEffectOrder[index];
-        }
-        else
-        {
-            // Native upgrades and old saves without chosen effects remain deterministic.
-            effectId = _preparedUpgradeEffect is int prepared && !UpgradeEffectOrder.Contains(prepared)
-                ? prepared
-                : Enumerable.Range(0, UpgradeEffectCount).First(id => !UpgradeEffectOrder.Contains(id));
-            UpgradeEffectOrder = UpgradeEffectOrder.Append(effectId).ToArray();
-        }
+        if (index < 0 || index >= UpgradeEffectCount) return;
+        int[] applied = UpgradeEffectOrder.Take(index).ToArray();
+        bool Eligible(int id) => id is >= 0 and < UpgradeEffectCount && !applied.Contains(id);
+        int selected = index < UpgradeEffectOrder.Length && Eligible(UpgradeEffectOrder[index])
+            ? UpgradeEffectOrder[index]
+            : _preparedUpgradeEffect is int prepared && Eligible(prepared)
+                ? prepared : Enumerable.Range(0, UpgradeEffectCount).First(Eligible);
+        if (index < UpgradeEffectOrder.Length) UpgradeEffectOrder[index] = selected;
+        else UpgradeEffectOrder = UpgradeEffectOrder.Append(selected).ToArray();
         _preparedUpgradeEffect = null;
-        if (effectId == 4) EnergyCost.UpgradeBy(-1);
     }
-
     protected override void AfterDeserialized()
     {
         base.AfterDeserialized();
-        UpgradeEffectOrder = (UpgradeEffectOrder ?? Array.Empty<int>())
-            .Where(id => id >= 0 && id < UpgradeEffectCount).Distinct().Take(UpgradeEffectCount).ToArray();
+        UpgradeEffectOrder = (UpgradeEffectOrder ?? Array.Empty<int>()).Where(id => id is >= 0 and < UpgradeEffectCount)
+            .Distinct().Take(UpgradeEffectCount).ToArray();
         _preparedUpgradeEffect = null;
     }
-
     protected override void AfterCloned()
     {
         base.AfterCloned();
-        UpgradeEffectOrder = (int[])UpgradeEffectOrder.Clone();
-        PendingFirstDpLossReturn = false;
+        UpgradeEffectOrder = UpgradeEffectOrder.ToArray();
         _preparedUpgradeEffect = null;
     }
-
     protected override void AfterDowngraded()
     {
         base.AfterDowngraded();
         UpgradeEffectOrder = Array.Empty<int>();
-        if (!HbrMemoryGardenProgression.IsRebuilding) PendingFirstDpLossReturn = false;
         _preparedUpgradeEffect = null;
     }
 }

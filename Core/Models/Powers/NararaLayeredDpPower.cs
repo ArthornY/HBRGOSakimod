@@ -13,10 +13,11 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPower
 {
+    private bool _pendingLayerBreakStatus;
     private NararaShibaBossMonster Boss => Owner?.Monster as NararaShibaBossMonster;
 
-    internal decimal LayerMaximum => PhantomHelper.ApplyMaximumDpLoss(
-        Owner, Math.Max(1m, Boss?.ExactDpLayerMaximum ?? LargeCreatureHealthHelper.GetMaxHp(Owner)));
+    internal decimal LayerMaximum => ThirtyOneXBondHelper.ScaleMaximumDp(Owner, PhantomHelper.ApplyMaximumDpLoss(
+        Owner, Math.Max(1m, Boss?.ExactDpLayerMaximum ?? LargeCreatureHealthHelper.GetMaxHp(Owner))));
     internal int RemainingLayers => Boss?.DpLayersRemaining ?? 1;
     protected override decimal MaximumAmount => LayerMaximum;
 
@@ -26,7 +27,7 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
             { ExactDpLayerMaximum: > 0 } boss
             ? boss.ExactDpLayerMaximum
             : CalculateUnadjustedInitialAmount(creature);
-        return PhantomHelper.ApplyMaximumDpLoss(creature, unadjustedMaximum);
+        return ThirtyOneXBondHelper.ScaleMaximumDp(creature, PhantomHelper.ApplyMaximumDpLoss(creature, unadjustedMaximum));
     }
 
     internal static decimal CalculateUnadjustedInitialAmount(Creature creature)
@@ -83,13 +84,7 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
         decimal incoming = Math.Max(0m, decimal.Floor(amount + PendingExtraDpDamage));
         decimal previous = CurrentDp;
         bool changedLayer = false;
-        if (!boss.CanBreakDpLayerThisRound)
-        {
-            decimal spent = Math.Min(Math.Max(0m, CurrentDp - 1m), incoming);
-            SetDpAmount(CurrentDp - spent);
-            _lastAbsorbedDamage = spent;
-        }
-        else if (incoming < CurrentDp)
+        if (incoming < CurrentDp)
         {
             decimal spent = incoming;
             SetDpAmount(CurrentDp - spent);
@@ -101,8 +96,9 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
             changedLayer = true;
             if (boss.DpLayersRemaining > 0)
             {
-                // Spill into the next layer, but never clear two layers in one
-                // combat round, even with a single huge hit or extra DP damage.
+                _pendingLayerBreakStatus = true;
+                // One hit consumes the active layer and can reduce the next
+                // to one DP. Later hits can break it during the same turn.
                 decimal spill = Math.Min(LayerMaximum - 1m, incoming - previous);
                 SetDpAmount(LayerMaximum - spill);
                 _lastAbsorbedDamage = previous + spill;
@@ -118,7 +114,7 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
         CardDamageHistoryHelper.RecordDpDamage(Owner, Math.Max(0m, _lastAbsorbedDamage - amount));
         if (changedLayer) RefreshLayerDisplay();
         if (_lastAbsorbedDamage > 0) Flash();
-        // A protected layer still intercepts all incoming damage at 1 DP.
+        // DP intercepts the entire hit; spill never becomes HP damage.
         return true;
     }
 
@@ -138,14 +134,6 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
         }
 
         _lastAbsorbedDamage = 0;
-        if (!boss.CanBreakDpLayerThisRound)
-        {
-            decimal previousDp = CurrentDp;
-            SetDpAmount(1m);
-            CardDamageHistoryHelper.RecordDpDamage(Owner, Math.Max(0m, previousDp - CurrentDp));
-            return;
-        }
-
         boss.RecordDpLayerBreak();
         if (boss.DpLayersRemaining <= 0)
         {
@@ -158,7 +146,21 @@ public sealed class NararaLayeredDpPower : HighDimensionalShellPower, ICustomPow
         SetDpAmount(LayerMaximum);
         CardDamageHistoryHelper.RecordDpDamage(Owner, consumedDp);
         RefreshLayerDisplay();
+        await HbrDpBreakStatusHelper.Apply(choiceContext, Owner);
         await CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
+    }
+
+    protected override Task ResolveIntermediateDpBreakStatus(PlayerChoiceContext context)
+    {
+        if (!_pendingLayerBreakStatus) return Task.CompletedTask;
+        _pendingLayerBreakStatus = false;
+        return HbrDpBreakStatusHelper.Apply(context, Owner);
+    }
+
+    protected override void AfterCloned()
+    {
+        base.AfterCloned();
+        _pendingLayerBreakStatus = false;
     }
 
     internal void RefreshLayerDisplay()

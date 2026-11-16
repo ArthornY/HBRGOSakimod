@@ -69,7 +69,7 @@ public sealed class FatePower : PowerModel
         }
 
         Flash();
-        await CreatureCmd.LoseMaxHp(
+        await CreatureCommandCompatibility.LoseMaxHp(
             choiceContext,
             target,
             HbrResourceValueHelper.Fixed(Owner, Amount * MaxHpLossPerDraw),

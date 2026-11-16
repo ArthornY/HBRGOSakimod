@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-/// <summary>Each stack reserves one extra turn, including its hand retention.</summary>
+/// <summary>Each received stack immediately queues one personal inserted turn.</summary>
 public sealed class BoostUpExtraTurnPower : PowerModel, ICustomPower
 {
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -34,48 +35,11 @@ public sealed class BoostUpExtraTurnPower : PowerModel, ICustomPower
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
 
-    public override bool ShouldTakeExtraTurn(Player player) =>
-        player == Owner.Player && Owner.IsAlive && Amount > 0 && !IsBoostTurnActive;
-
-    public override bool ShouldFlush(Player player) =>
-        player != Owner.Player || !Owner.IsAlive || Amount <= 0;
-
-    public override Task AfterTakingExtraTurn(Player player)
+    public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        // Native extra-turn sources share the same transition. Never activate
-        // on another player's turn or consume an already active reservation.
-        if (!ShouldTakeExtraTurn(player)) return Task.CompletedTask;
-
-        AssertMutable();
-        IsBoostTurnActive = true;
-        HasPendingEnergy = true;
-        return Task.CompletedTask;
-    }
-
-    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
-    {
-        if (player != Owner.Player || !Owner.IsAlive ||
-            !IsBoostTurnActive || !HasPendingEnergy) return;
-
-        AssertMutable();
-        HasPendingEnergy = false;
-        // This hook follows ALL energy-reset hooks, including Overclock's
-        // late SetEnergy. Its fixed allotment cannot erase this bonus.
-        Flash();
-        await PlayerCmd.GainEnergy(2m, player);
-    }
-
-    public override async Task AfterSideTurnEndLate(PlayerChoiceContext choiceContext,
-        CombatSide side, IEnumerable<Creature> participants)
-    {
-        if (!IsBoostTurnActive || side != Owner.Side || !participants.Contains(Owner)) return;
-
-        AssertMutable();
-        IsBoostTurnActive = false;
-        HasPendingEnergy = false;
-        // AfterSideTurnEndLate runs after hand flushing. Keeping the active
-        // stack until here retains both the entering hand and this turn's hand.
-        // Stacks added during the extra turn remain queued for subsequent turns.
-        await PowerCmd.ModifyAmount(choiceContext, this, -1m, null, null);
+        Player player = Owner?.Player;
+        int count = Math.Max(0, Amount);
+        if (player != null && count > 0) PersonalImmediateTurnCoordinator.Request(player, count);
+        await PowerCmd.Remove(this);
     }
 }

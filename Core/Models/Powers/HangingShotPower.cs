@@ -2,11 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Patches.Combat;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -20,6 +23,22 @@ public sealed class HangingShotPower : PowerModel
         PowerStackType.Counter;
 
     public override Color AmountLabelColor => new("E88954");
+
+    // The hit is its applier's powered attack, so HBR already converts the stacks
+    // as that applier's skill, six to 100%; the text states that coefficient.
+    public override LocString Description
+    {
+        get
+        {
+            bool owned = IsMutable && Owner != null;
+            if (owned ? !HbrBattleStatsHelper.IsEnabled(Applier ?? Owner) : !HbrVigorSkillDescriptionPatch.IsHbrCardHover)
+                return base.Description;
+            LocString text = new("powers", "HANGING_SHOT_POWER.hbrDescription");
+            text.Add("DamageSkill", owned ? HbrNativeEffectSkillHelper.FormatPercent(Amount)
+                : $"（层数×{HbrNativeEffectSkillHelper.FormatPercent(1m)}）");
+            return text;
+        }
+    }
 
     public override async Task BeforeSideTurnStart(
         PlayerChoiceContext choiceContext,

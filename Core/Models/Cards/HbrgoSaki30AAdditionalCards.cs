@@ -165,11 +165,11 @@ public sealed class SacrificialAttackHbrgoSaki : CardModel
             .LoseLevelFromActiveRosterEntry() ?? 0;
         if (phantom?.IsAlive == true && maxHpLoss > 0)
         {
-            await CreatureCmd.LoseMaxHp(
+            await CreatureCommandCompatibility.LoseMaxHp(
                 choiceContext,
                 phantom,
                 maxHpLoss,
-                isFromCard: true);
+                isFromCard: true, cardSource: this);
         }
     }
 

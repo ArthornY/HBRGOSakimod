@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "IconContinuousSpDamage.png",
+  "importedPath": "res://images/powers/hbr_energy_drain_power.png",
+  "sha256": "d19b8011163a0ba7697c16050b9c9db24e629cffb9ae7577594374e840f30720",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical original decoded Texture2D; no crop, recoloring, resizing or generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconContinuousSpDamage.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-5331981440740977511",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/.ai-collab/handoffs/monster-req-20261114/icons/IconContinuousSpDamage.png",
+    "sourceSha256": "d19b8011163a0ba7697c16050b9c9db24e629cffb9ae7577594374e840f30720",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrEnergyDrainPower",
+    "small": "res://images/powers/hbr_energy_drain_power.png",
+    "big": "res://images/powers/hbr_energy_drain_power.png"
+  },
+  "limits": "Asset provenance only; no Godot import or rendering."
+}

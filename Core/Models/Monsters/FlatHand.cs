@@ -766,7 +766,7 @@ public sealed class FlatHand :
                     99m,
                     Creature,
                     null);
-                await HbrPercentDebuffApplication.ApplyDefenseDown(
+                await HbrBossDebuffApplication.ApplyDefenseDown(
                     new ThrowingPlayerChoiceContext(),
                     playerCreature,
                     99m,

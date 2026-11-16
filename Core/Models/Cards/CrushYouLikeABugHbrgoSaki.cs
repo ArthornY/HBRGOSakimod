@@ -28,8 +28,7 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int[] UpgradeEffectOrder { get; private set; } = Array.Empty<int>();
 
-    public override int MaxUpgradeLevel => UpgradeEffectCount - 1;
-    protected override bool HasEnergyCostX => HasUpgradeEffect(4);
+    public override int MaxUpgradeLevel => UpgradeEffectCount;
     public override TargetType TargetType => HasUpgradeEffect(2) ? TargetType.AllEnemies : TargetType.AnyEnemy;
     public override bool CanBeGeneratedByModifiers => false;
     public override string PortraitPath => ImageHelper.GetImagePath(
@@ -40,9 +39,13 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
     {
         get
         {
-            if (HasUpgradeEffect(1)) yield return HoverTipFactory.FromPower<MindsEyePower>();
+            if (HasUpgradeEffect(1))
+            {
+                yield return HoverTipFactory.FromPower<HbrCriticalRateUpPower>();
+                yield return HoverTipFactory.FromPower<HbrCriticalDamageUpPower>();
+            }
+            yield return HoverTipFactory.FromPower<BreakPower>();
             if (HasUpgradeEffect(3)) yield return HoverTipFactory.FromPower<DestructionRatePower>();
-            if (HasUpgradeEffect(6)) yield return HoverTipFactory.FromPower<CrushYouLikeABugReplayPower>();
         }
     }
 
@@ -50,8 +53,7 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
 
     internal bool HasUpgradeEffect(int id) => UpgradeEffectOrder.Take(CurrentUpgradeLevel).Contains(id);
     private static bool IsEligible(int id, IReadOnlyCollection<int> applied) =>
-        id >= 0 && id < UpgradeEffectCount && !applied.Contains(id) &&
-        !(id == 0 && applied.Contains(4)) && !(id == 4 && applied.Contains(0));
+        id >= 0 && id < UpgradeEffectCount && !applied.Contains(id);
     internal IReadOnlyList<int> GetAvailableUpgradeEffects() => Enumerable.Range(0, UpgradeEffectCount)
         .Where(id => IsEligible(id, UpgradeEffectOrder.Take(CurrentUpgradeLevel).ToArray())).ToArray();
     internal bool PrepareUpgradeEffect(int id)
@@ -61,15 +63,24 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
         return true;
     }
     internal void CancelPreparedUpgradeEffect() => _preparedUpgradeEffect = null;
-    internal int GetHitCount(int resolvedX) => (int)Math.Min(int.MaxValue,
-        1L + (HasUpgradeEffect(4) ? Math.Max(0, (long)resolvedX) : 0L) + (HasUpgradeEffect(5) ? 2L : 0L));
+    internal int GetHitCount(int resolvedX = 0) => 1 + (HasUpgradeEffect(5) ? 2 : 0);
+
+    public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
+    {
+        modifiedCost = originalCost;
+        if (!ReferenceEquals(card, this) || !HasUpgradeEffect(6) || originalCost <= 0m ||
+            Owner?.Creature?.CombatState?.GetOpponentsOf(Owner.Creature)
+                .Any(enemy => enemy.IsAlive && enemy.HasPower<BreakPower>()) != true) return false;
+        modifiedCost = Math.Max(0m, originalCost - 1m);
+        return true;
+    }
 
     protected override void AddExtraArgsToDescription(LocString description)
     {
         base.AddExtraArgsToDescription(description);
         description.Add("BugTarget", HasUpgradeEffect(2) ? "所有敌人" : "目标");
-        description.Add("BugHits", HasUpgradeEffect(4) ? (HasUpgradeEffect(5) ? "X+3" : "X+1") : GetHitCount(0).ToString());
-        string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel).Where(id => id is 1 or 3 or 5 or 6)
+        description.Add("BugHits", GetHitCount().ToString());
+        string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel).Where(id => id is 1 or 3 or 4 or 5 or 6)
             .Select(id => HbrMemoryGardenUpgradeCatalog.GetEffectDescription(this, id.ToString())).ToArray();
         description.Add("UpgradeEffects", effects.Length == 0 ? string.Empty : "\n" + string.Join("\n", effects));
     }
@@ -78,21 +89,14 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
     {
         bool allEnemies = HasUpgradeEffect(2);
         if (!allEnemies) ArgumentNullException.ThrowIfNull(play.Target, nameof(play.Target));
-        int resolvedX = 0;
-        if (HasUpgradeEffect(4))
-        {
-            // Keep the inherited X for every free replay in this play series.
-            // Refunds use real ResourceInfo payment, never this copy cache.
-            EnergyCost.CapturedXValue = DualSwordsCopyHelper.PeekXEnergySpent(this, EnergyCost.CapturedXValue);
-            resolvedX = ResolveEnergyXValue();
-        }
+        if (HasUpgradeEffect(1) && HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+            foreach (var ally in TeamCombatHelper.GetLivingAllies(Owner.Creature))
+                await ThirtyOneAMemoryUpgradeHelper.GrantCriticals(context, ally, Owner.Creature, this);
         var attack = DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, play)
-            .WithHitCount(GetHitCount(resolvedX)).WithHitFx("vfx/vfx_attack_slash");
+            .WithHitCount(GetHitCount()).WithHitFx("vfx/vfx_attack_slash");
         if (allEnemies) attack.TargetingAllOpponents(CombatState);
         else attack.Targeting(play.Target);
         await attack.Execute(context);
-        if (HasUpgradeEffect(1) && Owner.Creature.IsAlive)
-            await PowerCmd.Apply<MindsEyePower>(context, Owner.Creature, 1m, Owner.Creature, this);
         await CrushYouLikeABugCombatHelper.FinishUpgradeEffects(context, this, play);
     }
 
@@ -109,11 +113,7 @@ public sealed class CrushYouLikeABugHbrgoSaki : CardModel
         else UpgradeEffectOrder = UpgradeEffectOrder.Append(id).ToArray();
         _preparedUpgradeEffect = null;
         if (id == 0) EnergyCost.UpgradeBy(-1);
-        if (id == 4)
-        {
-            EnergyCostField(this) = new CardEnergyCost(this, 1, true);
-            InvokeEnergyCostChanged();
-        }
+
     }
     protected override void AfterDeserialized()
     {

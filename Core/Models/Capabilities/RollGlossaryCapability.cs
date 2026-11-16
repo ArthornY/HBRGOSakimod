@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.FateDice;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Cards;
@@ -60,8 +62,13 @@ public sealed class RollGlossaryCapability :
     private int _lastCompletedEnergySpent;
     private int _lastCompletedRegularSwordheartAmount;
     private decimal _currentValueMultiplier = 1m;
+    // 镜面 doubles only the card's damage and block, not the power amounts it
+    // gives (design v3: 「这张牌的伤害和格挡翻倍」), so it is kept apart.
+    private decimal _currentMirrorMultiplier = 1m;
     private int _pendingSwordheartAmount;
     private int _pendingFragileTriggers;
+    private HbrFateDicePendingEffects _pendingFateEffects;
+    private List<RollPowerReservation> _pendingRollPowerReservations = new();
     private Stack<SuspendedRollState> _suspendedRollStates = new();
     // Standalone cannon dice reuse the owner pipeline without creating a card
     // or claiming any card-play resources, attributes or one-card bonuses.
@@ -91,7 +98,7 @@ public sealed class RollGlossaryCapability :
         long bonus = 0;
         long percent = HalfBodyHandHelper.GetRollPenalty(player) +
             TourGuidePower.GetRollPenalty(creature);
-        percent += NararaNullificationPenaltyHelper.GetRollPenalty(card, player);
+        percent += HbrRollPowerHelper.GetAvailableBonus(creature);
 
         StrengthenPower strengthen =
             creature.GetPower<StrengthenPower>();
@@ -134,15 +141,9 @@ public sealed class RollGlossaryCapability :
             percent += notOverYet.AttackRollBonus;
         }
 
-        if (creature.GetPower<MaidCultivationPower>()?.Amount > 0)
-        {
-            percent += MaidCultivationPower.RollBonus;
-        }
-
         percent += creature.GetPower<NextRollBonusPower>()?.Amount ?? 0;
         bonus += HotaruEchoLocationPower.GetProjectedBonus(player);
         bonus += HotaruLingeringEchoPower.GetProjectedBonus(player);
-        bonus += (long)decimal.Floor(creature.GetPower<SixSenseCombatPower>()?.CombatRollBonus ?? 0m);
         return (
             (int)Math.Clamp(bonus, int.MinValue, int.MaxValue),
             (int)Math.Clamp(percent, int.MinValue, int.MaxValue));
@@ -180,17 +181,7 @@ public sealed class RollGlossaryCapability :
         yield return CreateHoverTip(
             AbsoluteCriticalSuccessKeywordId,
             CreateAbsoluteCriticalSuccessDescription(card));
-        if (NararaNullificationPenaltyHelper.IsPenalized(card))
-        {
-            yield return new HoverTip(
-                new LocString("powers", "NARARA_NULLIFICATION_POWER.title"),
-                HbrgoSakiEnergyIconHelper.Add31OPrefix(
-                    new LocString("powers", "NARARA_NULLIFICATION_POWER.cardPenaltyDescription")))
-            {
-                Id = "NARARA_NULLIFICATION_CARD_PENALTY",
-                IsDebuff = true
-            };
-        }
+
     }
 
     public override async Task BeforeCardPlayed(CardPlay cardPlay)
@@ -203,9 +194,6 @@ public sealed class RollGlossaryCapability :
             return;
         }
 
-        // Reserve next-card bonuses before rolling regardless of capability dispatch order.
-        if (card.Capability<SixSenseCardCapability>() is { } sixSense)
-            await sixSense.PreparePlay(cardPlay);
         BeginCardRollState();
         _currentEnergySpent = Math.Max(
             0,
@@ -229,7 +217,7 @@ public sealed class RollGlossaryCapability :
         }
 
         return HbrgoSakiDamageMultiplierHelper.Add(
-            _currentValueMultiplier,
+            _currentValueMultiplier * _currentMirrorMultiplier,
             this);
     }
 
@@ -246,7 +234,7 @@ public sealed class RollGlossaryCapability :
             return 1m;
         }
 
-        return _currentValueMultiplier;
+        return _currentValueMultiplier * _currentMirrorMultiplier;
     }
 
     public override decimal ModifyPowerAmountGivenMultiplicative(
@@ -299,6 +287,7 @@ public sealed class RollGlossaryCapability :
 
             await ApplyPendingSwordheart(choiceContext, Owner);
             await PlayPendingFragileCards(choiceContext);
+            await PlayPendingFateEffects(choiceContext);
             await ResolveHotaruCriticalRewards(choiceContext);
         }
         finally
@@ -423,10 +412,19 @@ public sealed class RollGlossaryCapability :
     /// It deliberately uses the legacy "advantage only" modifier set used by
     /// NotOverYet.
     /// </summary>
-    public async Task<int> RollExtraD100(
+    public Task<int> RollExtraD100(
         PlayerChoiceContext choiceContext,
         CardModel cardSource,
-        bool forceAdvantage = false)
+        bool forceAdvantage = false) =>
+        RollExtraD100Core(choiceContext, cardSource, forceAdvantage, advantageOnly: true, "额外掷骰");
+
+    // New card effects request a fresh ordinary die, including the normal
+    // additive modifiers. The original attack's published roll is untouched.
+    public Task<int> RollAdditionalD100(PlayerChoiceContext choiceContext, CardModel cardSource) =>
+        RollExtraD100Core(choiceContext, cardSource, forceAdvantage: false, advantageOnly: false, "追加掷骰");
+
+    private async Task<int> RollExtraD100Core(PlayerChoiceContext choiceContext, CardModel cardSource,
+        bool forceAdvantage, bool advantageOnly, string label)
     {
         LastExtraRollWasCritical = false;
         if (!ReferenceEquals(cardSource, Owner) ||
@@ -435,44 +433,68 @@ public sealed class RollGlossaryCapability :
             return 0;
         }
 
-        SoulRollResult rollResult = RollD100(
-            includeMagicSwordBonus: true,
-            cardSource,
-            allowMaidBonus: false,
-            advantageOnly: true,
-            forceAdvantage);
-        int roll = rollResult.Roll;
-        bool wasCritical = RollKeywordRules.IsCriticalRoll(Controller, rollResult.WinningRoll);
-        RecordRoll(
-            rollResult,
-            $"「还没有结束」额外掷骰，由「{GetCardTitle(cardSource)}」触发");
-        RegisterResolvedRoll(rollResult.WinningRoll);
-        await ResolveHotaruCriticalRewards(choiceContext);
-
-        int swordheartAmount = ReserveExtraRollSwordheartAmount(
-            cardSource,
-            rollResult.WinningRoll);
-        if (swordheartAmount > 0)
+        List<RollPowerReservation> reservations = _pendingRollPowerReservations ??= new();
+        int reservationStart = reservations.Count;
+        Creature holder = Controller?.Creature;
+        StrengthenPower strengthen = !advantageOnly ? holder?.GetPower<StrengthenPower>() : null;
+        ExtremeDodgeRollPenaltyPower penalty = !advantageOnly ? holder?.GetPower<ExtremeDodgeRollPenaltyPower>() : null;
+        NextCriticalSuccessPower critical = !advantageOnly ? holder?.GetPower<NextCriticalSuccessPower>() : null;
+        int oldStrengthen = strengthen?.ReservedRollCount ?? 0;
+        int oldPenalty = penalty?.ReservedRollCount ?? 0;
+        int oldCritical = critical?.ReservedRollCount ?? 0;
+        ExceptionDispatchInfo failure = null;
+        int completedRoll = 0;
+        try
         {
-            await ApplySwordheart(
-                choiceContext,
+            SoulRollResult rollResult = RollD100(
+                includeMagicSwordBonus: true,
                 cardSource,
-                swordheartAmount);
-        }
+                allowMaidBonus: false,
+                advantageOnly,
+                forceAdvantage);
+            int roll = rollResult.Roll;
+            bool wasCritical = RollKeywordRules.IsCriticalRoll(Controller, rollResult.WinningRoll);
+            RecordRoll(
+                rollResult,
+                $"{label}，由「{GetCardTitle(cardSource)}」触发");
+            RegisterResolvedRoll(rollResult.WinningRoll);
+            await ResolveHotaruCriticalRewards(choiceContext);
 
-        if (roll > 95)
+            int swordheartAmount = ReserveExtraRollSwordheartAmount(cardSource, rollResult.WinningRoll);
+            if (swordheartAmount > 0)
+                await ApplySwordheart(choiceContext, cardSource, swordheartAmount);
+            if (roll > 95) _pendingFragileTriggers++;
+
+            _pendingFateEffects += HbrFateDiceRollHelper.EffectsOf(Controller, rollResult.WinningRoll.BaseRoll, wasCritical);
+            await PlayPendingFragileCards(choiceContext);
+            await PlayPendingFateEffects(choiceContext);
+            if (advantageOnly) await ConsumeReservedRollModifierPowers(choiceContext, cardSource);
+            // Reentrant card effects may roll again or change Charge. Publish
+            // the completed outer result after those effects finish.
+            LastExtraRollWasCritical = wasCritical;
+            completedRoll = roll;
+        }
+        catch (Exception error) { failure = ExceptionDispatchInfo.Capture(error); }
+        finally
         {
-            _pendingFragileTriggers++;
+            if (!advantageOnly)
+                failure = await CaptureRollCleanupFailure(failure, async () =>
+                {
+                    int count = (strengthen?.ReservedRollCount ?? 0) - oldStrengthen;
+                    if (count > 0) await strengthen.ConsumeReservedRolls(choiceContext, cardSource, count);
+                    count = (penalty?.ReservedRollCount ?? 0) - oldPenalty;
+                    if (count > 0) await penalty.ConsumeReservedRolls(choiceContext, cardSource, count);
+                    count = (critical?.ReservedRollCount ?? 0) - oldCritical;
+                    if (count > 0) await critical.ConsumeReservedRolls(choiceContext, cardSource, count);
+                });
+            // Normal completion may already have drained these tokens. Their
+            // idempotent consumption also protects this roll's failure path,
+            // without touching tokens that belonged to its enclosing card.
+            failure = await CaptureRollCleanupFailure(failure, () =>
+                ConsumeNewRollReservations(choiceContext, reservations, reservationStart, cardSource));
         }
-
-        await PlayPendingFragileCards(choiceContext);
-        await ConsumeReservedRollModifierPowers(
-            choiceContext,
-            cardSource);
-        // Reentrant card effects may roll again or change Charge. Publish the
-        // completed outer roll's original result only after those effects finish.
-        LastExtraRollWasCritical = wasCritical;
-        return roll;
+        failure?.Throw();
+        return completedRoll;
     }
 
     /// <summary>
@@ -513,6 +535,7 @@ public sealed class RollGlossaryCapability :
         {
             await ApplyPendingSwordheart(choiceContext, Owner);
             await PlayPendingFragileCards(choiceContext);
+            await PlayPendingFateEffects(choiceContext);
             await ResolveHotaruCriticalRewards(choiceContext);
         }
         finally
@@ -535,9 +558,17 @@ public sealed class RollGlossaryCapability :
 
     private Player Controller => _standalonePlayer ?? Owner?.Owner;
 
-    internal static async Task<(SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded)>
+    internal static Task<(SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded)>
         RollForCannon(PlayerChoiceContext context, Player player, CardType type, bool forceAdvantage = false,
-            SoulRollBreakdown inheritedRoll = null)
+            SoulRollBreakdown inheritedRoll = null) => RollForCannonCore(context, player, type, forceAdvantage, inheritedRoll, false);
+
+    internal static Task<(SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded)>
+        RollForContest(PlayerChoiceContext context, Player player, CardType type) =>
+        RollForCannonCore(context, player, type, false, null, true);
+
+    private static async Task<(SoulRollBreakdown Winning, IReadOnlyList<SoulRollBreakdown> Discarded)>
+        RollForCannonCore(PlayerChoiceContext context, Player player, CardType type, bool forceAdvantage,
+            SoulRollBreakdown inheritedRoll, bool comparisonOnly)
     {
         StrengthenPower strengthen = player.Creature.GetPower<StrengthenPower>();
         ExtremeDodgeRollPenaltyPower penalty = player.Creature.GetPower<ExtremeDodgeRollPenaltyPower>();
@@ -546,15 +577,54 @@ public sealed class RollGlossaryCapability :
         int oldPenalty = penalty?.ReservedRollCount ?? 0;
         int oldCritical = critical?.ReservedRollCount ?? 0;
         RollGlossaryCapability pipeline = CreateCannonPipeline(player, type);
-        SoulRollResult result = pipeline.RollD100(true, null, allowMaidBonus: false, advantageOnly: false,
-            forceAdvantage: forceAdvantage, inheritedRoll: inheritedRoll);
-        int newStrengthen = (strengthen?.ReservedRollCount ?? 0) - oldStrengthen;
-        int newPenalty = (penalty?.ReservedRollCount ?? 0) - oldPenalty;
-        int newCritical = (critical?.ReservedRollCount ?? 0) - oldCritical;
-        if (newStrengthen > 0) await strengthen.ConsumeReservedRolls(context, null, newStrengthen);
-        if (newPenalty > 0) await penalty.ConsumeReservedRolls(context, null, newPenalty);
-        if (newCritical > 0) await critical.ConsumeReservedRolls(context, null, newCritical);
+        SoulRollResult result = default;
+        ExceptionDispatchInfo failure = null;
+        try
+        {
+            result = pipeline.RollD100Core(true, null, allowMaidBonus: false, advantageOnly: false,
+                forceAdvantage: forceAdvantage, inheritedRoll: inheritedRoll, comparisonOnly: comparisonOnly);
+        }
+        catch (Exception error) { failure = ExceptionDispatchInfo.Capture(error); }
+        finally
+        {
+            failure = await CaptureRollCleanupFailure(failure, async () =>
+            {
+                int newStrengthen = (strengthen?.ReservedRollCount ?? 0) - oldStrengthen;
+                int newPenalty = (penalty?.ReservedRollCount ?? 0) - oldPenalty;
+                int newCritical = (critical?.ReservedRollCount ?? 0) - oldCritical;
+                if (newStrengthen > 0) await strengthen.ConsumeReservedRolls(context, null, newStrengthen);
+                if (newPenalty > 0) await penalty.ConsumeReservedRolls(context, null, newPenalty);
+                if (newCritical > 0) await critical.ConsumeReservedRolls(context, null, newCritical);
+            });
+            failure = await CaptureRollCleanupFailure(failure, () =>
+                ConsumeNewRollReservations(context, pipeline._pendingRollPowerReservations, 0, null));
+        }
+        failure?.Throw();
         return (result.WinningRoll, result.DiscardedRolls);
+    }
+
+    private static async Task ConsumeNewRollReservations(PlayerChoiceContext context,
+        List<RollPowerReservation> reservations, int start, CardModel source)
+    {
+        if (reservations == null || reservations.Count <= start) return;
+        RollPowerReservation[] added = reservations.Skip(start).ToArray();
+        reservations.RemoveRange(start, reservations.Count - start);
+        await HbrRollPowerHelper.ConsumeReservations(context, added, source);
+    }
+
+    private static async Task<ExceptionDispatchInfo> CaptureRollCleanupFailure(
+        ExceptionDispatchInfo failure, Func<Task> cleanup)
+    {
+        try { await cleanup(); }
+        catch (Exception error)
+        {
+            if (failure == null) return ExceptionDispatchInfo.Capture(error);
+            // Keep the actual roll/card failure and its original stack. A
+            // secondary cleanup failure is diagnostic data, never its replacement.
+            try { failure.SourceException.Data["HBRGOSakiMod.RollCleanupFailure"] = error; }
+            catch { }
+        }
+        return failure;
     }
 
     internal static void CommitCannonRoll(Player player, SoulRollBreakdown winning,
@@ -668,12 +738,9 @@ public sealed class RollGlossaryCapability :
         string keywordId,
         LocString description)
     {
-        return new HoverTip(
+        return HoverTipCompatibility.CreateKeyword(
             ModKeywordRegistry.GetTitle(keywordId),
-            description)
-        {
-            Id = keywordId
-        };
+            description, keywordId);
     }
 
     private void PrepareCardRoll(
@@ -700,23 +767,36 @@ public sealed class RollGlossaryCapability :
         _currentRollDetails = rollResult.WinningRoll;
         HotaruUncommonCardHelper.RecordResolvedRoll(card, roll);
         HotaruRareRollHelper.RecordResolvedRoll(card, _currentRollDetails);
-        _currentValueMultiplier = card.Type is
-            CardType.Attack or CardType.Skill
-                ? RollKeywordRules.GetAttackOrSkillValueMultiplier(
-                    Controller,
-                    _currentRollDetails,
-                    card.Type)
-                : 1m;
+        SetCurrentRollValueMultipliers(card);
 
         RecordRoll(
             rollResult,
             $"打出「{GetCardTitle(card)}」");
         RegisterResolvedRoll(_currentRollDetails);
         QueueCardSwordheart(_currentRollDetails, card);
+        _pendingFateEffects += HbrFateDiceRollHelper.EffectsOf(Controller, _currentRollDetails.BaseRoll,
+            RollKeywordRules.IsCriticalRoll(Controller, _currentRollDetails));
         if (roll > 95)
         {
             _pendingFragileTriggers++;
         }
+    }
+
+    // The roll's increase covers the card's damage, block and the power amounts it
+    // gives; 镜面's repdigit doubling covers only damage and block.
+    private void SetCurrentRollValueMultipliers(CardModel card)
+    {
+        bool attackOrSkill = card.Type is CardType.Attack or CardType.Skill;
+        _currentValueMultiplier = attackOrSkill
+            ? RollKeywordRules.GetAttackOrSkillValueMultiplier(
+                Controller,
+                _currentRollDetails,
+                card.Type)
+            : 1m;
+        _currentMirrorMultiplier = attackOrSkill &&
+            HbrFateDiceRollHelper.DoublesValues(Controller, _currentRollDetails.BaseRoll)
+                ? 2m
+                : 1m;
     }
 
     private void PrepareAdditionalDamageSegmentRoll(CardModel card)
@@ -733,32 +813,32 @@ public sealed class RollGlossaryCapability :
         _currentRollDetails = rollResult.WinningRoll;
         HotaruUncommonCardHelper.RecordResolvedRoll(card, roll);
         HotaruRareRollHelper.RecordResolvedRoll(card, _currentRollDetails);
-        _currentValueMultiplier = card.Type is
-            CardType.Attack or CardType.Skill
-                ? RollKeywordRules.GetAttackOrSkillValueMultiplier(
-                    Controller,
-                    _currentRollDetails,
-                    card.Type)
-                : 1m;
+        SetCurrentRollValueMultipliers(card);
 
         RecordRoll(
             rollResult,
             $"「{GetCardTitle(card)}」第{_damageSegmentsStarted + 1}段伤害");
         RegisterResolvedRoll(_currentRollDetails);
         QueueCardSwordheart(_currentRollDetails, card);
+        _pendingFateEffects += HbrFateDiceRollHelper.EffectsOf(Controller, _currentRollDetails.BaseRoll,
+            RollKeywordRules.IsCriticalRoll(Controller, _currentRollDetails));
         if (roll > 95)
         {
             _pendingFragileTriggers++;
         }
     }
 
-    private SoulRollResult RollD100(
+    private SoulRollResult RollD100(bool includeMagicSwordBonus, CardModel cardSource,
+        bool allowMaidBonus, bool advantageOnly, bool forceAdvantage = false, SoulRollBreakdown inheritedRoll = null) =>
+        RollD100Core(includeMagicSwordBonus, cardSource, allowMaidBonus, advantageOnly, forceAdvantage, inheritedRoll, false);
+
+    private SoulRollResult RollD100Core(
         bool includeMagicSwordBonus,
         CardModel cardSource,
         bool allowMaidBonus,
         bool advantageOnly,
         bool forceAdvantage = false,
-        SoulRollBreakdown inheritedRoll = null)
+        SoulRollBreakdown inheritedRoll = null, bool comparisonOnly = false)
     {
         Player player = Controller;
         if (player?.RunState == null)
@@ -767,6 +847,10 @@ public sealed class RollGlossaryCapability :
                 RollKeywordRules.ResolveRollTier(player, SoulRollBreakdown.FromFinalRoll(0)),
                 Array.Empty<SoulRollBreakdown>());
         }
+
+        RollPowerReservation countedRoll = HbrRollPowerHelper.Reserve(player.Creature);
+        if (countedRoll != null)
+            (_pendingRollPowerReservations ??= new()).Add(countedRoll);
 
         int echoBonus = !advantageOnly
             ? player.Creature.GetPower<HotaruEchoLocationPower>()?.GetRollBonus(cardSource) ?? 0
@@ -784,20 +868,21 @@ public sealed class RollGlossaryCapability :
         }
 
         int thisBeatPercent = HotaruRareRollHelper.GetRollPercent(player);
-        SoulRollBreakdown FinishSpecialRoll(SoulRollBreakdown roll)
+        SoulRollBreakdown FinishSpecialRoll(SoulRollBreakdown roll, bool applyCountedBonus = true)
         {
+            List<SoulRollBonusDetail> bonuses = new();
             if (thisBeatPercent != 0)
-                roll = RollModifierHelper.Apply(roll, new[]
-                {
-                    new SoulRollBonusDetail(thisBeatPercent, "只为眼前这一拍", isPercentage: true)
-                });
+                bonuses.Add(new SoulRollBonusDetail(thisBeatPercent, "只为眼前这一拍", isPercentage: true));
+            if (applyCountedBonus && countedRoll?.BonusPercent is { } bonus && bonus != 0)
+                bonuses.Add(new SoulRollBonusDetail(bonus, "掷骰加成", isPercentage: true));
+            roll = RollModifierHelper.Apply(roll, bonuses);
             return RollKeywordRules.ResolveRollTier(player,
                 HotaruRareRollHelper.ApplyCertainVoice(cardSource, AddEchoBonus(roll)));
         }
 
         NextCriticalSuccessPower nextCriticalSuccess =
             player.Creature.GetPower<NextCriticalSuccessPower>();
-        if (inheritedRoll == null && nextCriticalSuccess?.TryReserveRoll() == true)
+        if (!comparisonOnly && inheritedRoll == null && nextCriticalSuccess?.TryReserveRoll() == true)
         {
             return new SoulRollResult(
                 FinishSpecialRoll(SoulRollBreakdown.FromFinalRoll(
@@ -814,13 +899,12 @@ public sealed class RollGlossaryCapability :
             : player.Creature
                 .GetPower<ExtremeDodgeRollPenaltyPower>();
         bool useRollPenalty = rollPenalty?.TryReserveRoll() == true;
-
         if (inheritedRoll == null && RollKeywordCombatState.RollsAreFixedToOneHundred(player))
         {
             return new SoulRollResult(
                 FinishSpecialRoll(SoulRollBreakdown.FromFinalRoll(
                     RollKeywordRules.RollMaximum,
-                    "控制台指令：固定出目")),
+                    "控制台指令：固定出目"), applyCountedBonus: false),
                 Array.Empty<SoulRollBreakdown>());
         }
 
@@ -832,7 +916,8 @@ public sealed class RollGlossaryCapability :
 
         GuideLittleHand guideLittleHand =
             player.GetRelic<GuideLittleHand>();
-        if (inheritedRoll == null && guideLittleHand != null)
+        bool allowAdvantage = inheritedRoll == null && !HbrFateDiceRollHelper.BlocksAdvantage(player);
+        if (allowAdvantage && guideLittleHand != null)
         {
             rolls.Add(RollD100Die(
                 "优势骰：导游的小手",
@@ -842,37 +927,63 @@ public sealed class RollGlossaryCapability :
                 rolls[1].FinalRoll);
         }
 
-        if (inheritedRoll == null && useStrengthen)
+        if (allowAdvantage && useStrengthen)
         {
             rolls.Add(RollD100Die(
                 "优势骰：强化",
                 advantageOnly));
         }
 
+        if (allowAdvantage)
+        {
+            for (int index = 0; index < (countedRoll?.ExtraDice ?? 0); index++)
+                rolls.Add(RollD100Die("优势骰：能力", advantageOnly));
+        }
+
         ProtagonistPrivilegePower protagonistPrivilege =
             player.Creature.GetPower<ProtagonistPrivilegePower>();
-        if (inheritedRoll == null && protagonistPrivilege != null)
+        if (allowAdvantage && protagonistPrivilege != null)
         {
             rolls.Add(RollD100Die(
                 "优势骰：主人公特典",
                 advantageOnly));
         }
 
-        if (inheritedRoll == null && forceAdvantage)
+        if (allowAdvantage && forceAdvantage)
         {
             rolls.Add(RollD100Die(
                 "优势骰：还没有结束",
                 advantageOnly));
         }
 
-        if (inheritedRoll == null && HotaruEndgameEffectsHelper.HasAdvantage(player))
+        if (allowAdvantage && HotaruEndgameEffectsHelper.HasAdvantage(player))
         {
             rolls.Add(RollD100Die("优势骰：救赎／牺牲", advantageOnly));
+        }
+
+        // Fate fragments: 主人公特典 always, 先手 on the first roll of each turn; 孤注 takes no
+        // advantage die at all (「不能取优势骰」), so only the base die counts.
+        bool firstRollOfTurn = HbrFateDiceRollHelper.TakeFirstRollOfTurn(player);
+        if (allowAdvantage && HbrFateDiceRollHelper.Has(player, HbrFateDiceCatalog.ProtagonistPrivilege))
+        {
+            rolls.Add(RollD100Die("优势骰：主人公特典（命运碎片）", advantageOnly));
+        }
+
+        if (allowAdvantage && firstRollOfTurn)
+        {
+            rolls.Add(RollD100Die("优势骰：先手（命运碎片）", advantageOnly));
+        }
+
+        if (HbrFateDiceRollHelper.BlocksAdvantage(player) && rolls.Count > 1)
+        {
+            rolls.RemoveRange(1, rolls.Count - 1);
         }
 
         CardType? rollType = _standaloneType ?? cardSource?.Type;
         bool isAttackCardRoll = !advantageOnly && rollType == CardType.Attack;
         List<SoulRollBonusDetail> sharedBonuses = new();
+        if (countedRoll?.BonusPercent is { } countedBonus && countedBonus != 0)
+            sharedBonuses.Add(new SoulRollBonusDetail(countedBonus, "掷骰加成", isPercentage: true));
         if (thisBeatPercent != 0)
             sharedBonuses.Add(new SoulRollBonusDetail(thisBeatPercent, "只为眼前这一拍", isPercentage: true));
 
@@ -901,18 +1012,10 @@ public sealed class RollGlossaryCapability :
                 halfBodyPenalty, "半身", isPercentage: true));
         }
 
-        int sixSenseBonus = SixSenseCardCapability.GetRollBonus(cardSource);
-        if (sixSenseBonus > 0)
+        int equipmentBonus = ElectronicSoldierManual.GetEquipmentRollBonus(player, rollType);
+        if (equipmentBonus > 0)
         {
-            sharedBonuses.Add(new SoulRollBonusDetail(sixSenseBonus, "六感属性"));
-        }
-
-        int sixSenseEffectBonus = _standalonePlayer != null
-            ? (int)Math.Min(int.MaxValue, decimal.Floor(player.Creature.GetPower<SixSenseCombatPower>()?.CombatRollBonus ?? 0m))
-            : SixSenseCardCapability.GetTriggeredRollBonus(cardSource);
-        if (!advantageOnly && sixSenseEffectBonus > 0)
-        {
-            sharedBonuses.Add(new SoulRollBonusDetail(sixSenseEffectBonus, "六感效果"));
+            sharedBonuses.Add(new SoulRollBonusDetail(equipmentBonus, "饰品"));
         }
 
         int tourGuidePenalty = TourGuidePower.GetRollPenalty(player.Creature);
@@ -923,25 +1026,19 @@ public sealed class RollGlossaryCapability :
                 "导游之力", isPercentage: true));
         }
 
-        int nullificationPenalty = NararaNullificationPenaltyHelper.GetRollPenalty(cardSource, player);
-        if (nullificationPenalty != 0)
-        {
-            sharedBonuses.Add(new SoulRollBonusDetail(
-                nullificationPenalty, "无效化", isPercentage: true));
-        }
 
         if (useStrengthen && !advantageOnly)
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 strengthen.RollBonus,
-                "强化", isPercentage: true));
+                "吉兆", isPercentage: true));
         }
 
         if (useRollPenalty)
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 ExtremeDodgeRollPenaltyPower.RollPenalty,
-                "极限闪避", isPercentage: true));
+                "间不容发", isPercentage: true));
         }
 
         if (!advantageOnly && protagonistPrivilege != null)
@@ -961,6 +1058,11 @@ public sealed class RollGlossaryCapability :
                 sharedBonuses.Add(new SoulRollBonusDetail(
                     accelerationBonus,
                     "加速", isPercentage: true));
+            }
+
+            foreach ((int percent, string source) in HbrFateDiceRollHelper.PercentModifiers(player))
+            {
+                sharedBonuses.Add(new SoulRollBonusDetail(percent, source, isPercentage: true));
             }
 
             int phantomBonus = PhantomHelper.GetSummonerRollBonus(player);
@@ -993,7 +1095,7 @@ public sealed class RollGlossaryCapability :
             {
                 sharedBonuses.Add(new SoulRollBonusDetail(
                     sharingBonus,
-                    "魔剑共享"));
+                    "祥光"));
             }
         }
 
@@ -1003,19 +1105,6 @@ public sealed class RollGlossaryCapability :
             sharedBonuses.Add(new SoulRollBonusDetail(
                 notOverYet.AttackRollBonus,
                 "还没有结束", isPercentage: true));
-        }
-
-        if (allowMaidBonus)
-        {
-            int maidBonus = player.Creature
-                .GetPower<MaidCultivationPower>()
-                ?.GetRollBonus(cardSource) ?? 0;
-            if (maidBonus != 0)
-            {
-                sharedBonuses.Add(new SoulRollBonusDetail(
-                    maidBonus,
-                    "女仆的素养", isPercentage: true));
-            }
         }
 
         if (!advantageOnly)
@@ -1045,7 +1134,9 @@ public sealed class RollGlossaryCapability :
             })
             .Select(roll => RollKeywordRules.ResolveRollTier(player, roll))
             .ToList();
-        int winningIndex = GetWinningRollIndex(finalRolls);
+        int winningIndex = comparisonOnly
+            ? finalRolls.Select((roll, index) => (roll.FinalRoll, index)).OrderByDescending(x => x.FinalRoll).First().index
+            : GetWinningRollIndex(finalRolls);
         SoulRollBreakdown winningRoll = finalRolls[winningIndex];
         SoulRollBreakdown[] discardedRolls = finalRolls
             .Where((_, index) => index != winningIndex)
@@ -1060,23 +1151,46 @@ public sealed class RollGlossaryCapability :
         int? inheritedRaw = null)
     {
         Player player = Controller;
-        int baseRoll = inheritedRaw ?? player.RunState.Rng.Niche.NextInt(
-            RollKeywordRules.RollMinimum,
-            RollKeywordRules.RollExclusiveMaximum);
+        int baseRoll = inheritedRaw ?? NextRawRoll(player);
+        if (inheritedRaw == null)
+        {
+            // Fate dice: cracks past a full set lower every raw roll (「每多一道裂痕，原始
+            // 出目整局 −3」); 再来 rolls the combat's first low raw roll once more.
+            int penalty = HbrFateDiceRollHelper.RawPenalty(player);
+            if (penalty > 0)
+            {
+                int before = baseRoll;
+                baseRoll = HbrFateDiceRollHelper.ApplyRawPenalty(player, baseRoll);
+                diceSource += $"（裂痕：原始出目{before}−{before - baseRoll}）";
+            }
+
+            if (HbrFateDiceRollHelper.TryUseReroll(player, baseRoll))
+            {
+                diceSource += $"（再来：原始出目{baseRoll}重掷）";
+                baseRoll = HbrFateDiceRollHelper.ApplyRawPenalty(player, NextRawRoll(player));
+            }
+        }
+
         int finalRoll = baseRoll;
         bool isForcedCritical = false;
         List<SoulRollBonusDetail> bonuses = new();
 
+        // 幸运数字 (moved from the dual swords form to a fragment on 2026-11-09).
         if (!advantageOnly &&
-            player.Creature.HasPower<ReptureDualSwordsPower>() &&
-            baseRoll is 7 or 77)
+            HbrFateDiceRollHelper.AppliesLuckyNumbers(player, baseRoll))
         {
             int adjustment = RollKeywordRules.RollMaximum - baseRoll;
             bonuses.Add(new SoulRollBonusDetail(
                 adjustment,
-                "Repture-双剑（7或77视为100）"));
+                "幸运数字（7或77视为100）"));
             finalRoll = RollKeywordRules.RollMaximum;
             isForcedCritical = true;
+        }
+        else if (inheritedRaw == null && HbrFateDiceRollHelper.AppliesFloor(player, baseRoll))
+        {
+            diceSource += $"（托底：原始出目{baseRoll}按{HbrFateDiceCatalog.FloorValue}算）";
+            baseRoll = HbrFateDiceCatalog.FloorValue;
+            finalRoll = baseRoll;
         }
 
         return new SoulRollBreakdown(
@@ -1088,6 +1202,11 @@ public sealed class RollGlossaryCapability :
             IsForcedCritical = isForcedCritical
         };
     }
+
+    private static int NextRawRoll(Player player) =>
+        player.RunState.Rng.Niche.NextInt(
+            RollKeywordRules.RollMinimum,
+            RollKeywordRules.RollExclusiveMaximum);
 
     private int GetWinningRollIndex(IReadOnlyList<SoulRollBreakdown> rolls)
     {
@@ -1115,12 +1234,16 @@ public sealed class RollGlossaryCapability :
     private void RegisterResolvedRoll(SoulRollBreakdown roll)
     {
         HbrgoSakiPresentationBridge.NotifyRollResolved(Controller, roll.FinalRoll);
+        ThirtyOneOClassRelicHelper.QueueResolvedRoll(Controller, roll);
 
         if (!RollKeywordRules.IsCriticalRoll(Controller, roll))
         {
             return;
         }
 
+        if (roll.BaseRoll is >= 1 and <= RollKeywordRules.RollMaximum &&
+            roll.BaseRoll >= RollKeywordRules.GetCriticalMinimum(Controller))
+            RanaByakkoCombatHelper.QueueRawCritical(Controller);
         RollKeywordCombatState.RecordCriticalSuccess(Controller);
         Controller?.GetRelic<ElectronicSoldierManual>()
             ?.QueueSixSenseReward();
@@ -1129,6 +1252,8 @@ public sealed class RollGlossaryCapability :
 
     private async Task ResolveHotaruCriticalRewards(PlayerChoiceContext context)
     {
+        await ThirtyOneOClassRelicHelper.ResolvePendingRollRewards(context, Controller);
+        await RanaByakkoCombatHelper.ResolvePendingRawCritical(context, Controller);
         await HotaruRareRollHelper.ResolvePending(context, Controller);
         if (Controller?.GetRelic<Millsage>() is { } millsage)
             await millsage.ResolveCriticalCannonRewards(context);
@@ -1154,21 +1279,17 @@ public sealed class RollGlossaryCapability :
         Player player = Controller;
         if (!RollKeywordRules.UsesSakiRules(player) ||
             player?.Creature == null ||
-            player.Creature.HasPower<MagicSwordModePower>())
+            player.Creature.HasPower<MagicSwordModePower>() ||
+            RollKeywordRules.IsCopiedCard(card))
         {
             return;
         }
 
+        // A critical success gives its own amount (two, 剑鸣 two more) rather than
+        // filling swordheart (design v3, section 2).
         if (RollKeywordRules.IsCriticalRoll(player, roll))
         {
-            _pendingSwordheartAmount = Math.Max(
-                _pendingSwordheartAmount,
-                SwordheartPower.GetMaxAmount(player.Creature));
-            return;
-        }
-
-        if (RollKeywordRules.IsCopiedCard(card))
-        {
+            _pendingSwordheartAmount += RollKeywordRules.GetCriticalSwordheartAmount(player);
             return;
         }
 
@@ -1194,19 +1315,15 @@ public sealed class RollGlossaryCapability :
         Player player = Controller;
         if (!RollKeywordRules.UsesSakiRules(player) ||
             player?.Creature == null ||
-            player.Creature.HasPower<MagicSwordModePower>())
+            player.Creature.HasPower<MagicSwordModePower>() ||
+            RollKeywordRules.IsCopiedCard(cardSource))
         {
             return 0;
         }
 
         if (RollKeywordRules.IsCriticalRoll(player, roll))
         {
-            return SwordheartPower.GetMaxAmount(player.Creature);
-        }
-
-        if (RollKeywordRules.IsCopiedCard(cardSource))
-        {
-            return 0;
+            return RollKeywordRules.GetCriticalSwordheartAmount(player);
         }
 
         int requestedAmount =
@@ -1321,6 +1438,13 @@ public sealed class RollGlossaryCapability :
             cardSource);
     }
 
+    private async Task PlayPendingFateEffects(PlayerChoiceContext choiceContext)
+    {
+        HbrFateDicePendingEffects effects = _pendingFateEffects;
+        _pendingFateEffects = default;
+        await HbrFateDiceRollHelper.Resolve(choiceContext, Controller, effects);
+    }
+
     private async Task PlayPendingFragileCards(
         PlayerChoiceContext choiceContext)
     {
@@ -1392,6 +1516,11 @@ public sealed class RollGlossaryCapability :
             return;
         }
 
+        List<RollPowerReservation> reservations = _pendingRollPowerReservations;
+        _pendingRollPowerReservations = new();
+        if (reservations != null)
+            await HbrRollPowerHelper.ConsumeReservations(choiceContext, reservations, cardSource);
+
         StrengthenPower strengthen =
             creature.GetPower<StrengthenPower>();
         if (strengthen != null)
@@ -1432,7 +1561,8 @@ public sealed class RollGlossaryCapability :
         PowerModel power,
         decimal amount)
     {
-        return power is SwordheartPower ||
+        return power is CountedRollPower ||
+               power is SwordheartPower ||
                power is BeyondProtectionPower ||
                power is PhantomNextAttackDoublePower ||
                power is PhantomNextAttackBonusSegmentsPower ||
@@ -1442,6 +1572,29 @@ public sealed class RollGlossaryCapability :
                power is LingeringLifePower ||
                power is PhantomTemporaryLevelPower ||
                power.GetTypeForAmount(amount) == PowerType.Debuff;
+    }
+
+    internal object CaptureRollReservationMarker() => _pendingRollPowerReservations;
+
+    internal async Task CleanupFailedRollReservations(object marker)
+    {
+        ExceptionDispatchInfo failure = null;
+        // A nested play can fail before its AfterCardPlayed hook. Unwind only
+        // the states it created. If AfterCardPlayed already restored the parent
+        // and native pile cleanup then fails, its original marker is current
+        // and the parent's still-pending roll must remain untouched.
+        while (_isCardRollActive && !ReferenceEquals(_pendingRollPowerReservations, marker))
+        {
+            List<RollPowerReservation> reservations = _pendingRollPowerReservations;
+            _pendingRollPowerReservations = new();
+            try
+            {
+                failure = await CaptureRollCleanupFailure(failure, () =>
+                    HbrRollPowerHelper.ConsumeReservations(new ThrowingPlayerChoiceContext(), reservations, Owner));
+            }
+            finally { FinishCardRollState(); }
+        }
+        failure?.Throw();
     }
 
     private void BeginCardRollState()
@@ -1458,8 +1611,11 @@ public sealed class RollGlossaryCapability :
                 _currentEnergySpent,
                 _currentRegularSwordheartAmount,
                 _currentValueMultiplier,
+                _currentMirrorMultiplier,
                 _pendingSwordheartAmount,
-                _pendingFragileTriggers));
+                _pendingFragileTriggers,
+                _pendingFateEffects,
+                _pendingRollPowerReservations));
         }
 
         ResetCurrentRollState();
@@ -1485,8 +1641,11 @@ public sealed class RollGlossaryCapability :
         _currentRegularSwordheartAmount =
             state.CurrentRegularSwordheartAmount;
         _currentValueMultiplier = state.CurrentValueMultiplier;
+        _currentMirrorMultiplier = state.CurrentMirrorMultiplier;
         _pendingSwordheartAmount = state.PendingSwordheartAmount;
         _pendingFragileTriggers = state.PendingFragileTriggers;
+        _pendingFateEffects = state.PendingFateEffects;
+        _pendingRollPowerReservations = state.PendingRollPowerReservations;
     }
 
     private void ResetAllTransientState()
@@ -1509,8 +1668,11 @@ public sealed class RollGlossaryCapability :
         _currentEnergySpent = 0;
         _currentRegularSwordheartAmount = 0;
         _currentValueMultiplier = 1m;
+        _currentMirrorMultiplier = 1m;
         _pendingSwordheartAmount = 0;
         _pendingFragileTriggers = 0;
+        _pendingFateEffects = default;
+        _pendingRollPowerReservations = new();
     }
 
     private static string GetCardTitle(CardModel card)
@@ -1557,9 +1719,15 @@ public sealed class RollGlossaryCapability :
 
         internal decimal CurrentValueMultiplier { get; }
 
+        internal decimal CurrentMirrorMultiplier { get; }
+
         internal int PendingSwordheartAmount { get; }
 
         internal int PendingFragileTriggers { get; }
+
+        internal HbrFateDicePendingEffects PendingFateEffects { get; }
+
+        internal List<RollPowerReservation> PendingRollPowerReservations { get; }
 
         internal SuspendedRollState(
             bool isCardRollActive,
@@ -1570,8 +1738,11 @@ public sealed class RollGlossaryCapability :
             int currentEnergySpent,
             int currentRegularSwordheartAmount,
             decimal currentValueMultiplier,
+            decimal currentMirrorMultiplier,
             int pendingSwordheartAmount,
-            int pendingFragileTriggers)
+            int pendingFragileTriggers,
+            HbrFateDicePendingEffects pendingFateEffects,
+            List<RollPowerReservation> pendingRollPowerReservations)
         {
             IsCardRollActive = isCardRollActive;
             HasRolledForCurrentPlay = hasRolledForCurrentPlay;
@@ -1582,8 +1753,11 @@ public sealed class RollGlossaryCapability :
             CurrentRegularSwordheartAmount =
                 currentRegularSwordheartAmount;
             CurrentValueMultiplier = currentValueMultiplier;
+            CurrentMirrorMultiplier = currentMirrorMultiplier;
             PendingSwordheartAmount = pendingSwordheartAmount;
             PendingFragileTriggers = pendingFragileTriggers;
+            PendingFateEffects = pendingFateEffects;
+            PendingRollPowerReservations = pendingRollPowerReservations;
         }
     }
 }

@@ -8,18 +8,21 @@ using MegaCrit.Sts2.Core.Assets;
 
 namespace HBRGOSakiMod.Core.Nodes.Screens;
 
+// The glossary in the phone manual's page style (ui-concepts/manual-phone-20261104, 词条全解):
+// a pill search box across the top, the entry list on the left and the entry on the right.
+// The page header shows the count.
 public partial class NManualGlossaryPanel : Control
 {
-    private static readonly Color Accent = new("#ed72aa");
-    private static readonly Color Muted = new("#a7afb7");
+    private const float SearchHeight = 56f;
+    private const float ListWidth = 300f;
     private readonly Dictionary<string, Texture2D> _icons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Texture2D> _listIcons = new(StringComparer.Ordinal);
     private IReadOnlyList<HbrManualGlossaryEntry> _entries = Array.Empty<HbrManualGlossaryEntry>();
     private IReadOnlyList<HbrManualGlossaryEntry> _filtered = Array.Empty<HbrManualGlossaryEntry>();
+    private HBoxContainer _searchRow;
     private VBoxContainer _listPane;
     private LineEdit _search;
     private Button _clear;
-    private Label _count;
     private ItemList _list;
     private Label _emptyList;
     private PanelContainer _detailPane;
@@ -35,6 +38,9 @@ public partial class NManualGlossaryPanel : Control
 
     internal Control DefaultFocusedControl => _search;
     internal bool HbrNumericsEnabled { get; set; }
+    // "12 / 12 条" for the page header; CountChanged fires whenever the search narrows the list.
+    internal string CountText => $"{_filtered.Count} / {_entries.Count} 条";
+    internal Action CountChanged { get; set; }
 
     public override void _Ready()
     {
@@ -77,26 +83,21 @@ public partial class NManualGlossaryPanel : Control
         _fallbackIcon = new GradientTexture2D
         {
             Width = 32, Height = 32,
-            Gradient = new Gradient { Colors = new[] { new Color("#776178"), new Color("#383340") } }
+            Gradient = new Gradient { Colors = new[] { new Color("#3f8fa0"), new Color("#123040") } }
         };
-        _listPane = new VBoxContainer();
-        _listPane.AddThemeConstantOverride("separation", 8);
-        AddChild(_listPane);
-        HBoxContainer searchRow = new();
-        searchRow.AddThemeConstantOverride("separation", 6);
-        _listPane.AddChild(searchRow);
+        _searchRow = new HBoxContainer();
+        _searchRow.AddThemeConstantOverride("separation", 12);
+        AddChild(_searchRow);
         _search = new LineEdit
         {
             Name = "GlossarySearch", PlaceholderText = "搜索名称或说明",
             TooltipText = "搜索名称、分类或说明（Ctrl+F）",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(0, 42),
+            CustomMinimumSize = new Vector2(0, SearchHeight),
             ExpandToTextLength = false, FocusMode = FocusModeEnum.All,
             CaretBlink = true
         };
-        _search.AddThemeFontSizeOverride("font_size", 17);
-        _search.AddThemeStyleboxOverride("normal", Surface(new Color("#24272e"), new Color("#4a414b"), 1));
-        _search.AddThemeStyleboxOverride("focus", Surface(Colors.Transparent, Accent, 2));
+        HbrManualPhoneStyle.SearchBox(_search, 22);
         _search.TextChanged += _ => FilterEntries();
         _search.TextSubmitted += _ => FocusResults();
         _search.GuiInput += input =>
@@ -107,57 +108,51 @@ public partial class NManualGlossaryPanel : Control
                 _search.AcceptEvent();
             }
         };
-        searchRow.AddChild(_search);
+        _searchRow.AddChild(_search);
         _clear = new Button
         {
-            Text = "清空", TooltipText = "清空搜索", CustomMinimumSize = new Vector2(54, 42),
-            FocusMode = FocusModeEnum.All
+            Text = "清空", TooltipText = "清空搜索", CustomMinimumSize = new Vector2(110, SearchHeight),
+            FocusMode = FocusModeEnum.All, MouseDefaultCursorShape = CursorShape.PointingHand
         };
-        _clear.AddThemeFontSizeOverride("font_size", 16);
-        foreach (string state in new[] { "normal", "hover", "pressed", "focus" })
-            _clear.AddThemeStyleboxOverride(state, Surface(state == "normal" ? new Color("#25282e") : new Color("#3c303b"), Accent, state == "focus" ? 2 : 0));
+        HbrManualPhoneStyle.Secondary(_clear, 22);
         _clear.Pressed += () =>
         {
             _search.Text = string.Empty;
             FilterEntries();
             FocusSearch();
         };
-        searchRow.AddChild(_clear);
-        _count = MakeLabel(string.Empty, 15, Muted);
-        _count.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _listPane.AddChild(_count);
+        _searchRow.AddChild(_clear);
+
+        _listPane = new VBoxContainer();
+        _listPane.AddThemeConstantOverride("separation", 8);
+        AddChild(_listPane);
         _list = new ItemList
         {
             Name = "GlossaryEntries", MaxColumns = 1,
             SelectMode = ItemList.SelectModeEnum.Single,
             IconMode = ItemList.IconModeEnum.Left,
-            FixedIconSize = new Vector2I(32, 32),
+            FixedIconSize = new Vector2I(30, 30),
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             AllowReselect = true, AutoHeight = false,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill,
             FocusMode = FocusModeEnum.All
         };
-        _list.AddThemeFontSizeOverride("font_size", 18);
-        _list.AddThemeConstantOverride("v_separation", 12);
+        HbrManualPhoneStyle.ItemList(_list, 22);
+        _list.AddThemeConstantOverride("v_separation", 10);
         _list.AddThemeConstantOverride("h_separation", 10);
         _list.AddThemeConstantOverride("icon_margin", 10);
-        _list.AddThemeStyleboxOverride("panel", Surface(new Color("#22252b"), new Color("#493e49"), 1));
-        _list.AddThemeStyleboxOverride("focus", Surface(Colors.Transparent, Accent, 2));
-        _list.AddThemeStyleboxOverride("selected", Surface(new Color("#f2dbe6"), Accent, 2));
-        _list.AddThemeStyleboxOverride("selected_focus", Surface(Colors.White, Accent, 2));
-        _list.AddThemeStyleboxOverride("hovered", Surface(new Color("#3c303b"), Accent, 0));
-        _list.AddThemeColorOverride("font_color", new Color("#e5e5e9"));
-        _list.AddThemeColorOverride("font_selected_color", new Color("#7c3058"));
         _list.ItemSelected += index => { if (!_refreshing) SelectEntry((int)index); };
         _listPane.AddChild(_list);
-        _emptyList = MakeLabel("没有找到匹配的词条\n试试其他关键词，或清空搜索。", 18, Muted);
-        _emptyList.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _emptyList.SizeFlagsVertical = SizeFlags.ExpandFill;
-        _listPane.AddChild(_emptyList);
+        PanelContainer empty = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
+        empty.AddThemeStyleboxOverride("panel", HbrManualPhoneStyle.Panel(18, 18f, 14f));
+        _emptyList = HbrManualPhoneStyle.Label("没有找到匹配的词条\n试试其他关键词，或清空搜索。", 20, HbrManualPhoneArt.Muted, wrap: true);
+        _emptyList.VerticalAlignment = VerticalAlignment.Top;
+        empty.AddChild(_emptyList);
+        _listPane.AddChild(empty);
 
         _detailPane = new PanelContainer();
-        _detailPane.AddThemeStyleboxOverride("panel", Surface(new Color("#22252b"), new Color("#493e49"), 1, 18));
+        _detailPane.AddThemeStyleboxOverride("panel", HbrManualPhoneStyle.Panel(18, 22f, 18f));
         AddChild(_detailPane);
         _detailScroll = new ScrollContainer
         {
@@ -165,16 +160,17 @@ public partial class NManualGlossaryPanel : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill,
             FocusMode = FocusModeEnum.All
         };
+        HbrManualPhoneStyle.Scroll(_detailScroll);
         _detailPane.AddChild(_detailScroll);
         VBoxContainer content = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        content.AddThemeConstantOverride("separation", 16);
+        content.AddThemeConstantOverride("separation", 12);
         _detailScroll.AddChild(content);
         HBoxContainer heading = new();
         heading.AddThemeConstantOverride("separation", 14);
         content.AddChild(heading);
         _icon = new TextureRect
         {
-            CustomMinimumSize = new Vector2(64, 64),
+            CustomMinimumSize = new Vector2(56, 56),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             SizeFlagsVertical = SizeFlags.ShrinkBegin,
@@ -182,15 +178,14 @@ public partial class NManualGlossaryPanel : Control
         };
         heading.AddChild(_icon);
         VBoxContainer titles = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        titles.AddThemeConstantOverride("separation", 8);
+        titles.AddThemeConstantOverride("separation", 4);
         heading.AddChild(titles);
-        _title = MakeLabel(string.Empty, 26, Colors.White);
-        _title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        // #g-detail h3: 30px cyan.
+        _title = HbrManualPhoneStyle.Label(string.Empty, 30, HbrManualPhoneArt.Cyan, wrap: true);
         titles.AddChild(_title);
-        _category = MakeLabel(string.Empty, 16, Accent);
-        _category.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _category = HbrManualPhoneStyle.Label(string.Empty, 18, HbrManualPhoneArt.Muted, wrap: true);
         titles.AddChild(_category);
-        content.AddChild(new HSeparator());
+        content.AddChild(HbrManualPhoneStyle.Separator());
         _description = new MegaRichTextLabel
         {
             Name = "GlossaryDescription", BbcodeEnabled = true,
@@ -199,9 +194,10 @@ public partial class NManualGlossaryPanel : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             MouseFilter = MouseFilterEnum.Pass
         };
-        _description.AddThemeFontSizeOverride("normal_font_size", 20);
-        _description.AddThemeFontSizeOverride("bold_font_size", 20);
-        _description.AddThemeColorOverride("default_color", new Color("#d7dce1"));
+        _description.AddThemeFontSizeOverride("normal_font_size", 21);
+        _description.AddThemeFontSizeOverride("bold_font_size", 21);
+        _description.AddThemeColorOverride("default_color", HbrManualPhoneStyle.Text);
+        _description.AddThemeConstantOverride("line_separation", 8);
         foreach (string font in new[] { "normal_font", "bold_font", "italics_font", "bold_italics_font", "mono_font" })
             _description.AddThemeFontOverride(font, GetThemeFont(font, "RichTextLabel"));
         content.AddChild(_description);
@@ -211,9 +207,6 @@ public partial class NManualGlossaryPanel : Control
     {
         _filtered = HbrManualGlossaryCatalog.Search(_entries, _search.Text);
         _clear.Disabled = string.IsNullOrEmpty(_search.Text);
-        _count.Text = string.IsNullOrWhiteSpace(_search.Text)
-            ? $"{_filtered.Count} 个词条 · A–Z / 中文拼音"
-            : $"找到 {_filtered.Count} / {_entries.Count} 个词条";
         _refreshing = true;
         _list.Clear();
         foreach (HbrManualGlossaryEntry entry in _filtered)
@@ -222,7 +215,7 @@ public partial class NManualGlossaryPanel : Control
             _list.SetItemTooltip(index, $"{entry.Title}\n{entry.Category}");
         }
         _list.Visible = _filtered.Count > 0;
-        _emptyList.Visible = _filtered.Count == 0;
+        _emptyList.GetParent<Control>().Visible = _filtered.Count == 0;
         if (_filtered.Count > 0)
         {
             int selected = _filtered.ToList().FindIndex(entry => entry.Id == _selectedId);
@@ -240,6 +233,7 @@ public partial class NManualGlossaryPanel : Control
             _detailScroll.ScrollVertical = 0;
         }
         _refreshing = false;
+        CountChanged?.Invoke();
     }
 
     private void SelectEntry(int index)
@@ -321,43 +315,23 @@ public partial class NManualGlossaryPanel : Control
         _list.EnsureCurrentIsVisible();
     }
 
+    // #g-search across the top; #g-list 300px wide on the left, #g-detail beside it 16px apart.
     private void LayoutContent()
     {
         if (_listPane == null || _detailPane == null) return;
-        bool stacked = Size.X < 650;
-        _listPane.Position = Vector2.Zero;
-        if (stacked)
+        // Anchored, not sized: the empty-result note wraps, and a sized pane would keep the height it
+        // reports before it has a width, pushing the list's last entries below the phone screen.
+        HbrManualPhoneStyle.Pin(_searchRow, Size, 0f, 0f, Size.X, SearchHeight);
+        float top = SearchHeight + 16f;
+        float height = Math.Max(0f, Size.Y - top);
+        if (Size.X < 650)
         {
-            float listHeight = Math.Min(260, Math.Max(_listPane.GetCombinedMinimumSize().Y, Size.Y * 0.42f));
-            listHeight = Math.Min(listHeight, Math.Max(0, Size.Y - 32));
-            _listPane.Size = new Vector2(Size.X, listHeight);
-            float detailTop = _listPane.Size.Y + 12;
-            _detailPane.Position = new Vector2(0, detailTop);
-            _detailPane.Size = new Vector2(Size.X, Math.Max(0, Size.Y - detailTop));
+            float listHeight = Math.Min(260f, height * 0.42f);
+            HbrManualPhoneStyle.Pin(_listPane, Size, 0f, top, Size.X, listHeight);
+            HbrManualPhoneStyle.Pin(_detailPane, Size, 0f, top + listHeight + 12f, Size.X, Math.Max(0f, height - listHeight - 12f));
+            return;
         }
-        else
-        {
-            float listWidth = Math.Clamp(Size.X * 0.3f, 240, 280);
-            _listPane.Size = new Vector2(listWidth, Size.Y);
-            _detailPane.Position = new Vector2(listWidth + 18, 0);
-            _detailPane.Size = new Vector2(Math.Max(0, Size.X - listWidth - 18), Size.Y);
-        }
+        HbrManualPhoneStyle.Pin(_listPane, Size, 0f, top, ListWidth, height);
+        HbrManualPhoneStyle.Pin(_detailPane, Size, ListWidth + 16f, top, Math.Max(0f, Size.X - ListWidth - 16f), height);
     }
-
-    private static Label MakeLabel(string text, int size, Color color)
-    {
-        Label label = new() { Text = text, MouseFilter = MouseFilterEnum.Ignore };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color);
-        return label;
-    }
-
-    private static StyleBoxFlat Surface(Color background, Color border, int width, int padding = 10) => new()
-    {
-        BgColor = background, BorderColor = border,
-        BorderWidthLeft = width, BorderWidthRight = width, BorderWidthTop = width, BorderWidthBottom = width,
-        ContentMarginLeft = padding, ContentMarginRight = padding,
-        ContentMarginTop = 8, ContentMarginBottom = 8,
-        CornerRadiusTopLeft = 5, CornerRadiusTopRight = 5, CornerRadiusBottomLeft = 5, CornerRadiusBottomRight = 5
-    };
 }

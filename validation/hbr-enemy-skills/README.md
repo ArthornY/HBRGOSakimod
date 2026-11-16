@@ -1,5 +1,15 @@
 # Enemy skill and actor regression
 
+## Current focused resource checks (2026-11-14)
+
+The SmallHopper calibration now uses native14 -> HP8000 / DP4800 (total12800 unchanged, original37.5% DP share). The focused `--hopper-calibration-only` entry exercises native HP/DP spending and the production damage pipeline against an independently calculated hit trajectory, with current skill-coefficient destruction gain6 per complete single-hit attack. It also runs the current opening attack/Defend checks. Both stable0.107.1 and beta0.113.0 pass257 checks in the development candidates recorded under `outputs/31b-monsters-20261114/{stable,beta}/hopper-calibration-report.json`; the final report hashes, not this historical sentence, identify the tested DLLs.
+
+This is deliberately a focused entry, not a green claim for the older complete actor suite. The complete suite's untouched enemy support-block assertion expects3000 where the current shared formula returns2424. The frozen pre38 candidate `C70FEEBC...` reproduces the same failure after18 checks; baseline proof is `outputs/31b-monsters-20261114/enemy-skills-pre38-baseline.json`. The resource work does not change that support formula, so this separate stale assertion has not been silently rewritten or counted as passing.
+
+`--hopper-calibration-only` installs the real shared arithmetic and DP hooks and runs its native resource driver; it does not install the older synthetic canonical-damage terminal, which this focused driver never calls. Preview and RNG-counter inspection support both pinned native APIs. It is managed validation, without Godot, complete room gameplay or live multiplayer.
+
+## Historical full-suite records
+
 Current candidate `100E63797656C1E459980CB0ECEA057DF467C5C29B1944191BDE13ACD09B9C84` passes 650 checks in the stable actor/map/scope/skill segment with the obsolete Hopper card-budget calibration excluded. The focused act-carryover entry passes 161 checks on both stable and beta v0.111.0. These are managed native-model checks, not a complete game run or full-suite beta result.
 
 | Report under `outputs/enemy-parameter-act-carryover/` | Result |
@@ -76,6 +86,8 @@ validate every modifier combination, UI preview context, a complete native
 damage task, replay/save restoration or original per-enemy skill data. No Godot
 process, real game save/config IO or packaging is performed.
 
+`HopperOpeningAttack` (2026-11-08) runs in the green segment, outside the excluded calibration: since the fourth move-table batch the opening SmallHopper follows the original CrestHopperSmall table, and the check reads the production table and move values (normal attack 3, combo 1 x8). At the opening E150 the normal attack floors to 407, which a native Defend's 500 block takes whole (93 left); each combo hit floors to 135, and the eight hits (1080) leave 580 HP loss after the 500 block. Candidate `766663D0372B2DFFF996493BED800AD42B70452E7FF1E0719FE3C84792CA6CB3` passes 659 checks in the stable segment (650 before plus these 9). The report's `hopperOpeningAttack` holds the numbers.
+
 The following Hopper budget section documents the original historical calibration. Its fixed-destruction expectations are stale, and it is excluded from the green650-check segment; both frozen baseline and candidate reproduce its same failure as reported above.
 
 The Hopper calibration reads the installed native unupgraded StrikeIronclad,
@@ -99,11 +111,10 @@ OnPlay IL in the installed sts2.dll (A1F9E653F1E28E4076558FEE1E60D218619CB7E057B
 The report records the actual mod and native game DLL hashes. Difficulty8's
 maximum native HP17 now has11900 HP and3642 DP; four Strikes or Bash plus two
 Strikes also kill that case. Later difficulty DP/attack changes are not covered.
-Defend100INT grants500 block against542 final incoming damage, floored at the
-shared pipeline boundary from the intermediate542.857... value. This defender
-has no DP: native DamageBlockInternal resolves500 block before native
-LoseHpInternal spends the remaining42 HP. These profile numbers
-are mod design values, not original HBR Hopper data.
+Before 2026-11-08 the calibration ended with Defend100INT granting500 block
+against the old 4-damage attack's542 final incoming damage (42 HP loss); that
+part moved to `HopperOpeningAttack` above with the new moves. These profile
+numbers are mod design values, not original HBR Hopper data.
 
 The single-coefficient cases execute the real native StrikeIronclad and mod
 StrikeHbrgoSaki `OnUpgrade` mutations. Raw6 becomes9 (the existing100% becomes150%),

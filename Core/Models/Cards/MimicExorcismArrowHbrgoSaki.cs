@@ -37,7 +37,7 @@ public sealed class MimicExorcismArrowHbrgoSaki : CardModel
     };
 
     public MimicExorcismArrowHbrgoSaki()
-        : base(2, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
+        : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
     }
 

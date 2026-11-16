@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Compatibility;
 using BaseLib.Abstracts;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
@@ -15,7 +16,7 @@ using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class PhantomCardUpgradeBenefitPower : PowerModel, ICustomPower
+public sealed class PhantomCardUpgradeBenefitPower : PowerModel, ICustomPower, IHbrAfterDeathListener
 {
     public string CustomPackedIconPath => ModelDb.Power<StrengthPower>().IconPath;
     public string CustomBigIconPath => CustomPackedIconPath;
@@ -58,7 +59,7 @@ public sealed class PhantomCardUpgradeBenefitPower : PowerModel, ICustomPower
         return Task.CompletedTask;
     }
 
-    public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature creature,
+    public async Task AfterDeath(PlayerChoiceContext choiceContext, Creature creature,
         bool wasRemovalPrevented, float deathAnimLength)
     {
         if (wasRemovalPrevented)

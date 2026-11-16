@@ -57,7 +57,6 @@ public sealed class DualSwordsEnhancementHbrgoSaki : CardModel
 
     protected override void OnUpgrade()
     {
-        DynamicVars["DamagePercent"].UpgradeValueBy(10m);
         AddKeyword(CardKeyword.Innate);
     }
 }

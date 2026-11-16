@@ -691,13 +691,13 @@ public sealed class SkullFeather :
         where TPower : PowerModel, new()
     {
         if (typeof(TPower) == typeof(WeakPower))
-            return HbrPercentDebuffApplication.ApplyAttackDown(
+            return HbrBossDebuffApplication.ApplyAttackDown(
                 new ThrowingPlayerChoiceContext(),
                 targets.Where(target => target.IsAlive).ToArray(),
                 amount,
                 Creature,
                 null);
-        return PowerCmd.Apply<TPower>(
+        return HBRGOSakiMod.Core.Patches.Combat.ThirtyOneAYukiEnumerableDebuffPatch.ApplyEnumerable<TPower>(
             new ThrowingPlayerChoiceContext(),
             targets.Where(target => target.IsAlive).ToArray(),
             amount,

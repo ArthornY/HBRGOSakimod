@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Characters;
@@ -114,6 +115,7 @@ internal static class HBRGOSakiCardRewardPoolHelper
 
     internal static bool IsRewardCard(Player player, CardModel card, bool includeColorless = false)
     {
+        if (card == null || HBRGOSakiContentPack.RetiredCardTypes.Contains(card.GetType())) return false;
         if (HbrMemoryGardenCardCatalog.IsGardenCard(card)) return false;
 
         if (!HbrgoSaki31OCardFilter.IsAvailableTo(
@@ -145,6 +147,7 @@ internal static class HBRGOSakiCardRewardPoolHelper
 
     internal static bool CanOfferCard(Player player, CardModel card)
     {
+        if (card == null || HBRGOSakiContentPack.RetiredCardTypes.Contains(card.GetType())) return false;
         if (HbrMemoryGardenCardCatalog.IsGardenCard(card)) return false;
 
         if (!HbrgoSaki31OCardFilter.IsAvailableTo(

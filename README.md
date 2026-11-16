@@ -4,7 +4,7 @@
 
 模组包含祥子的 31O、30A 玩法与小萤：六感成长与掷骰、DP 护盾与破坏率、幻影、五门浮游炮及其升级，以及 OD 额外回合。具体规则可在游戏内的角色手册中查看。
 
-当前 `test-hbr-numerics` 分支用于 HBR 战斗数值测试。新局启用力、器用、知性、体力、精神、运，以及新的技能威力、暴击与破坏率计算；保留卡牌、掷骰、六感和 OD 玩法。旧档保持原数值。范围、适配参数和公式来源见 [数值测试说明](docs/hbr-numerics-test.md)，数学回归运行方法见 [验证说明](validation/hbr-numerics/README.md)。
+主分支已集成 HBR 战斗数值体系。新局启用力量、灵巧、智慧、体力、精神、运气，以及新的技能威力、暴击与破坏率计算；保留卡牌、掷骰、六感和 OD 玩法。旧档保持原数值。范围、适配参数和公式来源见 [数值说明](docs/hbr-numerics-test.md)，数学回归运行方法见 [验证说明](validation/hbr-numerics/README.md)。
 
 ## 安装与设置
 
@@ -12,7 +12,7 @@
 
 运行依赖的最低版本和模组版本以根目录的 [HBRGOSakiMod.json](HBRGOSakiMod.json) 为准。声音资源由独立的 SoundPack 项目提供。
 
-开发中的 stable v0.107.1 / public-beta v0.111.0 适配、依赖配置和验证范围见 [跨版本兼容说明](docs/beta-compatibility.md)；这部分修改尚未发布。
+当前版本已针对 stable v0.107.1 / public-beta v0.113.1 完成编译和相关回归验证；完整实机与联机验收仍待进行。跨版本适配背景与依赖配置见 [兼容说明](docs/beta-compatibility.md)。
 
 **ModUI** 默认开启，可在游戏的模组配置菜单或 RitsuLib 配置菜单中调整。开启后使用模组的 HP/DP、能力、遗物与药水布局。
 
@@ -63,7 +63,7 @@ dotnet build .\HBRGOSakiMod.csproj --no-restore -c Release -p:SkipModOutputCopy=
 
 `main` 用于已验证的版本。日常修改在各任务的 worktree 中进行，通过验证后再集成；已有 `test` 分支继续保留，使用前先检查它与主线的差异。
 
-当前数值测试版的集成分支为 `test-hbr-numerics`，本机源码目录为 `D:/stsmod/worktrees/HBRGOSakiMod-hbr-numerics-test/`，交付目录为其中的 `build/`。其他临时 worktree 的测试版改动需先整合到这里，再从此目录打包；只保存在临时 worktree 中的修改不会自动进入测试包。
+当前主模组在 `main` 集成，从本仓库根目录打包并交付到 `build/`。临时 worktree 中的修改需先验证并整合到主分支，再进入发布包。
 
 打包使用 Godot 的 `Windows Desktop` 导出预设，将 C# 程序集、PCK 与根目录的模组清单写入本地 `build/`。常规交付为 JSON、DLL、PCK 和用于调试的 PDB，默认不生成 ZIP。
 
@@ -85,3 +85,8 @@ dotnet build .\HBRGOSakiMod.csproj --no-restore -c Release -p:SkipModOutputCopy=
 | `HBRGOSakiMod.csproj`、`HBRGOSakiMod.sln` | C# 构建入口 |
 
 整理仓库只改变 Git 跟踪范围；已有的本地素材、备份和发布包继续保留。旧提交中的历史文件也仍可检索。
+
+## 贡献者
+
+- **Codex（OpenAI）**：AI 开发助手，协助代码实现、问题修复、回归验证和打包。
+- **Claude Code（Claude 小姐，Anthropic）**：AI 开发助手，协助代码、界面、素材整合和文档工作。

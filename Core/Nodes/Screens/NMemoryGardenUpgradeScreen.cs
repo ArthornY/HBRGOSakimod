@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Nodes.Cards;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
@@ -16,22 +17,26 @@ using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 
 namespace HBRGOSakiMod.Core.Nodes.Screens;
 
+// Memory sublimation in the HBR style (ui-concepts/memory-garden-20261104): the effects as glass rows on the left,
+// the upgraded card on a glass panel at the right. Confirming breaks the card like glass before the screen closes.
 public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
 {
     private readonly TaskCompletionSource<int> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly List<Button> _optionButtons = new();
+    private readonly List<TextureRect> _optionIcons = new();
     private IReadOnlyList<MemoryGardenUpgradeOption> _options = Array.Empty<MemoryGardenUpgradeOption>();
     private MemoryGardenUpgradeOption _selected;
     private string _cardTitle;
     private string _noticeKey = "upgradeNotice";
-    private Panel _panel;
+    private Control _rig;
     private Label _title;
-    private Label _cardName;
+    private Label _titleEn;
+    private NinePatchRect _titleLine;
     private Label _subtitle;
     private Label _focusPrompt;
+    private Panel _footer;
     private Label _notice;
     private ScrollContainer _scroll;
-    private GridContainer _content;
     private VBoxContainer _optionList;
     private Panel _previewPanel;
     private Label _previewTitle;
@@ -40,6 +45,7 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
     private Button _confirm;
     private Tween _fade;
     private bool _completed;
+    private bool _sublimating;
 
     internal static IEnumerable<string> AssetPaths => NCard.AssetPaths
         .Concat(new[] { "res://images/packed/sprite_fonts/colorless_energy_icon.png" });
@@ -69,6 +75,9 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
     {
         MouseFilter = MouseFilterEnum.Stop;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        // The previews are already upgraded; their names read as before the upgrade until it is confirmed.
+        foreach (MemoryGardenUpgradeOption option in _options)
+            HbrMemoryTitleState.Hold(option.PreviewCard, option.PreviewCard.CurrentUpgradeLevel - 1);
         BuildUi();
         LayoutPanel();
         RefreshNavigation();
@@ -131,26 +140,27 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
 
     private void BuildUi()
     {
-        ColorRect background = new()
-        {
-            Color = new Color(0.018f, 0.022f, 0.028f, 0.90f),
-            MouseFilter = MouseFilterEnum.Stop
-        };
-        background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        AddChild(background);
+        NMemoryGardenBackdrop backdrop = new();
+        AddChild(backdrop);
+        backdrop.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _rig = new Control { MouseFilter = MouseFilterEnum.Pass, Size = HbrMemoryGardenTheme.Rig };
+        AddChild(_rig);
 
-        _panel = new Panel { ClipContents = true, MouseFilter = MouseFilterEnum.Stop };
-        _panel.AddThemeStyleboxOverride("panel", Box(new Color("171922"), new Color("554354"), 14));
-        AddChild(_panel);
-        _title = MakeLabel(Text("upgradeTitle"), 30, new Color("F0D8E9"));
+        _title = HbrMemoryGardenTheme.Label(Text("upgradeTitle"), 48, HbrMemoryGardenTheme.Ink);
         _title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        _panel.AddChild(_title);
-        _cardName = MakeLabel(_cardTitle, 20, new Color("F0D8E9"));
-        _cardName.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        _panel.AddChild(_cardName);
-        _subtitle = MakeLabel(Text("upgradeSubtitle"), 17, new Color("B9B6C1"));
-        _subtitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _panel.AddChild(_subtitle);
+        _rig.AddChild(_title);
+        _titleEn = HbrMemoryGardenTheme.Label("MEMORY GARDEN", 20, HbrMemoryGardenTheme.Ink2);
+        _rig.AddChild(_titleEn);
+        _titleLine = new NinePatchRect
+        {
+            Texture = HbrMemoryGardenTheme.Sprite("MordaTitleLineEdge"),
+            PatchMarginLeft = 2, PatchMarginRight = 55,
+            MouseFilter = MouseFilterEnum.Ignore
+        };
+        _rig.AddChild(_titleLine);
+        _subtitle = HbrMemoryGardenTheme.Label($"「{_cardTitle}」 · {Text("upgradeSubtitle")}", 21, HbrMemoryGardenTheme.Ink2);
+        _subtitle.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        _rig.AddChild(_subtitle);
 
         _scroll = new ScrollContainer
         {
@@ -159,44 +169,50 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
             FollowFocus = true,
             MouseFilter = MouseFilterEnum.Stop
         };
-        _panel.AddChild(_scroll);
-        _content = new GridContainer
-        {
-            Columns = 2,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            MouseFilter = MouseFilterEnum.Pass
-        };
-        _content.AddThemeConstantOverride("h_separation", 22);
-        _content.AddThemeConstantOverride("v_separation", 18);
-        _scroll.AddChild(_content);
+        _rig.AddChild(_scroll);
         _optionList = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _optionList.AddThemeConstantOverride("separation", 14);
-        _content.AddChild(_optionList);
+        _scroll.AddChild(_optionList);
 
         // A neutral focus target keeps keyboard navigation available without
         // selecting an upgrade or opening a card tooltip on entry.
-        _focusPrompt = MakeLabel(Text("upgradeChoosePrompt"), 20, new Color("F0D8E9"));
+        _focusPrompt = HbrMemoryGardenTheme.Label(Text("upgradeChoosePrompt"), 24, HbrMemoryGardenTheme.PinkInk);
         _focusPrompt.FocusMode = FocusModeEnum.All;
         _focusPrompt.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _focusPrompt.CustomMinimumSize = new Vector2(0, 32);
+        _focusPrompt.CustomMinimumSize = new Vector2(0, 40);
         _optionList.AddChild(_focusPrompt);
         foreach (MemoryGardenUpgradeOption option in _options)
         {
-            Button button = MakeButton(string.Empty, false);
-            button.CustomMinimumSize = new Vector2(0, 132);
+            Button button = OptionButton();
+            button.CustomMinimumSize = new Vector2(0, 120);
             button.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             button.ToggleMode = true;
             button.Pressed += () => Select(option);
             _optionList.AddChild(button);
             _optionButtons.Add(button);
 
-            Label title = MakeLabel(option.Title, 22, new Color("F0D8E9"));
+            TextureRect icon = new()
+            {
+                Texture = HbrMemoryGardenTheme.Sprite("IconBreakLimitBatchActive"),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                MouseFilter = MouseFilterEnum.Ignore,
+                Modulate = new Color(1, 1, 1, .35f)
+            };
+            icon.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterLeft);
+            icon.OffsetLeft = 20;
+            icon.OffsetRight = 68;
+            icon.OffsetTop = -24;
+            icon.OffsetBottom = 24;
+            button.AddChild(icon);
+            _optionIcons.Add(icon);
+            Label title = HbrMemoryGardenTheme.Label(option.Title, 25, HbrMemoryGardenTheme.Ink);
             title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
             title.SetAnchorsAndOffsetsPreset(LayoutPreset.TopWide);
-            title.OffsetLeft = 18;
-            title.OffsetRight = -18;
-            title.OffsetTop = 12;
-            title.OffsetBottom = 44;
+            title.OffsetLeft = 84;
+            title.OffsetRight = -24;
+            title.OffsetTop = 16;
+            title.OffsetBottom = 50;
             button.AddChild(title);
             MegaRichTextLabel description = new()
             {
@@ -205,75 +221,63 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
                 SelectionEnabled = false, MouseFilter = MouseFilterEnum.Ignore,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             };
-            description.AddThemeFontSizeOverride("normal_font_size", 18);
-            description.AddThemeFontSizeOverride("bold_font_size", 18);
-            description.AddThemeColorOverride("default_color", new Color("D4CBD7"));
+            description.AddThemeFontSizeOverride("normal_font_size", 19);
+            description.AddThemeFontSizeOverride("bold_font_size", 19);
+            description.AddThemeColorOverride("default_color", HbrMemoryGardenTheme.Ink2);
             foreach (string font in new[] { "normal_font", "bold_font", "italics_font", "bold_italics_font", "mono_font" })
                 description.AddThemeFontOverride(font, GetThemeFont(font, "RichTextLabel"));
             description.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-            description.OffsetLeft = 18;
-            description.OffsetRight = -18;
-            description.OffsetTop = 49;
-            description.OffsetBottom = -12;
+            description.OffsetLeft = 84;
+            description.OffsetRight = -24;
+            description.OffsetTop = 54;
+            description.OffsetBottom = -16;
             description.MinimumSizeChanged += () =>
-                button.CustomMinimumSize = new Vector2(0, Math.Max(132f, description.GetMinimumSize().Y + 62f));
+                button.CustomMinimumSize = new Vector2(0, Math.Max(120f, description.GetMinimumSize().Y + 70f));
             button.AddChild(description);
         }
 
-        _previewPanel = new Panel
-        {
-            ClipContents = true,
-            CustomMinimumSize = new Vector2(0, 470),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        _previewPanel.AddThemeStyleboxOverride("panel", Box(new Color("12141C"), new Color("3D3443"), 9));
+        _previewPanel = new Panel { ClipContents = true, MouseFilter = MouseFilterEnum.Ignore };
+        _previewPanel.AddThemeStyleboxOverride("panel", HbrMemoryGardenTheme.GlassBox(22));
         _previewPanel.Resized += LayoutPreview;
-        _content.AddChild(_previewPanel);
-        _previewTitle = MakeLabel(Text("upgradePreviewTitle"), 20, new Color("F0D8E9"));
+        _rig.AddChild(_previewPanel);
+        _previewTitle = HbrMemoryGardenTheme.Label(Text("upgradePreviewTitle"), 28, HbrMemoryGardenTheme.Gold);
         _previewTitle.HorizontalAlignment = HorizontalAlignment.Center;
         _previewPanel.AddChild(_previewTitle);
-        _previewPrompt = MakeLabel(Text("upgradePreviewPrompt"), 18, new Color("9D95A3"));
+        _previewPrompt = HbrMemoryGardenTheme.Label(Text("upgradePreviewPrompt"), 22, HbrMemoryGardenTheme.Ink2);
         _previewPrompt.HorizontalAlignment = HorizontalAlignment.Center;
         _previewPrompt.VerticalAlignment = VerticalAlignment.Center;
         _previewPrompt.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _previewPanel.AddChild(_previewPrompt);
 
-        _notice = MakeLabel(Text(_noticeKey), 15, new Color("9D95A3"));
+        _footer = new Panel { MouseFilter = MouseFilterEnum.Pass };
+        _footer.AddThemeStyleboxOverride("panel", HbrMemoryGardenTheme.GlassBox(22));
+        _rig.AddChild(_footer);
+        _notice = HbrMemoryGardenTheme.Label(Text(_noticeKey), 20, HbrMemoryGardenTheme.Ink2);
         _notice.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _panel.AddChild(_notice);
-        _confirm = MakeButton(Text("upgradeConfirm"), true);
+        _footer.AddChild(_notice);
+        _confirm = HbrMemoryGardenTheme.HbrButton(Text("upgradeConfirm"));
         _confirm.Disabled = true;
         _confirm.Pressed += Confirm;
-        _panel.AddChild(_confirm);
+        _footer.AddChild(_confirm);
     }
 
+    // Everything sits on the preview's 1920x1080 rig, centred in the screen.
     private void LayoutPanel()
     {
-        if (_panel == null || _confirm == null) return;
+        if (_rig == null || _confirm == null) return;
         Vector2 viewport = Size;
         if (viewport.X <= 0 || viewport.Y <= 0) viewport = GetViewportRect().Size;
-        Vector2 panelSize = new(Math.Max(1f, Math.Min(1100f, viewport.X - 32f)),
-            Math.Max(1f, Math.Min(790f, viewport.Y - 48f)));
-        _panel.Position = (viewport - panelSize) / 2f;
-        _panel.Size = panelSize;
-        bool narrow = panelSize.X < 760f;
-        float inset = narrow ? 16f : 28f;
-        float width = Math.Max(1f, panelSize.X - inset * 2f);
-        float bodyTop = narrow ? 150f : 138f;
-        float footerHeight = narrow ? 112f : 86f;
-        float bodyHeight = Math.Max(1f, panelSize.Y - bodyTop - footerHeight);
-        Place(_title, inset, 18f, width, 40f);
-        Place(_cardName, inset, 63f, width, 30f);
-        Place(_subtitle, inset, 98f, width, narrow ? 46f : 34f);
-        Place(_scroll, inset, bodyTop, width, bodyHeight);
-        _content.Columns = narrow ? 1 : 2;
-        _previewPanel.CustomMinimumSize = new Vector2(0, narrow ? 410f : 470f);
-        float buttonWidth = Math.Min(160f, width);
-        float buttonY = panelSize.Y - 62f;
-        Place(_confirm, panelSize.X - inset - buttonWidth, buttonY, buttonWidth, 42f);
-        Place(_notice, inset, narrow ? buttonY - 42f : buttonY,
-            narrow ? width : Math.Max(1f, width - buttonWidth - 24f), narrow ? 36f : 42f);
+        _rig.Position = HbrMemoryGardenTheme.Origin(viewport);
+        _rig.Size = HbrMemoryGardenTheme.Rig;
+        Place(_title, 168, 92, 1500, 64);
+        Place(_titleEn, 172, 158, 700, 28);
+        Place(_titleLine, 168, 190, 720, 10);
+        Place(_subtitle, 170, 210, 1580, 34);
+        Place(_scroll, 96, 262, 1000, 640);
+        Place(_previewPanel, 1130, 262, 700, 640);
+        Place(_footer, 60, 932, 1800, 136);
+        Place(_notice, 28, 30, 1300, 76);
+        Place(_confirm, 1800 - 30 - 330, 2, 330, 132);
         LayoutPreview();
     }
 
@@ -281,21 +285,25 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
     {
         if (_previewPanel == null || _previewTitle == null || _previewPrompt == null) return;
         Vector2 size = _previewPanel.Size;
-        Place(_previewTitle, 12f, 16f, size.X - 24f, 32f);
-        Place(_previewPrompt, 22f, 58f, size.X - 44f, size.Y - 80f);
+        Place(_previewTitle, 12f, 22f, size.X - 24f, 40f);
+        Place(_previewPrompt, 22f, 84f, size.X - 44f, size.Y - 120f);
         if (_previewCard == null) return;
         float scale = Math.Max(0.01f, Math.Min(1f,
-            Math.Min((size.X - 50f) / NCard.defaultSize.X, (size.Y - 78f) / NCard.defaultSize.Y)));
+            Math.Min((size.X - 50f) / NCard.defaultSize.X, (size.Y - 100f) / NCard.defaultSize.Y)));
         _previewCard.Scale = Vector2.One * scale;
-        _previewCard.Position = new Vector2(size.X / 2f, 58f + (size.Y - 78f) / 2f);
+        _previewCard.Position = new Vector2(size.X / 2f, 76f + (size.Y - 100f) / 2f);
     }
 
     private void Select(MemoryGardenUpgradeOption option)
     {
-        if (_completed || !_options.Contains(option)) return;
+        if (_completed || _sublimating || !_options.Contains(option)) return;
         _selected = option;
         for (int index = 0; index < _optionButtons.Count; index++)
-            _optionButtons[index].SetPressedNoSignal(ReferenceEquals(_options[index], option));
+        {
+            bool on = ReferenceEquals(_options[index], option);
+            _optionButtons[index].SetPressedNoSignal(on);
+            _optionIcons[index].Modulate = new Color(1, 1, 1, on ? 1f : .35f);
+        }
         NHoverTipSet.Clear();
         if (_previewCard == null)
         {
@@ -337,9 +345,25 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
         }
     }
 
-    private void Confirm()
+    private async void Confirm()
     {
-        if (_completed || _selected == null) return;
+        if (_completed || _sublimating || _selected == null) return;
+        // The next part of the name decodes, the card breaks like glass, a rainbow spreads, then the choice goes through.
+        if (_previewCard?.GetNodeOrNull<Control>("%Frame") is { } frame)
+        {
+            _sublimating = true;
+            _confirm.Disabled = true;
+            int heldParts = HbrMemoryTitleState.Parts(_selected.PreviewCard);
+            HbrMemoryTitleState.Release(_selected.PreviewCard);
+            double decode = NHbrCardStyle.Of(_previewCard)?.PlayTitleReveal(heldParts) ?? 0;
+            if (decode > 0)
+            {
+                await ToSignal(GetTree().CreateTimer(decode + .1), SceneTreeTimer.SignalName.Timeout);
+                if (!GodotObject.IsInstanceValid(this) || _completed) return;
+            }
+            await NMemoryGardenSublimation.Play(this, _previewCard, frame, shatter: true);
+            if (!GodotObject.IsInstanceValid(this) || _completed) return;
+        }
         _completed = true;
         NHoverTipSet.Clear();
         NOverlayStack.Instance?.Remove(this);
@@ -355,40 +379,22 @@ public partial class NMemoryGardenUpgradeScreen : Control, IOverlayScreen
         control.Size = new Vector2(Math.Max(1f, width), Math.Max(1f, height));
     }
 
-    private static Label MakeLabel(string text, int size, Color color)
-    {
-        Label label = new() { Text = text, MouseFilter = MouseFilterEnum.Ignore };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color);
-        return label;
-    }
-
-    private static Button MakeButton(string text, bool accent)
+    // A glass row; the chosen one turns pink with a pink ring (.opt / .opt.on in the preview).
+    private static Button OptionButton()
     {
         Button button = new()
         {
-            Text = text,
             FocusMode = FocusModeEnum.All,
             MouseDefaultCursorShape = CursorShape.PointingHand
         };
-        Color edge = accent ? new Color("C879AF") : new Color("5E5568");
-        button.AddThemeFontSizeOverride("font_size", 20);
-        button.AddThemeColorOverride("font_color", new Color("F4EAF2"));
-        button.AddThemeStyleboxOverride("normal", Box(accent ? new Color("54344F") : new Color("282430"), edge, 7));
-        button.AddThemeStyleboxOverride("hover", Box(new Color("69465F"), new Color("E5ACD1"), 7));
-        button.AddThemeStyleboxOverride("hover_pressed", Box(new Color("69465F"), new Color("E5ACD1"), 7));
-        button.AddThemeStyleboxOverride("pressed", Box(new Color("54344F"), new Color("D890BE"), 7));
-        button.AddThemeStyleboxOverride("focus", Box(new Color(0f, 0f, 0f, 0f), new Color("EDD1E6"), 7));
-        button.AddThemeStyleboxOverride("disabled", Box(new Color("211F28"), new Color("3C3743"), 7));
+        StyleBoxFlat Row(Color fill, Color rim, int width) => HbrMemoryGardenTheme.GlassBox(18, fill, rim, width);
+        Color chosen = new(1f, .9f, .95f, .9f);
+        button.AddThemeStyleboxOverride("normal", Row(HbrMemoryGardenTheme.Glass, HbrMemoryGardenTheme.Rim, 1));
+        button.AddThemeStyleboxOverride("hover", Row(HbrMemoryGardenTheme.Glass, new Color(HbrMemoryGardenTheme.Pink, .55f), 2));
+        button.AddThemeStyleboxOverride("pressed", Row(chosen, HbrMemoryGardenTheme.Pink, 2));
+        button.AddThemeStyleboxOverride("hover_pressed", Row(chosen, HbrMemoryGardenTheme.Pink, 2));
+        button.AddThemeStyleboxOverride("focus", Row(new Color(0, 0, 0, 0), new Color(HbrMemoryGardenTheme.Pink, .8f), 2));
+        button.AddThemeStyleboxOverride("disabled", Row(HbrMemoryGardenTheme.Glass, HbrMemoryGardenTheme.Rim, 1));
         return button;
     }
-
-    private static StyleBoxFlat Box(Color fill, Color border, int radius) => new()
-    {
-        BgColor = fill,
-        BorderColor = border,
-        BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
-        CornerRadiusTopLeft = radius, CornerRadiusTopRight = radius,
-        CornerRadiusBottomLeft = radius, CornerRadiusBottomRight = radius
-    };
 }

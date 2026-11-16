@@ -106,6 +106,10 @@ internal static class HighHitDamageVisualHelper
         internal Creature Dealer;
     }
 
+    internal static bool IsDirectBatchDamage(DirectDamageBatchScope batch) =>
+        batch?.Active == true && CurrentDamage.Value is { Active: true, IsDirectBatchDamage: true } scope &&
+        ReferenceEquals(scope.DirectBatch, batch);
+
     // The card boundary counts Execute calls, not hits within a command. These
     // cards now use one multi-hit Execute; its resolved count owns the splitting.
     internal static CardBatchScope BeginCardBatch(CardModel card) =>
@@ -113,7 +117,7 @@ internal static class HighHitDamageVisualHelper
 
     private static long GetExpectedLoopHits(CardModel card) => card switch
     {
-        DragonArrowHbrgoSaki => DualSwordsCopyHelper.PeekXEnergySpent(card,
+        DragonArrowHbrgoSaki => CardCopyContextHelper.PeekXEnergySpent(card,
             card.EnergyCost.CapturedXValue) > 0 ? 1 : 0,
         MagicSwordLuckySevenHbrgoSaki => (int)(LuckySevenHits.GetValue(card) ?? 0) > 0 ? 1 : 0,
         BladeDanceHbrgoSaki => card.DynamicVars.Repeat.IntValue > 0 ? 1 : 0,
@@ -125,7 +129,7 @@ internal static class HighHitDamageVisualHelper
         CardBatchScope scope = new()
         {
             Card = card,
-            Order = Interlocked.Increment(ref NextScopeOrder),
+            Order = AllocateAttackOrder(),
             Previous = CurrentCard.Value,
             Enabled = expectedHits > MergeThreshold,
             CountUnknownHits = expectedHits > 1,
@@ -187,6 +191,13 @@ internal static class HighHitDamageVisualHelper
         CurrentAttack.Value = scope;
         return scope;
     }
+
+    internal static bool IsResolvingAttack(AttackCommand command) =>
+        CurrentAttack.Value is { Active: true } scope && ReferenceEquals(scope.Command, command);
+
+    internal static long AllocateAttackOrder() => Interlocked.Increment(ref NextScopeOrder);
+    internal static (AttackCommand Command, long Order) GetCurrentAttackIdentity() =>
+        CurrentAttack.Value is { Active: true } scope ? (scope.Command, scope.Order) : (null, 0L);
 
     // Replaces only the native call site after BeforeAttack. This sees the final
     // hook-modified count instead of invoking modifiers twice for a preview.
@@ -431,6 +442,10 @@ internal static class HighHitDamageVisualHelper
         // Both timing and floating numbers inherit the live batch boundary.
         return CurrentFastPresentationBatch != null;
     }
+
+    internal static bool IsDirectAttackDamage(AttackCommand command) =>
+        CurrentDamage.Value is { Active: true, IsDirectAttackDamage: true, Attack: { Active: true } attack } &&
+        ReferenceEquals(attack.Command, command);
 
     internal static DamageScope BeginDamage(ValueProp props, Creature dealer, CardModel card)
     {

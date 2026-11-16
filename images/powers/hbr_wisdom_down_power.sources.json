@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR WisdomDownRate icon",
+  "importedPath": "res://images/powers/hbr_wisdom_down_power.png",
+  "sha256": "b5c560ce800b5d50b9742e5d0c3e02badd9f62e77c05ec4e9dbc4dcc1614f208",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "Original texture with a programmatic corner arrow composited over it (Pillow polygon, 8x supersampled, blue down arrow with a dark outline, bottom-right corner). No resizing, recoloring of the original pixels outside the arrow, crop or AI generation. Reason: the original IconWisdom is the attribute icon shared by its rises and falls; the arrow marks the down variant, the same arrow as the spirit-down icon.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconWisdom.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-7453348839258756980",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_-7453348839258756980_IconWisdom.png",
+    "sourceSha256": "a8e487319edb241ab973a0527ba2be269e8381edfd8cdba778b1120feee1595b",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrWisdomDownPower",
+    "originalEffect": "WisdomDownRate",
+    "small": "res://images/powers/hbr_wisdom_down_power.png",
+    "big": "res://images/powers/hbr_wisdom_down_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

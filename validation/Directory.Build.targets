@@ -1,0 +1,16 @@
+<Project>
+  <!-- RitsuLib 0.6 moved its runtime types (ModelCapabilityRegistry and the
+       rest of STS2RitsuLib.Models.Capabilities) into sibling assemblies such
+       as STS2-RitsuLib.Runtime.dll and left type forwarders in
+       STS2-RitsuLib.dll. A fixture compiled against such a profile needs the
+       siblings as references too, or the forwarded types do not resolve.
+       The stable libs/ folder has no siblings, so stable builds are
+       unchanged; at run time the bootstraps load the siblings from the
+       profile folder. -->
+  <PropertyGroup Condition="'$(NativeRitsuAssemblyPath)' != ''">
+    <_RitsuLibDirectory>$([System.IO.Path]::GetDirectoryName('$(NativeRitsuAssemblyPath)'))</_RitsuLibDirectory>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(_RitsuLibDirectory)' != ''">
+    <Reference Include="$(_RitsuLibDirectory)/STS2-RitsuLib.*.dll" HintPath="%(FullPath)" Private="false" />
+  </ItemGroup>
+</Project>

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -57,7 +58,7 @@ internal static class TopBarPowerHoverRedirect
         // the moved icon. CreateAndShow still owns targeting and overflow guards.
         if (NCombatRoom.Instance?.Ui?.Hand?.InCardPlay == true) return true;
         Remove(icon);
-        NHoverTipSet tips = NHoverTipSet.CreateAndShow(icon, hoverTips, HoverTipAlignment.Center);
+        NHoverTipSet tips = NativeHoverTipCompatibility.CreateAndShowBelow(icon, hoverTips);
         if (tips != null)
         {
             Tips.Add(icon, tips);

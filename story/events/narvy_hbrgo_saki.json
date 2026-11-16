@@ -108,6 +108,17 @@
             "senseAmount": 0,
             "cardChoices": 0
           }
+        },
+        {
+          "id": "MORE_MEMORIES",
+          "text": "更多回忆",
+          "description": "选择另一段回忆。",
+          "nextPage": "MORE_MEMORIES_1",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
         }
       ],
       "characters": []
@@ -742,6 +753,262 @@
       ],
       "choices": [],
       "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_1",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_AKARI",
+          "text": "伊达朱里",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_AKARI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_SEIRA",
+          "text": "樱庭星罗",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_SEIRA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_YAYOI",
+          "text": "丰后弥生",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_YAYOI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_MARI",
+          "text": "佐月麻里",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MARI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_MAKI",
+          "text": "黑泽真希",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MAKI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "RETURN_TO_INITIAL",
+          "text": "返回",
+          "description": "返回最初的回忆选项。",
+          "nextPage": "INITIAL",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MEMORY_AKARI",
+      "title": "伊达朱里",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了伊达朱里。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "akari"
+      ]
+    },
+    {
+      "id": "MEMORY_SEIRA",
+      "title": "樱庭星罗",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了樱庭星罗。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "精神力+8，从3张卡牌中选择1张获得。",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "MentalStrength",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "seira"
+      ]
+    },
+    {
+      "id": "MEMORY_YAYOI",
+      "title": "丰后弥生",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了丰后弥生。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "yayoi"
+      ]
+    },
+    {
+      "id": "MEMORY_MARI",
+      "title": "佐月麻里",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了佐月麻里。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "mari"
+      ]
+    },
+    {
+      "id": "MEMORY_MAKI",
+      "title": "黑泽真希",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了黑泽真希。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "maki"
+      ]
     }
   ]
 }

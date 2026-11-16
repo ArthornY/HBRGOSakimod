@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -29,6 +30,11 @@ public sealed class CrimsonBladeFlowPower : PowerModel
     public override PowerStackType StackType => PowerStackType.Counter;
 
     public override Color AmountLabelColor => new("F85C5C");
+
+    public override LocString Description => HbrBattleStatsHelper.IsEnabled(IsMutable ? Owner : null)
+        ? new LocString("powers", "CRIMSON_BLADE_FLOW_POWER.hbrDescription" +
+            (IsMutable && HisameCloseSlashCombatHelper.HasMastersAdvice(Owner?.Player ?? Owner?.PetOwner) ? ".advice" : string.Empty))
+        : base.Description;
 
     public static int GetSoulOfAnchorEffectMultiplier(Creature creature)
     {
@@ -123,7 +129,7 @@ public sealed class CrimsonBladeFlowPower : PowerModel
 
     public decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
     {
-        if (amount <= 0m)
+        if (amount <= 0m || HbrBattleStatsHelper.IsEnabled(Owner))
         {
             return 1m;
         }

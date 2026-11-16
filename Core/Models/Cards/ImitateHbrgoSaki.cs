@@ -54,7 +54,7 @@ public sealed class ImitateHbrgoSaki : CardModel
             }
             finally
             {
-                DualSwordsCopyHelper.Clear(copy);
+                CardCopyContextHelper.Clear(copy);
                 await RemoveCopyFromCombat(copy);
             }
         }
@@ -95,7 +95,7 @@ public sealed class ImitateHbrgoSaki : CardModel
     {
         CardModel copy = CardModel.FromSerializable(source.ToSerializable());
         Owner.Creature.CombatState.AddCard(copy, Owner);
-        DualSwordsCopyHelper.RecordCopy(copy);
+        CardCopyContextHelper.RecordCopy(copy);
         copy.AfterCreated();
         return copy;
     }

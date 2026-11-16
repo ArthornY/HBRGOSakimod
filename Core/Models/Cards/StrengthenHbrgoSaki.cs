@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Powers;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
@@ -24,12 +22,16 @@ public sealed class StrengthenHbrgoSaki : CardModel
 
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<StrengthenPower>(3m)
+        new DynamicVar("RollBonus", 10m),
+        new DynamicVar("RollUses", 3m),
+        new DynamicVar("AdvantageDice", 1m),
+        new DynamicVar("AdvantageUses", 3m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
-        HoverTipFactory.FromPower<StrengthenPower>()
+        HoverTipFactory.FromPower<RollBonusPower>(),
+        HoverTipFactory.FromPower<AdvantageDicePower>()
     };
 
     public StrengthenHbrgoSaki()
@@ -37,31 +39,30 @@ public sealed class StrengthenHbrgoSaki : CardModel
     {
     }
 
-    protected override void AddExtraArgsToDescription(
-        LocString description)
-    {
-        base.AddExtraArgsToDescription(description);
-        description.Add(
-            "RollBonus",
-            HasEnhancedRollBonus
-                ? StrengthenPower.UpgradedRollBonus
-                : StrengthenPower.BaseRollBonus);
-    }
-
     protected override async Task OnPlay(
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        await PowerCmd.Apply<StrengthenPower>(
+        await RollBonusPower.Apply(
             choiceContext,
             Owner.Creature,
-            DynamicVars["StrengthenPower"].BaseValue,
+            (int)DynamicVars["RollBonus"].BaseValue,
+            (int)DynamicVars["RollUses"].BaseValue,
+            Owner.Creature,
+            this);
+        await AdvantageDicePower.Apply(
+            choiceContext,
+            Owner.Creature,
+            (int)DynamicVars["AdvantageDice"].BaseValue,
+            (int)DynamicVars["AdvantageUses"].BaseValue,
             Owner.Creature,
             this);
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars["StrengthenPower"].UpgradeValueBy(1m);
+        DynamicVars["RollBonus"].UpgradeValueBy(10m);
+        DynamicVars["RollUses"].UpgradeValueBy(1m);
+        DynamicVars["AdvantageUses"].UpgradeValueBy(1m);
     }
 }

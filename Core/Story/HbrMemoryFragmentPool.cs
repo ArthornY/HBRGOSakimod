@@ -6,6 +6,7 @@ using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Random;
 
 namespace HBRGOSakiMod.Core.Story;
 
@@ -39,6 +40,26 @@ internal static class HbrMemoryFragmentPool
         story => story.IsAllowedForStoryPool(runState, allowReplay: true),
         story => story.Definition.Id, VisitedStoryIds(runState),
         () => runState.Rng.Niche.NextFloat());
+
+    // Scouting has a separate named stream and a virtual repeat history. It
+    // never calls the ordinary selector or records a character encounter.
+    internal static HbrStoryEvent ChooseForScouting(RunState state, bool guaranteed,
+        IEnumerable<string> previewHistory, Rng rng, bool ceremonyWillBeVisited = false)
+    {
+        var party = state.Players.Select(player => player.Character.GetType().Name);
+        var history = VisitedStoryIds(state).Concat(previewHistory);
+        var eligibilityHistory = state.VisitedEventIds.Select(id => id.Entry).Concat(ceremonyWillBeVisited
+            ? new[] { "JOINING_CEREMONY_HBRGO_SAKI" } : Array.Empty<string>());
+        bool Allowed(HbrStoryEvent story) => story.Definition.Conditions.IsEligible(
+            party, state.CurrentActIndex + 1, eligibilityHistory, story.Definition.Id, allowReplay: true);
+        return guaranteed
+            ? HbrMemoryFragmentPoolRules.ChooseGuaranteed(party, GetMemories(),
+                Allowed, story => story.Definition.Id,
+                history, () => rng.NextFloat())
+            : HbrMemoryFragmentPoolRules.Choose(party, GetMemories(),
+                Allowed, story => story.Definition.Id,
+                history, () => rng.NextFloat());
+    }
 
     private static IEnumerable<HbrStoryEvent> GetMemories() => StoryTypes
         .Select(type => ModelDb.GetById<HbrStoryEvent>(ModelDb.GetId(type)))

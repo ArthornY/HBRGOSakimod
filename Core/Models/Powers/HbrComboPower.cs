@@ -6,6 +6,7 @@ using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -13,11 +14,18 @@ using MegaCrit.Sts2.Core.ValueProps;
 namespace HBRGOSakiMod.Core.Models.Powers;
 
 /// <summary>Each stack pays for one complete attack, regardless of its targets or hits.</summary>
-public abstract class HbrComboPower : MyLegendNextAttackBasePower
+public abstract class HbrComboPower : MyLegendNextAttackBasePower, IHbrEffectInstance
 {
+    internal const int MaximumInstancesPerKind = 2;
+
+    public override PowerInstanceType InstanceType => PowerInstanceType.Instanced;
     public abstract int ChargesPerApplication { get; }
     internal override int ApplicationsPerAttack => Amount > 0 ? 1 : 0;
     internal override bool RequiresActualHit => true;
+    decimal IHbrEffectInstance.EffectPotency => DoublesHitCount ? 2m : ExtraHits;
+    int IHbrEffectInstance.Remaining => Amount;
+    HbrEffectProfile IHbrEffectInstance.EffectProfile =>
+        new(HbrEffectLimit.Default, HbrEffectExit.Count, ChargesPerApplication);
 
     /// <summary>Grant applications as charges; ordinary power amount changes still count individual charges.</summary>
     public static Task<T> Grant<T>(PlayerChoiceContext context, Creature target,
@@ -29,8 +37,12 @@ public abstract class HbrComboPower : MyLegendNextAttackBasePower
     protected override bool IsOwnerAttack(AttackCommand command) =>
         base.IsOwnerAttack(command) && !command.DamageProps.HasFlag(ValueProp.Unpowered);
 
-    public override Task AfterApplied(Creature applier, CardModel cardSource) =>
-        CombatPreviewRefreshHelper.RefreshCreatureIntent(Owner);
+    public override async Task AfterApplied(Creature applier, CardModel cardSource)
+    {
+        IHbrEffectInstance effect = this;
+        if (!await HbrEffectRules.Enforce(this, effect.EffectPotency, effect.EffectProfile)) return;
+        await CombatPreviewRefreshHelper.RefreshCreatureIntent(Owner);
+    }
 
     public override Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext,
         PowerModel power, decimal amount, Creature applier, CardModel cardSource) =>

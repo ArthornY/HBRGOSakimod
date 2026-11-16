@@ -9,6 +9,9 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
+// Haste (急速) gave Dexterity for each six-sense resistance broken. The
+// resistances were removed on 2026-11-09 and the card retired; the power stays
+// for saved runs that still hold the card and changes nothing.
 public sealed class HastePower : PowerModel, ICustomPower
 {
     public override PowerType Type => PowerType.Buff;
@@ -17,9 +20,4 @@ public sealed class HastePower : PowerModel, ICustomPower
     public string CustomPackedIconPath => ModelDb.Power<DexterityPower>().IconPath;
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
-
-    internal Task OnResistancesBroken(PlayerChoiceContext context, CardModel card, int count) =>
-        count > 0 && Amount > 0 && Owner.IsAlive
-            ? PowerCmd.Apply<DexterityPower>(context, Owner, (decimal)Amount * count, Owner, card)
-            : Task.CompletedTask;
 }

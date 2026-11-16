@@ -26,8 +26,12 @@ internal static class CardDescriptionLocPatch
             __result = replacement;
         }
         if (skillPower) HbrSkillCardDescription.AddParameters(__instance, __result);
-        else if (HbrPercentDebuffCardDescription.IsEnabled(__instance))
-            HbrPercentDebuffCardDescription.AddParameters(__instance, __result);
+        else
+        {
+            if (HbrPercentDebuffCardDescription.IsEnabled(__instance))
+                HbrPercentDebuffCardDescription.AddParameters(__instance, __result);
+            HbrSkillCardDescription.AddLegacyParameters(__instance, __result);
+        }
     }
 
     private static string GetReplacementLocKey(CardModel card)
@@ -35,6 +39,12 @@ internal static class CardDescriptionLocPatch
         bool isUpgraded = card.IsUpgraded || card.DeckVersion?.IsUpgraded == true;
         string specialKey = card switch
         {
+            ChihayaClassmateHbrgoSaki chihaya when chihaya.UsesOnlyTwoModes =>
+                "CHIHAYA_CLASSMATE_HBRGO_SAKI.thirtyOneODescription",
+            SakuraRainHbrgoSaki or CrimsonBladeFlowHbrgoSaki or FocusedShotHbrgoSaki
+                or NoSelfInDreamHbrgoSaki
+                when HbrBattleStatsHelper.IsEnabled(card.IsMutable ? card.Owner?.Creature : null) =>
+                card.Id.Entry + (isUpgraded ? ".upgradedDescription.hbr" : ".description.hbr"),
             FeintHbrgoSaki when !CombatModeHelper.IsMultiplayer(
                 card.IsMutable ? card.Owner?.Creature : null) =>
                 "FEINT_HBRGO_SAKI.singleplayerDescription",

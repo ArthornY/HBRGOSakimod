@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -24,6 +25,9 @@ internal static class HbrgoSakiCharacterSelectVariantSelector
         bool hasHotaru = false;
         foreach (CharacterModel character in characters ?? Enumerable.Empty<CharacterModel>())
         {
+            // Keep the retired base registered for old saves and inherited
+            // content, but never advertise it as a playable catalog entry.
+            if (HbrgoRetiredCharacters.IsRetired(character)) continue;
             if (character is not HbrgoHotaru)
             {
                 result.Add(character);
@@ -233,7 +237,7 @@ internal static class HbrgoSakiCharacterSelectVariantSelector
         if (variant == HbrgoSakiVariant.ThirtyA ||
             !selectedSharedButton)
         {
-            screen.SelectCharacter(sharedButton, character);
+            screen.SelectCharacterCompat(sharedButton, character);
         }
     }
 
@@ -328,11 +332,11 @@ internal static class CharacterSelectScreenSelectedVariantPatch
 {
     private static void Postfix(
         NCharacterSelectScreen __instance,
-        CharacterModel characterModel)
+        object[] __args)
     {
         HbrgoSakiCharacterSelectVariantSelector.OnCharacterSelected(
             __instance,
-            characterModel);
+            NativeUiApiCompatibility.SelectedCharacterFromArguments(__args));
     }
 }
 

@@ -17,8 +17,6 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class MaidCultivationPower : PowerModel
 {
-    public const int RollBonus = 20;
-
     private const decimal _damageMultiplier = 1.5m;
     private const decimal _baseOverclockMultiplier = 1.5m;
     private const decimal _upgradedOverclockMultiplier = 2m;
@@ -95,11 +93,6 @@ public sealed class MaidCultivationPower : PowerModel
                 ? _damageMultiplier
                 : 1m;
         return HbrgoSakiDamageMultiplierHelper.Add(multiplier, this);
-    }
-
-    internal int GetRollBonus(CardModel cardSource)
-    {
-        return IsEnhancing(cardSource) ? RollBonus : 0;
     }
 
     internal decimal GetOverclockMultiplier(CardModel cardSource)

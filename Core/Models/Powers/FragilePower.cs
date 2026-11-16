@@ -17,13 +17,21 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-public sealed class FragilePower : PowerModel
+public sealed class FragilePower : PowerModel, IHbrEffectInstance
 {
     private decimal? _hbrEffectPercent;
 
     // Amount is remaining turns; original modifier strength is stored separately.
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int HbrModifierCount { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HbrUnlimitedInstances { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int HbrExitOverride { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int HbrLimitOverride { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int HbrDefaultRemainingOverride { get; private set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public string HbrEffectData
@@ -31,7 +39,7 @@ public sealed class FragilePower : PowerModel
         get => _hbrEffectPercent.HasValue
             ? _hbrEffectPercent.Value.ToString(CultureInfo.InvariantCulture) : string.Empty;
         private set => _hbrEffectPercent = decimal.TryParse(value, NumberStyles.Number,
-            CultureInfo.InvariantCulture, out decimal parsed) ? Math.Max(0m, parsed) : null;
+            CultureInfo.InvariantCulture, out decimal parsed) ? parsed : null;
     }
 
     internal int ModifierAmount => HbrModifierCount > 0 ? HbrModifierCount : Math.Max(0, Amount);
@@ -41,13 +49,26 @@ public sealed class FragilePower : PowerModel
     internal void ConfigureHbr(decimal percent, int modifiers)
     {
         AssertMutable();
-        _hbrEffectPercent = Math.Max(0m, percent);
+        _hbrEffectPercent = percent;
         HbrModifierCount = Math.Max(1, modifiers);
     }
+    internal void SetUnlimited(bool unlimited) { AssertMutable(); HbrUnlimitedInstances = unlimited; }
+    internal void ConfigureProfile(HbrEffectProfile profile)
+    {
+        AssertMutable(); HbrExitOverride = (int)profile.Exit + 1; HbrLimitOverride = (int)profile.Limit + 1;
+        HbrDefaultRemainingOverride = profile.DefaultRemaining; HbrUnlimitedInstances = profile.Limit == HbrEffectLimit.None;
+    }
+    internal HbrEffectProfile CurrentEffectProfile => new(
+        HbrUnlimitedInstances ? HbrEffectLimit.None : HbrLimitOverride > 0 ? (HbrEffectLimit)(HbrLimitOverride - 1) : HbrEffectLimit.Default,
+        HbrExitOverride > 0 ? (HbrEffectExit)(HbrExitOverride - 1) : HbrEffectExit.EnemyTurnEnd,
+        HbrDefaultRemainingOverride > 0 ? HbrDefaultRemainingOverride : 1);
 
     public override PowerType Type => PowerType.Debuff;
     public override PowerStackType StackType => PowerStackType.Counter;
     public override PowerInstanceType InstanceType => PowerInstanceType.Instanced;
+    decimal IHbrEffectInstance.EffectPotency => HbrEffectPercent;
+    int IHbrEffectInstance.Remaining => Amount;
+    HbrEffectProfile IHbrEffectInstance.EffectProfile => CurrentEffectProfile;
     public override Color AmountLabelColor => new("DDA0DD");
 
     public override LocString Description
@@ -62,6 +83,9 @@ public sealed class FragilePower : PowerModel
                 .ToString("0.#", CultureInfo.InvariantCulture));
             text.Add("Turns", Math.Max(0, Amount));
             text.Add("ModifierCount", ModifierAmount);
+            text.Add("Duration", HbrEffectProfileResolver.Duration(CurrentEffectProfile, Amount));
+            text.Add("LifetimeRule", HbrEffectProfileResolver.LifetimeRule(CurrentEffectProfile, Amount));
+            text.Add("SlotRule", HbrEffectProfileResolver.SlotRule(CurrentEffectProfile));
             return text;
         }
     }
@@ -69,6 +93,17 @@ public sealed class FragilePower : PowerModel
     public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext,
         CombatSide side, IEnumerable<Creature> participants)
     {
+        if (HbrBattleStatsHelper.IsEnabled(Owner))
+        {
+            if (!_hbrEffectPercent.HasValue)
+            {
+                ConfigureHbr(HbrEffectPercent, ModifierAmount);
+                SetAmount(Math.Min(2, Amount), silent: true);
+            }
+            SkipNextDurationTick = false;
+            await HbrEffectRules.Tick(this, ((IHbrEffectInstance)this).EffectProfile, side);
+            return;
+        }
         if (side != Owner.Side || !participants.Contains(Owner) || Amount <= 0 ||
             ExtraTurnDurationHelper.ShouldSuppressDurationTick(this)) return;
         if (HbrBattleStatsHelper.IsEnabled(Owner) && !_hbrEffectPercent.HasValue)

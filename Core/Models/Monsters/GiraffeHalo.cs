@@ -1,25 +1,72 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using MegaCrit.Sts2.Core.ValueProps;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-// HBR 长颈怪环 (GiraffeHaloDefault), elite. Generated from the act two/three roster table; see
-// docs/hbr-act-rosters.md for the design and calibration.
-public sealed class GiraffeHalo : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
+// HBR 长颈怪环, act-three elite: original GiraffeHaloDefault_01
+// (MC04BExpDay01Kisokoma01_BOSS01). Its dp table opens with eight once-only
+// steps, then alternates Attack Up and Judgment Ray
+// (docs/hbr-monster-mechanics-proposal.md).
+public sealed class GiraffeHalo : HbrgoMoveTableMonster, IHbrgoPhantomAttackResults
 {
-    internal const string HaloMoveId = "HALO_MOVE";
+    internal const string NeckLashSkill = "GiraffeHalo_AttackSingle01";
+    internal const string HaloShotsSkill = "GiraffeHalo_AttackAll01";
+    internal const string JudgmentRaySkill = "GiraffeHalo_AttackAll02";
+    internal const string AttackUpSkill = "GiraffeHalo_AttackUp";
+    internal const string HealSkill = "GiraffeHalo_Heal";
+
+    internal const string NeckLashMoveId = "NECK_LASH_MOVE";
+    internal const string HaloShotsMoveId = "HALO_SHOTS_MOVE";
+    internal const string JudgmentRayMoveId = "JUDGMENT_RAY_MOVE";
+    internal const string AttackUpMoveId = "ATTACK_UP_MOVE";
+    internal const string HealMoveId = "HEAL_MOVE";
+
+    internal const int AttackUpPercent = 100;
+    internal const int HaloShotsHits = 2;
+    internal const int JudgmentRayHits = 5;
+    internal const int IllusionLayers = 2;
+
+    // Original HealDp 15000 over the original maximum DP 7500: a full heal.
+    internal const decimal HealDpRatio = 15000m / 7500m;
+
+    internal static readonly HbrgoMoveTables Tables = new(
+        "GiraffeHaloDefault_01",
+        Table("GiraffeHaloDefault_01",
+            PickOnce((NeckLashSkill, 40), (HaloShotsSkill, 60)),
+            PickOnce((NeckLashSkill, 40), (AttackUpSkill, 60)),
+            OnceStep(JudgmentRaySkill),
+            PickOnce((NeckLashSkill, 30), (HaloShotsSkill, 70)),
+            OnceStep(AttackUpSkill),
+            OnceStep(JudgmentRaySkill),
+            PickOnce((NeckLashSkill, 40), (AttackUpSkill, 60)),
+            OnceStep(HaloShotsSkill),
+            Step(AttackUpSkill),
+            Step(JudgmentRaySkill)),
+        Table("GiraffeHaloDefault_01_break",
+            Pick((HaloShotsSkill, 50), (JudgmentRaySkill, 50)),
+            Pick((NeckLashSkill, 30), (AttackUpSkill, 70)),
+            Step(JudgmentRaySkill),
+            Pick((HaloShotsSkill, 50), (AttackUpSkill, 50)),
+            Step(JudgmentRaySkill),
+            Step(HealSkill)));
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(NeckLashSkill, NeckLashMoveId, HbrgoMoveTarget.Single),
+        new(HaloShotsSkill, HaloShotsMoveId, HbrgoMoveTarget.All),
+        new(JudgmentRaySkill, JudgmentRayMoveId, HbrgoMoveTarget.All),
+        new(AttackUpSkill, AttackUpMoveId, HbrgoMoveTarget.Self),
+        new(HealSkill, HealMoveId, HbrgoMoveTarget.Self),
+    };
 
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
@@ -33,80 +80,51 @@ public sealed class GiraffeHalo : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
             266,
             250);
 
-    private int HaloDamage =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            12,
-            10);
-
-    internal const int HaloDefenseDown = 2;
-
     private int NeckLashDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            27,
-            24);
+            15,
+            13);
 
     private int HaloShotsDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            6,
-            5);
+            8,
+            7);
 
-    private int HaloShotsHits =>
+    private int JudgmentRayDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            5,
-            5);
+            4,
+            3);
 
-    internal const int PrayerStrength = 3;
+    internal override HbrgoMoveTables GetMoveTables(int variant) => Tables;
 
-    private int PrayerBlock =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            22,
-            18);
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState halo = new(
-            HaloMoveId,
-            HaloMove,
-            new SingleAttackIntent(() => HaloDamage),
-            new DebuffIntent());
-        MoveState neckLash = new(
-            "NECK_LASH_MOVE",
+        yield return new MoveState(
+            NeckLashMoveId,
             NeckLashMove,
             new SingleAttackIntent(() => NeckLashDamage));
-        MoveState haloShots = new(
-            "HALO_SHOTS_MOVE",
+        yield return new MoveState(
+            HaloShotsMoveId,
             HaloShotsMove,
             new MultiAttackIntent(HaloShotsDamage, () => HaloShotsHits));
-        MoveState prayer = new(
-            "PRAYER_MOVE",
-            PrayerMove,
-            new BuffIntent(),
-            new DefendIntent());
-        return ModMonsterMoveStateMachines.Cycle(
-            halo,
-            neckLash,
-            haloShots,
-            prayer);
-    }
-
-    private async Task HaloMove(IReadOnlyList<Creature> targets)
-    {
-        await PerformAttack(HaloDamage);
-        await ApplyHalo(targets);
-    }
-
-    private Task ApplyHalo(IEnumerable<Creature> targets)
-    {
-        return HbrPercentDebuffApplication.ApplyDefenseDown(
-            new ThrowingPlayerChoiceContext(),
-            targets.Where(target => target.IsAlive).ToArray(),
-            HaloDefenseDown,
-            Creature);
+        yield return new MoveState(
+            JudgmentRayMoveId,
+            JudgmentRayMove,
+            new MultiAttackIntent(JudgmentRayDamage, () => JudgmentRayHits),
+            new DebuffIntent());
+        yield return new MoveState(
+            AttackUpMoveId,
+            AttackUpMove,
+            new BuffIntent());
+        yield return new MoveState(
+            HealMoveId,
+            HealMove,
+            new HealIntent());
     }
 
     private Task NeckLashMove(IReadOnlyList<Creature> _)
@@ -114,35 +132,41 @@ public sealed class GiraffeHalo : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
         return PerformAttack(NeckLashDamage);
     }
 
+    // Original all-unit attack: every player-side unit, summons included.
     private Task HaloShotsMove(IReadOnlyList<Creature> _)
     {
-        return PerformAttack(HaloShotsDamage, HaloShotsHits);
+        return PerformAttackOn(HaloShotsDamage, HaloShotsHits, HbrgoAttackTargets.AllUnits);
     }
 
-    private async Task PrayerMove(IReadOnlyList<Creature> _)
+    // Original all-unit attack whose illusion always lands (chance 100%, not a
+    // chance-based status), so every player in range takes it, blocked or not.
+    private async Task JudgmentRayMove(IReadOnlyList<Creature> targets)
+    {
+        await PerformAttackOn(JudgmentRayDamage, JudgmentRayHits, HbrgoAttackTargets.AllUnits);
+        await HbrEnemyEffects.ApplyIllusion(
+            UnitsInRange(targets, HbrgoAttackTargets.AllUnits), IllusionLayers, Creature);
+    }
+
+    private async Task AttackUpMove(IReadOnlyList<Creature> _)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        await PowerCmd.Apply<StrengthPower>(
-            new ThrowingPlayerChoiceContext(),
-            Creature,
-            PrayerStrength,
-            Creature,
-            null);
-        await CreatureCmd.GainBlock(
-            Creature,
-            PrayerBlock,
-            ValueProp.Move,
-            null);
+        await HbrEnemyEffects.ApplyTimedBuff<HbrAttackUpPower>(Creature, AttackUpPercent);
     }
 
-    Task IHbrgoPhantomAttackEffects.AfterPhantomAttackIntent(
-        MoveState move,
-        IReadOnlyList<Creature> targets)
+    private async Task HealMove(IReadOnlyList<Creature> _)
     {
-        return move?.Id switch
-        {
-            HaloMoveId => ApplyHalo(targets),
-            _ => Task.CompletedTask
-        };
+        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
+        RestoreDpRatio(HealDpRatio);
+    }
+
+    Task IHbrgoPhantomAttackResults.AfterPhantomAttack(
+        MoveState move,
+        IReadOnlyList<Creature> attackedTargets,
+        IReadOnlyList<Creature> passedTargets,
+        decimal passedDamage)
+    {
+        return move?.Id == JudgmentRayMoveId
+            ? HbrEnemyEffects.ApplyIllusion(attackedTargets, IllusionLayers, Creature)
+            : Task.CompletedTask;
     }
 }

@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -109,17 +110,14 @@ internal static class MoreThanOneTruthContextDisposePatch
 [HarmonyPatch]
 internal static class MoreThanOneTruthContextDamagePatch
 {
-    private static MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-        .Where(method => method.Name == nameof(CreatureCmd.Damage) && method.GetParameters() is var p &&
-            p.Length is 6 or 7 && p[1].ParameterType == typeof(IEnumerable<Creature>) &&
-            p[2].ParameterType == typeof(decimal) && p[5].ParameterType == typeof(CardModel))
-        .OrderByDescending(method => method.GetParameters().Length).First();
-    private static void Prefix(PlayerChoiceContext choiceContext, IEnumerable<Creature> targets,
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
+    private static void Prefix(PlayerChoiceContext choiceContext, object[] __args,
         decimal amount, ValueProp props, Creature dealer, CardModel cardSource,
         out (MoreThanOneTruthCombatHelper.ContextState State, MoreThanOneTruthCombatHelper.Segment Segment) __state)
     {
         MoreThanOneTruthCombatHelper.ContextState state = MoreThanOneTruthCombatHelper.FindContext(dealer, cardSource, props);
-        __state = state == null ? default : (state, new(choiceContext, targets.ToArray(), amount, props, dealer, cardSource));
+        __state = state == null ? default : (state, new(choiceContext,
+            NativeDamageApiCompatibility.ReadTargets(__args).ToArray(), amount, props, dealer, cardSource));
     }
     private static void Postfix(ref Task<IEnumerable<DamageResult>> __result,
         (MoreThanOneTruthCombatHelper.ContextState State, MoreThanOneTruthCombatHelper.Segment Segment) __state)

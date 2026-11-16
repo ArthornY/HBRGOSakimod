@@ -294,7 +294,7 @@ public sealed class DefyFateStrikeHbrgoSaki : CardModel
     public DefyFateStrikeHbrgoSaki() : base(0, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy) { }
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        int x = DualSwordsCopyHelper.TakeXEnergySpent(this, cardPlay.Resources.EnergySpent);
+        int x = CardCopyContextHelper.TakeXEnergySpent(this, cardPlay.Resources.EnergySpent);
         if (x <= 0) return;
         Creature phantom = PhantomHelper.GetLivingPhantom(Owner);
         await DamageCmd.Attack(DynamicVars.Damage.BaseValue).FromCardCompat(this, cardPlay)
@@ -338,7 +338,8 @@ public sealed class PainResonanceHbrgoSaki : CardModel
 {
     public override string PortraitPath => ImageHelper.GetImagePath("packed/card_portraits/hbrgo_saki/memory_corridor_hbrgo_saki.png");
     public override string BetaPortraitPath => PortraitPath;
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new PowerVar<PainResonancePower>(6m) };
+    // Six stacks: 6 native damage, or a 100% skill of the holder under HBR.
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { HbrSkillVars.DamagePower<PainResonancePower>(100m) };
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<PhantomPower>() };
     public PainResonanceHbrgoSaki() : base(2, CardType.Power, CardRarity.Rare, TargetType.Self) { }
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay) =>

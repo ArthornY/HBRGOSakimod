@@ -34,16 +34,11 @@ internal static class HbrFragilePowerHelper
         if (modifiers <= 0m) return 0m;
         decimal reference = HbrOriginalNumericFormula.EvaluateWeightedStat(
             new HbrBattleStats(0, 0, intelligence, 0, 0, luck), Weights);
-        decimal difference = Math.Max(0m, reference - Math.Max(0m, enemyParameter));
-        return DamageAmplificationLimits.MultiplySaturated(BasePercent(modifiers),
-            1m + difference * HbrOriginalNumericFormula.DebuffOverflowPerPoint);
+        return HbrOriginalNumericFormula.EvaluateLinearDebuffPotency(BasePercent(modifiers), reference, enemyParameter);
     }
 
     internal static decimal ResolvePercent(decimal modifiers, Creature applier, Creature target) =>
-        HbrBattleStatsHelper.TryGetStats(applier, out HbrBattleStats stats)
-            ? EvaluatePercent(modifiers, stats.Intelligence, stats.Luck,
-                HbrEnemyProfileHelper.GetEnemyParameter(target))
-            : BasePercent(modifiers);
+        HbrEffectFormula.Debuff(BasePercent(modifiers), applier, target, Weights);
 
     internal static decimal PerLayerPercent(Creature applier, Creature target) =>
         ResolvePercent(1m, applier, target);

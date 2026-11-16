@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -23,9 +24,10 @@ public sealed class EatPassersbyHbrgoSaki : CardModel
         HoverTipFactory.FromPower<EatPassersbyPower>()
     };
 
+    // Three stacks: 3 native damage, or a 50% skill of the holder under HBR.
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<EatPassersbyPower>(3m)
+        HbrSkillVars.DamagePower<EatPassersbyPower>(50m)
     };
 
     public EatPassersbyHbrgoSaki()

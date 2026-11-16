@@ -38,32 +38,40 @@ internal static class CardModelSpendResourcesPatch
 {
     private static bool Prefix(CardModel __instance, ref Task<ValueTuple<int, int>> __result)
     {
-        if (!MagicSwordEnergyPaymentHelper.CanPayWithSwordheart(__instance, out int deficit, out int energyToSpend, out int starsToSpend))
+        // Keep the displayed half-price decision stable across energy-spent
+        // hooks and the later mode switch/native replay series.
+        DualSwordsChaseHelper.RecordPayment(__instance);
+        if (!MagicSwordEnergyPaymentHelper.TryGetPaymentQuote(__instance, out SwordheartPaymentQuote quote) || !quote.CanAfford)
         {
             return true;
         }
 
-        __result = SpendResourcesWithSwordheart(__instance, deficit, energyToSpend, starsToSpend);
+        __result = SpendResourcesWithSwordheart(__instance, quote);
         return false;
     }
 
-    private static async Task<ValueTuple<int, int>> SpendResourcesWithSwordheart(CardModel card, int deficit, int energyToSpend, int starsToSpend)
+    private static void Postfix(CardModel __instance, ref Task<ValueTuple<int, int>> __result) =>
+        __result = DualSwordsChaseHelper.KeepPaymentUnlessFailed(__instance, __result);
+
+    private static async Task<ValueTuple<int, int>> SpendResourcesWithSwordheart(CardModel card, SwordheartPaymentQuote quote)
     {
+        int energyToSpend = quote.EnergyToSpend;
+        int starsToSpend = quote.StarsToSpend;
         if (card.Owner.Creature.HasPower<MagicSwordModePower>())
         {
             // The existing mode settles this once in BeforeCardPlayed, including
             // clarity's consumption multiplier and the mode's exit behaviour.
-            MagicSwordEnergyPaymentHelper.RecordPendingSwordheartCost(card, deficit);
+            MagicSwordEnergyPaymentHelper.RecordPendingSwordheartCost(card, quote.EnergyDeficit);
         }
         else
         {
             // Universality pays immediately: it must not depend on a mode hook
-            // being present later, and outside the mode the exchange is 1:1.
+            // being present later. Clarity doubles this same quoted cost.
             MagicSwordEnergyPaymentHelper.RecordPendingSwordheartCost(card, 0);
             await PowerCmd.ModifyAmount(
                 new ThrowingPlayerChoiceContext(),
                 card.Owner.Creature.GetPower<SwordheartPower>(),
-                -deficit,
+                -quote.SwordheartToSpend,
                 card.Owner.Creature,
                 card);
         }

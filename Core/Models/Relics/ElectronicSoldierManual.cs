@@ -34,8 +34,6 @@ public partial class ElectronicSoldierManual : RelicModel
 {
     public const int MaxSixSense = 99;
 
-    public const int SixSenseBonusThreshold = 30;
-
     public const int StartingSixSensePointsPerPair = 5;
 
     public virtual int SixSenseRewardOptionCount => 3;
@@ -48,6 +46,16 @@ public partial class ElectronicSoldierManual : RelicModel
         SixSenseAttribute.MentalStrength,
         SixSenseAttribute.Simplicity,
         SixSenseAttribute.Madness
+    };
+
+    // Each card type keeps its pair of senses for the starting points and the
+    // per-victory +1 (cards themselves no longer carry an attribute).
+    internal static SixSenseAttribute[] GetSensePair(CardType type) => type switch
+    {
+        CardType.Attack => new[] { SixSenseAttribute.Madness, SixSenseAttribute.LeadershipCharm },
+        CardType.Skill => new[] { SixSenseAttribute.Simplicity, SixSenseAttribute.MentalStrength },
+        CardType.Power => new[] { SixSenseAttribute.Talent, SixSenseAttribute.Gentleness },
+        _ => Array.Empty<SixSenseAttribute>()
     };
 
     public override RelicRarity Rarity => RelicRarity.Starter;
@@ -161,11 +169,14 @@ public partial class ElectronicSoldierManual : RelicModel
                 Owner.Creature,
                 null);
         }
+
+        await ConvertStrikesForEquipment();
+        await RestoreKeptSwordheart();
     }
 
     public override decimal ModifyGoldGained(Player player, decimal amount) =>
         player == Owner && amount > 0m
-            ? amount * (1m + Math.Max(0m, GetEffectiveSenseAmount(SixSenseAttribute.Talent)) * 0.02m)
+            ? amount * (1m + IchikoEldestCombatHelper.GetGoldBonusPercent(player) / 100m)
             : amount;
 
     public override EventModel ModifyNextEvent(EventModel currentEvent)
@@ -202,11 +213,13 @@ public partial class ElectronicSoldierManual : RelicModel
 
     public override bool TryModifyRewardsLate(Player player, List<Reward> rewards, AbstractRoom room)
     {
-        if (player != Owner || room is not CombatRoom)
+        if (player != Owner || room is not CombatRoom combatRoom)
         {
             return false;
         }
 
+        bool equipmentAdded = AddEquipmentDrops(rewards, combatRoom);
+        bool fragmentsAdded = AddFateFragmentRewards(rewards, combatRoom);
         int restoredRewards = rewards.RemoveAll(reward => reward is SixSenseReward);
         long points = restoredRewards;
         if (!CombatSixSensePointsGranted)
@@ -228,7 +241,7 @@ public partial class ElectronicSoldierManual : RelicModel
         }
         GrantSixSensePoints(points);
         ClearPendingSixSenseRewards();
-        return restoredRewards > 0;
+        return restoredRewards > 0 || equipmentAdded || fragmentsAdded;
     }
 
     private void GrantPendingAllSenseIncreases()
@@ -253,7 +266,7 @@ public partial class ElectronicSoldierManual : RelicModel
         bool increased = false;
         foreach (CardType type in new[] { CardType.Attack, CardType.Skill, CardType.Power })
         {
-            SixSenseAttribute[] candidates = SixSenseCardCapability.GetCandidates(type)
+            SixSenseAttribute[] candidates = GetSensePair(type)
                 .Where(CanIncreaseSense).ToArray();
             if (candidates.Length == 0) continue;
             SixSenseAttribute attribute = candidates[Owner.PlayerRng.Rewards.NextInt(candidates.Length)];
@@ -352,7 +365,7 @@ public partial class ElectronicSoldierManual : RelicModel
         List<SixSenseAttribute> replacements = availableAttributes
             .Where(attribute => !options.Contains(attribute))
             .ToList();
-        Owner.PlayerRng.Rewards.Shuffle(replacements);
+        Owner.PlayerRng.Rewards.ShuffleCompat(replacements);
         options.AddRange(
             replacements.Take(targetCount - options.Count));
         return options;
@@ -387,11 +400,6 @@ public partial class ElectronicSoldierManual : RelicModel
             canExceedMaximum);
     }
 
-    public decimal ModifyDamageMultiplicative(Creature target, decimal amount, ValueProp props, Creature dealer, CardModel cardSource)
-    {
-        return 1m;
-    }
-
     public int GetSenseAmount(SixSenseAttribute attribute)
     {
         return attribute switch
@@ -420,17 +428,12 @@ public partial class ElectronicSoldierManual : RelicModel
 
         foreach (CardType type in new[] { CardType.Attack, CardType.Skill, CardType.Power })
         {
-            SixSenseAttribute[] pair = SixSenseCardCapability.GetCandidates(type);
+            SixSenseAttribute[] pair = GetSensePair(type);
             int first = Owner.PlayerRng.Rewards.NextInt(StartingSixSensePointsPerPair + 1);
             SetSenseAmount(pair[0], GetSenseAmount(pair[0]) + first);
             SetSenseAmount(pair[1], GetSenseAmount(pair[1]) + StartingSixSensePointsPerPair - first);
         }
         StartingSixSenseGranted = true;
-    }
-
-    public bool HasSixSenseBonus(SixSenseAttribute attribute)
-    {
-        return GetSenseAmount(attribute) >= SixSenseBonusThreshold;
     }
 
     public decimal GetEffectiveSenseAmount(SixSenseAttribute attribute) =>
@@ -481,27 +484,20 @@ public partial class ElectronicSoldierManual : RelicModel
         };
     }
 
-    public static string GetSenseShortDescription(SixSenseAttribute attribute)
-    {
-        string name = GetSenseTitle(attribute);
-        return GetSenseChoiceDescription(attribute) +
-            $"达到{SixSenseBonusThreshold}级后，其他属性牌也可削减{name}抗性，但不获得该属性的出目加值和出牌效果。上限{MaxSixSense}级。";
-    }
+    public static string GetSenseShortDescription(SixSenseAttribute attribute) =>
+        GetSenseChoiceDescription(attribute) + $"上限{MaxSixSense}级。";
 
     public string GetSenseShortDescriptionForOwner(SixSenseAttribute attribute) =>
-        IsHbrNumericsEnabled
-            ? GetSenseChoiceDescriptionForOwner(attribute) +
-                $"达到{SixSenseBonusThreshold}级后，其他属性牌也可削减{GetSenseTitle(attribute)}抗性，但不获得该属性的出牌效果。上限{MaxSixSense}级。"
-            : GetSenseShortDescription(attribute);
+        GetSenseChoiceDescriptionForOwner(attribute) + $"上限{MaxSixSense}级。";
 
+    // Without HBR numerics a level no longer changes card rolls; it still counts
+    // toward the memory garden's six-sense total.
     public static string GetSenseChoiceDescription(SixSenseAttribute attribute) =>
-        $"每级使{GetSenseTitle(attribute)}属性牌的出目+1。" +
-        (attribute == SixSenseAttribute.Talent ? "每点才能使获得的金币+2%。" : string.Empty);
+        $"{GetSenseTitle(attribute)}等级计入记忆之庭的六感总点数。";
 
     public string GetSenseChoiceDescriptionForOwner(SixSenseAttribute attribute) =>
         IsHbrNumericsEnabled
-            ? $"每级使战斗属性{HbrBattleStatsHelper.GetBattleStatTitle(attribute)}+{HbrBattleStatsHelper.SenseStatGainPerLevel}，六感等级不再直接增加掷骰出目。" +
-                (attribute == SixSenseAttribute.Talent ? "每点才能使获得的金币+2%。" : string.Empty)
+            ? $"每级使战斗属性{HbrBattleStatsHelper.GetBattleStatTitle(attribute)}+{HbrBattleStatsHelper.SenseStatGainPerLevel}。"
             : GetSenseChoiceDescription(attribute);
 
     public static string GetSenseRewardDescriptionKey(SixSenseAttribute attribute)

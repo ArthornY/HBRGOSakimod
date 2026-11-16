@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using MegaCrit.Sts2.Core.Random;
@@ -8,6 +9,17 @@ namespace HBRGOSakiMod.Core.Compatibility;
 
 internal static class RngCompatibility
 {
+    // The native Shuffle method disappeared in v0.113. Keep its exact
+    // Fisher-Yates order and consume the supplied stream once per swap.
+    internal static void ShuffleCompat<T>(this Rng rng, IList<T> list)
+    {
+        for (int index = list.Count - 1; index > 0; index--)
+        {
+            int other = rng.NextInt(index + 1);
+            (list[index], list[other]) = (list[other], list[index]);
+        }
+    }
+
     private static readonly ConstructorInfo SeedConstructor =
         typeof(Rng).GetConstructor([typeof(uint), typeof(int)]) ??
         typeof(Rng).GetConstructor([typeof(ulong)]) ??
@@ -20,6 +32,10 @@ internal static class RngCompatibility
     private static readonly ConstructorInfo NamedSeedConstructor =
         typeof(Rng).GetConstructor([RunSeedGetter.ReturnType, typeof(string)]) ??
         throw new MissingMethodException(typeof(Rng).FullName, ".ctor(seed, name)");
+
+    private static readonly MethodInfo PlayerSeedGetter =
+        typeof(PlayerRngSet).GetProperty(nameof(PlayerRngSet.Seed))?.GetMethod ??
+        throw new MissingMemberException(typeof(PlayerRngSet).FullName, nameof(PlayerRngSet.Seed));
 
     internal static Rng Create(uint seed)
     {
@@ -41,6 +57,12 @@ internal static class RngCompatibility
     internal static ulong GetRunSeed(RunRngSet rngs)
     {
         return Convert.ToUInt64(CompatibilityReflection.Invoke(RunSeedGetter, rngs, []));
+    }
+
+    // The player's seed is uint on stable and ulong on the beta, like the run's.
+    internal static ulong GetPlayerSeed(PlayerRngSet rngs)
+    {
+        return Convert.ToUInt64(CompatibilityReflection.Invoke(PlayerSeedGetter, rngs, []));
     }
 
     internal static Rng CreateNamed(RunRngSet rngs, string name)

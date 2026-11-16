@@ -32,11 +32,17 @@ internal static class CrushYouLikeABugCombatHelper
     {
         if (cardSource is not CrushYouLikeABugHbrgoSaki || target == null || !props.IsPoweredAttack())
             return 1m;
-        // Evaluated by the actual damage calculation for every target/segment.
-        // Keep exact DP, rather than the native display proxy or its maximum.
-        return target.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m ||
+        // Both conditions are evaluated separately for each target and segment.
+        decimal multiplier = target.GetPower<HighDimensionalShellPower>()?.CurrentDp > 0m ||
             target.Player?.GetRelic<DeflectorProtection>()?.Dp > 0 ? 1.5m : 1m;
+        if (HbrBattleStatsHelper.IsEnabled(target) && cardSource is CrushYouLikeABugHbrgoSaki card &&
+            card.HasUpgradeEffect(4) && target.HasPower<BreakPower>()) multiplier *= 1.5m;
+        return multiplier;
     }
+
+    internal static decimal GetBreakDestructionMultiplier(CardModel source, Creature target) =>
+        source is CrushYouLikeABugHbrgoSaki card && card.HasUpgradeEffect(4) &&
+        target?.HasPower<BreakPower>() == true ? 2m : 1m;
 
     internal static decimal GetDestructionRateMultiplier(CardModel cardSource) =>
         cardSource is CrushYouLikeABugHbrgoSaki card && card.HasUpgradeEffect(3) ? 2m : 1m;
@@ -90,8 +96,5 @@ internal static class CrushYouLikeABugCombatHelper
             int refund = TakeRefund(card, play);
             if (refund > 0) await PlayerCmd.GainEnergy(refund, card.Owner);
         }
-        if (card.HasUpgradeEffect(6) && card.Owner.Creature.IsAlive)
-            await PowerCmd.Apply<CrushYouLikeABugReplayPower>(context,
-                card.Owner.Creature, 1m, card.Owner.Creature, card);
     }
 }

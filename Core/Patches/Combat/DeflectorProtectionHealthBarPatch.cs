@@ -17,13 +17,6 @@ internal static class NHealthBarSetCreaturePatch
         ModNodeAttachmentRegistry.EnsureReadyAttachments(__instance);
 
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
-                __instance, HBRGOSakiCombatUiIntegration.SixSenseResistanceRowAttachmentId,
-                out NSixSenseResistanceRow resistanceRow))
-        {
-            resistanceRow.SetCreature(creature, __instance.HpBarContainer);
-        }
-
-        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
                 __instance,
                 HBRGOSakiCombatUiIntegration.DeflectorProtectionDpBarAttachmentId,
                 out NDeflectorProtectionDpBar dpBar))
@@ -46,12 +39,6 @@ internal static class NHealthBarRefreshValuesPatch
 {
     private static void Postfix(NHealthBar __instance)
     {
-        if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
-                __instance, HBRGOSakiCombatUiIntegration.SixSenseResistanceRowAttachmentId,
-                out NSixSenseResistanceRow resistanceRow))
-        {
-            resistanceRow.Refresh();
-        }
         if (HBRGOSakiCombatUiIntegration.Registry.TryGetAttached(
                 __instance,
                 HBRGOSakiCombatUiIntegration.DeflectorProtectionDpBarAttachmentId,

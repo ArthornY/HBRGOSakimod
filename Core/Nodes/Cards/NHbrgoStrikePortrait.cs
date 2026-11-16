@@ -1,4 +1,5 @@
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards;
@@ -21,6 +22,9 @@ public partial class NHbrgoStrikePortrait : Node
     private bool _originalAncientFlipV;
     private TextureRect.StretchModeEnum _originalStretchMode;
     private TextureRect.StretchModeEnum _originalAncientStretchMode;
+
+    internal static bool NeedsWhiteBackground(CardModel model) => HbrMemoryGardenPortraits.HasCutinFrame(model) ||
+        model is HalfBodyHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki or SummerGrassDreamHbrgoSaki or BoostUpHbrgoSaki;
 
     public override void _Ready()
     {
@@ -49,13 +53,14 @@ public partial class NHbrgoStrikePortrait : Node
         {
             return;
         }
-        if (Card.Model is not (StrikeHbrgoSaki or DefendHbrgoSaki or HalfBodyHbrgoSaki or CommunicationMeetingHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki or SummerGrassDreamHbrgoSaki or BoostUpHbrgoSaki))
+        CardModel model = Card.Model;
+        bool white = NeedsWhiteBackground(model);
+        if (!white && model is not (StrikeHbrgoSaki or DefendHbrgoSaki or CommunicationMeetingHbrgoSaki))
         {
             RestoreOrientation();
             return;
         }
 
-        CardModel model = Card.Model;
         string path = model.PortraitPath;
         if (!force && _model == model && _portraitPath == path)
         {
@@ -83,14 +88,16 @@ public partial class NHbrgoStrikePortrait : Node
         // Flip the presentation only: both axes equal a 180-degree rotation, without resampling.
         bool flipH = mode is StrikeHbrgoSaki.StrikePortraitMode.DualSwords or StrikeHbrgoSaki.StrikePortraitMode.Bow;
         bool flipV = mode == StrikeHbrgoSaki.StrikePortraitMode.Bow;
-        bool cover = mode == StrikeHbrgoSaki.StrikePortraitMode.Fist ||
-            model is HalfBodyHbrgoSaki or CommunicationMeetingHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki or SummerGrassDreamHbrgoSaki or BoostUpHbrgoSaki;
+        // Cards in the HBR card style always fill its art window (NHbrCardStyle), whatever the art's shape.
+        bool cover = mode == StrikeHbrgoSaki.StrikePortraitMode.Fist || NHbrCardStyle.IsStyled(model) ||
+            white || model is CommunicationMeetingHbrgoSaki;
         ApplyPortrait(_portrait, texture, flipH, flipV,
             cover ? TextureRect.StretchModeEnum.KeepAspectCovered : _originalStretchMode);
         ApplyPortrait(_ancientPortrait, texture, flipH, flipV,
             cover ? TextureRect.StretchModeEnum.KeepAspectCovered : _originalAncientStretchMode);
-        SetWhiteBackground(_portrait, ref _whiteBackground, model is HalfBodyHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki);
-        SetWhiteBackground(_ancientPortrait, ref _ancientWhiteBackground, model is HalfBodyHbrgoSaki or MyLegendBeginsHbrgoSaki or HelloWorldHbrgoSaki or SaviorGrandEntranceHbrgoSaki or WorldsFinestHbrgoSaki or MoreThanOneTruthHbrgoSaki or CrushYouLikeABugHbrgoSaki);
+        // Memory portraits in the transparent slanted cut-in frame sit on white, like the cut-ins in HBR.
+        SetWhiteBackground(_portrait, ref _whiteBackground, white);
+        SetWhiteBackground(_ancientPortrait, ref _ancientWhiteBackground, white);
         _model = model;
         _portraitPath = path;
     }

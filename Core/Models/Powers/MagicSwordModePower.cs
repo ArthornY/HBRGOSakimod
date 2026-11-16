@@ -15,21 +15,32 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
+// Since 2026-11-09 the magic sword is a switch (HbrMagicSwordToggle) laid over the bow or
+// dual swords, which keep working; it no longer forces dual swords, removes 千早同学？ or
+// carries the two survival rules (design v3, section 3).
 public sealed class MagicSwordModePower : PowerModel
 {
     public const int RollBonus = 77;
+    internal const int ExtraEnergyPerTurn = 1;
+    internal const decimal DeckBonusPerCard = 0.02m;
 
-    private const decimal _dpRecoverThreshold = 0.75m;
-    private const decimal _dpRecoverPercent = 0.25m;
-
-    private bool _pendingDpBreak;
     private bool _isExiting;
-    private bool _isGrantingClaritySwordheart;
+    private bool _isEmergencyRetreat;
+    private bool _playedFinisher;
+    private static bool _crackLifecycleRegistered;
+
+    // Missing in an old mid-combat save: that opening already paid its crack.
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int CrackTimingVersion { get; private set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasSettledExitCrack { get; private set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ConsumedSwordheartAmount { get; private set; }
@@ -43,60 +54,79 @@ public sealed class MagicSwordModePower : PowerModel
 
     public override Color AmountLabelColor => new("F8D36A");
 
-    internal bool IsGrantingClaritySwordheart =>
-        _isGrantingClaritySwordheart;
-
-    public void MarkDpBrokenByDamage()
+    internal static async Task ApplyForNewOpening(PlayerChoiceContext context, Creature owner, CardModel source)
     {
-        if (!IsMutable)
-        {
-            return;
-        }
+        if (owner == null || owner.HasPower<MagicSwordModePower>()) return;
+        var power = (MagicSwordModePower)ModelDb.Power<MagicSwordModePower>().ToMutable();
+        power.CrackTimingVersion = 1;
+        power.HasSettledExitCrack = false;
+        await PowerCmd.Apply(context, power, owner, 1m, owner, source);
+    }
 
+    private void SettleExitCrack(Creature owner)
+    {
+        if (CrackTimingVersion < 1 || HasSettledExitCrack || _isEmergencyRetreat) return;
         AssertMutable();
-        _pendingDpBreak = true;
+        HasSettledExitCrack = true;
+        owner?.Player?.GetRelic<ElectronicSoldierManual>()?.AddFateDiceCrack();
     }
 
-    public override async Task AfterDamageReceived(PlayerChoiceContext choiceContext, Creature target, DamageResult result, ValueProp props, Creature dealer, CardModel cardSource)
+    private static void EnsureCrackLifecycle()
     {
-        if (target != Owner || !_pendingDpBreak)
+        if (_crackLifecycleRegistered) return;
+        _crackLifecycleRegistered = true;
+        // A loss skips native AfterCombatEnd model hooks. Its final event still
+        // has the room's live actors, so settle each holder independently here.
+        CombatManager.Instance.CombatEnded += room =>
         {
-            return;
-        }
-
-        _pendingDpBreak = false;
-        await SetSwordheartToZero(choiceContext);
+            if (room?.CombatState == null) return;
+            foreach (Player player in room.CombatState.Players)
+                player.Creature.GetPower<MagicSwordModePower>()?.SettleExitCrack(player.Creature);
+        };
     }
 
-    public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+    internal static decimal GetDeckBonusMultiplier(Creature dealer) =>
+        dealer?.HasPower<MagicSwordModePower>() == true && dealer.Player != null
+            ? 1m + dealer.Player.Deck.Cards.Count * DeckBonusPerCard
+            : 1m;
+
+    internal static int GetTurnEnergyBonus(Player player) =>
+        player?.Creature?.HasPower<MagicSwordModePower>() == true ? ExtraEnergyPerTurn : 0;
+
+    public decimal ModifyDamageMultiplicative(
+        Creature target,
+        decimal amount,
+        ValueProp props,
+        Creature dealer,
+        CardModel cardSource)
     {
-        if (!participants.Contains(Owner))
+        if (dealer != Owner || target?.Side == Owner.Side ||
+            amount <= 0m || !props.IsPoweredAttack())
         {
-            return;
+            return 1m;
         }
 
-        DeflectorProtection deflectorProtection = Owner.Player?.GetRelic<DeflectorProtection>();
-        if (DisabledPower.IsAtMax(Owner))
-        {
-            return;
-        }
+        return HbrgoSakiDamageMultiplierHelper.AddNonTemporary(
+            GetDeckBonusMultiplier(dealer), this);
+    }
 
-        if (deflectorProtection != null && deflectorProtection.IsDpBelowPercent(_dpRecoverThreshold))
-        {
-            int restoredDp = deflectorProtection.RestoreDpByMaxPercent(_dpRecoverPercent);
-            if (restoredDp > 0)
-            {
-                Flash();
-            }
-
-            await PowerCmd.Apply<DisabledPower>(choiceContext, Owner, 1m, Owner, null);
-            await SpendSwordheart(choiceContext, 1m, null);
-        }
+    public override decimal ModifyPowerAmountGivenMultiplicative(
+        PowerModel power,
+        Creature giver,
+        decimal amount,
+        Creature target,
+        CardModel cardSource)
+    {
+        return power is DestructionRatePower && giver == Owner &&
+               target != null && target.Side != Owner.Side && amount > 0m
+            ? GetDeckBonusMultiplier(giver)
+            : 1m;
     }
 
     public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature applier, CardModel cardSource)
     {
-        if (power is SwordheartPower && power.Owner == Owner && power.Amount <= 0)
+        if (power is SwordheartPower && power.Owner == Owner && power.Amount <= 0 &&
+            !_isEmergencyRetreat && cardSource is not TeleportHbrgoSaki)
         {
             await ExitAndLuckySeven(choiceContext);
         }
@@ -128,11 +158,22 @@ public sealed class MagicSwordModePower : PowerModel
     public override async Task AfterRemoved(Creature oldOwner)
     {
         await RemoveFeintCards(oldOwner);
-        await ModeTransitionHelper.EnterDualSwordsAfterModeExit(oldOwner);
-        await PlayMagicSwordLuckySevenOpening(
+        if (_isEmergencyRetreat) return;
+        _playedFinisher |= await PlayMagicSwordLuckySevenOpening(
             new ThrowingPlayerChoiceContext(),
             oldOwner,
             ConsumedSwordheartAmount);
+        if (!_isExiting)
+        {
+            if (_playedFinisher || CombatManager.Instance.IsOverOrEnding) SettleExitCrack(oldOwner);
+            MagicSwordTurnEndHelper.Request(oldOwner);
+        }
+    }
+
+    public override Task AfterCombatEnd(CombatRoom room)
+    {
+        SettleExitCrack(Owner);
+        return Task.CompletedTask;
     }
 
     public override async Task AfterEnergyReset(Player player)
@@ -143,45 +184,22 @@ public sealed class MagicSwordModePower : PowerModel
         }
 
         Flash();
-        player.PlayerCombatState.LoseEnergy(1);
-        await Task.CompletedTask;
-    }
-
-    public override async Task AfterCardChangedPiles(CardModel card, PileType oldPileType, AbstractModel clonedBy)
-    {
-        if (card is ChihayaClassmateHbrgoSaki &&
-            card.Owner?.Creature == Owner &&
-            card.Pile?.IsCombatPile == true &&
-            card.Pile.Type != PileType.Play)
-        {
-            await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
-        }
-
-        await ModeTransitionHelper.HandleIncompatibleCardEnteredHand(
-            Owner,
-            card,
-            oldPileType);
+        await PlayerCmd.GainEnergy(ExtraEnergyPerTurn, player);
     }
 
     protected override void AfterCloned()
     {
         base.AfterCloned();
-        _pendingDpBreak = false;
         _isExiting = false;
-        _isGrantingClaritySwordheart = false;
+        _isEmergencyRetreat = false;
+        _playedFinisher = false;
     }
 
+    // Opening keeps the current form (常态, bow or dual swords) and 千早同学？.
     public override async Task AfterApplied(Creature applier, CardModel cardSource)
     {
-        await PowerCmd.Remove(Owner.GetPower<NormalStatePower>());
-        await ModeTransitionHelper.RemoveModeSelectionCardsFromCombat(Owner);
-        int discardedCardCount =
-            await ModeTransitionHelper.DiscardIncompatibleCardsFromHandAndRedraw(Owner);
+        EnsureCrackLifecycle();
         await AddFeintCardToCombat();
-        if (discardedCardCount > 0)
-        {
-            Flash();
-        }
     }
 
     public async Task AddFeintCardToCombat()
@@ -215,57 +233,6 @@ public sealed class MagicSwordModePower : PowerModel
         await ConsumeSwordheart(choiceContext, amount, cardSource);
     }
 
-    internal async Task GrantSwordheartFromClarity(
-        PlayerChoiceContext choiceContext,
-        CardModel cardSource)
-    {
-        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
-        if (swordheart == null || swordheart.Amount <= 0) return;
-
-        await GrantSwordheartIgnoringMagicSwordRestriction(
-            choiceContext,
-            (decimal)swordheart.Amount,
-            cardSource);
-    }
-
-    internal async Task GrantSwordheartIgnoringMagicSwordRestriction(
-        PlayerChoiceContext choiceContext,
-        decimal amount,
-        CardModel cardSource)
-    {
-        if (amount <= 0m)
-        {
-            return;
-        }
-
-        _isGrantingClaritySwordheart = true;
-        try
-        {
-            await PowerCmd.Apply<SwordheartPower>(
-                choiceContext,
-                Owner,
-                amount,
-                Owner,
-                cardSource);
-        }
-        finally
-        {
-            _isGrantingClaritySwordheart = false;
-        }
-    }
-
-    private async Task SetSwordheartToZero(PlayerChoiceContext choiceContext)
-    {
-        SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
-        if (swordheart == null || swordheart.Amount <= 0)
-        {
-            await ExitAndLuckySeven(choiceContext);
-            return;
-        }
-
-        await ConsumeSwordheart(choiceContext, swordheart.Amount, null);
-    }
-
     private async Task ConsumeSwordheart(PlayerChoiceContext choiceContext, decimal amount, CardModel cardSource)
     {
         SwordheartPower swordheart = Owner.GetPower<SwordheartPower>();
@@ -292,6 +259,25 @@ public sealed class MagicSwordModePower : PowerModel
         ConsumedSwordheartAmount += (int)amount;
     }
 
+    // Pressing the button again while open (「再按一次按钮手动关掉」) ends it the same
+    // way as running out of swordheart.
+    internal Task ExitByToggle(PlayerChoiceContext choiceContext) => ExitAndLuckySeven(choiceContext);
+
+    internal async Task ExitForEmergencyRetreat(PlayerChoiceContext context, CardModel source)
+    {
+        if (_isExiting) return;
+        AssertMutable();
+        _isExiting = true;
+        _isEmergencyRetreat = true;
+        HasSettledExitCrack = true;
+        ConsumedSwordheartAmount = 0;
+        Creature owner = Owner;
+        SwordheartPower swordheart = owner.GetPower<SwordheartPower>();
+        if (swordheart?.Amount > 0)
+            await PowerCmd.ModifyAmount(context, swordheart, -(decimal)swordheart.Amount, owner, source);
+        await RemoveForModeTransition();
+    }
+
     private async Task ExitAndLuckySeven(PlayerChoiceContext choiceContext)
     {
         if (_isExiting)
@@ -304,7 +290,9 @@ public sealed class MagicSwordModePower : PowerModel
         int hitCount = ConsumedSwordheartAmount;
         Flash();
         await RemoveForModeTransition();
-        await PlayMagicSwordLuckySeven(choiceContext, owner, hitCount);
+        _playedFinisher |= await PlayMagicSwordLuckySeven(choiceContext, owner, hitCount);
+        if (_playedFinisher || CombatManager.Instance.IsOverOrEnding) SettleExitCrack(owner);
+        MagicSwordTurnEndHelper.Request(owner);
     }
 
     internal Task RemoveForModeTransition()
@@ -312,7 +300,7 @@ public sealed class MagicSwordModePower : PowerModel
         return PowerCmd.Remove(this);
     }
 
-    private static async Task PlayMagicSwordLuckySevenOpening(
+    private static async Task<bool> PlayMagicSwordLuckySevenOpening(
         PlayerChoiceContext choiceContext,
         Creature owner,
         int consumedSwordheartAmount)
@@ -322,7 +310,7 @@ public sealed class MagicSwordModePower : PowerModel
             owner.CombatState == null ||
             CombatManager.Instance.IsOverOrEnding)
         {
-            return;
+            return false;
         }
 
         MagicSwordLuckySevenOpeningHbrgoSaki deckCard = player.Deck.Cards
@@ -330,7 +318,7 @@ public sealed class MagicSwordModePower : PowerModel
             .FirstOrDefault();
         if (deckCard == null)
         {
-            return;
+            return false;
         }
 
         MagicSwordLuckySevenOpeningHbrgoSaki opening =
@@ -340,18 +328,20 @@ public sealed class MagicSwordModePower : PowerModel
         SyncUpgradeLevelFromDeck(opening, deckCard);
         opening.SetConsumedSwordheartAmount(
             consumedSwordheartAmount);
+        opening.PrepareForFinisherAttempt();
         await CardCmd.AutoPlay(choiceContext, opening, null);
         await CombatFlowHelper.FinishAutoPlayedCard(opening);
+        return opening.HasExecutedForFinisher;
     }
 
-    private static async Task PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner, int hitCount)
+    private static async Task<bool> PlayMagicSwordLuckySeven(PlayerChoiceContext choiceContext, Creature owner, int hitCount)
     {
         Player player = owner.Player;
         if (player == null ||
             owner.CombatState == null ||
             CombatManager.Instance.IsOverOrEnding)
         {
-            return;
+            return false;
         }
 
         MagicSwordLuckySevenHbrgoSaki deckCard = player.Deck.Cards
@@ -367,8 +357,15 @@ public sealed class MagicSwordModePower : PowerModel
         }
 
         luckySeven.SetMagicSwordModeHitCount(hitCount);
+        luckySeven.PrepareForFinisherAttempt();
+        // The finisher show (design v3, section 6) only waits around the autoplay: the card, its hits,
+        // targets and order resolve exactly as before, and each peer picks its own show.
+        using HbrLuckySevenFinisher show = HbrLuckySevenFinisher.Begin(owner, luckySeven, hitCount);
+        await show.BeforeHits();
         await CardCmd.AutoPlay(choiceContext, luckySeven, null);
+        await show.AfterHits();
         await CombatFlowHelper.FinishAutoPlayedCard(luckySeven);
+        return luckySeven.HasExecutedForFinisher;
     }
 
     private static void SyncUpgradeLevelFromDeck(CardModel card, CardModel deckCard)

@@ -38,7 +38,12 @@ internal static class VerticalPotionNavigationPatch
 {
     private static IEnumerable<MethodBase> TargetMethods()
     {
-        yield return AccessTools.DeclaredMethod(typeof(NPotionContainer), "UpdateNavigation");
+        // v0.113 creates potion holders directly; the old navigation method
+        // no longer exists. Reapply our links after that native layout step.
+        yield return AccessTools.DeclaredMethod(typeof(NPotionContainer), "UpdateNavigation") ??
+            AccessTools.DeclaredMethod(typeof(NPotionContainer), "GrowPotionHolders") ??
+            throw new System.MissingMethodException(typeof(NPotionContainer).FullName,
+                "UpdateNavigation / GrowPotionHolders");
         yield return AccessTools.DeclaredMethod(typeof(NRelicInventory), "UpdateNavigation");
     }
 

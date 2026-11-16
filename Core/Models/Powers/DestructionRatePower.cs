@@ -45,9 +45,10 @@ public sealed class DestructionRatePower : PowerModel
     internal static decimal GetDamageIncreasePerStack(Creature creature) =>
         GetFullDamageIncreasePerStack(creature) * HotaruAbsolutionUpgradeHelper.GetDestructionRateEffectScale(creature);
 
+    // Native numerics: a flat 0.5% per stack (the six-sense resistance bonus
+    // that once multiplied it is gone).
     private static decimal GetFullDamageIncreasePerStack(Creature creature) =>
-        HbrBattleStatsHelper.IsEnabled(creature) ? 0.01m :
-            (creature?.GetPower<SixSenseResistancePower>()?.DamageConversion ?? 0.5m) / 100m;
+        HbrBattleStatsHelper.IsEnabled(creature) ? 0.01m : 0.005m;
 
     // Shared by the damage hook and HUD; querying it must not enter or modify
     // the additive damage context used while resolving an actual hit.

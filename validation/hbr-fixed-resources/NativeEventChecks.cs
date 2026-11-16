@@ -9,10 +9,15 @@ using MegaCrit.Sts2.Core.Models.Events;
 
 static partial class Checks
 {
-    // Exact English text read from the installed v0.111.0 SlayTheSpire2.pck, localization/eng/events.json.
+    // Exact English text read from the installed v0.111.0/v0.113.0 PCK, localization/eng/events.json.
     // These options write their fixed HP amount literally instead of through a variable.
     static readonly Dictionary<string, string> EventText = new()
     {
+        // 0.113 validates an EventOption title before constructing its description.
+        ["COLOSSAL_FLOWER.pages.INITIAL.options.EXTRACT_CURRENT_PRIZE_1.title"] = "Extract Nectar",
+        ["COLOSSAL_FLOWER.pages.INITIAL.options.EXTRACT_CURRENT_PRIZE_1.description"] = "Gain [blue]{Prize1}[/blue] [gold]Gold[/gold].",
+        ["COLOSSAL_FLOWER.pages.INITIAL.options.REACH_DEEPER_1.title"] = "Reach Deeper",
+        ["TRIAL.pages.NOBLE.options.GUILTY.title"] = "DECIDE: Guilty",
         ["COLOSSAL_FLOWER.pages.INITIAL.options.REACH_DEEPER_1.description"] = "Enter deeper. Lose [red]5[/red] HP.",
         ["TRIAL.pages.NOBLE.options.GUILTY.description"] = "Heal [green]10[/green] HP."
     };

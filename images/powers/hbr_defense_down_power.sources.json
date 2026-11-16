@@ -2,13 +2,23 @@
   "schema": 1,
   "name": "HBR DefenseDown icon",
   "importedPath": "res://images/powers/hbr_defense_down_power.png",
-  "sha256": "53db86932618cfc3971e09aa6cb8b300fee3e2bbfde08bd629228ff8ab202042",
+  "sha256": "e2d0b70e283c6432b9871835a41c9b6ce3f4831e7b93c4e844254d2bff1743ac",
+  "originalCopySha256": "53db86932618cfc3971e09aa6cb8b300fee3e2bbfde08bd629228ff8ab202042",
   "dimensions": [
     64,
     64
   ],
   "pngMode": "RGBA",
-  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "transformation": "2026-11-08: the first-batch blue down arrow composited over the original texture, drawn by the same code and parameters as hbr_spirit_down_power.png (Pillow polygon, 8x supersampled then LANCZOS to 64x64, dark outline, bottom-right corner). Every pixel outside the arrow layer is unchanged; no resizing, recoloring of other pixels, crop or AI generation. Before this, the file was a byte-identical copy of the original (originalCopySha256).",
+  "processing": {
+    "date": "2026-11-08",
+    "reason": "User decision 「也补上」 (relayed by the 全局统筹 session): the down icons get the same down arrow as Spirit Down, so they read apart from hbr_defense_up_power.png, which shares this base art with an up arrow.",
+    "script": "D:/stsmod/outputs/monster-batch1-20261107/down-icons/badge_down_icons.py",
+    "report": "D:/stsmod/outputs/monster-batch1-20261107/down-icons/badge-report.json",
+    "arrow": "down, fill #50A8FF, outline #181620, centre (50.5, 49.0), 20x15 px, inner triangle 0.62",
+    "changedPixels": 243,
+    "unchangedPixelsOutsideArrow": 3844
+  },
   "original": {
     "assetPath": "Assets/UI/Texture/BattleIcon/IconBuffDefense.png",
     "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
@@ -55,7 +65,7 @@
   "usage": {
     "small": "res://images/powers/hbr_defense_down_power.png",
     "big": "res://images/powers/hbr_defense_down_power.png",
-    "note": "The indexed original has one 64x64 Texture2D and its Sprite. Both icon roles reuse the original image."
+    "note": "The indexed original has one 64x64 Texture2D and its Sprite. Both icon roles reuse this badged image."
   },
   "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
 }

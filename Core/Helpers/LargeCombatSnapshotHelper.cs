@@ -53,6 +53,16 @@ internal static class LargeCombatSnapshotHelper
         public List<ExactDamageCap> DamageCaps { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<ExactTemporaryDamagePool> TemporaryDamagePools { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<ExactHpLayers> HpLayers { get; set; }
+    }
+
+    internal sealed class ExactHpLayers
+    {
+        public int PowerIndex { get; set; }
+        public string PowerId { get; set; }
+        public string PartitionMaximumHp { get; set; }
+        public string SpentMaximumHp { get; set; }
     }
 
     internal sealed class ExactDamageCap
@@ -147,6 +157,7 @@ internal static class LargeCombatSnapshotHelper
             captured.Exact.DpPowers.Add(CaptureDp(shell, index));
         CaptureDamageCap(captured.Exact, power, index);
         CaptureTemporaryDamage(captured.Exact, power, index);
+        CaptureHpLayers(captured.Exact, power, index);
         return power.Amount;
     }
 
@@ -192,6 +203,7 @@ internal static class LargeCombatSnapshotHelper
                 if (power is HighDimensionalShellPower shell) exact.DpPowers.Add(CaptureDp(shell, powerIndex));
                 CaptureDamageCap(exact, power, powerIndex);
                 CaptureTemporaryDamage(exact, power, powerIndex);
+                CaptureHpLayers(exact, power, powerIndex);
                 powerIndex++;
             }
             envelope.Creatures.Add(exact);
@@ -260,9 +272,6 @@ internal static class LargeCombatSnapshotHelper
             case LingeringLifePower lingering:
                 Add(nameof(LingeringLifePower.InheritedDamageBonusPercent), lingering.InheritedDamageBonusPercent);
                 break;
-            case BeyondProtectionPower beyond:
-                Add(nameof(BeyondProtectionPower.DamagePercent), beyond.DamagePercent);
-                break;
             case LetMeBearItPower bear:
                 MomentOfReign relic = bear.IsMutable ? bear.Owner?.Player?.GetRelic<MomentOfReign>() : null;
                 Add(nameof(MomentOfReign.LastPhantomDamageBonusPercent), relic?.LastPhantomDamageBonusPercent ?? 0m);
@@ -279,6 +288,36 @@ internal static class LargeCombatSnapshotHelper
             // active weapon state and later aggregate clipping are separate.
             pool.Values.Add(new ExactTemporaryDamageValue { Name = name, Percent = Format(percent) });
         }
+    }
+
+    private static void CaptureHpLayers(ExactCreature creature, PowerModel power, int powerIndex)
+    {
+        if (power is not NararaLayeredHpPower hp) return;
+        string partition = hp.PartitionMaximumHpData;
+        string spent = hp.SpentMaximumHpData;
+        if (string.IsNullOrEmpty(partition))
+        {
+            // A raw fixture/old model may not have run AfterApplied. Capture a
+            // deterministic fallback without initializing or changing it here.
+            decimal maximum = decimal.Parse(creature.MaxHp, CultureInfo.InvariantCulture);
+            partition = Format(maximum);
+        }
+        if (string.IsNullOrEmpty(spent))
+        {
+            // Match the runtime's independent fallbacks. An existing original
+            // partition survives a later max-HP change even when only its spent
+            // field is absent; never replace it with today's maximum.
+            ValidateHpLayerNumber(partition);
+            decimal initial = decimal.Parse(partition, CultureInfo.InvariantCulture);
+            spent = Format(initial - decimal.Floor(initial * Math.Clamp(hp.Amount, 0, 4) / 4m));
+        }
+        (creature.HpLayers ??= new()).Add(new ExactHpLayers
+        {
+            PowerIndex = powerIndex,
+            PowerId = hp.Id.ToString(),
+            PartitionMaximumHp = partition,
+            SpentMaximumHp = spent
+        });
     }
 
     internal static string Format(decimal amount) => amount.ToString(NumberFormat, CultureInfo.InvariantCulture);
@@ -385,6 +424,20 @@ internal static class LargeCombatSnapshotHelper
                     state.Creatures[index].powers[pool.PowerIndex].id.ToString() != pool.PowerId))
                     throw new InvalidDataException("Native and exact temporary-damage snapshot identities differ.");
             }
+            previousPowerIndex = -1;
+            foreach (ExactHpLayers hp in exact.HpLayers ?? Enumerable.Empty<ExactHpLayers>())
+            {
+                if (hp == null || hp.PowerIndex <= previousPowerIndex || string.IsNullOrEmpty(hp.PowerId))
+                    throw new InvalidDataException("Invalid exact HP-layer snapshot order.");
+                previousPowerIndex = hp.PowerIndex;
+                ValidateHpLayerNumber(hp.PartitionMaximumHp);
+                ValidateHpLayerNumber(hp.SpentMaximumHp);
+                // Spent capacity can exceed the original partition maximum
+                // when a native maximum-HP gain enlarged a consumed layer.
+                if (combat && (hp.PowerIndex >= state.Creatures[index].powers.Count ||
+                    state.Creatures[index].powers[hp.PowerIndex].id.ToString() != hp.PowerId))
+                    throw new InvalidDataException("Native and exact HP-layer snapshot identities differ.");
+            }
         }
     }
 
@@ -393,5 +446,13 @@ internal static class LargeCombatSnapshotHelper
         if (text == null || !decimal.TryParse(text, NumberStyles.AllowDecimalPoint,
                 CultureInfo.InvariantCulture, out decimal amount) || amount < 0m || Format(amount) != text)
             throw new InvalidDataException("Exact combat amounts must be canonical nonnegative decimal strings.");
+    }
+
+    private static void ValidateHpLayerNumber(string text)
+    {
+        ValidateNumber(text);
+        decimal amount = decimal.Parse(text, CultureInfo.InvariantCulture);
+        if (amount != decimal.Floor(amount) || amount > BigCombatNumbers.MaximumCreatureStat)
+            throw new InvalidDataException("Exact HP-layer budgets must be bounded nonnegative integers.");
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -24,13 +25,15 @@ public sealed class LiveHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new PowerVar<ChargePower>(2m),
-            new IntVar(GoldVar, 5m)
+            new IntVar(GoldVar, 5m),
+            new IntVar("AttackUpPercent", 30m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new[]
         {
-            HoverTipFactory.FromPower<ChargePower>()
+            HoverTipFactory.FromPower<ChargePower>(),
+            HoverTipFactory.FromPower<HbrAttackUpPower>()
         };
 
     public LiveHbrgoSaki()
@@ -55,6 +58,10 @@ public sealed class LiveHbrgoSaki : CardModel
         await PlayerCmd.GainGold(
             DynamicVars[GoldVar].BaseValue,
             Owner);
+        foreach (var ally in TeamCombatHelper.GetLivingAllies(Owner.Creature))
+            await HbrEffectApplication.Apply<HbrAttackUpPower>(choiceContext, ally,
+                DynamicVars["AttackUpPercent"].BaseValue, Owner.Creature, this, 2,
+                new HbrEffectProfile(HbrEffectLimit.Default, HbrEffectExit.PlayerTurnEnd, 2));
     }
 
     protected override void OnUpgrade()

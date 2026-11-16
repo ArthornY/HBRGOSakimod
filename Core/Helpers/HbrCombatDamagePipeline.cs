@@ -32,9 +32,22 @@ internal static class HbrCombatDamagePipeline
         CardPlay cardPlay,
         out List<AbstractModel> modifiers)
     {
+        if (MonakaFriendlyFireHelper.IsFixed(target, dealer, cardSource, props))
+        {
+            modifiers = new();
+            decimal fixedDamage = Math.Max(0m, decimal.Floor(damage));
+            ItsMygoIncomingDamageCapture.Capture(target, fixedDamage);
+            return fixedDamage;
+        }
         using var effectCalculation = HbrEffectSkillDamageContext.EnterCalculation(
             target, dealer, cardSource, damage, props);
         bool effectSkill = HbrEffectSkillDamageContext.IsCurrentEffectCalculation;
+        Creature arithmeticDealer = effectSkill && HbrEffectSkillDamageContext.TryGetStatSource(out Creature declaredSource)
+            ? declaredSource : dealer;
+        Creature ModifierDealer(AbstractModel model) => effectSkill && model != null &&
+            (model.GetType().Assembly == typeof(HbrCombatDamagePipeline).Assembly ||
+             model is MegaCrit.Sts2.Core.Models.Powers.WeakPower or MegaCrit.Sts2.Core.Models.Powers.VulnerablePower)
+                ? arithmeticDealer : dealer;
         // A newly declared raw skill source wins over an enclosing resolved
         // hit, even when its target/card/amount happen to be identical.
         bool isPrecalculatedDamage = !effectSkill &&
@@ -74,23 +87,9 @@ internal static class HbrCombatDamagePipeline
                 ? HbrDamageSkillAdapter.ConvertBaseDamageWithSkillBonus(
                     target, dealer, damage, props, cardSource, vigorUnits)
                 : damage;
-        decimal modifiedDamage = baseDamage *
-            (isModeTransitionPreview
-                ? previewState.BaseDamageMultiplier
-                : 1m);
+        decimal modifiedDamage = baseDamage;
         // Capture pre-reduction damage alongside the live hooks, without evaluating any hook twice.
-        decimal rawDamage = Math.Max(0m, baseDamage) * (isModeTransitionPreview
-            ? Math.Max(1m, previewState.BaseDamageMultiplier) : 1m);
-
-        // Apply to the base value before Strength and the existing damage multipliers.
-        if (!isPrecalculatedDamage && modifyDamageHookType.HasFlag(ModifyDamageHookType.Additive) &&
-            props.IsPoweredAttack() && cardSource?.Owner?.Creature == dealer)
-        {
-            decimal madnessMultiplier = SixSenseCardCapability.GetMadnessDamageMultiplier(cardSource);
-            modifiedDamage *= madnessMultiplier;
-            rawDamage *= Math.Max(1m, madnessMultiplier);
-            if (madnessMultiplier != 1m) appliedModifiers.Add(cardSource);
-        }
+        decimal rawDamage = Math.Max(0m, baseDamage);
 
         if (!isPrecalculatedDamage &&
             modifyDamageHookType.HasFlag(ModifyDamageHookType.Additive))
@@ -99,7 +98,7 @@ internal static class HbrCombatDamagePipeline
             {
                 if (baseVigor.Contains(model) || PhantomHelper.IsSummonerOwnedDamageModifier(
                         model,
-                        dealer))
+                        arithmeticDealer))
                 {
                     continue;
                 }
@@ -110,13 +109,13 @@ internal static class HbrCombatDamagePipeline
                     target,
                     modifiedDamage,
                     HbrEffectSkillDamageContext.GetModifierProps(model, props),
-                    dealer,
+                    ModifierDealer(model),
                     cardSource,
                     cardPlay);
-                additiveAmount = HbrDamageSkillAdapter.ConvertFlatDamageBonus(model, target, dealer,
+                additiveAmount = HbrDamageSkillAdapter.ConvertFlatDamageBonus(model, target, arithmeticDealer,
                     cardSource, props, additiveAmount,
                     hbrNumerics && HbrEffectSkillDamageContext.GetModifierProps(model, props).IsPoweredAttack(),
-                    effectSkill || !HbrAbsoluteBaseDamageContext.Matches(target, dealer, cardSource, damage));
+                    allowCritical: true);
                 modifiedDamage += additiveAmount;
                 rawDamage += Math.Max(0m, additiveAmount);
                 if (additiveAmount != 0m)
@@ -126,7 +125,7 @@ internal static class HbrCombatDamagePipeline
             }
         }
 
-        HbrDamageMultiplierAccumulator multipliers = new(dealer,
+        HbrDamageMultiplierAccumulator multipliers = new(arithmeticDealer,
             isModeTransitionPreview ? previewState.ModeDamageMultiplier : 1m,
             HbrDamageMultiplierPolicy.Combat, hbrNumerics, target);
         decimal enemyDamageMultiplier = 1m;
@@ -136,30 +135,120 @@ internal static class HbrCombatDamagePipeline
         if (!isPrecalculatedDamage &&
             modifyDamageHookType.HasFlag(ModifyDamageHookType.Multiplicative))
         {
+            bool directPlayerCard = cardSource != null && cardSource.Owner?.Creature == dealer &&
+                HbrEffectSkillDamageContext.GetPersistentEffectProps(props).IsPoweredAttack() &&
+                !HotaruCannonStatsHelper.TryGetCurrentCannon(target, dealer, cardSource, props, out _);
+            decimal virtualEye = props.IsPoweredAttack()
+                ? MindsEyeCombatHelper.GetVirtualPercent(arithmeticDealer) : 0m;
+            if (virtualEye != 0m)
+                multipliers.Add(ModelDb.Power<MindsEyePower>(), 1m + virtualEye / 100m,
+                    ref modifiedDamage, ref rawDamage);
             // Shared by intent previews and actual damage. Apply after additive
             // bonuses, before reductions/caps, and never to already resolved hits.
-            enemyDamageMultiplier = EnemyStatScalingHelper.GetDamageMultiplier(dealer) *
-                SaviorGrandEntranceCombatHelper.GetDamageMultiplier(target, dealer,
+            enemyDamageMultiplier = EnemyStatScalingHelper.GetDamageMultiplier(arithmeticDealer) *
+                ThirtyOneXBondHelper.GetDamageMultiplier(target, arithmeticDealer,
+                    HbrEffectSkillDamageContext.GetNativeEffectProps(props)) *
+                SaviorGrandEntranceCombatHelper.GetDamageMultiplier(target, arithmeticDealer,
                     HbrEffectSkillDamageContext.GetPersistentEffectProps(props)) *
                 WorldsFinestCombatHelper.GetDamageMultiplier(target) *
+                ThirtyOneBEnemyActionHelper.GetKuraParryMultiplier(target, dealer, props) *
                 CrushYouLikeABugCombatHelper.GetDpDamageMultiplier(cardSource, target,
-                    HbrEffectSkillDamageContext.GetPersistentEffectProps(props));
+                    HbrEffectSkillDamageContext.GetPersistentEffectProps(props)) *
+                ThirtyOneBCardCombatHelper.GetDamageMultiplier(arithmeticDealer, target, cardSource,
+                    HbrEffectSkillDamageContext.GetPersistentEffectProps(props)) *
+                (directPlayerCard
+                    ? YamawakiLaboratoryCombatHelper.GetHpDamageMultiplier(cardSource, target) *
+                        NoblesseObligeCombatHelper.GetHpDamageMultiplier(cardSource, target) *
+                        HisameCloseSlashCombatHelper.GetHpDamageMultiplier(cardSource, target) *
+                        HisameCloseSlashCombatHelper.GetDpDamageMultiplier(cardSource, target) *
+                        MaruyamaStyleCombatHelper.GetDpDamageMultiplier(cardSource, target, dealer, props) *
+                        CarolHeroCombatHelper.GetHpDamageMultiplier(cardSource, target, dealer, props) *
+                        IreneExposeCombatHelper.GetDpDamageMultiplier(cardSource, target, dealer, props) *
+                        WorldConquestCombatHelper.GetConditionalDamageMultiplier(cardSource, dealer, target, props) *
+                        FubukiChangeCombatHelper.GetConditionalDamageMultiplier(cardSource, dealer, target, props) *
+                        AkariAceCombatHelper.GetConditionalDamageMultiplier(cardSource, dealer, target, props) *
+                        MinoriDeliveryCombatHelper.GetConditionalDamageMultiplier(cardSource, dealer, target, props) *
+                        MonakaWindForestCombatHelper.GetConditionalDamageMultiplier(cardSource, dealer, target, props)
+                    : 1m);
             modifiedDamage *= enemyDamageMultiplier;
             rawDamage *= enemyDamageMultiplier;
+            if (hbrNumerics && directPlayerCard)
+                multipliers.AddOriginalAttackPercent(IrohaDyeCombatHelper.GetDamageAmplificationPercent(
+                    cardSource, dealer, target, props));
+            if (hbrNumerics && (props.IsPoweredAttack() || effectSkill) && target?.Side != dealer?.Side)
+                multipliers.AddOriginalAttackPercent(HbrCardEffectBonusHelper.GetPercent(cardSource, dealer, props));
             multiplierBaseDamage = modifiedDamage;
             rawMultiplierBaseDamage = rawDamage;
             bool completed = false;
             decimal hbrgoReferenceDamage = modifiedDamage;
-            HbrgoSakiDamageMultiplierHelper.Begin(dealer, target, hbrNumerics);
+            HbrgoSakiDamageMultiplierHelper.Begin(arithmeticDealer, target, hbrNumerics);
             try
             {
+                if (HbrEffectSkillDamageContext.GetPersistentEffectProps(props).IsPoweredAttack())
+                {
+                    decimal spiritBonus = KozueSpiritHelper.GetDamageAmplificationPercent(arithmeticDealer);
+                    if (spiritBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + spiritBonus / 100m, null);
+                    decimal laboratoryBonus = directPlayerCard
+                        ? YamawakiLaboratoryCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (laboratoryBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + laboratoryBonus / 100m, null);
+                    decimal conquestBonus = directPlayerCard
+                        ? WorldConquestCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (conquestBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + conquestBonus / 100m, null);
+                    decimal showtimeBonus = directPlayerCard
+                        ? KanzakiShowtimeCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (showtimeBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + showtimeBonus / 100m, null);
+                    decimal tengenBonus = directPlayerCard
+                        ? TengenBrilliantMoveCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (tengenBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + tengenBonus / 100m, null);
+                    decimal niinaBonus = directPlayerCard && hbrNumerics
+                        ? NiinaNarcissismCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (niinaBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + niinaBonus / 100m, null);
+                    decimal natsumeBonus = directPlayerCard && hbrNumerics
+                        ? NatsumeCondemnationCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (natsumeBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + natsumeBonus / 100m, null);
+                    decimal leaderBonus = directPlayerCard && hbrNumerics
+                        ? LeadingChargeCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (leaderBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + leaderBonus / 100m, null);
+                    decimal carolBonus = hbrNumerics && directPlayerCard
+                        ? CarolHeroCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (carolBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + carolBonus / 100m, null);
+                    decimal ireneBonus = hbrNumerics && directPlayerCard
+                        ? IreneExposeCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (ireneBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + ireneBonus / 100m, null);
+                    decimal mariaBonus = hbrNumerics && directPlayerCard
+                        ? MariaRepentanceCombatHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (hbrNumerics && directPlayerCard && !StrongestShieldDamagePatch.IsResolvingActualDamage &&
+                        !HotaruCannonStatsHelper.IsReactionDamage)
+                        mariaBonus = MariaRepentanceCombatHelper.GetPreviewKnockBonusPercent(cardSource);
+                    if (mariaBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + mariaBonus / 100m, null);
+                    decimal familiarBonus = directPlayerCard
+                        ? DemonKingAndFamiliarBondHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                    if (familiarBonus != 0m)
+                        HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + familiarBonus / 100m, null);
+                }
+                decimal phantomRelicBonus = hbrNumerics
+                    ? ThirtyAClassRelicsHelper.GetDamageAmplificationPercent(cardSource, dealer, target, props) : 0m;
+                if (phantomRelicBonus != 0m)
+                    HbrgoSakiDamageMultiplierHelper.AddNonTemporary(1m + phantomRelicBonus / 100m, null);
                 HotaruCannonStatsHelper.ContributeCannonRollMultiplier(target, dealer, cardSource, props);
-                foreach (AbstractModel model in HotaruContestVulnerabilityHelper.EnumerateDamageModifiers(
-                    runState.IterateHookListeners(combatState), target))
+                foreach (AbstractModel model in HbrCardEffectPreview.EnumerateDamageModifiers(
+                    HotaruContestVulnerabilityHelper.EnumerateDamageModifiers(
+                        runState.IterateHookListeners(combatState), target), target, cardSource))
                 {
                     if (PhantomHelper.IsSummonerOwnedDamageModifier(
                             model,
-                            dealer))
+                            arithmeticDealer))
                     {
                         continue;
                     }
@@ -180,7 +269,7 @@ internal static class HbrCombatDamagePipeline
                         target,
                         amountForHook,
                         HbrEffectSkillDamageContext.GetModifierProps(model, props),
-                        dealer,
+                        ModifierDealer(model),
                         cardSource,
                         cardPlay);
                     // HBR defense down snapshots Sea Breeze's base bonus on
@@ -218,7 +307,7 @@ internal static class HbrCombatDamagePipeline
             {
                 if (PhantomHelper.IsSummonerOwnedDamageModifier(
                         model,
-                        dealer))
+                        arithmeticDealer))
                 {
                     continue;
                 }
@@ -227,7 +316,7 @@ internal static class HbrCombatDamagePipeline
                     model,
                     target,
                     props,
-                    dealer,
+                    ModifierDealer(model),
                     cardSource,
                     cardPlay);
                 caps.Add((model, cap));
@@ -235,11 +324,29 @@ internal static class HbrCombatDamagePipeline
             }
         }
 
-        decimal hbrgoMultiplier = multipliers.Resolve(groupedResult, TemporaryDamageBonusHelper.AppliesTo(dealer));
+        decimal hbrgoMultiplier = multipliers.Resolve(groupedResult, TemporaryDamageBonusHelper.AppliesTo(arithmeticDealer));
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(multiplierBaseDamage, multipliers.OtherMultiplier);
+        decimal chaseMultiplier = !isPrecalculatedDamage &&
+            modifyDamageHookType.HasFlag(ModifyDamageHookType.Multiplicative) &&
+            props.IsPoweredAttack() && target?.Side != dealer?.Side &&
+            !HotaruCannonStatsHelper.TryGetCurrentCannon(target, dealer, cardSource, props, out _)
+                ? DualSwordsChaseHelper.GetDamageMultiplier(dealer, cardSource) : 1m;
+        decimal ApplyHitBonuses(decimal amount)
+        {
+            amount = DamageAmplificationLimits.MultiplySaturated(amount, chaseMultiplier);
+            if (!isPrecalculatedDamage && modifyDamageHookType.HasFlag(ModifyDamageHookType.Multiplicative))
+            {
+                amount = HbrCriticalDamageContext.ApplyCriticalDamageMultiplier(amount, target, dealer, cardSource, props);
+                amount = DamageAmplificationLimits.MultiplySaturated(amount,
+                    ThirtyOneDBondHelper.GetDamageMultiplier(arithmeticDealer, target));
+            }
+            return amount;
+        }
         decimal damageBeforeStrongestShield = Math.Min(
-            DamageAmplificationLimits.MultiplySaturated(
-                DamageAmplificationLimits.MultiplySaturated(modifiedDamage, hbrgoMultiplier), multipliers.FinalMultiplier),
+            ApplyHitBonuses(
+                DamageAmplificationLimits.MultiplySaturated(
+                    DamageAmplificationLimits.MultiplySaturated(modifiedDamage, hbrgoMultiplier),
+                    multipliers.FinalMultiplier)),
             minimumCap);
         if (!isPrecalculatedDamage &&
             StrongestShieldDamagePatch.IsResolvingActualDamage)
@@ -271,6 +378,7 @@ internal static class HbrCombatDamagePipeline
         // apply the target's defenses and the existing single-hit cap.
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(modifiedDamage, hbrgoMultiplier);
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(modifiedDamage, multipliers.FinalMultiplier);
+        modifiedDamage = ApplyHitBonuses(modifiedDamage);
         decimal cannonFinalScale = HotaruCannonStatsHelper.GetFinalDamageScale(target, dealer, cardSource, props,
             out bool isCannonDamage);
         modifiedDamage = DamageAmplificationLimits.MultiplySaturated(modifiedDamage, cannonFinalScale);
@@ -306,10 +414,11 @@ internal static class HbrCombatDamagePipeline
         // Shield notifications can synchronously calculate another preview. Publish
         // last, so a nested preview cannot replace this actual hit's captured value.
         modifiedDamage = DamageLimitHelper.CapSingleHit(modifiedDamage);
-        decimal rawMultiplier = multipliers.Resolve(groupedResult, TemporaryDamageBonusHelper.AppliesTo(dealer), positiveOnly: true);
+        decimal rawMultiplier = multipliers.Resolve(groupedResult, TemporaryDamageBonusHelper.AppliesTo(arithmeticDealer), positiveOnly: true);
         decimal capturedRawDamage = DamageAmplificationLimits.MultiplySaturated(
             DamageAmplificationLimits.MultiplySaturated(rawMultiplierBaseDamage, multipliers.RawOtherMultiplier), rawMultiplier);
         capturedRawDamage = DamageAmplificationLimits.MultiplySaturated(capturedRawDamage, cannonFinalScale);
+        capturedRawDamage = ApplyHitBonuses(capturedRawDamage);
         if (isCannonDamage) capturedRawDamage = Math.Max(1m, capturedRawDamage);
         capturedRawDamage = DamageLimitHelper.CapSingleHit(capturedRawDamage);
         if (hbrNumerics)

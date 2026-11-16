@@ -18,12 +18,12 @@ internal static class HbrBattleStatsHelper
 
     internal static string GetBattleStatTitle(SixSenseAttribute attribute) => attribute switch
     {
-        SixSenseAttribute.Madness => "力",
-        SixSenseAttribute.LeadershipCharm => "器用",
-        SixSenseAttribute.Talent => "知性",
+        SixSenseAttribute.Madness => "力量",
+        SixSenseAttribute.LeadershipCharm => "灵巧",
+        SixSenseAttribute.Talent => "智慧",
         SixSenseAttribute.Gentleness => "体力",
         SixSenseAttribute.MentalStrength => "精神",
-        SixSenseAttribute.Simplicity => "运",
+        SixSenseAttribute.Simplicity => "运气",
         _ => string.Empty
     };
 

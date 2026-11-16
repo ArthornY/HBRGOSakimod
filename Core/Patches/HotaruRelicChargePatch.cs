@@ -63,6 +63,14 @@ internal static class HotaruRelicDescriptionPatch
             replacement.AddVariablesFrom(__result);
             __result = replacement;
         }
+        else if (__instance is ThirtyOneACollection && __instance.IsMutable &&
+            HbrBattleStatsHelper.IsEnabled(__instance.Owner))
+        {
+            // Dodge layers stand for 100 HBR points, so the Block and Dodge rules state them.
+            LocString replacement = new("relics", "THIRTY_ONE_A_COLLECTION.hbrDescription");
+            replacement.AddVariablesFrom(__result);
+            __result = replacement;
+        }
         else if (__instance is ElectronicSoldierManual manual &&
             (!manual.IsMutable || manual.IsHbrNumericsEnabled))
         {

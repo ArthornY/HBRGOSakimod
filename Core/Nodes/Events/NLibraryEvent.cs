@@ -72,13 +72,13 @@ public partial class NLibraryEvent : Control, ICustomEventNode
 
     public IScreenContext CurrentScreenContext => this;
     private HbrStoryEvent StoryEvent => _event as HbrStoryEvent;
-    private bool UseOriginalDialogue => StoryEvent?.Definition.Presentation.DialogueStyle == "original";
+    private bool UseOriginalDialogue => ReaderPresentation?.DialogueStyle == "original";
     private int DialogueFontSize => UseOriginalDialogue ? 44 : 40;
-    private string StoryBackgroundPath => StoryEvent?.Definition.Presentation.Background
+    private string StoryBackgroundPath => ReaderPresentation?.Background
         ?? ImageHelper.GetImagePath(BackgroundPath);
-    private string StoryChoicePortraitPath => StoryEvent?.Definition.Presentation.ChoicePortrait
+    private string StoryChoicePortraitPath => ReaderPresentation?.ChoicePortrait
         ?? ImageHelper.GetImagePath("characters/hbrgo_saki_normal.png");
-    private string StoryThoughtPortraitPath => StoryEvent?.Definition.Presentation.ThoughtPortrait
+    private string StoryThoughtPortraitPath => ReaderPresentation?.ThoughtPortrait
         ?? ImageHelper.GetImagePath("ui/top_panel/character_icon_hbrgo_saki.png");
     public Control DefaultFocusedControl => _showingChoices
         ? _choiceButtons.FirstOrDefault(button => !button.Disabled) ?? (Control)_advanceButton
@@ -96,9 +96,10 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         BuildUi();
         _initialized = true;
         ResizeCanvas();
-        _event.StateChanged += RefreshEventState;
+        if (_event != null) _event.StateChanged += RefreshEventState;
         ActiveScreenContext.Instance.Updated += OnActiveScreenUpdated;
-        RefreshEventState(_event);
+        if (IsUpgradeMemory) RefreshUpgradeMemory();
+        else RefreshEventState(_event);
         _hud.SetActive(IsReaderActive());
     }
 
@@ -110,6 +111,8 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         }
         ActiveScreenContext.Instance.Updated -= OnActiveScreenUpdated;
         _hud.Dispose();
+        DisposeDirections();
+        if (IsUpgradeMemory) CompleteUpgradeMemory(HbrMemoryUpgradeStoryPlaybackResult.Abandoned);
     }
 
     public override void _Notification(int what)
@@ -127,14 +130,16 @@ public partial class NLibraryEvent : Control, ICustomEventNode
             return;
         }
 
+        if (IsUpgradeMemory && !HbrMemoryUpgradeStoryPresentation.ObserveReader(this)) return;
         bool readerActive = IsReaderActive() && DisplayServer.WindowIsFocused();
+        ProcessDirections(delta, readerActive, readerActive && Input.IsKeyPressed(Key.Ctrl));
         UpdateChoiceHighlight(readerActive && _showingChoices && !_dispatchPending);
         if (!readerActive) return;
 
         _pulseTime += delta;
         _continueMarker.Modulate = new Color(1f, 1f, 1f,
             0.65f + 0.35f * (float)Math.Sin(_pulseTime * 3.8));
-        if (_dispatchPending || _showingChoices || _pages.Count == 0)
+        if (_dispatchPending || _showingChoices || _pages.Count == 0 || _directionBusy)
         {
             return;
         }
@@ -165,17 +170,25 @@ public partial class NLibraryEvent : Control, ICustomEventNode
             return;
         }
         if (inputEvent.IsActionPressed(MegaInput.pauseAndBack)
-            && LibraryHudVisibility.OpenPause(_event.Owner.RunState))
+            && LibraryHudVisibility.OpenPause(ReaderPlayer?.RunState))
         {
             GetViewport().SetInputAsHandled();
             return;
         }
 
+        if (_directionBusy && inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse)
+        {
+            // A local skip button keeps its normal GUI path; other clicks only
+            // satisfy this direction's tap gate and cannot advance the text too.
+            if (_upgradeMemorySkip is { Disabled: false } && _upgradeMemorySkip.GetGlobalRect().HasPoint(mouse.Position)) return;
+            SignalDirectionAdvance(); GetViewport().SetInputAsHandled(); return;
+        }
         // Native confirmation was renamed in beta. Route the active game's
         // confirmation/select actions once before Godot Button GUI handling.
         if (LibraryInputCompatibility.IsAdvancePressed(inputEvent))
         {
             Control focused = GetViewport().GuiGetFocusOwner();
+            if (!ReferenceEquals(focused, _upgradeMemorySkip) && SignalDirectionAdvance()) { GetViewport().SetInputAsHandled(); return; }
             if (focused is Button button && IsAncestorOf(button))
             {
                 if (!button.Disabled)
@@ -283,6 +296,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
             MouseFilter = MouseFilterEnum.Ignore
         };
         Put(_continueMarker, _canvas, new Rect2(1366, 833, 36, 34));
+        BuildDirectionUi();
 
     }
 
@@ -341,6 +355,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
             _dialogueShade.OffsetTop = _canvas.Position.Y + OriginalDialogueTop * scale;
         }
         UpdatePortraitExtent();
+        ResizeDirections();
     }
 
     private void RefreshEventState(EventModel eventModel)
@@ -360,6 +375,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         _pages.Clear();
         if (eventModel is HbrStoryEvent story)
         {
+            PrepareDirectionPage(story.CurrentStoryPage);
             for (int lineIndex = 0; lineIndex < story.CurrentStoryPage.Lines.Count; lineIndex++)
             {
                 HbrStoryLine line = story.CurrentStoryPage.Lines[lineIndex];
@@ -374,7 +390,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
                     PaginateParagraph(paragraph, line.Kind == "thought", line.Speaker, portrait,
                         line.PortraitLayout ?? story.Definition.Presentation.PortraitLayout,
                         story.CurrentStoryPage.ResolveCharacters(lineIndex),
-                        story.CurrentStoryPage.ResolveBackground(story.Definition.Presentation, lineIndex));
+                        story.CurrentStoryPage.ResolveBackground(story.Definition.Presentation, lineIndex), lineIndex, line);
                 }
             }
         }
@@ -401,7 +417,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
     }
 
     private void PaginateParagraph(string paragraph, bool thought, string speaker, string portrait,
-        HbrPortraitLayout portraitLayout, IReadOnlyList<HbrStoryCharacter> characters, string background)
+        HbrPortraitLayout portraitLayout, IReadOnlyList<HbrStoryCharacter> characters, string background, int sourceLineIndex = -1, HbrStoryLine sourceLine = null)
     {
         Font font = _dialogue.GetThemeFont("font");
         int[] boundaries = StringInfo.ParseCombiningCharacters(paragraph);
@@ -434,7 +450,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
                 }
             }
             int end = best < boundaries.Length ? boundaries[best] : paragraph.Length;
-            _pages.Add(new DialoguePage(paragraph[boundaries[start]..end], thought, speaker, portrait, portraitLayout, characters, background));
+            _pages.Add(new DialoguePage(paragraph[boundaries[start]..end], thought, speaker, portrait, portraitLayout, characters, background, sourceLineIndex, sourceLine));
             start = best;
         }
     }
@@ -459,17 +475,15 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         return paragraph.GetLineCount() <= 2 && paragraph.GetSize().Y <= _dialogue.Size.Y;
     }
 
-    private void ShowLine()
+    private void PaintLine(DialoguePage page)
     {
-        DialoguePage page = _pages[_pageIndex];
         _dialogue.Text = page.Text;
         _dialogue.VisibleCharacters = 0;
         _visibleCharacters = 0;
         _readDelay = 0;
         _continueMarker.Hide();
         SetChoicePresentation(false);
-        ShowBackground(page.Background);
-        ShowStageCharacters(page.Characters);
+        if (_directionStage == null) { ShowBackground(page.Background); ShowStageCharacters(page.Characters); }
         _storyPortrait.Visible = !string.IsNullOrEmpty(page.Portrait);
         if (_storyPortrait.Visible)
         {
@@ -495,6 +509,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
 
     private void AdvanceStory()
     {
+        if (SignalDirectionAdvance()) return;
         if (_dispatchPending || _showingChoices || !IsReaderActive() || _pages.Count == 0)
         {
             return;
@@ -532,6 +547,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         {
             _pageIndex--;
         }
+        _restoreDirectionRequested = true;
         ShowLine();
         _dialogue.VisibleCharacters = -1;
         _continueMarker.Visible = !UseOriginalDialogue;
@@ -540,6 +556,11 @@ public partial class NLibraryEvent : Control, ICustomEventNode
 
     private void ShowChoices()
     {
+        if (IsUpgradeMemory)
+        {
+            CompleteUpgradeMemory(HbrMemoryUpgradeStoryPlaybackResult.Completed);
+            return;
+        }
         _showingChoices = true;
         _advanceButton.Disabled = true;
         _continueMarker.Hide();
@@ -580,7 +601,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
             int index = i;
             string title = _event.IsFinished
                 ? Ui("PROCEED", "返回塔内")
-                : StoryEvent != null && i < StoryEvent.CurrentStoryPage.Choices.Count ? StoryEvent.CurrentStoryPage.Choices[i].Text
+                : StoryEvent != null && i < StoryEvent.CurrentStoryPage.Choices.Count ? StoryEvent.ChoiceTitle(StoryEvent.CurrentStoryPage.Choices[i])
                 : PlainText(_event.CurrentOptions[i].Title?.GetFormattedText() ?? string.Empty);
             string reward = _event.IsFinished
                 ? string.Empty
@@ -610,15 +631,16 @@ public partial class NLibraryEvent : Control, ICustomEventNode
     private string StoryChoiceDescription(HbrStoryChoice choice)
     {
         var names = HbrStoryChoicePreview.GetEncounterNames(StoryEvent.Definition, StoryEvent.CurrentStoryPage, choice);
+        string description = StoryEvent.ChoiceDescription(choice);
         if (names.Count == 0)
         {
-            return choice.Description;
+            return description;
         }
 
         string encounters = Ui("ENCOUNTER_CHARACTERS", "登场角色") + "：" + string.Join("、", names);
-        return string.IsNullOrWhiteSpace(choice.Description)
+        return string.IsNullOrWhiteSpace(description)
             ? encounters
-            : choice.Description + "\n" + encounters;
+            : description + "\n" + encounters;
     }
 
     private void AddThoughtPortrait()
@@ -726,7 +748,8 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         _dialogueShade.Visible = !choosing;
         _dialogue.Visible = !choosing;
         _advanceButton.Visible = !choosing;
-        _backgroundMaterial.SetShaderParameter("blur_amount", choosing ? 8f : 0f);
+        if (_directionStage != null) _directionStage.ChoiceBlur(choosing);
+        else _backgroundMaterial.SetShaderParameter("blur_amount", choosing ? 8f : 0f);
         if (choosing)
         {
             _nameplate.Hide();
@@ -906,6 +929,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         ConfigureFocusNavigation();
         if (_event.IsFinished)
         {
+            if (!_closingStoryAudio && _storyAudio != null) { ObserveDirection(CloseThenProceed(index, _event)); return; }
             if (TryProceedFromRestStory()) return;
             if (_event is HbrStoryEvent { IsActEndingDoor: true }
                 && RunManager.Instance.DebugOnlyGetState()?.Act is HbrgoActFour)
@@ -934,6 +958,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         {
             focusable.Add(_advanceButton);
         }
+        if (IsUpgradeMemory && _upgradeMemorySkip is { Disabled: false }) focusable.Add(_upgradeMemorySkip);
         for (int i = 0; i < focusable.Count; i++)
         {
             Button current = focusable[i];
@@ -952,6 +977,7 @@ public partial class NLibraryEvent : Control, ICustomEventNode
 
     private void OnActiveScreenUpdated()
     {
+        if (IsUpgradeMemory && !HbrMemoryUpgradeStoryPresentation.ObserveReader(this)) return;
         this.UpdateControllerNavEnabled();
         _hud.SetActive(IsReaderActive());
         // Fast-forward pauses while cards, the map, or other screens cover the
@@ -1073,5 +1099,6 @@ public partial class NLibraryEvent : Control, ICustomEventNode
         .Replace(" NL ", "\n");
 
     private sealed record DialoguePage(string Text, bool Thought, string Speaker, string Portrait,
-        HbrPortraitLayout PortraitLayout, IReadOnlyList<HbrStoryCharacter> Characters, string Background);
+        HbrPortraitLayout PortraitLayout, IReadOnlyList<HbrStoryCharacter> Characters, string Background,
+        int SourceLineIndex = -1, HbrStoryLine SourceLine = null);
 }

@@ -103,6 +103,7 @@ internal static class ItsMygoIncomingDamageCapture
     {
         IReadOnlyList<DamageResult> hitResults = results as IReadOnlyList<DamageResult> ?? results.ToArray();
         HpOnlyDamageContext.BindDpReceipts(hitResults);
+        ThirtyOneBEnemyActionHelper.ObserveMuuaHits(hitResults);
         CardDamageHistoryHelper.RecordHit(hitResults);
         HighHitDamageVisualHelper.RecordHit(hitResults);
         PendingResults.TryGetValue(destination, out RawDamage capture);

@@ -30,11 +30,11 @@ public partial class NHandCardHoverTips : Node
     private readonly List<Control> _entries = new();
     private ScrollContainer _scroll;
     private VBoxContainer _column;
-    private float _nativeWidth;
     private float _width;
     private bool _dirty = true;
     private Rect2 _lastViewport;
     private Rect2 _lastCard;
+    private Transform2D _lastTipsTransform;
 
     public override void _Ready()
     {
@@ -43,6 +43,7 @@ public partial class NHandCardHoverTips : Node
         _cards = _tips.GetNodeOrNull<Control>("cardHoverTipContainer");
         _viewport = GetViewport();
         _viewport.SizeChanged += Invalidate;
+        _tips.ItemRectChanged += Invalidate;
         if (Usable(_text)) _text.Resized += Invalidate;
         if (Usable(_cards)) _cards.Resized += Invalidate;
         // Hand animations change position, scale and rotation without Resized.
@@ -58,15 +59,20 @@ public partial class NHandCardHoverTips : Node
         if (!Usable(_tips) || !Usable(Holder) || !_tips.IsVisibleInTree()) return;
         NCard card = Holder.CardNode;
         if (!Usable(card) || !card.IsVisibleInTree()) return;
-        if (_scroll != null) FollowOwner(_tips) = false;
-        Transform2D inverse = _tips.GetGlobalTransformWithCanvas().AffineInverse();
+        // Use the stable parent frame. Native alignment can move the tip root
+        // again after measuring or rebuilding Shift details; that old offset
+        // must never become the next layout's anchor.
+        CanvasItem frame = _tips.GetParent() as CanvasItem;
+        Transform2D inverse = frame != null ? frame.GetGlobalTransformWithCanvas().AffineInverse() : Transform2D.Identity;
+        Transform2D tipsToFrame = inverse * _tips.GetGlobalTransformWithCanvas();
         Rect2 viewport = inverse * _tips.GetViewportRect();
         Rect2 reserved = Bounds(card, inverse);
         if (Usable(card.Body)) reserved = reserved.Merge(Bounds(card.Body, inverse));
-        if (!reserved.HasArea() || !_dirty && viewport == _lastViewport && reserved == _lastCard) return;
+        if (!reserved.HasArea() || !_dirty && viewport == _lastViewport && reserved == _lastCard && tipsToFrame == _lastTipsTransform) return;
         _dirty = false;
         _lastViewport = viewport;
         _lastCard = reserved;
+        _lastTipsTransform = tipsToFrame;
 
         if (_scroll == null)
         {
@@ -74,25 +80,19 @@ public partial class NHandCardHoverTips : Node
             AddEntries(_text);
             AddEntries(_cards);
             if (_entries.Count == 0) { _dirty = true; return; }
-            if (!NeedsSidebar(viewport, reserved, inverse)) return;
-            _nativeWidth = 360f;
-            foreach (Control entry in _entries)
-                _nativeWidth = Math.Max(_nativeWidth, Math.Max(entry.Size.X, entry.GetCombinedMinimumSize().X));
         }
-        // Labels and card previews can finish measuring after native creation.
-        // Only minimum sizes remain intrinsic after VBox has assigned a width;
-        // feeding assigned Size back here would grow the column every frame.
-        float width = _nativeWidth;
-        foreach (Control entry in _entries)
-            if (Usable(entry)) width = Math.Max(width, entry.GetCombinedMinimumSize().X);
-        if (_column != null && width != _width) _column.CustomMinimumSize = new Vector2(width, 0f);
-        _width = width;
+        // A stable native-width column is also used for compact tips. Waiting
+        // for native FlowContainer overflow misses its first deferred measure,
+        // and makes compact/full rebuilds pick different columns.
+        _width = 360f;
         HandCardHoverTipPlacement placement = HandCardHoverTipLayoutHelper.ComputePlacement(viewport, reserved, _width + 20f);
         if (!placement.Bounds.HasArea() || placement.Scale <= 0f) { _dirty = true; return; }
         if (_scroll == null) CreateSidebar();
         FollowOwner(_tips) = false;
-        _scroll.Position = placement.Bounds.Position;
-        _scroll.Scale = Vector2.One * placement.Scale;
+        Transform2D local = HandCardHoverTipLayoutHelper.InParentFrame(tipsToFrame, placement.Bounds.Position, placement.Scale);
+        _scroll.Position = local.Origin;
+        _scroll.Rotation = local.Rotation;
+        _scroll.Scale = local.Scale;
         _scroll.Size = placement.Bounds.Size / placement.Scale;
     }
 
@@ -101,17 +101,6 @@ public partial class NHandCardHoverTips : Node
         if (!Usable(parent)) return;
         foreach (Node child in parent.GetChildren())
             if (child is Control entry && Usable(entry) && entry.Visible) _entries.Add(entry);
-    }
-
-    private bool NeedsSidebar(Rect2 viewport, Rect2 reserved, Transform2D inverse)
-    {
-        Rect2 safe = viewport.Grow(-16f);
-        foreach (Control entry in _entries)
-        {
-            Rect2 bounds = Bounds(entry, inverse);
-            if (bounds.HasArea() && (bounds.Intersects(reserved.Grow(12f)) || !safe.Encloses(bounds))) return true;
-        }
-        return false;
     }
 
     private void CreateSidebar()
@@ -137,7 +126,11 @@ public partial class NHandCardHoverTips : Node
         bar.FocusMode = Control.FocusModeEnum.None;
         bar.MouseFilter = Control.MouseFilterEnum.Ignore;
         foreach (Control entry in _entries)
-            if (Usable(entry)) entry.Reparent(_column, false);
+            if (Usable(entry))
+            {
+                HandCardHoverTipLayoutHelper.WrapText(entry);
+                entry.Reparent(_column, false);
+            }
         if (Usable(_text)) _text.Hide();
         if (Usable(_cards)) _cards.Hide();
         _column.MinimumSizeChanged += Invalidate;
@@ -181,6 +174,7 @@ public partial class NHandCardHoverTips : Node
     public override void _ExitTree()
     {
         RenderingServer.FramePreDraw -= RefreshLayout;
+        if (GodotObject.IsInstanceValid(_tips)) _tips.ItemRectChanged -= Invalidate;
         if (GodotObject.IsInstanceValid(_viewport)) _viewport.SizeChanged -= Invalidate;
         if (GodotObject.IsInstanceValid(_text)) _text.Resized -= Invalidate;
         if (GodotObject.IsInstanceValid(_cards)) _cards.Resized -= Invalidate;

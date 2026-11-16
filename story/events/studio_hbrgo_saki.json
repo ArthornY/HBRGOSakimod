@@ -68,6 +68,17 @@
             "senseAmount": 0,
             "cardChoices": 0
           }
+        },
+        {
+          "id": "MORE_MEMORIES",
+          "text": "更多回忆",
+          "description": "选择另一段回忆。",
+          "nextPage": "MORE_MEMORIES_1",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
         }
       ],
       "characters": []
@@ -148,6 +159,383 @@
       "lines": [],
       "choices": [],
       "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_1",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_YUINA",
+          "text": "白河由依奈",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_YUINA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_FUBUKI",
+          "text": "命吹雪",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_FUBUKI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_ADELHEID",
+          "text": "神崎阿迪尔海德",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_ADELHEID",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_YOTSUHA",
+          "text": "大岛四叶草",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_YOTSUHA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_MIKO",
+          "text": "天音巫呼",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MIKO",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "NEXT_MEMORIES",
+          "text": "下一页",
+          "description": "查看更多回忆。",
+          "nextPage": "MORE_MEMORIES_2",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_2",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_WAKKI",
+          "text": "山胁・冯・伊瓦尔",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_WAKKI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_IRENE",
+          "text": "艾琳·雷德梅茵",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_IRENE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "RETURN_TO_INITIAL",
+          "text": "返回",
+          "description": "返回最初的回忆选项。",
+          "nextPage": "INITIAL",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MEMORY_YUINA",
+      "title": "白河由依奈",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了白河由依奈。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "yuina"
+      ]
+    },
+    {
+      "id": "MEMORY_FUBUKI",
+      "title": "命吹雪",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了命吹雪。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "fubuki"
+      ]
+    },
+    {
+      "id": "MEMORY_ADELHEID",
+      "title": "神崎阿迪尔海德",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了神崎阿迪尔海德。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "adelheid"
+      ]
+    },
+    {
+      "id": "MEMORY_YOTSUHA",
+      "title": "大岛四叶草",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了大岛四叶草。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "精神力+8，从3张卡牌中选择1张获得。",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "MentalStrength",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "yotsuha"
+      ]
+    },
+    {
+      "id": "MEMORY_MIKO",
+      "title": "天音巫呼",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了天音巫呼。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "miko"
+      ]
+    },
+    {
+      "id": "MEMORY_WAKKI",
+      "title": "山胁・冯・伊瓦尔",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了山胁・冯・伊瓦尔。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "wakki"
+      ]
+    },
+    {
+      "id": "MEMORY_IRENE",
+      "title": "艾琳·雷德梅茵",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了艾琳·雷德梅茵。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "irene"
+      ]
     }
   ]
 }

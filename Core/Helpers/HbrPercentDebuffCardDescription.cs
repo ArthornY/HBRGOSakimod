@@ -28,7 +28,13 @@ internal static class HbrPercentDebuffCardDescription
             if (power == null) continue;
             text.Add(variable.Name + "Percent", Format(card, power,
                 variable.BaseValue, variable.WasJustUpgraded));
+            text.Add(variable.Name + "Duration", HbrCardFaceDescription.Duration(
+                HbrEffectProfileResolver.Resolve(power, card)));
         }
+        text.Add("AttackDownDuration", HbrCardFaceDescription.Duration(
+            HbrEffectProfileResolver.ForType(typeof(HbrAttackDownPower), card)));
+        text.Add("DefenseDownDuration", HbrCardFaceDescription.Duration(
+            HbrEffectProfileResolver.ForType(typeof(HbrDefenseDownPower), card)));
         HbrPercentDebuffDescriptionHelper.Track(text, card.DynamicVars.Values);
     }
 
@@ -38,6 +44,7 @@ internal static class HbrPercentDebuffCardDescription
         PowerVar<VulnerablePower> => ModelDb.Power<HbrDefenseDownPower>(),
         PowerVar<HbrAttackDownPower> => ModelDb.Power<HbrAttackDownPower>(),
         PowerVar<HbrDefenseDownPower> => ModelDb.Power<HbrDefenseDownPower>(),
+        PowerVar<HbrDpDefenseDownPower> => ModelDb.Power<HbrDpDefenseDownPower>(),
         _ => null
     };
 

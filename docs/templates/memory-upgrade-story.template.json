@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "characterId": "ruka",
+  "presentation": {
+    "background": "res://images/events/hbrgo_saki_mod_event_library_hbrgo_saki.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "",
+    "thoughtPortrait": ""
+  },
+  "segments": []
+}

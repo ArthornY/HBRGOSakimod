@@ -231,39 +231,39 @@ internal static class HotaruRareRollHelper
         await ResolvePending(context, snapshot.Player);
     }
 
-    internal static async Task ChooseResistanceAndDiscount(PlayerChoiceContext context, CardModel source,
-        Creature target, int resistanceLoss, int discount)
+    // The card types Trace Old Scar can discount, with their names.
+    internal static readonly (CardType Type, string Title)[] TraceOldScarTypes =
+    {
+        (CardType.Attack, "攻击牌"), (CardType.Skill, "技能牌"), (CardType.Power, "能力牌")
+    };
+
+    internal static async Task ChooseCardTypeAndDiscount(PlayerChoiceContext context, CardModel source, int discount)
     {
         Player player = source.Owner;
-        if (!HotaruCommonCannonHelper.CanAct(player) || !SixSenseCombatHelper.IsEligibleEnemy(target) ||
-            target.GetPower<SixSenseResistancePower>() is not { } resistance) return;
+        if (!HotaruCommonCannonHelper.CanAct(player)) return;
         var combat = player.Creature.CombatState;
         var token = OverclockImmediateTurnCoordinator.GetTurnToken(player);
         int turn = player.PlayerCombatState.TurnNumber;
-        SixSenseAttribute[] attributes = ElectronicSoldierManual.AllSixSenseAttributes.ToArray();
-        HotaruCannonChoiceToken[] options = new HotaruCannonChoiceToken[attributes.Length];
+        HotaruCannonChoiceToken[] options = new HotaruCannonChoiceToken[TraceOldScarTypes.Length];
         try
         {
-            for (int i = 0; i < attributes.Length; i++)
+            for (int i = 0; i < TraceOldScarTypes.Length; i++)
             {
                 var option = (HotaruCannonChoiceToken)ModelDb.Card<HotaruCannonChoiceToken>().ToMutable();
                 options[i] = option;
                 option.Owner = player;
                 LocString description = new("cards", "HOTARU_TRACE_OLD_SCAR.choiceDescription");
-                description.Add("Resistance", resistance.GetResistance(attributes[i]));
-                description.Add("ResistanceLoss", resistanceLoss);
-                option.Configure(ElectronicSoldierManual.GetSenseTitle(attributes[i]), description);
+                description.Add("CardType", TraceOldScarTypes[i].Title);
+                description.Add("CostReduction", discount);
+                option.Configure(TraceOldScarTypes[i].Title, description);
             }
             CardModel selected = (await CardSelectCmd.FromSimpleGrid(context, options, player,
                 new CardSelectorPrefs(new LocString("cards", "HOTARU_TRACE_OLD_SCAR.selectionScreenPrompt"), 1))).FirstOrDefault();
             int index = Array.FindIndex(options, option => ReferenceEquals(option, selected));
             if (index < 0 || !HotaruCommonCannonHelper.CanAct(player) || !ReferenceEquals(combat, player.Creature.CombatState) ||
                 turn != player.PlayerCombatState.TurnNumber || !ReferenceEquals(token, OverclockImmediateTurnCoordinator.GetTurnToken(player))) return;
-            await SixSenseCombatHelper.ReduceResistance(context, player, target, source, attributes[index], resistanceLoss);
-            if (HotaruCommonCannonHelper.CanAct(player) && ReferenceEquals(combat, player.Creature.CombatState) &&
-                turn == player.PlayerCombatState.TurnNumber && ReferenceEquals(token, OverclockImmediateTurnCoordinator.GetTurnToken(player)))
-                await HotaruTurnLedgerPower.Grant<HotaruTraceOldScarPower>(context, player.Creature,
-                    discount, int.MaxValue, source, (int)attributes[index]);
+            await HotaruTurnLedgerPower.Grant<HotaruTraceOldScarPower>(context, player.Creature,
+                discount, int.MaxValue, source, (int)TraceOldScarTypes[index].Type);
         }
         finally
         {

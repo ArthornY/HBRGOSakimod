@@ -26,6 +26,7 @@ public sealed class NararaSleepingPower :
 
     public override Task AfterApplied(Creature applier, CardModel cardSource)
     {
+        Owner?.GetPower<NararaPressurePower>()?.ResetPressure();
         Owner?.GetPower<NararaGiveYouPower>()?.RefreshCountdown();
         Owner?.GetPower<NararaOverworkPower>()?.RefreshCountdown();
         return Task.CompletedTask;
@@ -50,6 +51,7 @@ public sealed class NararaSleepingPower :
         if (oldOwner?.IsAlive == true &&
             oldOwner.Monster is NararaShibaBossMonster boss)
         {
+            oldOwner.GetPower<NararaPressurePower>()?.ResetPressure();
             // Reset even if no cards were played during this sleep.
             oldOwner.GetPower<NararaGiveYouPower>()?.ResetAwakeCounters();
             oldOwner.GetPower<NararaOverworkPower>()?.RefreshCountdown();

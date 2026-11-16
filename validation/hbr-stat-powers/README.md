@@ -11,10 +11,10 @@ remain unchanged. The full attack-consumption and cannon-reservation checks live
 in `validation/hbr-effect-skill-damage`; the older fixed +2000/+200 expectations
 have been replaced here.
 
-Coverage includes allied Strength STR/DEX +1% per layer and allied Dexterity INT
-+1% per layer, with layers added before multiplying the unbuffed live stat.
+Coverage includes allied Strength STR/DEX +2% per layer and allied Dexterity INT
++2% per layer, with layers added before multiplying the unbuffed live stat.
 Non-100 bases (150 STR, 180 DEX, 220 INT) distinguish percentage growth from
-flat additions and per-layer compounding. Negative layers, -100/-101 floors,
+flat additions and per-layer compounding. Negative layers, -50/-51 floors,
 live removal, fixed Calamity after percentage growth, enemy Strength's local
 VIT/SPR ignore, enemy Dexterity's
 local STR/DEX ignore, per-act 1/2/3/4/8 scaling, HP/DP and physical/spirit weights,
@@ -25,8 +25,8 @@ LocManager/LocTable/SmartFormat renders all four stat-power descriptions with th
 current act's actual bound value, preserving original strings outside HBR runs.
 
 Happiness Lv.3 combines two copies of positive Strength in the same percentage
-sum: 20 layers on STR150 produce STR210, not STR216. Six virtual Longing
-Dexterity layers combine with 25 native layers to make INT220 × 1.31 = 288.2.
+sum: 20 layers on STR150 produce STR270, not STR294. Six virtual Longing
+Dexterity layers combine with 25 native layers to make INT220 × 1.62 = 356.4.
 Phantoms use their own native layers; cannons use their owner's layers once.
 
 The exact stable-built candidate below passed **636 checks on both stable and

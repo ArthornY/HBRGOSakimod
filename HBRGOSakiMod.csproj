@@ -14,6 +14,7 @@
     <HarmonyAssemblyPath Condition="'$(HarmonyAssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\0Harmony.dll</HarmonyAssemblyPath>
     <BaseLibAssemblyPath Condition="'$(BaseLibAssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\BaseLib.dll</BaseLibAssemblyPath>
     <RitsuLibAssemblyPath Condition="'$(RitsuLibAssemblyPath)' == ''">$(MSBuildProjectDirectory)\libs\STS2-RitsuLib.dll</RitsuLibAssemblyPath>
+    <RitsuLibDirectory>$([System.IO.Path]::GetDirectoryName('$(RitsuLibAssemblyPath)'))</RitsuLibDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,6 +42,13 @@
       <HintPath>$(RitsuLibAssemblyPath)</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+
+  <!-- New Ritsu runtimes forward their API to sibling assemblies. Keep the
+       stable monolithic reference unchanged and resolve siblings only where
+       the selected dependency profile actually supplies them. -->
+  <ItemGroup>
+    <Reference Include="$(RitsuLibDirectory)/STS2-RitsuLib.*.dll" HintPath="%(FullPath)" Private="false" />
   </ItemGroup>
 
   <Target Name="CopyCustomOutput"

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
@@ -33,6 +34,8 @@ internal static class HbrDestructionGainHelper
         internal readonly bool Enabled;
         internal bool Active = true;
         private readonly SkillScope _skill;
+
+        internal SkillScope Skill => _skill;
         private readonly Dictionary<Creature, Share> _shares = new();
 
         internal HitScope(Creature dealer, CardModel card, ValueProp props)
@@ -174,6 +177,15 @@ internal static class HbrDestructionGainHelper
 
     internal static void ObserveHit(Creature target) => CurrentHit.Value?.Observe(target);
 
+    // Hits of the attack now resolving for this dealer and card. Previews and
+    // lone native hits have no skill scope and count as one hit.
+    internal static decimal GetSkillHits(Creature dealer, CardModel card)
+    {
+        SkillScope scope = CurrentHit.Value is { Active: true, Skill: { } owned } ? owned : Current.Value;
+        return scope?.Active == true && ReferenceEquals(scope.Dealer, dealer) && ReferenceEquals(scope.Card, card)
+            ? scope.TotalHits : 1m;
+    }
+
     internal static decimal GetGain(Creature target, Creature dealer,
         CardModel card, ValueProp props)
     {
@@ -189,7 +201,50 @@ internal static class HbrDestructionGainHelper
                 ReferenceEquals(scope.Card, card) ? scope.NextShare(target) : DefaultSkillCoefficient;
         }
         decimal coefficient = GetEnemyCoefficient(target);
-        return HbrOriginalNumericFormula.DestructionGain(coefficient, skill);
+        // Blast earrings and ancient chains raise the gain like the original
+        // destruction-rate passives.
+        return HbrOriginalNumericFormula.DestructionGain(coefficient, skill,
+            ElectronicSoldierManual.GetEquipmentDestructionBonus(dealer, card)) *
+            CrushYouLikeABugCombatHelper.GetBreakDestructionMultiplier(card, target) *
+            RanaByakkoCombatHelper.GetDestructionMultiplier(card) *
+            ThirtyOneBCardCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            KanzakiShowtimeCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            TengenBrilliantMoveCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            FubukiChangeCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            AkariAceCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            AinaDeepDiveCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            NiinaNarcissismCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            NiinaNarcissismCombatHelper.GetNextDestructionMultiplier(dealer, card, props) *
+            MinoriDeliveryCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            YotsuhaNoEffortCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            IsuzuOpenTheLockCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            MuuaFaithCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            NoblesseObligeCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            KiryuExorcisingStringCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            ThirtyGBondHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            ThirtyOneFDefenseCombatHelper.GetDestructionGainMultiplier(target, dealer, props) *
+            YanagiButlerCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            MaruyamaStyleCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            HanamuraOrchestraCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            MatsuokaBlowAwayCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            NatsumeCondemnationCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            KurosawaLeaderCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            CarolHeroCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            IreneExposeCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            MariaRepentanceCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            VritikaCalculationCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            YingxiaFormationCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            CharlottaLoveCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            MonakaWindForestCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            KuraSatomiCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            HisameCloseSlashCombatHelper.GetDestructionGainMultiplier(card, target, dealer, props) *
+            ThirtyOneCMachinaHelper.DestructionMultiplier(dealer, card, props) *
+            (card != null && card.Owner?.Creature == dealer &&
+                !HotaruCannonStatsHelper.TryGetCurrentCannon(target, dealer, card, props, out _)
+                ? YamawakiLaboratoryCombatHelper.GetDestructionGainMultiplier(card, target) : 1m) *
+            (target?.Side != dealer?.Side
+                ? MagicSwordModePower.GetDeckBonusMultiplier(dealer)
+                : 1m);
     }
 
     internal static decimal GetEnemyCoefficient(Creature target)

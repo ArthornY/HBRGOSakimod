@@ -1,25 +1,65 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using MegaCrit.Sts2.Core.ValueProps;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-// HBR 针嘴鸟 (NeedleBirdSmall), an elite. Pecks, charges, then pierces; the
-// pierce strikes harder against a target that still has DP (its original
-// "BreakAttack" effect).
-public sealed class NeedleBird : HbrgoStaticMonster
+// HBR 针嘴鸟, an elite: original NeedleBirdSmallVirtual_MC02 (MC02_20_Battle01).
+// Moves follow its original dp/hp tables (docs/hbr-monster-mechanics-proposal.md):
+// Charge, then Ruin Bullet empties the target's DP while still charged. A stun
+// or DP break interrupts the charge, without turning DP break into a stun.
+public sealed class NeedleBird : HbrgoMoveTableMonster
 {
+    internal const string AttackSkill = "NeedleBird_AttackSingle01";
+    internal const string MurderBladeSkill = "NeedleBird_AttackAll01";
+    internal const string ChargeSkill = "NeedleBird_Charge01";
+    internal const string RuinBulletSkill = "NeedleBird_AttackSingle02_Braek";
+    internal const string RecoverSkill = "NeedleBird_Buff01";
+
+    internal const string PeckMoveId = "PECK_MOVE";
+    internal const string MurderBladeMoveId = "MURDER_BLADE_MOVE";
+    internal const string ChargeMoveId = "CHARGE_MOVE";
+    internal const string RuinBulletMoveId = "RUIN_BULLET_MOVE";
+    internal const string RecoverMoveId = "RECOVER_MOVE";
+
+    // Original HealDp 700 over the original maximum DP 27800.
+    internal const decimal RecoverDpRatio = 700m / 27800m;
+
+    internal static readonly HbrgoMoveTables Tables = new(
+        "NeedleBirdSmallVirtual_MC02",
+        Table("NeedleBirdSmall",
+            Step(AttackSkill),
+            Step(ChargeSkill),
+            Step(RuinBulletSkill, EnemyChargeCondition),
+            Pick((AttackSkill, 60), (MurderBladeSkill, 40)),
+            Pick((AttackSkill, 40), (MurderBladeSkill, 60))),
+        Table("NeedleBirdSmall_break",
+            Pick((AttackSkill, 40), (MurderBladeSkill, 60)),
+            Step(ChargeSkill),
+            Step(RuinBulletSkill, EnemyChargeCondition),
+            Pick((AttackSkill, 60), (MurderBladeSkill, 40)),
+            Step(ChargeSkill),
+            Step(RuinBulletSkill, EnemyChargeCondition),
+            Step(RecoverSkill)));
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(AttackSkill, PeckMoveId, HbrgoMoveTarget.Single),
+        new(MurderBladeSkill, MurderBladeMoveId, HbrgoMoveTarget.All, SpiritDefense: true),
+        new(ChargeSkill, ChargeMoveId, HbrgoMoveTarget.Self),
+        new(RuinBulletSkill, RuinBulletMoveId, HbrgoMoveTarget.Single),
+        new(RecoverSkill, RecoverMoveId, HbrgoMoveTarget.Self),
+    };
+
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.ToughEnemies,
@@ -32,90 +72,81 @@ public sealed class NeedleBird : HbrgoStaticMonster
             90,
             86);
 
-    private int PeckHits =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            5,
-            4);
-
-    private int ChargeBlock =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            12,
-            10);
-
-    private int BreakPierceDamage =>
+    private int PeckDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
             17,
-            15);
+            14);
 
-    private int BreakPierceDpBonus =>
+    private int MurderBladeDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            8,
-            6);
+            19,
+            16);
 
-    internal const int PeckDamage = 3;
-    internal const int ChargeStrength = 3;
+    internal override HbrgoMoveTables GetMoveTables(int variant) => Tables;
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
+
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState peck = new(
-            "PECK_MOVE",
+        yield return new MoveState(
+            PeckMoveId,
             PeckMove,
-            new MultiAttackIntent(PeckDamage, () => PeckHits));
-        MoveState charge = new(
-            "CHARGE_MOVE",
+            new SingleAttackIntent(() => PeckDamage));
+        yield return new MoveState(
+            MurderBladeMoveId,
+            MurderBladeMove,
+            new SingleAttackIntent(() => MurderBladeDamage));
+        yield return new MoveState(
+            ChargeMoveId,
             ChargeMove,
-            new BuffIntent(),
-            new DefendIntent());
-        MoveState breakPierce = new(
-            "BREAK_PIERCE_MOVE",
-            BreakPierceMove,
-            new SingleAttackIntent(
-                () => BreakPierceDamage + BreakPierceDpBonus));
-        return ModMonsterMoveStateMachines.Cycle(peck, charge, breakPierce);
+            new BuffIntent());
+        yield return new MoveState(
+            RuinBulletMoveId,
+            RuinBulletMove,
+            new DebuffIntent(strong: true));
+        yield return new MoveState(
+            RecoverMoveId,
+            RecoverMove,
+            new HealIntent());
     }
 
     private Task PeckMove(IReadOnlyList<Creature> _)
     {
-        return PerformAttack(PeckDamage, PeckHits);
+        return PerformAttack(PeckDamage);
+    }
+
+    // Original all-unit attack: every player-side unit, summons included.
+    private Task MurderBladeMove(IReadOnlyList<Creature> _)
+    {
+        return PerformAttackOn(MurderBladeDamage, 1, HbrgoAttackTargets.AllUnits);
     }
 
     private async Task ChargeMove(IReadOnlyList<Creature> _)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        await PowerCmd.Apply<StrengthPower>(
-            new ThrowingPlayerChoiceContext(),
-            Creature,
-            ChargeStrength,
-            Creature,
-            null);
-        await CreatureCmd.GainBlock(
-            Creature,
-            ChargeBlock,
-            ValueProp.Move,
-            null);
+        await HbrEnemyEffects.ApplyCharge(Creature);
     }
 
-    private async Task BreakPierceMove(IReadOnlyList<Creature> targets)
+    // No damage: the target's DP is emptied (a phantom halves an enemy's).
+    private async Task RuinBulletMove(IReadOnlyList<Creature> targets)
     {
-        List<Creature> targetsWithDp = targets
-            .Where(target => target.IsAlive && HasActiveDp(target))
-            .ToList();
-
-        await PerformAttack(BreakPierceDamage);
-        if (targetsWithDp.Count == 0)
+        // A DP break or stun can remove Charge after this move was selected.
+        // Preserve the saved AI cursor/follow-up; do not execute a stale charge.
+        if (!Creature.HasPower<HbrEnemyChargePower>()) return;
+        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
+        foreach (Creature target in HbrEnemyEffects.SingleTargets(Creature, targets))
         {
-            return;
+            await HbrEnemyEffects.BreakDp(new ThrowingPlayerChoiceContext(), target, Creature);
         }
 
-        await CreatureCommandCompatibility.Damage(
-            new ThrowingPlayerChoiceContext(),
-            targetsWithDp.Where(target => target.IsAlive),
-            BreakPierceDpBonus,
-            ValueProp.Move,
-            Creature);
+        await HbrEnemyEffects.RemoveCharge(Creature);
+    }
+
+    private async Task RecoverMove(IReadOnlyList<Creature> _)
+    {
+        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
+        RestoreDpRatio(RecoverDpRatio);
     }
 }

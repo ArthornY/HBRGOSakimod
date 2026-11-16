@@ -1,5 +1,19 @@
 {
   "HBR_NATIVE_EFFECT_SKILL_DAMAGE.description": "{SkillPower}%倍率",
+  "HBR_NATIVE_REGRET.description": "在你的回合结束时，如果这张牌在你的[gold]手牌[/gold]中，每有一张[gold]手牌[/gold]，失去{HbrFixedHp}点生命。",
+  "HBR_NATIVE_MR_STRUGGLES.description": "在你的回合开始时，对所有敌人造成{CurrentDamage}点伤害（随当前回合数提高）。",
   "HBRGO_MEMORY_FRAGMENT.title": "记忆碎片",
-  "HBRGO_MEMORY_FRAGMENT.description": "进入后必定触发一段记忆碎片。每次遇见后，该事件的当前权重减半，减少的权重平均分配给其它记忆碎片；仍可再次遇见。"
+  "HBRGO_MEMORY_FRAGMENT.description": "进入后必定触发一段记忆碎片。每次遇见后，该事件的当前权重减半，减少的权重平均分配给其它记忆碎片；仍可再次遇见。",
+  "HBRGO_THIRTY_ONE_D_SCOUTING.title": "31D 侦察",
+  "HBRGO_THIRTY_ONE_D_SCOUTING.description": "带有31D小徽章的节点已经侦察。图标表示实际房间类型；悬停可查看事件、记忆碎片的回忆与人物，或宝箱为每名玩家保留的遗物。只显示房间类型，不预告战斗中的敌人。",
+  "HBRGO_RISA_DP.title": "DP 回复",
+  "HBRGO_RISA_DP.description": "DP先于生命承受伤害。本张牌按每名目标自己的最大DP回复，单独处理玩家与幻影的DP池，不把玩家的回复转移给其幻影。治愈微笑及真心款待可将当前DP补至上限的120%，不提高DP上限。",
+  "HBR_CLASS_RELIC_MODE_SWITCH.title": "切换形态",
+  "HBR_CLASS_RELIC_MODE_SWITCH.description": "进入弓、双剑或镰刀形态时触发。开关魔剑不算切换形态。",
+  "HBR_CLASS_RELIC_SIX_SENSE_POINTS.title": "六感点数",
+  "HBR_CLASS_RELIC_SIX_SENSE_POINTS.description": "可在电子军人手册的六感界面分配，提高对应六感。",
+  "HBR_CLASS_RELIC_CRITICAL_SUCCESS.title": "大成功",
+  "HBR_CLASS_RELIC_CRITICAL_SUCCESS.description": "掷骰结算为大成功时触发，包括绝对大成功、必定大成功和视为大成功。",
+  "HBR_CLASS_RELIC_FORM_CARD.title": "形态牌",
+  "HBR_CLASS_RELIC_FORM_CARD.description": "牌面标有弓形态牌或双剑形态牌的卡牌。"
 }

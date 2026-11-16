@@ -100,6 +100,7 @@ public sealed class UnfetteredPower : PowerModel
     private CardModel CreateRandomAttack(ReptureCardMode targetMode)
     {
         List<CardModel> candidates = Owner.Player.Deck.Cards
+            .Where(MagicSwordCombatTemplateHelper.CanGenerateFromDeck)
             .Where(card => card.Type == CardType.Attack)
             .Where(card =>
                 ModeTransitionHelper.GetCardMode(card) == targetMode)

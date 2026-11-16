@@ -26,6 +26,7 @@ internal struct HbrDamageMultiplierAccumulator
     private decimal _nativeTemporaryAttackOffset;
     private decimal _nativeOtherAttackOffset;
     private decimal _targetMultiplier;
+    private decimal _originalAttackOffset;
 
     internal decimal ModeMultiplier { get; private set; }
     internal decimal ManualOffset { get; private set; }
@@ -49,6 +50,7 @@ internal struct HbrDamageMultiplierAccumulator
         _destructionMultiplier = 1m;
         _nativeTemporaryAttackOffset = _nativeOtherAttackOffset = 0m;
         _targetMultiplier = 1m;
+        _originalAttackOffset = 0m;
         ModeMultiplier = modeMultiplier;
         ManualOffset = RawManualOffset = 0m;
         FinalMultiplier = TemporaryMultiplier = OtherMultiplier = RawOtherMultiplier = 1m;
@@ -57,6 +59,11 @@ internal struct HbrDamageMultiplierAccumulator
 
     internal static bool IsModeSource(AbstractModel model) => model is
         NormalStatePower or ReptureDualSwordsPower or ReptureBowPower or LoliFormPower;
+
+    // Card-bound dyes join the original AttackUp/MindEye area without creating
+    // another power instance or occupying that effect's limited slots.
+    internal void AddOriginalAttackPercent(decimal percent) => _originalAttackOffset =
+        DamageAmplificationLimits.AddSaturated(_originalAttackOffset, percent / 100m);
 
     internal void Add(AbstractModel model, decimal multiplier,
         ref decimal runningDamage, ref decimal rawDamage)
@@ -84,6 +91,11 @@ internal struct HbrDamageMultiplierAccumulator
             // Its raw ledger update has the same position as before extraction.
             FinalMultiplier *= multiplier;
             rawDamage *= Math.Max(1m, multiplier);
+        }
+        else if (combat && model is HbrAttackUpPower or MindsEyePower)
+        {
+            // Original AttackUp and MindEye share one additive attack area.
+            _originalAttackOffset = DamageAmplificationLimits.AddSaturated(_originalAttackOffset, multiplier - 1m);
         }
         else if (_hbrNumerics && model is DestructionRatePower)
         {
@@ -152,6 +164,9 @@ internal struct HbrDamageMultiplierAccumulator
                 positiveOnly ? RawModeMultiplier : ModeMultiplier,
                 positiveOnly ? 1m + RawManualOffset : Math.Max(0m, 1m + ManualOffset)),
             group, TemporaryMultiplier, capped, positiveOnly);
+        decimal originalAttack = Math.Max(0m, 1m + _originalAttackOffset);
+        attack = DamageAmplificationLimits.MultiplySaturated(attack,
+            positiveOnly ? Math.Max(1m, originalAttack) : originalAttack);
         if (!_hbrNumerics) return attack;
         decimal defenseDown = Math.Max(0m, DamageAmplificationLimits.AddSaturated(1m,
             DamageAmplificationLimits.AddSaturated(_defenseDownOffset, group.DefenseDownMultiplierOffset)));

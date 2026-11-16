@@ -1,21 +1,73 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-// HBR 花冠利刃 (CorollaKnifeSmall). Generated from the act two/three roster table; see
-// docs/hbr-act-rosters.md for the design and calibration.
-public sealed class CorollaKnife : HbrgoStaticMonster
+// HBR 花冠利刃, act three: original CorollaKnifeSmall_01; when two knives fight
+// together (CorollaKnivesNormal, BigotryGateAndCorollaKnivesNormal) the second
+// is CorollaKnifeSmall_02, set by the encounter. Neither has an hp table or a
+// heal, so Break keeps walking the dp table
+// (docs/hbr-monster-mechanics-proposal.md).
+public sealed class CorollaKnife : HbrgoMoveTableMonster, IHbrgoPhantomAttackResults
 {
+    internal const int FirstVariant = 0;
+    internal const int SecondVariant = 1;
+
+    internal const string SlashSkill = "CorollaKnife_AttackSingle01";
+    internal const string RotationCutSkill = "CorollaKnife_AttackSingle02";
+    internal const string RampageSliceSkill = "CorollaKnife_AttackAll01";
+    internal const string AttackUpSkill = "CorollaKnife_AttackUp";
+
+    internal const string SlashMoveId = "SLASH_MOVE";
+    internal const string RotationCutMoveId = "ROTATION_CUT_MOVE";
+    internal const string RampageSliceMoveId = "RAMPAGE_SLICE_MOVE";
+    internal const string AttackUpMoveId = "ATTACK_UP_MOVE";
+
+    internal const int AttackUpPercent = 100;
+    internal const int RampageSliceHits = 2;
+
+    private static HbrgoMoveStep EitherSingle(int slash, int cut) =>
+        Pick((SlashSkill, slash), (RotationCutSkill, cut));
+
+    internal static readonly HbrgoMoveTables FirstTables = new(
+        "CorollaKnifeSmall_01",
+        Table("CorollaKnifeSmall_01",
+            EitherSingle(70, 30),
+            EitherSingle(60, 40),
+            EitherSingle(30, 70),
+            Step(AttackUpSkill),
+            Step(RampageSliceSkill)),
+        HbrgoMoveTable.None);
+
+    internal static readonly HbrgoMoveTables SecondTables = new(
+        "CorollaKnifeSmall_02",
+        Table("CorollaKnifeSmall_02",
+            Step(AttackUpSkill),
+            Step(RampageSliceSkill),
+            EitherSingle(70, 30),
+            EitherSingle(60, 40),
+            EitherSingle(30, 70)),
+        HbrgoMoveTable.None);
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(SlashSkill, SlashMoveId, HbrgoMoveTarget.Single),
+        new(RotationCutSkill, RotationCutMoveId, HbrgoMoveTarget.Single),
+        new(RampageSliceSkill, RampageSliceMoveId, HbrgoMoveTarget.All, SpiritDefense: true),
+        new(AttackUpSkill, AttackUpMoveId, HbrgoMoveTarget.Self),
+    };
+
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.ToughEnemies,
@@ -31,41 +83,54 @@ public sealed class CorollaKnife : HbrgoStaticMonster
     private int SlashDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            17,
-            15);
+            11,
+            10);
 
-    private int PetalDanceDamage =>
+    private int RotationCutDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            6,
-            5);
+            15,
+            13);
 
-    private int PetalDanceHits =>
+    // Original DefenseDown 20% (30% on hard): 2 modifier layers, 3 on hard.
+    private int RotationCutDefenseDown =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            4,
-            4);
+            3,
+            2);
 
-    internal const int WhetStrength = 3;
+    private int RampageSliceDamage =>
+        AscensionHelper.GetValueIfAscension(
+            AscensionLevel.DeadlyEnemies,
+            7,
+            6);
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override int MoveTableVariantCount => 2;
+
+    internal override HbrgoMoveTables GetMoveTables(int variant) =>
+        variant == SecondVariant ? SecondTables : FirstTables;
+
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
+
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState slash = new(
-            "SLASH_MOVE",
+        yield return new MoveState(
+            SlashMoveId,
             SlashMove,
             new SingleAttackIntent(() => SlashDamage));
-        MoveState petalDance = new(
-            "PETAL_DANCE_MOVE",
-            PetalDanceMove,
-            new MultiAttackIntent(PetalDanceDamage, () => PetalDanceHits));
-        MoveState whet = new(
-            "WHET_MOVE",
-            WhetMove,
+        yield return new MoveState(
+            RotationCutMoveId,
+            RotationCutMove,
+            new SingleAttackIntent(() => RotationCutDamage),
+            new DebuffIntent());
+        yield return new MoveState(
+            RampageSliceMoveId,
+            RampageSliceMove,
+            new MultiAttackIntent(RampageSliceDamage, () => RampageSliceHits));
+        yield return new MoveState(
+            AttackUpMoveId,
+            AttackUpMove,
             new BuffIntent());
-        return ModMonsterMoveStateMachines.Cycle(
-            slash,
-            petalDance,
-            whet);
     }
 
     private Task SlashMove(IReadOnlyList<Creature> _)
@@ -73,19 +138,41 @@ public sealed class CorollaKnife : HbrgoStaticMonster
         return PerformAttack(SlashDamage);
     }
 
-    private Task PetalDanceMove(IReadOnlyList<Creature> _)
+    private async Task RotationCutMove(IReadOnlyList<Creature> targets)
     {
-        return PerformAttack(PetalDanceDamage, PetalDanceHits);
+        await PerformAttack(RotationCutDamage);
+        await ApplyRotationCut(targets);
     }
 
-    private async Task WhetMove(IReadOnlyList<Creature> _)
+    private Task ApplyRotationCut(IEnumerable<Creature> targets)
+    {
+        return HbrPercentDebuffApplication.ApplyDefenseDown(
+            new ThrowingPlayerChoiceContext(),
+            targets.Where(target => target.IsAlive).ToArray(),
+            RotationCutDefenseDown,
+            Creature);
+    }
+
+    // Original all-unit attack: every player-side unit, summons included.
+    private Task RampageSliceMove(IReadOnlyList<Creature> _)
+    {
+        return PerformAttackOn(RampageSliceDamage, RampageSliceHits, HbrgoAttackTargets.AllUnits);
+    }
+
+    private async Task AttackUpMove(IReadOnlyList<Creature> _)
     {
         await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        await PowerCmd.Apply<StrengthPower>(
-            new ThrowingPlayerChoiceContext(),
-            Creature,
-            WhetStrength,
-            Creature,
-            null);
+        await HbrEnemyEffects.ApplyTimedBuff<HbrAttackUpPower>(Creature, AttackUpPercent);
+    }
+
+    Task IHbrgoPhantomAttackResults.AfterPhantomAttack(
+        MoveState move,
+        IReadOnlyList<Creature> attackedTargets,
+        IReadOnlyList<Creature> passedTargets,
+        decimal passedDamage)
+    {
+        return move?.Id == RotationCutMoveId
+            ? ApplyRotationCut(attackedTargets)
+            : Task.CompletedTask;
     }
 }

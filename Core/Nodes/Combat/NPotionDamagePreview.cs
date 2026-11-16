@@ -1,4 +1,5 @@
 using Godot;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Combat;
@@ -74,7 +75,7 @@ public partial class NPotionDamagePreview : Node
 
     private void Reposition()
     {
-        if (Alignment != HoverTipAlignment.Center)
+        if (!NativeHoverTipCompatibility.IsBelow(_tips, Alignment))
         {
             _tips.SetAlignment(OwnerControl, Alignment);
             return;
@@ -82,16 +83,10 @@ public partial class NPotionDamagePreview : Node
 
         Control anchor = OwnerControl is NPotionTargetDamagePreview targeting
             ? targeting.Holder : OwnerControl;
-        _textContainer.Position = Vector2.Zero;
-        _tips.GlobalPosition = anchor.GlobalPosition + Vector2.Down *
+        Vector2 position = anchor.GlobalPosition + Vector2.Down *
             anchor.Size.Y * Mathf.Max(1.5f, anchor.Scale.Y);
-        if (PotionDamagePreviewUiHelper.IsUsable(_cardContainer))
-        {
-            // Native Center alignment adds the text height to the old position.
-            // Repeated refreshes must place card tips from the same origin.
-            _cardContainer.Position = Vector2.Down * _textContainer.Size.Y;
-            _cardContainer.LayoutResizeAndReposition(_cardContainer.GlobalPosition, Alignment);
-        }
+        NativeHoverTipCompatibility.PositionBelowAt(_tips, position, _textContainer,
+            PotionDamagePreviewUiHelper.IsUsable(_cardContainer) ? _cardContainer : null);
         // None keeps the chosen anchor while applying native viewport overflow correction.
         _tips.SetAlignment(OwnerControl, HoverTipAlignment.None);
     }

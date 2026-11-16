@@ -1,19 +1,53 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-public sealed class ClayKnocker : HbrgoStaticMonster
+// HBR 黏土重锤, act-one elite partner: original DarkKnockerDefaultVirtual
+// (MC02_12_Battle01-03, MC02_18_Battle01, MC02_19_Battle01; DarkKnockerDefault
+// has the same tables). The original has no charge; the 11-05 Strength charge
+// and heavy attack are gone (docs/hbr-act-rosters.md, fourth batch).
+public sealed class ClayKnocker : HbrgoMoveTableMonster
 {
+    internal const string AttackSkill = "DarkKnocker_Attack01";
+    internal const string MultiAttackSkill = "DarkKnocker_Attack02";
+    internal const string AllAttackSkill = "DarkKnocker_AttackAll01";
+
+    internal const string AttackMoveId = "ATTACK_MOVE";
+    internal const string MultiAttackMoveId = "MULTI_ATTACK_MOVE";
+    internal const string AllAttackMoveId = "ALL_ATTACK_MOVE";
+
+    internal const int MultiAttackHits = 2;
+
+    internal static readonly HbrgoMoveTables Tables = new(
+        "DarkKnockerDefaultVirtual",
+        Table("DarkKnockerDefault",
+            Step(AttackSkill),
+            Step(AllAttackSkill),
+            Pick((AttackSkill, 50), (MultiAttackSkill, 50)),
+            Step(AllAttackSkill),
+            Step(AllAttackSkill),
+            Step(AllAttackSkill),
+            Step(AllAttackSkill)),
+        Table("DarkKnockerDefault_break",
+            Step(MultiAttackSkill),
+            Step(AllAttackSkill),
+            Pick((AttackSkill, 50), (MultiAttackSkill, 50)),
+            Step(AllAttackSkill)));
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(AttackSkill, AttackMoveId, HbrgoMoveTarget.Single),
+        new(MultiAttackSkill, MultiAttackMoveId, HbrgoMoveTarget.Single),
+        new(AllAttackSkill, AllAttackMoveId, HbrgoMoveTarget.All),
+    };
+
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.ToughEnemies,
@@ -35,38 +69,33 @@ public sealed class ClayKnocker : HbrgoStaticMonster
     private int MultiAttackDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            6,
-            5);
+            4,
+            3);
 
-    private int HeavyAttackDamage =>
+    private int AllAttackDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            16,
-            14);
+            9,
+            8);
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override HbrgoMoveTables GetMoveTables(int variant) => Tables;
+
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
+
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState attack = new(
-            "ATTACK_MOVE",
+        yield return new MoveState(
+            AttackMoveId,
             AttackMove,
             new SingleAttackIntent(() => AttackDamage));
-        MoveState multiAttack = new(
-            "MULTI_ATTACK_MOVE",
+        yield return new MoveState(
+            MultiAttackMoveId,
             MultiAttackMove,
-            new MultiAttackIntent(MultiAttackDamage, 2));
-        MoveState charge = new(
-            "CHARGE_MOVE",
-            ChargeMove,
-            new BuffIntent());
-        MoveState heavyAttack = new(
-            "HEAVY_ATTACK_MOVE",
-            HeavyAttackMove,
-            new SingleAttackIntent(() => HeavyAttackDamage));
-        return ModMonsterMoveStateMachines.Cycle(
-            attack,
-            multiAttack,
-            charge,
-            heavyAttack);
+            new MultiAttackIntent(MultiAttackDamage, () => MultiAttackHits));
+        yield return new MoveState(
+            AllAttackMoveId,
+            AllAttackMove,
+            new SingleAttackIntent(() => AllAttackDamage));
     }
 
     private Task AttackMove(IReadOnlyList<Creature> _)
@@ -76,22 +105,12 @@ public sealed class ClayKnocker : HbrgoStaticMonster
 
     private Task MultiAttackMove(IReadOnlyList<Creature> _)
     {
-        return PerformAttack(MultiAttackDamage, 2);
+        return PerformAttack(MultiAttackDamage, MultiAttackHits);
     }
 
-    private async Task ChargeMove(IReadOnlyList<Creature> _)
+    // Original all-unit attack: every player-side unit, summons included.
+    private Task AllAttackMove(IReadOnlyList<Creature> _)
     {
-        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        await PowerCmd.Apply<StrengthPower>(
-            new ThrowingPlayerChoiceContext(),
-            Creature,
-            2,
-            Creature,
-            null);
-    }
-
-    private Task HeavyAttackMove(IReadOnlyList<Creature> _)
-    {
-        return PerformAttack(HeavyAttackDamage);
+        return PerformAttackOn(AllAttackDamage, 1, HbrgoAttackTargets.AllUnits);
     }
 }

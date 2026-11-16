@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Core/Nodes/Combat/HbrMagicSwordHoverState.cs" Link="HbrMagicSwordHoverState.cs" />
+    <Reference Include="Mono.Cecil" HintPath="C:/Users/ROG/.nuget/packages/mono.cecil/0.11.6/lib/netstandard2.0/Mono.Cecil.dll" />
+  </ItemGroup>
+</Project>

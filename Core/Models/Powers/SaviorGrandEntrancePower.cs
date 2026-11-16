@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot;
 using BaseLib.Abstracts;
@@ -18,6 +19,24 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 public sealed class SaviorGrandEntrancePower : PowerModel, ICustomPower
 {
+    private int _allEnemyStunTurn = -1;
+    private object _ordinaryStunToken = new();
+    private HashSet<object> _allEnemyStunUses = new();
+    internal bool TryTakeAllEnemyStun()
+    {
+        if (!HasUpgradeEffect(3) || Owner?.Player is not { } player) return false;
+        int turn = player.PlayerCombatState?.TurnNumber ?? 0;
+        if (_allEnemyStunTurn != turn)
+        {
+            _allEnemyStunTurn = turn;
+            _allEnemyStunUses.Clear();
+        }
+        // Inserted turns have their own use; returning to the interrupted normal
+        // turn must retain its earlier use rather than resetting a last-token flag.
+        object token = OverclockImmediateTurnCoordinator.GetTurnToken(player) ?? _ordinaryStunToken;
+        return _allEnemyStunUses.Add(token);
+    }
+
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int[] UpgradeEffects { get; private set; } = Array.Empty<int>();
 
@@ -49,7 +68,7 @@ public sealed class SaviorGrandEntrancePower : PowerModel, ICustomPower
     {
         if (card == null) return;
         AssertMutable();
-        UpgradeEffects = UpgradeEffects.Concat(Enumerable.Range(0, 7).Where(card.HasUpgradeEffect)).Distinct().OrderBy(id => id).ToArray();
+        UpgradeEffects = UpgradeEffects.Concat(Enumerable.Range(0, 8).Where(card.HasUpgradeEffect)).Distinct().OrderBy(id => id).ToArray();
         Owner?.InvokePowerModified(this, 0, true);
     }
     public override Task AfterApplied(Creature applier, CardModel source)
@@ -64,5 +83,8 @@ public sealed class SaviorGrandEntrancePower : PowerModel, ICustomPower
     {
         base.AfterCloned();
         UpgradeEffects = UpgradeEffects?.ToArray() ?? Array.Empty<int>();
+        _allEnemyStunTurn = -1;
+        _ordinaryStunToken = new();
+        _allEnemyStunUses = new();
     }
 }

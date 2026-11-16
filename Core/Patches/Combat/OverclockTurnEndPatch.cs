@@ -49,7 +49,8 @@ internal static class OverclockTurnEndSignalPatch
 
     private static bool TrySignalTurnEnd<T>(TaskCompletionSource<T> source, T signal)
     {
-        if (!OverclockImmediateTurnCoordinator.TryEnd(out Task task)) return source.TrySetResult(signal);
+        if (!OverclockImmediateTurnCoordinator.TryEnd(out Task task))
+            return PersonalImmediateTurnCoordinator.ShouldDeferOrdinaryEnd() ? false : source.TrySetResult(signal);
         TaskHelper.RunSafely(task);
         return false;
     }

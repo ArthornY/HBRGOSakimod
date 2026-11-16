@@ -18,5 +18,11 @@ internal static class HBRGOSakiRewards
         ModRewardRegistry.Register(
             SixSenseReward.SixSense,
             SixSenseReward.CreateFromSerializable);
+        ModRewardRegistry.Register(
+            HbrEquipmentReward.HbrEquipment,
+            HbrEquipmentReward.CreateFromSerializable);
+        ModRewardRegistry.Register(
+            HbrFateFragmentReward.HbrFateFragment,
+            HbrFateFragmentReward.CreateFromSerializable);
     }
 }

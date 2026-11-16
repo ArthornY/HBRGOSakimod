@@ -200,7 +200,7 @@ internal static class HbrgoEliteBossEncounterConfigPatch
         {
             if (i % bag.Count == 0)
             {
-                rng.Shuffle(bag);
+                rng.ShuffleCompat(bag);
             }
 
             rooms.eliteEncounters.Add(bag[i % bag.Count]);

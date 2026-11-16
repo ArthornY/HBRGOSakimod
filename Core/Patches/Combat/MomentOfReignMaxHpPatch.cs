@@ -37,13 +37,15 @@ internal static class MomentOfReignLoseMaxHpPatch
 {
     [HarmonyPriority(Priority.First)]
     private static bool Prefix(PlayerChoiceContext choiceContext, Creature creature,
-        decimal amount, bool isFromCard, ref Task __result)
+        decimal amount, object[] __args, ref Task __result)
     {
         MomentOfReign reign = MomentOfReignMaxHpTarget.Get(creature);
         if (reign == null || amount < 0m) return true;
         decimal delta = MomentOfReign.GetRequestedMaxHpChange(creature, amount, PhantomMaxHpChange.Lose);
         if (delta == 0) return true;
-        __result = reign.RedirectMaxHpChange(delta, PhantomMaxHpChange.Lose, choiceContext, isFromCard);
+        bool isFromCard = __args[3] is bool flag ? flag : __args[3] is MegaCrit.Sts2.Core.Models.CardModel;
+        __result = reign.RedirectMaxHpChange(delta, PhantomMaxHpChange.Lose, choiceContext, isFromCard,
+            __args[3] as MegaCrit.Sts2.Core.Models.CardModel);
         return false;
     }
 }

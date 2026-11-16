@@ -6,6 +6,7 @@ using HBRGOSakiMod.Core.Config;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Patches;
+using HBRGOSakiMod.Core.RunUpload;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using STS2RitsuLib;
@@ -24,6 +25,11 @@ namespace HBRGOSakiMod{
             HBRGOSakiRewards.Register();
             SixSenseNetActions.Initialize();
             PhantomRosterNetActions.Initialize();
+            HbrEquipmentNetActions.Initialize();
+            HbrFateDiceNetActions.Initialize();
+            HbrThirtyOneCMachinaNetActions.Initialize();
+            HbrOverclockNetActions.Initialize();
+            HbrPersonalTurnNetActions.Initialize();
             HBRGOSakiTargetTypes.Register();
             HbrgoSakiVariantPreference.Register();
             Harmony harmony = new(ModId);
@@ -31,6 +37,9 @@ namespace HBRGOSakiMod{
             HBRGOSakiContentPack.Register();
             HBRGOSakiRightClickIntegration.Register();
             HBRGOSakiRunLifecycle.Register();
+            HbrMemoryGardenUpgradeStories.Initialize();
+            // Off by default; records and sends nothing until the player agrees.
+            RunUploadService.Initialize();
             HBRGOSakiCombatUiIntegration.Register();
 
             BaseLibRuntimeCompatibility.Install(harmony);

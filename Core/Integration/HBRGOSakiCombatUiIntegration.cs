@@ -27,14 +27,15 @@ internal static class HBRGOSakiCombatUiIntegration
     internal const string GameOverObserverAttachmentId =
         "game_over_observer";
     internal const string StrikePortraitAttachmentId = "strike_portrait";
-    internal const string SixSenseEnergyIconAttachmentId = "six_sense_energy_icon";
     internal const string CardDescriptionScrollAttachmentId = "card_description_scroll";
-    internal const string SixSenseResistanceRowAttachmentId = "six_sense_resistance_row";
     internal const string PhantomRevivalIntentsAttachmentId = "phantom_revival_intents";
     internal const string PhantomCombatLayoutAttachmentId = "phantom_combat_layout";
     internal const string PhantomMinionPlacementAttachmentId = "phantom_minion_placement";
     internal const string BattleGaugeResizeInputAttachmentId = "battle_gauge_resize_input";
     internal const string CardSelectionPortraitAttachmentId = "card_selection_portrait";
+    internal const string CardStyleAttachmentId = "hbr_card_style";
+    internal const string MagicSwordButtonAttachmentId = "magic_sword_button";
+    internal const string MachinaButtonAttachmentId = "thirty_one_c_machina_button";
 
     private const string ModId = "HBRGOSakiMod";
 
@@ -63,12 +64,6 @@ internal static class HBRGOSakiCombatUiIntegration
             _ => new NPhantomRevivalIntents(),
             CreateOptions("PhantomRevivalIntents", order: 0));
 
-        Registry.RegisterReadyChild<NCard, NSixSenseEnergyIcon>(
-            SixSenseEnergyIconAttachmentId,
-            _ => new NSixSenseEnergyIcon(),
-            (card, icon) => icon.Card = card,
-            CreateOptions("SixSenseEnergyIcon", order: 1));
-
         Registry.RegisterReadyChild<NCard, NHbrgoStrikePortrait>(
             StrikePortraitAttachmentId,
             _ => new NHbrgoStrikePortrait(),
@@ -80,6 +75,17 @@ internal static class HBRGOSakiCombatUiIntegration
             _ => new NHbrCardDescriptionScroll(),
             (card, scroll) => scroll.Card = card,
             CreateOptions("HbrCardDescriptionScroll", order: 2));
+
+        Registry.RegisterReadyChild<NCard, NHbrCardStyle>(
+            CardStyleAttachmentId,
+            _ => new NHbrCardStyle(),
+            (card, style) => style.Card = card,
+            CreateOptions("HbrCardStyle", order: 3));
+
+        Registry.RegisterReadyChild<NCombatUi, NThirtyOneACutinOverlay>(
+            "thirty_one_a_cutin",
+            _ => new NThirtyOneACutinOverlay(),
+            CreateOptions("ThirtyOneACutinOverlay", order: 6));
 
         Registry.RegisterReadyChild<NCombatUi, NOverclockGauge>(
             GaugeAttachmentId,
@@ -106,6 +112,17 @@ internal static class HBRGOSakiCombatUiIntegration
             _ => new NSakiCardSelectionPortrait(),
             CreateOptions(NSakiCardSelectionPortrait.WidgetName, order: 4));
 
+        // 31O's magic sword switch; it hides itself for every other character.
+        Registry.RegisterReadyChild<NCombatUi, NHbrMagicSwordButton>(
+            MagicSwordButtonAttachmentId,
+            _ => new NHbrMagicSwordButton(),
+            CreateOptions(NHbrMagicSwordButton.WidgetName, order: 5));
+
+        Registry.RegisterReadyChild<NCombatUi, NHbrMachinaButton>(
+            MachinaButtonAttachmentId,
+            _ => new NHbrMachinaButton(),
+            CreateOptions(NHbrMachinaButton.WidgetName, order: 7));
+
         Registry.RegisterReadyChild<NHealthBar, NDeflectorProtectionDpBar>(
             DeflectorProtectionDpBarAttachmentId,
             _ => new NDeflectorProtectionDpBar(),
@@ -115,11 +132,6 @@ internal static class HBRGOSakiCombatUiIntegration
             RedCrimsonActionBarAttachmentId,
             _ => new NRedCrimsonActionBar(),
             CreateOptions("RedCrimsonActionBar", order: 1));
-
-        Registry.RegisterReadyChild<NHealthBar, NSixSenseResistanceRow>(
-            SixSenseResistanceRowAttachmentId,
-            _ => new NSixSenseResistanceRow(),
-            CreateOptions("SixSenseResistanceRow", order: 2));
 
         Registry.RegisterReadyChild<
             NChooseACardSelectionScreen,

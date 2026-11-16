@@ -40,7 +40,10 @@ public sealed class WorldsFinestHbrgoSaki : CardModel
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[]
     {
         HoverTipFactory.FromPower<SpiritTalismanPower>(),
-        HoverTipFactory.FromPower<MindsEyePower>()
+        HoverTipFactory.FromPower<MindsEyePower>(),
+        HoverTipFactory.FromPower<HbrCriticalRateUpPower>(),
+        HoverTipFactory.FromPower<HbrCriticalDamageUpPower>(),
+        HoverTipFactory.FromPower<HbrVirusPower>()
     };
 
     public WorldsFinestHbrgoSaki()
@@ -57,15 +60,14 @@ public sealed class WorldsFinestHbrgoSaki : CardModel
         return true;
     }
     private static bool IsEligible(int id, IReadOnlyCollection<int> applied) =>
-        id >= 0 && id < UpgradeEffectCount && !applied.Contains(id) &&
-        (!(id is 1 or 2) || applied.Contains(id - 1));
+        id >= 0 && id < UpgradeEffectCount && !applied.Contains(id);
 
     internal void CancelPreparedUpgradeEffect() => _preparedUpgradeEffect = null;
 
     protected override void AddExtraArgsToDescription(LocString description)
     {
         base.AddExtraArgsToDescription(description);
-        string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel).Where(id => id != 3 && !(id == 0 && HasUpgradeEffect(1)) && !(id == 1 && HasUpgradeEffect(2)))
+        string[] effects = UpgradeEffectOrder.Take(CurrentUpgradeLevel).Where(id => id != 3)
             .Select(id => HbrMemoryGardenUpgradeCatalog.GetEffectDescription(this, id.ToString())).ToArray();
         description.Add("UpgradeEffects", effects.Length == 0 ? string.Empty : "\n" + string.Join("\n", effects));
     }
@@ -74,8 +76,16 @@ public sealed class WorldsFinestHbrgoSaki : CardModel
     {
         await WorldsFinestCombatHelper.RestoreDp(context, this, HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["Recovery"].BaseValue));
         if (HasUpgradeEffect(6))
-            await PowerCmd.Apply<MindsEyePower>(context, Owner.Creature,
-                DynamicVars["MindsEyePower"].BaseValue, Owner.Creature, this);
+        {
+            if (HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+            {
+                await HbrEffectApplication.ApplyMindsEye(context, Owner.Creature, Owner.Creature, this);
+                await ThirtyOneAMemoryUpgradeHelper.GrantCriticals(context, Owner.Creature, Owner.Creature, this);
+            }
+            else await PowerCmd.Apply<MindsEyePower>(context, Owner.Creature, 1m, Owner.Creature, this);
+        }
+        if (HasUpgradeEffect(2) && HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+            await WorldsFinestCombatHelper.CleanseOneDebuff(this);
     }
 
     protected override void OnUpgrade()

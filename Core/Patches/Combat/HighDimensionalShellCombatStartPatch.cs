@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Monsters;
 using HBRGOSakiMod.Core.Models.Powers;
@@ -39,6 +40,15 @@ internal static class HighDimensionalShellCombatStartPatch
 
             await GrantShell(enemy, replaceExisting: false);
         }
+
+        // All native start hooks (including the opening main phantom and DP
+        // initialization) have completed. Do not reapply these to late summons.
+        await AkariAceCombatHelper.OnCombatStart(combatState);
+        foreach (var player in combatState.Players)
+            await RisaRecoveryCombatHelper.BeforeCombatStart(player);
+        await NiinaMakeupCombatHelper.OnCombatStart(combatState);
+        await MinoriDeliveryCombatHelper.OnCombatStart(combatState);
+        await KuraSatomiCombatHelper.OnCombatStart(combatState);
     }
 
     internal static bool ShouldGrantShells(ICombatState combatState)

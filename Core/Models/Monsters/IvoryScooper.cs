@@ -1,26 +1,56 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Helpers;
-using HBRGOSakiMod.Core.Models.Powers;
-using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using MegaCrit.Sts2.Core.ValueProps;
-using STS2RitsuLib.Scaffolding.MonsterMoves;
+using static HBRGOSakiMod.Core.Models.Monsters.HbrgoMoveTableBuilder;
 
 namespace HBRGOSakiMod.Core.Models.Monsters;
 
-// HBR 象牙异蛛 (IvoryScooperDefault), an act-one boss. Scoops, entangles a
-// target to lower its attack, breaks the ground, then hides behind its ivory
-// plating, gaining block and restoring DP.
-public sealed class IvoryScooper : HbrgoStaticMonster, IHbrgoPhantomAttackEffects
+// HBR 象牙异蛛, act-one boss: original IvoryScooperDefaultVirtual
+// (MC02_21_Battle02). It has no heal skill: Energy Drain restores DP from the
+// damage it deals, which Break (no shell) blocks
+// (docs/hbr-monster-mechanics-proposal.md).
+public sealed class IvoryScooper : HbrgoMoveTableMonster, IHbrgoPhantomAttackResults
 {
-    internal const string EntangleMoveId = "ENTANGLE_MOVE";
+    internal const string ScoopSkill = "IvoryScooper_Attack01";
+    internal const string EnergyDrainSkill = "IvoryScooper_Attack02";
+    internal const string DestroyBashSkill = "IvoryScooper_AttackAll01";
+
+    internal const string ScoopMoveId = "SCOOP_MOVE";
+    internal const string EnergyDrainMoveId = "ENERGY_DRAIN_MOVE";
+    internal const string DestroyBashMoveId = "DESTROY_BASH_MOVE";
+
+    internal const int EnergyDrainHits = 3;
+
+    private static HbrgoMoveStep ScoopOrBash() =>
+        Pick((ScoopSkill, 50), (DestroyBashSkill, 50));
+
+    internal static readonly HbrgoMoveTables Tables = new(
+        "IvoryScooperDefaultVirtual",
+        Table("IvoryScooperDefault",
+            Step(ScoopSkill),
+            Step(EnergyDrainSkill),
+            ScoopOrBash(),
+            ScoopOrBash(),
+            Step(EnergyDrainSkill),
+            Step(DestroyBashSkill)),
+        Table("IvoryScooperDefault_break",
+            Step(DestroyBashSkill),
+            ScoopOrBash(),
+            Pick((EnergyDrainSkill, 50), (DestroyBashSkill, 50)),
+            ScoopOrBash(),
+            Step(EnergyDrainSkill)));
+
+    private static readonly HbrgoTableMove[] Moves =
+    {
+        new(ScoopSkill, ScoopMoveId, HbrgoMoveTarget.Single),
+        new(EnergyDrainSkill, EnergyDrainMoveId, HbrgoMoveTarget.Single),
+        new(DestroyBashSkill, DestroyBashMoveId, HbrgoMoveTarget.All, SpiritDefense: true),
+    };
 
     public override int MinInitialHp =>
         AscensionHelper.GetValueIfAscension(
@@ -33,57 +63,45 @@ public sealed class IvoryScooper : HbrgoStaticMonster, IHbrgoPhantomAttackEffect
     private int ScoopDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            14,
-            12);
-
-    private int EntangleDamage =>
-        AscensionHelper.GetValueIfAscension(
-            AscensionLevel.DeadlyEnemies,
-            8,
+            9,
             7);
 
-    private int GroundBreakDamage =>
+    private int EnergyDrainDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            6,
-            5);
+            4,
+            3);
 
-    private int IvoryGuardBlock =>
+    private int DestroyBashDamage =>
         AscensionHelper.GetValueIfAscension(
             AscensionLevel.DeadlyEnemies,
-            18,
-            14);
+            10,
+            9);
+    private int PoisonBurstPercent => AscensionHelper.GetValueIfAscension(AscensionLevel.DeadlyEnemies, 15, 10);
+    private bool HasPoisonBurst => BoundCreature is { } creature &&
+        EnemyStatScalingHelper.IsEnemy(creature) && HbrBattleStatsHelper.IsEnabled(creature);
 
-    internal const int EntangleAttackDown = 2;
-    internal const int GroundBreakHits = 3;
-    // Fixed DP recovery in native units; the HBR resource boundary scales it.
-    internal const decimal IvoryGuardDp = 25m;
+    internal override HbrgoMoveTables GetMoveTables(int variant) => Tables;
 
-    protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+    internal override IReadOnlyList<HbrgoTableMove> TableMoves => Moves;
+
+    internal override IEnumerable<MoveState> CreateTableMoveStates()
     {
-        MoveState scoop = new(
-            "SCOOP_MOVE",
+        yield return new MoveState(
+            ScoopMoveId,
             ScoopMove,
             new SingleAttackIntent(() => ScoopDamage));
-        MoveState entangle = new(
-            EntangleMoveId,
-            EntangleMove,
-            new SingleAttackIntent(() => EntangleDamage),
-            new DebuffIntent());
-        MoveState groundBreak = new(
-            "GROUND_BREAK_MOVE",
-            GroundBreakMove,
-            new MultiAttackIntent(GroundBreakDamage, GroundBreakHits));
-        MoveState ivoryGuard = new(
-            "IVORY_GUARD_MOVE",
-            IvoryGuardMove,
-            new DefendIntent(),
+        yield return new MoveState(
+            EnergyDrainMoveId,
+            EnergyDrainMove,
+            new MultiAttackIntent(EnergyDrainDamage, () => EnergyDrainHits),
             new HealIntent());
-        return ModMonsterMoveStateMachines.Cycle(
-            scoop,
-            entangle,
-            groundBreak,
-            ivoryGuard);
+        yield return new MoveState(
+            DestroyBashMoveId,
+            DestroyBashMove,
+            // Unbound machines enumerate every potential asset for preloading.
+            (BoundCreature == null || HasPoisonBurst) ? new AbstractIntent[] { new SingleAttackIntent(() => DestroyBashDamage), new DebuffIntent() }
+                : new AbstractIntent[] { new SingleAttackIntent(() => DestroyBashDamage) });
     }
 
     private Task ScoopMove(IReadOnlyList<Creature> _)
@@ -91,44 +109,33 @@ public sealed class IvoryScooper : HbrgoStaticMonster, IHbrgoPhantomAttackEffect
         return PerformAttack(ScoopDamage);
     }
 
-    private async Task EntangleMove(IReadOnlyList<Creature> targets)
+    // Original HealDpByDamage: DP back from the DP and HP the hits took.
+    private async Task EnergyDrainMove(IReadOnlyList<Creature> targets)
     {
-        await PerformAttack(EntangleDamage);
-        await ApplyEntangle(targets);
+        HbrgoAttackHits hits = await PerformTrackedAttack(EnergyDrainDamage, EnergyDrainHits, targets);
+        HbrEnemyEffects.AbsorbDp(Creature, hits.PassedDamage);
     }
 
-    private Task GroundBreakMove(IReadOnlyList<Creature> _)
+    // Original all-unit attack: every player-side unit, summons included.
+    private async Task DestroyBashMove(IReadOnlyList<Creature> targets)
     {
-        return PerformAttack(GroundBreakDamage, GroundBreakHits);
+        if (!HasPoisonBurst)
+        { await PerformAttackOn(DestroyBashDamage, 1, HbrgoAttackTargets.AllUnits); return; }
+        HbrgoAttackHits hits = await PerformTrackedAttack(DestroyBashDamage, 1, targets, HbrgoAttackTargets.AllUnits);
+        await HbrEnemyEffects.ApplyContinuousDamage(hits.Units, Creature, PoisonBurstPercent, 4);
     }
 
-    private async Task IvoryGuardMove(IReadOnlyList<Creature> _)
-    {
-        await CreatureCmd.TriggerAnim(Creature, "Cast", 0.15f);
-        Creature.GetPower<HighDimensionalShellPower>()?
-            .Restore(HbrResourceValueHelper.Fixed(Creature, IvoryGuardDp));
-        await CreatureCmd.GainBlock(
-            Creature,
-            IvoryGuardBlock,
-            ValueProp.Move,
-            null);
-    }
-
-    private Task ApplyEntangle(IEnumerable<Creature> targets)
-    {
-        return HbrPercentDebuffApplication.ApplyAttackDown(
-            new ThrowingPlayerChoiceContext(),
-            targets.Where(target => target.IsAlive).ToArray(),
-            EntangleAttackDown,
-            Creature);
-    }
-
-    Task IHbrgoPhantomAttackEffects.AfterPhantomAttackIntent(
+    Task IHbrgoPhantomAttackResults.AfterPhantomAttack(
         MoveState move,
-        IReadOnlyList<Creature> targets)
+        IReadOnlyList<Creature> attackedTargets,
+        IReadOnlyList<Creature> passedTargets,
+        decimal passedDamage)
     {
-        return move?.Id == EntangleMoveId
-            ? ApplyEntangle(targets)
-            : Task.CompletedTask;
+        if (move?.Id == EnergyDrainMoveId)
+        {
+            HbrEnemyEffects.AbsorbDp(Creature, passedDamage);
+        }
+
+        return Task.CompletedTask;
     }
 }

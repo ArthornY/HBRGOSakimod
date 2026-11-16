@@ -64,6 +64,23 @@ internal static class HandCardHoverTipLayoutHelper
         return Place(best, contentWidth, preferredX);
     }
 
+    // Convert an absolute placement in the tip parent's frame to this tip
+    // root's local space. This cancels any native re-alignment, including one
+    // with unchanged viewport/card geometry after a Shift rebuild.
+    internal static Transform2D InParentFrame(Transform2D tipsToFrame, Vector2 position, float scale) =>
+        tipsToFrame.AffineInverse() * new Transform2D(0f, Vector2.One * scale, 0f, position);
+
+    internal static void WrapText(Control entry)
+    {
+        if (entry.GetNodeOrNull<Label>("%Title") is { } title)
+        {
+            title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            title.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        }
+        if (entry.GetNodeOrNull<RichTextLabel>("%Description") is { } body)
+            body.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+    }
+
     private static HandCardHoverTipPlacement Place(Rect2 area, float contentWidth, float preferredX)
     {
         float width = Math.Min(contentWidth, area.Size.X);

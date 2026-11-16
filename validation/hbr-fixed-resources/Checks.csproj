@@ -7,7 +7,9 @@
     <GodotSharpAssemblyPath Condition="'$(GodotSharpAssemblyPath)' == ''">$(NuGetPackageRoot)godotsharp/4.5.1/lib/net8.0/GodotSharp.dll</GodotSharpAssemblyPath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../hbr-enemy-resources/Bootstrap.cs" Link="Bootstrap.cs" />
+    <!-- The enemy-skills bootstrap also runs the v0.111.0 profile, with its telemetry isolation flag. -->
+    <Compile Include="../hbr-enemy-skills/Bootstrap.cs" Link="Bootstrap.cs" />
+    <Compile Include="../hotaru-overcharge/TelemetryIsolation.cs" Link="TelemetryIsolation.cs" />
     <Reference Include="HBRGOSakiMod" HintPath="$(ModAssemblyPath)" Private="false" />
     <Reference Include="sts2" HintPath="$(RepositoryRoot)/libs/sts2.dll" Private="false" />
     <Reference Include="BaseLib" HintPath="$(RepositoryRoot)/libs/BaseLib.dll" Private="false" />

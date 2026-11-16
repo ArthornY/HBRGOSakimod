@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC03ExpMtKinpu02_E02.
+// HBR MC03ExpMtKinpu02_E02; the second killer hopper starts one dp step
+// ahead.
 public sealed class TargetWireFrameKillerElite : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Elite;
@@ -20,11 +21,13 @@ public sealed class TargetWireFrameKillerElite : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var second = (CrestHopperKiller)ModelDb.Monster<CrestHopperKiller>().ToMutable();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<CrestHopperKiller>().ToMutable(), null),
             (ModelDb.Monster<TargetWireFrameKiller>().ToMutable(), null),
-            (ModelDb.Monster<CrestHopperKiller>().ToMutable(), null)
+            (second, null)
         };
     }
 }

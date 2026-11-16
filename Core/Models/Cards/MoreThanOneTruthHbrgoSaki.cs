@@ -32,12 +32,13 @@ public sealed class MoreThanOneTruthHbrgoSaki : CardModel
     public override string BetaPortraitPath => PortraitPath;
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new PowerVar<StrengthPower>(1m)
+        new IntVar("AttackUpPercent", 20m)
     };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new[]
     {
-        HoverTipFactory.FromPower<StrengthPower>(),
+        HoverTipFactory.FromPower<HbrAttackUpPower>(),
+        HoverTipFactory.FromPower<HbrComboSmallPower>(),
         HoverTipFactory.FromPower<MindsEyePower>()
     };
 
@@ -66,10 +67,12 @@ public sealed class MoreThanOneTruthHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
-        await PowerCmd.Apply<StrengthPower>(context, Owner.Creature,
-            DynamicVars["StrengthPower"].BaseValue, Owner.Creature, this);
-        if (HasUpgradeEffect(5))
-            await MoreThanOneTruthCombatHelper.ApplyRandomResistanceBreak(context, this);
+        if (HbrBattleStatsHelper.IsEnabled(Owner.Creature))
+            await HbrEffectApplication.Apply<HbrAttackUpPower>(context, Owner.Creature,
+                DynamicVars["AttackUpPercent"].BaseValue, Owner.Creature, this,
+                profile: new HbrEffectProfile(HbrEffectLimit.None, HbrEffectExit.Eternal, 1));
+        else
+            await PowerCmd.Apply<StrengthPower>(context, Owner.Creature, 1m, Owner.Creature, this);
     }
 
     protected override void OnUpgrade()

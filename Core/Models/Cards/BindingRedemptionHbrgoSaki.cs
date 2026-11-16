@@ -60,19 +60,8 @@ public sealed class BindingRedemptionHbrgoSaki : CardModel
         if (cardPlay.Target.PetOwner == Owner &&
             cardPlay.Target.HasPower<PhantomPower>())
         {
-            decimal remaining = HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["Recovery"].BaseValue);
-            HighDimensionalShellPower shell =
-                cardPlay.Target.GetPower<HighDimensionalShellPower>();
-            if (shell != null)
-            {
-                remaining -= shell.Restore(remaining);
-            }
-
-            if (remaining > 0)
-            {
-                await CreatureCmd.Heal(cardPlay.Target, remaining);
-            }
-
+            await YanagiButlerCombatHelper.RestoreDpThenHp(cardPlay.Target,
+                HbrResourceValueHelper.Fixed(Owner.Creature, DynamicVars["Recovery"].BaseValue), this);
             return;
         }
 

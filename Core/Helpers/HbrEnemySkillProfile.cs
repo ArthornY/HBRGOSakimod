@@ -51,6 +51,9 @@ internal static class HbrEnemySkillProfiles
         {
             RedCrimsonBossMonster => move is "DISAPPEAR_RAY_MOVE" or
                 "WORLDS_END_SUPER_NOVA_1_MOVE" or "WORLDS_END_SUPER_NOVA_2_MOVE",
+            // Move-table monsters carry each original skill's con/spr weights.
+            HbrgoMoveTableMonster monster =>
+                HbrgoMoveTableMonster.FindTableMove(monster, move)?.SpiritDefense == true,
             _ => false
         };
         return spirit ? HbrEnemySkillProfile.Default with

@@ -69,7 +69,6 @@ public sealed class SwitchingSlashHbrgoSaki : CardModel
     {
         Creature owner = Owner?.Creature;
         if (!ReferenceEquals(cardPlay?.Card, this) ||
-            DualSwordsCopyHelper.IsDualSwordsCopy(this) ||
             owner?.CombatState == null ||
             CombatManager.Instance.IsOverOrEnding ||
             owner.HasPower<ReptureBowPower>())

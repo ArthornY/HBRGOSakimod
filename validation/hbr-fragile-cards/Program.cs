@@ -119,10 +119,10 @@ static partial class Checks
         typeof(ElectronicSoldierManual).GetProperty("Talent", F)!.SetValue(Manual, 0);
         typeof(ElectronicSoldierManual).GetProperty("Simplicity", F)!.SetValue(Manual, 0);
 
-        // Mode switching halves the real raw input before coefficient conversion.
+        // Switching form keeps the full authored modifier before coefficient conversion.
         CardModel thunder = Card(typeof(MimicThunderGaleHbrgoSaki));
-        Check(Render(thunder, false, target: Enemy).Contains("30%的脆弱"),
-            "off-form Thunder selected target mirrors real raw2 halved to1 before B calculation");
+        Check(Render(thunder, false, target: Enemy).Contains("37.5%的脆弱"),
+            "off-form Thunder selected target retains its full raw2 and37point5percent");
         var dual = (PowerModel)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(ReptureDualSwordsPower));
         Set(dual, "<IsMutable>k__BackingField", true); Set(dual, "_owner", Hero); Set(dual, "_amount", 1);
         ((List<PowerModel>)Field(typeof(Creature), "_powers").GetValue(Hero)!).Add(dual);
@@ -131,8 +131,8 @@ static partial class Checks
         ((List<PowerModel>)Field(typeof(Creature), "_powers").GetValue(Hero)!).Remove(dual);
 
         CardModel odd = Card(typeof(MimicExorcismArrowHbrgoSaki));
-        Check(Render(odd, false, target: Enemy).Contains("30%的脆弱"),
-            "off-form raw3 becomes1point5 and native integer normalization selects B1 rather than fractional exponent");
+        Check(Render(odd, false, target: Enemy).Contains("46.9%的脆弱"),
+            "off-form raw3 retains its full46point875percent coefficient");
         var scars = Blank<HotaruUnfadingScarsPower>();
         Set(scars, "<IsMutable>k__BackingField", true); Set(scars, "_owner", Hero); Set(scars, "_amount", 1);
         typeof(HotaruUnfadingScarsPower).GetProperty("EffectPercent", F)!.SetValue(scars, 25);
@@ -147,8 +147,8 @@ static partial class Checks
         typeof(ElectronicSoldierManual).GetProperty("Talent", F)!.SetValue(Manual, 0);
         typeof(ElectronicSoldierManual).GetProperty("Simplicity", F)!.SetValue(Manual, 0);
         thunder.DynamicVars["FragilePower"].UpgradeValueBy(-1m);
-        Check(Render(thunder, false, target: Enemy).Contains("0%的脆弱"),
-            "raw1 halved to0point5 creates no Fragile grant and therefore no Scars bonus");
+        Check(Render(thunder, false, target: Enemy).Contains("37.5%的脆弱"),
+            "off-form raw1 keeps its30percent Fragile grant and receives the final25percent Scars bonus");
         powers.Remove(scars);
     }
 

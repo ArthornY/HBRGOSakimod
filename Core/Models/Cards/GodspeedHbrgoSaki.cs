@@ -10,18 +10,15 @@ using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
+// Retired (2026-11-09): it made every six-sense resistance cut one point deeper.
+// The resistances are gone, so it is no longer offered; saved runs that still
+// hold it can play it, and it does nothing.
 public sealed class GodspeedHbrgoSaki : CardModel
 {
     public override string PortraitPath => ImageHelper.GetImagePath(
         "packed/card_portraits/hbrgo_saki/godspeed_hbrgo_saki.png");
 
     public override string BetaPortraitPath => PortraitPath;
-
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[]
-        {
-            HoverTipFactory.FromPower<GodspeedPower>()
-        };
 
     public GodspeedHbrgoSaki()
         : base(
@@ -32,17 +29,9 @@ public sealed class GodspeedHbrgoSaki : CardModel
     {
     }
 
-    protected override async Task OnPlay(
+    protected override Task OnPlay(
         PlayerChoiceContext choiceContext,
-        CardPlay cardPlay)
-    {
-        await PowerCmd.Apply<GodspeedPower>(
-            choiceContext,
-            Owner.Creature,
-            1m,
-            Owner.Creature,
-            this);
-    }
+        CardPlay cardPlay) => Task.CompletedTask;
 
     protected override void OnUpgrade()
     {

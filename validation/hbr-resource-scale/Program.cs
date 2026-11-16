@@ -121,8 +121,23 @@ static partial class Checks
         Check(harmony.CreateClassProcessor(Mod.GetType("HBRGOSakiMod.Core.Patches.HotaruAncientHealthRecoveryPatch", true)!).Patch().Count == 1,
             "production Hotaru ancient recovery guard installs on native BeforeEventStarted");
         TestMode.IsOn = true;
-        foreach (Type type in new[] { typeof(ElectronicSoldierManual), typeof(HotaruElectronicSoldierManual), typeof(DeflectorProtection) })
-            SavedPropertiesTypeCache.InjectTypeIntoCache(type);
+        InitializeResourceSavedPropertyCache(new[] { typeof(ElectronicSoldierManual), typeof(HotaruElectronicSoldierManual), typeof(DeflectorProtection) });
+    }
+    static void InitializeResourceSavedPropertyCache(IEnumerable<Type> types)
+    {
+        Assembly native = typeof(Creature).Assembly;
+        Type? legacy = native.GetType("MegaCrit.Sts2.Core.Saves.Runs.SavedPropertiesTypeCache");
+        if (legacy != null)
+        {
+            MethodInfo inject = AccessTools.Method(legacy, "InjectTypeIntoCache");
+            foreach (Type type in types) inject.Invoke(null, new object[] { type });
+            return;
+        }
+        native.GetType("MegaCrit.Sts2.Core.Modding.AssemblyInfo", true)!.GetMethod("Init", F)!.Invoke(null, null);
+        Type cache = native.GetType("MegaCrit.Sts2.Core.Multiplayer.Serialization.ModelIdSerializationCache", true)!;
+        cache.GetMethod("Init", F)!.Invoke(null, null);
+        MethodInfo register = cache.GetMethod("CacheSavedPropertiesForTypeDebug", F)!;
+        foreach (Type type in types) register.Invoke(null, new object[] { type });
     }
     static void InitialCases()
     {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -54,7 +55,7 @@ public sealed class HalfBodyAffiliationCapability : CardCapability,
     {
         if (!ReferenceEquals(card, Owner)) yield break;
         foreach (string id in GetKeywordIds(card))
-            yield return new HoverTip(ModKeywordRegistry.GetTitle(id),
-                new LocString("card_keywords", id + ".description")) { Id = id };
+            yield return HoverTipCompatibility.CreateKeyword(ModKeywordRegistry.GetTitle(id),
+                new LocString("card_keywords", id + ".description"), id);
     }
 }

@@ -61,10 +61,10 @@ static partial class Checks
         HighDimensionalShellPower? shell = Enemy.GetPower<HighDimensionalShellPower>();
         PowerModel[] receipts = Enemy.Powers.ToArray();
         decimal beforeDp = shell?.CurrentDp ?? 0m; int beforeHp = Enemy.CurrentHp;
-        int rng = RunState.Rng.Niche.Counter;
+        int rng = RngCount(RunState.Rng.Niche);
         using IDisposable? hit = (IDisposable?)Call(Helper("HbrDestructionGainHelper"), "BeginHit", Hero, card, ValueProp.Move);
         decimal damage = ActualDamage(Hero, Enemy, raw, card: card);
-        Check(RunState.Rng.Niche.Counter == rng && Current == null, "calibration uses explicit noncritical damage without RNG");
+        Check(RngCount(RunState.Rng.Niche) == rng && Current == null, "calibration uses explicit noncritical damage without RNG");
         foreach (PowerModel power in receipts) await power.BeforeDamageReceived(null!, Enemy, damage, ValueProp.Move, Hero, card);
         decimal blocked = Enemy.DamageBlockInternal(damage, ValueProp.Move);
         DamageResult result = Enemy.LoseHpInternal(Math.Max(0m, damage - blocked), ValueProp.Move);
@@ -86,60 +86,118 @@ static partial class Checks
         Equal(NativeCost(strike), 1m, "native Strike energy cost"); Equal(NativeCost(bash), 2m, "native Bash energy cost");
         Equal(NativeCost(defend), 1m, "native Defend energy cost");
         var rows = new List<object>();
-        foreach (int roll in Enumerable.Range(12, 5))
+        foreach (int roll in Enumerable.Range(12, 6))
         {
-            Hopper(roll); int hp = Enemy.MaxHp; decimal dp = Enemy.GetPower<HighDimensionalShellPower>()!.CurrentDp;
-            Check(hp == roll * 700 && dp == decimal.Floor(roll / 14m * 3000m), "normal native HP roll maps to 700x HP and independent Hopper DP: " + roll);
-            Equal(Parameter(Enemy), 150m, "opening SmallHopper E150 is independent of native HP roll: " + roll);
-            Equal(ActualDamage(Hero, Enemy, 6m, card: strike), decimal.Floor(3857.14m), "real shell listener adds no legacy 25% reduction before final HBR floor: " + roll);
-            Progress(false); Equal(ActualDamage(Hero, Enemy, 6m, card: strike), 4.5m, "legacy mode retains real shell 25% reduction: " + roll); Progress(true);
-            var strikes = new List<Hit>();
-            while (Enemy.CurrentHp > 0 && strikes.Count < 8) strikes.Add(await HitCard(strike));
-            Check(strikes.Count == 4, "normal Hopper roll takes exactly four native Strikes: " + roll);
-            Check(strikes[0].DpAfter == 0m && strikes[0].HpAfter == hp && strikes[0].DestructionAfter == 2,
-                "breaking Strike discards overflow, preserves HP and earns 2 destruction points: " + roll);
-            Check(strikes[1].DestructionAfter == 4 && strikes[2].DestructionAfter == 6,
-                "later HP hits advance destruction after their own damage: " + roll);
-            Hopper(roll);
-            Hit bashHit = await HitCard(bash);
-            Check(!Enemy.HasPower<VulnerablePower>() && bashHit.PipelineDamage == decimal.Floor(5142.85m) && bashHit.HpAfter == hp,
-                "opening Bash deals unvulnerable damage and only breaks DP: " + roll);
-            // Native Bash.OnPlay awaits AttackCommand.Execute before applying
-            // VulnerablePower. Match that order without replacing its multiplier.
-            var vulnerable = new VulnerablePower(); AddPower(Enemy, vulnerable); Set(vulnerable, "_amount", (int)bash.DynamicVars.Vulnerable.BaseValue);
-            Hit second = await HitCard(strike); Hit third = await HitCard(strike);
-            Equal(second.PipelineDamage, decimal.Floor(3857.14m * 1.02m * 1.5m), "first post-Bash Strike floors after native Vulnerable and 102% destruction: " + roll);
-            Equal(third.PipelineDamage, decimal.Floor(3857.14m * 1.04m * 1.5m), "second post-Bash Strike floors after native Vulnerable and 104% destruction: " + roll);
-            Check(second.HpAfter > 0 && third.HpAfter == 0, "Bash plus two Strikes kills every normal roll in three cards: " + roll);
-            Equal(NativeCost(bash) + NativeCost(strike) * 2m, 4m, "Bash plus two Strikes costs four native energy: " + roll);
-            rows.Add(new { nativeHp = roll, hp, dp, strikes, bashThenStrikes = new[] { bashHit, second, third } });
+            Set(RunState, "<AscensionLevel>k__BackingField", roll == 17 ? 8 : 0);
+            // Updated 2026-11-14: opening total12800, original SmallCrest DP share37.5%.
+            // HP floor happens before a fresh DP pool derives from that adapted HP.
+            int hp = (int)decimal.Floor(roll * 8000m / 14m);
+            decimal dp = decimal.Floor(hp * 4800m / 8000m);
+            var sequences = new List<object>();
+            foreach (bool bashFirst in new[] { false, true })
+            {
+                Hopper(roll);
+                Equal(Enemy.MaxHp, hp, "redistributed opening Hopper HP: " + roll);
+                Equal(Enemy.GetPower<HighDimensionalShellPower>()!.CurrentDp, dp, "redistributed opening Hopper DP: " + roll);
+                Equal(Parameter(Enemy), 150m, "opening E150 is independent of resource share: " + roll);
+                decimal expectedDp = dp; int expectedHp = hp, destruction = 0;
+                var hits = new List<Hit>();
+                while (Enemy.CurrentHp > 0 && hits.Count < 8)
+                {
+                    bool isBash = bashFirst && hits.Count == 0;
+                    // Independent arithmetic: coefficient6/8, stats100 versusE150;
+                    // ordinary coefficient3 x enemy coefficient2 =6 destruction per hit.
+                    decimal skill = decimal.Floor((isBash ? 8000m : 6000m) * (1m - 50m / 140m) * 100m) / 100m;
+                    decimal damage = decimal.Floor(skill * (1m + destruction / 100m) * (bashFirst && hits.Count > 0 ? 1.5m : 1m));
+                    decimal beforeDp = expectedDp; int beforeHp = expectedHp;
+                    if (expectedDp > 0m)
+                    {
+                        expectedDp = Math.Max(0m, expectedDp - damage);
+                        if (expectedDp == 0m) destruction += 6;
+                    }
+                    else
+                    {
+                        expectedHp = Math.Max(0, expectedHp - (int)damage);
+                        destruction += 6;
+                    }
+                    Hit actual = await HitCard(isBash ? bash : strike); hits.Add(actual);
+                    Equal(actual.PipelineDamage, damage, $"Hopper{roll} sequence{bashFirst} hit{hits.Count} damage");
+                    Check(actual.DpBefore == beforeDp && actual.DpAfter == expectedDp && actual.HpBefore == beforeHp && actual.HpAfter == expectedHp,
+                        "real shell and HP preserve the independent resource trajectory");
+                    Equal(actual.DestructionAfter, destruction, "current skill-coefficient destruction replaces obsolete fixed2 expectation");
+                    if (isBash)
+                    {
+                        var vulnerable = new VulnerablePower(); AddPower(Enemy, vulnerable);
+                        Set(vulnerable, "_amount", (int)bash.DynamicVars.Vulnerable.BaseValue);
+                    }
+                }
+                Check(Enemy.CurrentHp == 0 && hits.Count >= 3 && hits.Count <= 5,
+                    "unchanged damage with redistributed pools kills within measured3to5 card budget");
+                sequences.Add(new { bashFirst, cards = hits.Count, energy = hits.Count + (bashFirst ? 1 : 0), hits });
+            }
+            rows.Add(new { nativeHp = roll, hp, dp, ascension = roll == 17 ? 8 : 0, sequences });
         }
-        // Native difficulty8 expands the HP roll to13-17; DP enhancement starts
-        // later at10. At700x HP, even its highest roll fits both card budgets.
-        Set(RunState, "<AscensionLevel>k__BackingField", 8); Hopper(17);
-        var hardStrikes = new List<Hit>();
-        while (Enemy.CurrentHp > 0 && hardStrikes.Count < 8) hardStrikes.Add(await HitCard(strike));
-        Check(hardStrikes.Count == 4 && hardStrikes[2].HpAfter > 0 && hardStrikes[3].HpAfter == 0,
-            "difficulty8 native HP17 at700x HP takes exactly four Strikes");
-        Hopper(17); Hit hardBash = await HitCard(bash);
-        var hardVulnerable = new VulnerablePower(); AddPower(Enemy, hardVulnerable); Set(hardVulnerable, "_amount", (int)bash.DynamicVars.Vulnerable.BaseValue);
-        Hit hardSecond = await HitCard(strike); Hit hardThird = await HitCard(strike);
-        Check(hardSecond.HpAfter > 0 && hardThird.HpAfter == 0, "difficulty8 native HP17 at700x HP dies to Bash plus two Strikes");
-        object highRoll = new { ascension = 8, nativeHp = 17, hp = Enemy.MaxHp, hardStrikes,
-            bashThenTwoStrikes = new[] { hardBash, hardSecond, hardThird } };
         Set(RunState, "<AscensionLevel>k__BackingField", 0);
-        Hopper(14); Powers(Hero).Clear(); Set(Hero, "_currentHp", 1000); Set(Hero, "_maxHp", 1000);
-        Check(Hero.Block == 0, "Defend calibration starts without existing block");
-        decimal block = MegaCrit.Sts2.Core.Hooks.Hook.ModifyBlock(Combat, Hero, defend.DynamicVars.Block.BaseValue, ValueProp.Move, defend, null, out _);
-        Equal(block, 500m, "native Defend at INT100 yields 500 HBR block"); Hero.GainBlockInternal(block);
-        decimal incoming = ActualDamage(Enemy, Hero, 4m);
-        Equal(incoming, decimal.Floor(400m * (1m + 50m / 140m)), "opening Hopper E150 and explicit body row floor final incoming damage to542");
-        decimal absorbed = Hero.DamageBlockInternal(incoming, ValueProp.Move);
-        DamageResult defenseResult = Hero.LoseHpInternal(Math.Max(0m, incoming - absorbed), ValueProp.Move);
-        Check(Hero.Block == 0 && Hero.CurrentHp == 958 && defenseResult.UnblockedDamage == 42m,
-            "final HBR floor542 followed by native block500 leaves42 HP loss");
-        CalibrationReport = new { normalRolls = rows, highRoll, defend = new { block, incoming, hpLoss = defenseResult.UnblockedDamage },
-            assumptions = "HBR level-one six stats100; 700x native HP; Hopper DP independently calibrated to3000 at native HP14; default100% HP/damage and20% DP config; no crits, upgrades, senses, other modifiers or turn expiry. Bash order matches installed native IL. Counts are cards/energy budget, not same-turn playability. Normal native HP12-16 and difficulty8 maximum HP17 fit the 3-4 card budget; later difficulty DP/attack changes are not covered. Values are mod calibration data, not original HBR Hopper data." };
+        CalibrationReport = new { rows,
+            assumptions = "Current opening profile native14 -> HP8000/DP4800 (total12800 unchanged); native rolls12..16 and difficulty8 max17. Stats100 versusE150, no crit/dice/turn expiration. Current ordinary skill coefficient3 x enemy coefficient2 gives6 destruction per complete hit. Bash native Vulnerable is applied after its attack. Counts are cards, not same-turn playability. Managed real resource pipeline; no rendered game combat." };
         CalibrationListeners = false;
+    }
+
+    // The opening Hopper's attacks against a native Defend. Since the fourth
+    // move-table batch (2026-11-08) the Hopper follows the original
+    // CrestHopperSmall table (normal attack on steps 1 and 3, attack or combo on
+    // step 2, combo on steps 4-5). Split out of the historical card-budget
+    // calibration so that it runs in the green segment.
+    static object? OpeningAttackReport;
+    static void HopperOpeningAttack()
+    {
+        CalibrationConfig(); ResetSenses(); Progress(true); CalibrationListeners = true;
+        try
+        {
+            var defend = Card<DefendIronclad>();
+            Equal(defend.DynamicVars.Block.BaseValue, 5m, "native unupgraded Ironclad Defend block");
+            Hopper(14); Powers(Hero).Clear(); Set(Hero, "_currentHp", 1000); Set(Hero, "_maxHp", 1000);
+            Check(Hero.Block == 0, "Defend calibration starts without existing block");
+            decimal block = MegaCrit.Sts2.Core.Hooks.Hook.ModifyBlock(Combat, Hero, defend.DynamicVars.Block.BaseValue, ValueProp.Move, defend, null, out _);
+            Equal(block, 500m, "native Defend at INT100 yields 500 HBR block");
+            // The table and the damage come from the production class.
+            object tables = typeof(SmallHopper).GetField("Tables", F)!.GetValue(null)!;
+            object table = tables.GetType().GetProperty("Dp")!.GetValue(tables)!;
+            object firstStep = ((System.Collections.IList)table.GetType().GetProperty("Steps")!.GetValue(table)!)[0]!;
+            object firstOption = ((System.Collections.IList)firstStep.GetType().GetProperty("Options")!.GetValue(firstStep)!)[0]!;
+            Check((string)firstOption.GetType().GetProperty("Skill")!.GetValue(firstOption)! == "CrestHopper_DefaultAttack",
+                "the opening SmallHopper starts its dp table with the normal attack");
+            int attack = (int)typeof(SmallHopper).GetProperty("AttackDamage", F)!.GetValue(Enemy.Monster)!;
+            int combo = (int)typeof(SmallHopper).GetProperty("ComboDamage", F)!.GetValue(Enemy.Monster)!;
+            int hits = (int)typeof(SmallHopper).GetField("ComboHits", F)!.GetValue(null)!;
+            Check(attack == 3 && combo == 1 && hits == 8, "difficulty-0 SmallHopper: normal attack 3, combo 1 x8");
+            Hero.GainBlockInternal(block);
+            decimal incoming = ActualDamage(Enemy, Hero, attack);
+            Equal(incoming, decimal.Floor(300m * (1m + 50m / 140m)), "opening Hopper E150 and explicit body row floor its normal attack to407");
+            decimal absorbed = Hero.DamageBlockInternal(incoming, ValueProp.Move);
+            DamageResult defenseResult = Hero.LoseHpInternal(Math.Max(0m, incoming - absorbed), ValueProp.Move);
+            Check(Hero.Block == 93 && Hero.CurrentHp == 1000 && defenseResult.UnblockedDamage == 0m,
+                "native block500 takes the whole normal attack407 and keeps93");
+            Set(Hero, "_block", 0); Set(Hero, "_currentHp", 1000);
+            Move(Enemy, "COMBO_MOVE"); Hero.GainBlockInternal(block);
+            decimal perHit = ActualDamage(Enemy, Hero, combo);
+            Equal(perHit, decimal.Floor(100m * (1m + 50m / 140m)), "each combo hit uses the same body row and floors to135");
+            decimal comboLoss = 0m;
+            for (int hit = 0; hit < hits; hit++)
+            {
+                decimal stopped = Hero.DamageBlockInternal(perHit, ValueProp.Move);
+                comboLoss += Hero.LoseHpInternal(Math.Max(0m, perHit - stopped), ValueProp.Move).UnblockedDamage;
+            }
+            Check(Hero.Block == 0 && comboLoss == 580m && Hero.CurrentHp == 420,
+                "the 1x8 combo (8x135 = 1080) after native block500 leaves580 HP loss");
+            Move(Enemy, "ATTACK_MOVE");
+            OpeningAttackReport = new { block, normalAttack = new { attack, incoming, hpLoss = defenseResult.UnblockedDamage },
+                combo = new { combo, hits, perHit, hpLoss = comboLoss },
+                assumptions = "Opening act-one floor-one monster room (E150), HBR level-one six stats100, native Defend at INT100, no crits, senses or other modifiers; per-hit HBR floor; production SmallHopper move values." };
+        }
+        finally
+        {
+            CalibrationListeners = false;
+        }
     }
 }

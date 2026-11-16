@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using BaseLib.Config;
+using HBRGOSakiMod.Core.RunUpload;
 
 namespace HBRGOSakiMod.Core.Config;
 
@@ -28,6 +29,7 @@ public sealed class HBRGOSakiConfig : SimpleModConfig
     private static int _enemyDamageGrowthPerActPercent =
         DefaultEnemyDamageGrowthPerActPercent;
     private static int _hpDpThicknessPercent = 150;
+    private static int _thirtyOneXHiddenEffectPermille = 1;
 
     public HBRGOSakiConfig()
     {
@@ -37,6 +39,13 @@ public sealed class HBRGOSakiConfig : SimpleModConfig
     [ConfigHideInUI]
     [ConfigIgnoreRestoreDefaults]
     public static bool SeenDamageChallengeAnnouncement { get; set; } = false;
+
+    [ConfigHideInUI]
+    public static int ThirtyOneXHiddenEffectPermille
+    {
+        get => _thirtyOneXHiddenEffectPermille;
+        set => _thirtyOneXHiddenEffectPermille = Math.Clamp(value, 0, 1000);
+    }
 
     internal static bool CanSaveAnnouncementAcknowledgment => _instance != null;
 
@@ -72,6 +81,33 @@ public sealed class HBRGOSakiConfig : SimpleModConfig
 
     [ConfigHoverTip]
     public static bool UseBigDogChewCardFace { get; set; } = false;
+
+    [ConfigHoverTip]
+    public static bool ThirtyOneACutInPresentation { get; set; } = true;
+
+    [ConfigHoverTip]
+    public static bool ThirtyGProposalPresentation { get; set; } = true;
+
+    [ConfigHoverTip]
+    public static HbrMemoryGardenStoryPlayback MemoryGardenUpgradeStoryPlayback { get; set; } =
+        HbrMemoryGardenStoryPlayback.All;
+
+    // This is a temporary new-run policy, not a live-run mode switch. Keep a
+    // writable config property so old/off files and mirrored settings can load
+    // normally, but they cannot opt a newly started run out of HBR numerics.
+    // Existing runs continue to read the mode saved in their soldier manual.
+    [ConfigHoverTip]
+    public static bool HbrNumerics
+    {
+        get => true;
+        set { }
+    }
+
+    // Magic Sword Lucky Seven's finisher show. Presentation only: the setting never changes the
+    // damage, and a teammate's finisher is never shown full screen on this machine.
+    [ConfigHoverTip]
+    public static HbrFinisherPresentation FinisherPresentation { get; set; } =
+        HbrFinisherPresentation.Fullscreen;
 
     [ConfigHoverTip]
     public static bool ForceModEliteBossEncounters { get; set; } = false;
@@ -245,6 +281,52 @@ public sealed class HBRGOSakiConfig : SimpleModConfig
                 EnemyDamageGrowthPerActPercent = percentage;
             }
         }
+    }
+
+    // Run data upload (Core/RunUpload). The switch reads the consent file in
+    // user://HBRGOSakiMod/run-upload, not this config. The first-launch prompt
+    // sets it; turning it on here shows the same explanation first, and
+    // Restore Defaults never touches it.
+    [ConfigHoverTip]
+    [ConfigIgnoreRestoreDefaults]
+    public static bool UploadRunData
+    {
+        get => RunUploadService.IsEnabled;
+        set => RunUploadService.RequestEnabled(value);
+    }
+
+    // Shown for copying; edits are ignored and the field snaps back.
+    [ConfigTextInput("[0-9a-f-]+", MaxLength = 36)]
+    [ConfigHoverTip]
+    [ConfigIgnoreRestoreDefaults]
+    public static string RunUploadInstallId
+    {
+        get => RunUploadService.InstallId;
+        set
+        {
+            if (!string.Equals(value ?? string.Empty, RunUploadService.InstallId, StringComparison.Ordinal))
+                Godot.Callable.From(RefreshRunUploadSettings).CallDeferred();
+        }
+    }
+
+    [ConfigButton("RunUploadCopyButton")]
+    [ConfigHoverTip]
+    public static void CopyRunUploadInstallId() => RunUploadService.CopyInstallId();
+
+    [ConfigButton("RunUploadRegenerateButton")]
+    [ConfigHoverTip]
+    public static void RegenerateRunUploadInstallId() => RunUploadService.ConfirmRegenerateInstallId();
+
+    [ConfigButton("RunUploadClearButton")]
+    [ConfigHoverTip]
+    public static void ClearRunUploadLocalData() => RunUploadService.ConfirmClearLocalData();
+
+    internal static void RefreshRunUploadSettings() => NotifyConfigValueChanged();
+
+    internal static void SaveRunUploadSettings()
+    {
+        _instance?.Save();
+        NotifyConfigValueChanged();
     }
 
     private static bool TryParsePercentage(string value, out int percentage)

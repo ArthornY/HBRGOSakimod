@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace HBRGOSakiMod.Core.Helpers;
@@ -26,10 +27,20 @@ internal static class EnemyHealthScalingHelper
 
         decimal originalMaxHp = LargeCreatureHealthHelper.GetMaxHp(creature);
         decimal originalCurrentHp = LargeCreatureHealthHelper.GetCurrentHp(creature);
-        decimal multiplier = EnemyStatScalingHelper.GetMaxHpMultiplier(creature);
-        decimal maximum = BigCombatNumbers.ScaleHealth(originalMaxHp, multiplier);
-        decimal current = originalCurrentHp <= 0 ? 0 : Math.Min(maximum,
-            BigCombatNumbers.ScaleHealth(originalCurrentHp, multiplier));
+        decimal maximum, current;
+        if (creature.Monster is IHbrgoFixedEnemyResources fixedResources)
+        {
+            // The original's absolute HP replaces the native roll and its
+            // multiplayer scaling, and no setting or HP scale applies.
+            maximum = Math.Max(1, fixedResources.FixedMaxHp);
+            current = originalCurrentHp <= 0 ? 0 : maximum;
+        }
+        else
+        {
+            maximum = HbrEnemyResourceAdapter.ScaleHealth(creature, originalMaxHp);
+            current = originalCurrentHp <= 0 ? 0 : Math.Min(maximum,
+                HbrEnemyResourceAdapter.ScaleHealth(creature, originalCurrentHp));
+        }
 
         // Mark before notifying health observers so reentrant callbacks cannot multiply twice.
         Applied.Add(creature, new AppliedState());
@@ -43,8 +54,7 @@ internal static class EnemyHealthScalingHelper
         // egg can execute the same source during its first entry; the outer entry hook owns
         // scaling in that case. Re-adds and later phases retain their one-time entry marker.
         return EnemyStatScalingHelper.IsEnemy(creature) && Applied.TryGetValue(creature, out _)
-            ? BigCombatNumbers.ScaleHealth(amount,
-                EnemyStatScalingHelper.GetMaxHpMultiplier(creature))
+            ? HbrEnemyResourceAdapter.ScaleHealth(creature, amount)
             : amount;
     }
 }

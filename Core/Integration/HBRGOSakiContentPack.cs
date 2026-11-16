@@ -76,6 +76,7 @@ internal static class HBRGOSakiContentPack
         typeof(MimicFullBodyShotHbrgoSaki),
         typeof(MimicReminiscenceHbrgoSaki),
         typeof(QuickThinkingHbrgoSaki),
+        typeof(DesuwaHbrgoSaki),
         typeof(SwitchingSlashHbrgoSaki),
         typeof(ConsecutiveSlashHbrgoSaki),
         typeof(AmnesiaHbrgoSaki),
@@ -98,6 +99,11 @@ internal static class HBRGOSakiContentPack
         typeof(GodspeedHbrgoSaki),
         typeof(WithMeHbrgoSaki),
         typeof(LiveHbrgoSaki),
+        typeof(ArpeggioHbrgoSaki),
+        typeof(MimicShootingStarSongHbrgoSaki),
+        typeof(MimicHeartFlutterSlideHbrgoSaki),
+        typeof(MimicDivineCraftHbrgoSaki),
+        typeof(MimicWillActivationHbrgoSaki),
         typeof(TrainingTimeHbrgoSaki),
         typeof(HasteHbrgoSaki),
         typeof(FateHbrgoSaki),
@@ -112,6 +118,48 @@ internal static class HBRGOSakiContentPack
         typeof(CrushYouLikeABugHbrgoSaki),
         typeof(SummerGrassDreamHbrgoSaki),
         typeof(BoostUpHbrgoSaki),
+        typeof(ByakkoRoarHbrgoSaki),
+        typeof(PeacefulMemoriesHbrgoSaki),
+        typeof(HellfireBurnHbrgoSaki),
+        typeof(FrozenMistMeowHbrgoSaki),
+        typeof(InnocentRequiemHbrgoSaki),
+        typeof(FreshDeathHbrgoSaki),
+        typeof(WorldIsMyLaboratoryHbrgoSaki),
+        typeof(WorldConquestHbrgoSaki),
+        typeof(ItsNinjaShowtimeHbrgoSaki),
+        typeof(ImmortalRecollectionHbrgoSaki),
+        typeof(StarsGuideYouHbrgoSaki),
+        typeof(AllOrdersConfirmedHbrgoSaki),
+        typeof(TengenBrilliantMoveHbrgoSaki),
+        typeof(PaintTheWorldMyColorHbrgoSaki),
+        typeof(MakeAChangeKillYourselfHbrgoSaki),
+        typeof(AlwaysKeepYourChinUpHbrgoSaki),
+        typeof(AcePlayerIsNotMeHbrgoSaki),
+        typeof(DiveAsDeepAsIWantHbrgoSaki),
+        typeof(EldestOshimaIsHereHbrgoSaki),
+        typeof(NarcissismIsFineHbrgoSaki),
+        typeof(YourCombatDeliveryIsHereHbrgoSaki),
+        typeof(AbsolutelyNoEffortHbrgoSaki),
+        typeof(OpenTheLockHbrgoSaki),
+        typeof(IWillNotFallHbrgoSaki),
+        typeof(NoblesseObligeHbrgoSaki),
+        typeof(ExorcisingStringResoundHbrgoSaki),
+        typeof(WindForestFireMountainHbrgoSaki),
+        typeof(HarvestBountifulGrainsHbrgoSaki),
+        typeof(CuteIsInvincibleHbrgoSaki),
+        typeof(SlashIfCloseHbrgoSaki),
+        typeof(AsTheYoungLadyCommandsHbrgoSaki),
+        typeof(LetMeShowYouClassHbrgoSaki),
+        typeof(ThisIsMyStageHbrgoSaki),
+        typeof(LeaveAnyBattlefieldToMeHbrgoSaki),
+        typeof(LegacyFlashHbrgoSaki),
+        typeof(FollowBehindMeHbrgoSaki),
+        typeof(ReadySteadyDieHbrgoSaki),
+        typeof(ThereIsOnlyOneTruthHbrgoSaki),
+        typeof(RepentanceTimeHbrgoSaki),
+        typeof(NumbersAreTheSourceHbrgoSaki),
+        typeof(WitnessMySupremacyHbrgoSaki),
+        typeof(LoveCharlottaHbrgoSaki),
         typeof(MimicDreamBubbleHbrgoSaki),
         typeof(EhehePeroroHbrgoSaki),
         typeof(NoSelfInDreamHbrgoSaki),
@@ -339,10 +387,13 @@ internal static class HBRGOSakiContentPack
         typeof(HotaruGentleTouch)
     };
 
-    // Permanent choices unlocked by a level-seven cannon. They are loadable
-    // and localized like other cards, but never enter ordinary reward pools.
+    // Generated cards and selection models remain loadable/localized without
+    // entering any character's ordinary reward pool.
     private static readonly Type[] HotaruDerivedCardTypes =
     {
+        typeof(KuraRiceBallHbrgoSaki),
+        typeof(PallasCatDollHbrgoSaki),
+        typeof(YingxiaFormationChoiceHbrgoSaki),
         typeof(HotaruSacrifice),
         typeof(HotaruRedemption),
         typeof(HotaruCannonChoiceToken)
@@ -365,7 +416,13 @@ internal static class HBRGOSakiContentPack
         typeof(BecomeGodHbrgoSaki),
         typeof(HotaruElectronicSoldierManual),
         typeof(Millsage),
-        typeof(HotaruIridescence)
+        typeof(HotaruIridescence),
+        typeof(MetronomeThirtyOneO), typeof(MarkOfSeven), typeof(BoneChinaTeacup),
+        typeof(SakuraSwordTassel), typeof(ScoreOfHaruhikage), typeof(MusicStand),
+        typeof(LetterArrivesThirtyA), typeof(FormerFoesThirtyA), typeof(CheckmateThirtyA),
+        typeof(TicketStubThirtyA), typeof(PhantomsOfBygoneDaysThirtyA), typeof(ShelterRationCouponThirtyA),
+        typeof(CheersByTheSea), typeof(KanatasHomework), typeof(GiftFromAbove),
+        typeof(TheLastStage), typeof(SmilingPanKeychain), typeof(StreetPiano)
     };
 
     private static readonly Type[] InternalRelicTypes =
@@ -373,6 +430,16 @@ internal static class HBRGOSakiContentPack
         typeof(FabricatedSoulOfAnchor),
         typeof(ThirtyACollection),
         typeof(ThirtyOneACollection),
+        typeof(ThirtyOneBCollection),
+        typeof(ThirtyOneCCollection),
+        typeof(ThirtyOneDCollection),
+        typeof(ThirtyOneECollection),
+        typeof(ThirtyOneFCollection),
+        typeof(ThirtyOneXCollection),
+        typeof(ThirtyGCollectionRelic),
+        typeof(TigersMouthSnackBond),
+        typeof(FamilyIsLikeThisBond),
+        typeof(DemonKingAndFamiliarBond),
         typeof(CryChicCollection)
     };
 
@@ -382,6 +449,26 @@ internal static class HBRGOSakiContentPack
         typeof(FragilePotionHbrgoSaki),
         typeof(SoulPotionHbrgoSaki)
     };
+
+    // Kept loadable for existing saves, but no longer offered anywhere. The six
+    // resistance cards left with the six-sense resistance layer (2026-11-09); 加速 and
+    // 主人公特典 became fate fragments the same day (design v3, section 4).
+    internal static readonly System.Collections.Generic.IReadOnlySet<Type> RetiredCardTypes =
+        new System.Collections.Generic.HashSet<Type>
+        {
+            typeof(MimicEvilEyeTidalSlashHbrgoSaki),
+            typeof(GodspeedHbrgoSaki),
+            typeof(HasteHbrgoSaki),
+            typeof(RuinStrikeHbrgoSaki),
+            typeof(ResistanceBulwarkHbrgoSaki),
+            typeof(BreakInsightHbrgoSaki),
+            typeof(SenseShatterHbrgoSaki),
+            typeof(AccelerationHbrgoSaki),
+            typeof(ProtagonistPrivilegeHbrgoSaki),
+            typeof(ConsecutiveSlashHbrgoSaki),
+            typeof(LoliFormHbrgoSaki),
+            typeof(QuickThinkingHbrgoSaki)
+        };
 
     internal static bool IsRegisteredCardType(Type cardType)
     {
@@ -435,10 +522,64 @@ internal static class HBRGOSakiContentPack
                 ModKeywordCardDescriptionPlacement.None,
                 includeInCardHoverTip: false)
             .CardKeywordOwnedByLocNamespace(
+                "31B",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "31C",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "31D",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "31E",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "31F",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
                 "HEADQUARTERS",
                 null,
                 ModKeywordCardDescriptionPlacement.None,
                 includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "EXTRA_SERVING", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "ORCHESTRA", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "31X", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "CONDEMNATION", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "LEADING_CHARGE", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "EXPOSE", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "CALCULATION", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "FORMATION", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "30G",
+                null,
+                ModKeywordCardDescriptionPlacement.None,
+                includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "GRADUATED", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "HEARTFELT", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "LITA", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
+            .CardKeywordOwnedByLocNamespace(
+                "DRESS_UP", null, ModKeywordCardDescriptionPlacement.None, includeInCardHoverTip: false)
             .CardKeywordOwnedByLocNamespace(
                 "CRYCHIC",
                 null,
@@ -473,11 +614,26 @@ internal static class HBRGOSakiContentPack
                 context.Content.RegisterModelCapability<
                     ThirtyAKeywordCapability>();
                 context.Content.RegisterModelCapability<ThirtyOneAKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyOneBKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyOneCKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyOneDKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyOneEKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyOneFKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyOneXKeywordCapability>();
+                context.Content.RegisterModelCapability<CondemnationKeywordCapability>();
+                context.Content.RegisterModelCapability<LeadingChargeKeywordCapability>();
+                context.Content.RegisterModelCapability<ExposeKeywordCapability>();
+                context.Content.RegisterModelCapability<CalculationKeywordCapability>();
+                context.Content.RegisterModelCapability<FormationKeywordCapability>();
+                context.Content.RegisterModelCapability<ExtraServingKeywordCapability>();
+                context.Content.RegisterModelCapability<OrchestraKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyGKeywordCapability>();
+                context.Content.RegisterModelCapability<ThirtyGCardStateCapability>();
+                context.Content.RegisterModelCapability<ChieLitaCardCapability>();
                 context.Content.RegisterModelCapability<HalfBodyAffiliationCapability>();
+                // Card six-sense attributes are gone. The capability stays registered
+                // only so saved cards that still carry its entry load; new cards get none.
                 context.Content.RegisterModelCapability<SixSenseCardCapability>();
-                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
-                    "six_sense_attribute",
-                    static (_, capabilities) => capabilities.Add<SixSenseCardCapability>());
                 context.Content.ConfigureDefaultModelCapabilities<CardModel>(
                     "roll_glossary",
                     static (_, capabilities) =>
@@ -489,6 +645,54 @@ internal static class HBRGOSakiContentPack
                 context.Content.ConfigureDefaultModelCapabilities<CardModel>(
                     "thirty_one_a_keyword",
                     static (_, capabilities) => capabilities.Add<ThirtyOneAKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_one_b_keyword",
+                    static (_, capabilities) => capabilities.Add<ThirtyOneBKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_one_c_keyword",
+                    static (_, capabilities) => capabilities.Add<ThirtyOneCKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_one_d_keyword",
+                    static (_, capabilities) => capabilities.Add<ThirtyOneDKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_one_e_keyword",
+                    static (_, capabilities) => capabilities.Add<ThirtyOneEKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_one_f_keyword",
+                    static (_, capabilities) => capabilities.Add<ThirtyOneFKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_one_x_keyword",
+                    static (card, capabilities) => { if (card is IThirtyOneXMemberCard) capabilities.Add<ThirtyOneXKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "condemnation_keyword",
+                    static (card, capabilities) => { if (card is LegacyFlashHbrgoSaki) capabilities.Add<CondemnationKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "leading_charge_keyword",
+                    static (card, capabilities) => { if (card is ILeadingChargeCard) capabilities.Add<LeadingChargeKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "expose_keyword",
+                    static (card, capabilities) => { if (card is IExposeCard) capabilities.Add<ExposeKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "calculation_keyword",
+                    static (card, capabilities) => { if (card is NumbersAreTheSourceHbrgoSaki) capabilities.Add<CalculationKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "formation_keyword",
+                    static (card, capabilities) => { if (card is WitnessMySupremacyHbrgoSaki) capabilities.Add<FormationKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "extra_serving_keyword",
+                    static (card, capabilities) => { if (card is IExtraServingCard) capabilities.Add<ExtraServingKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "orchestra_keyword",
+                    static (card, capabilities) => { if (card is IOrchestraCard) capabilities.Add<OrchestraKeywordCapability>(); });
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_g_keyword",
+                    static (_, capabilities) => capabilities.Add<ThirtyGKeywordCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "thirty_g_card_state",
+                    static (_, capabilities) => capabilities.Add<ThirtyGCardStateCapability>());
+                context.Content.ConfigureDefaultModelCapabilities<CardModel>(
+                    "chie_lita_card_state",
+                    static (_, capabilities) => capabilities.Add<ChieLitaCardCapability>());
                 context.Content.ConfigureDefaultModelCapabilities<CardModel>(
                     "half_body_affiliation",
                     static (_, capabilities) => capabilities.Add<HalfBodyAffiliationCapability>());
@@ -517,7 +721,7 @@ internal static class HBRGOSakiContentPack
                             ModelPublicEntryOptions.FromFullPublicEntry(publicEntries[cardType]));
                         continue;
                     }
-                    if (cardType == typeof(MimicEvilEyeTidalSlashHbrgoSaki))
+                    if (RetiredCardTypes.Contains(cardType))
                     {
                         // Retired cards remain loadable in existing saves.
                         context.Content.RegisterCard(typeof(DeprecatedCardPool), cardType,
@@ -576,11 +780,7 @@ internal static class HBRGOSakiContentPack
                 foreach (Type relicType in RewardRelicTypes)
                 {
                     context.Content.RegisterRelic(
-                        relicType == typeof(HotaruElectronicSoldierManual) ||
-                        relicType == typeof(Millsage) ||
-                        relicType == typeof(HotaruIridescence)
-                            ? typeof(HbrgoHotaruRelicPool)
-                            : typeof(HBRGOSakiRelicPool),
+                        GetRewardRelicPool(relicType),
                         relicType,
                         ModelPublicEntryOptions.FromFullPublicEntry(publicEntries[relicType]));
                 }
@@ -607,4 +807,11 @@ internal static class HBRGOSakiContentPack
             })
             .Apply();
     }
+
+    internal static Type GetRewardRelicPool(Type relicType) =>
+        typeof(IThirtyOneOClassRelic).IsAssignableFrom(relicType) ? typeof(HBRGOSaki31ORelicPool) :
+        typeof(IThirtyAClassRelic).IsAssignableFrom(relicType) ? typeof(HBRGOSaki30ARelicPool) :
+        typeof(IHotaruClassRelic).IsAssignableFrom(relicType) ||
+            relicType == typeof(HotaruElectronicSoldierManual) || relicType == typeof(Millsage) ||
+            relicType == typeof(HotaruIridescence) ? typeof(HbrgoHotaruRelicPool) : typeof(HBRGOSakiRelicPool);
 }

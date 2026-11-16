@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <StartupObject>EquipmentServiceBootstrap</StartupObject>
+    <RepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../..'))</RepositoryRoot>
+    <ModAssemblyPath Condition="'$(ModAssemblyPath)' == ''">$(RepositoryRoot)/.godot/mono/temp/bin/Release/HBRGOSakiMod.dll</ModAssemblyPath>
+    <NativeAssemblyPath Condition="'$(NativeAssemblyPath)' == ''">$(RepositoryRoot)/libs/sts2.dll</NativeAssemblyPath>
+    <NativeRitsuAssemblyPath Condition="'$(NativeRitsuAssemblyPath)' == ''">$(RepositoryRoot)/libs/STS2-RitsuLib.dll</NativeRitsuAssemblyPath>
+    <DefineConstants Condition="'$(BetaNativeChecks)' == 'true'">$(DefineConstants);HBR_BETA_NATIVE</DefineConstants>
+    <GodotSharpAssemblyPath Condition="'$(GodotSharpAssemblyPath)' == ''">C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll</GodotSharpAssemblyPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../31c-machina/Program.cs" Link="MachinaHost.cs" />
+    <Compile Include="../31c-machina/Bond50Checks.cs" Link="Bond50Host.cs" />
+    <Compile Include="../31c-machina/Seira54Checks.cs" Link="Seira54Host.cs" />
+    <Compile Include="../hbr-effect-skill-damage/*.cs" Link="EffectHost/%(Filename)%(Extension)" />
+    <Compile Include="../31b-rana/Program.cs" Link="RanaHost.cs" />
+    <Compile Include="../31b-bonds/Program.cs" Link="BondHost.cs" />
+    <Compile Include="../31b-bonds/DamageCallsiteChecks.cs" Link="DamageCallsiteHost.cs" />
+    <Compile Include="../hbr-stat-powers/Program.cs" Link="StatPowerHost.cs" />
+    <Compile Include="../hotaru-overcharge/TelemetryIsolation.cs" Link="TelemetryIsolation.cs" />
+    <Reference Include="HBRGOSakiMod" HintPath="$(ModAssemblyPath)" Private="false" />
+    <Reference Include="sts2" HintPath="$(NativeAssemblyPath)" Private="false" />
+    <Reference Include="BaseLib" HintPath="$(RepositoryRoot)/libs/BaseLib.dll" Private="false" />
+    <Reference Include="STS2-RitsuLib" HintPath="$(NativeRitsuAssemblyPath)" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(RepositoryRoot)/libs/0Harmony.dll" />
+    <Reference Include="GodotSharp" HintPath="$(GodotSharpAssemblyPath)" Private="false" />
+  </ItemGroup>
+</Project>

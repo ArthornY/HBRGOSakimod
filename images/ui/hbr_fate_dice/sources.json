@@ -1,0 +1,36 @@
+{
+  "script": "ui-concepts/magic-sword-finisher-20261109/make_placeholders.py",
+  "font": "Kreon Bold from the game (SIL OFL)",
+  "files": [
+    {
+      "file": "fate_dice.png",
+      "origin": "procedural",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "89310171ef933c0073851fe76275e3fb8821576aea8579aabdff901df203a642",
+      "note": "Placeholder: two d10s reading 70 and 7, #7799CC bodies, gold Kreon numerals."
+    },
+    {
+      "file": "fate_fragment.png",
+      "origin": "procedural",
+      "size": [
+        256,
+        256
+      ],
+      "sha256": "3daa61d069d4b7cf2e25d8e339c081e23998fa7a5b229629d83bb4811639966c",
+      "note": "Placeholder: a shard of the die with half a gold 7 and a neutral white rim."
+    },
+    {
+      "file": "fate_dice_glyph.png",
+      "origin": "procedural",
+      "size": [
+        168,
+        168
+      ],
+      "sha256": "5c27d93ee42f582e84c2b61de1d0b83a70a609fce3058ddf8254564eef6843fb",
+      "note": "Placeholder: the d10 as a white glyph with a halo, for the manual home button."
+    }
+  ]
+}

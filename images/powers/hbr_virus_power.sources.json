@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR VirusRandom icon",
+  "importedPath": "res://images/powers/hbr_virus_power.png",
+  "sha256": "a47812d317f9c43f8528e1083b99a5f5c944b0d2d232733df28642801e7f5fd3",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation. The original has no separate up/down variant, so no arrow is added.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconVirus.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "7886381137889904699",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_7886381137889904699_IconVirus.png",
+    "sourceSha256": "a47812d317f9c43f8528e1083b99a5f5c944b0d2d232733df28642801e7f5fd3",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrVirusPower",
+    "originalEffect": "VirusRandom",
+    "small": "res://images/powers/hbr_virus_power.png",
+    "big": "res://images/powers/hbr_virus_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

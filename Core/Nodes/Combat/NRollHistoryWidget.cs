@@ -3,28 +3,35 @@ using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Relics;
 using HBRGOSakiMod.Core.Nodes.Screens;
-using MegaCrit.Sts2.addons.mega_text;
-using MegaCrit.Sts2.Core.Helpers;
 
 namespace HBRGOSakiMod.Core.Nodes.Combat;
 
+// The roll history button, drawn as the HBR battle "AUTO" capsule (ButtonBattleAutoOnOff*, 80px caps)
+// from ui-concepts/battle-hud-practical-20261104: idle, hovered and pressed states, greyed out under
+// amnesia. Left click opens the history, a drag over 5px moves it, right click also opens it.
 public partial class NRollHistoryWidget : Control
 {
-    private const float WidgetWidth = 250f;
-    private const float WidgetHeight = 68f;
     private const float ViewportPadding = 12f;
     private const float DragThreshold = 5f;
-    private const string IconPath =
-        "res://images/relics/soul_of_anchor.png";
-    private const string FontPath =
-        "res://themes/kreon_bold_glyph_space_one.tres";
+    private const string IdleTexture = "ButtonBattleAutoOnOffDefault";
+    private const string HoverTexture = "ButtonBattleAutoOnOffActive";
+    private const string PressedTexture = "ButtonBattleAutoOnOffTempActive";
 
+    private static readonly Color CountColor = new(HbrBattleHudLayout.RollCountColor);
+    private static readonly Color DisabledColor = new(HbrBattleHudLayout.DisabledTextColor);
+    private static readonly Color TextOutline = new(0.07f, 0.03f, 0.09f, 0.9f);
     private static Vector2? _savedPositionRatio;
 
     private SoulOfAnchor _history;
+    private NinePatchRect _cap;
+    private Label _titleLabel;
     private Label _countLabel;
+    private Tween _bumpTween;
     private bool _isPointerDown;
     private bool _hasDragged;
+    private bool _isHovered;
+    private bool _isHidden;
+    private int _shownCount = -1;
     private Vector2 _pointerDownPosition;
     private Vector2 _dragPointerOffset;
 
@@ -34,22 +41,26 @@ public partial class NRollHistoryWidget : Control
         AnchorRight = 1f;
         AnchorTop = 0f;
         AnchorBottom = 0f;
-        OffsetLeft = -300f;
-        OffsetRight = -50f;
-        OffsetTop = 350f;
-        OffsetBottom = 418f;
-        CustomMinimumSize = new Vector2(WidgetWidth, WidgetHeight);
+        OffsetLeft = -HbrBattleHudLayout.RollFromRight;
+        OffsetRight = OffsetLeft + HbrBattleHudLayout.RollWidth;
+        OffsetTop = HbrBattleHudLayout.RollTop;
+        OffsetBottom = OffsetTop + HbrBattleHudLayout.RollHeight;
+        CustomMinimumSize = new Vector2(HbrBattleHudLayout.RollWidth, HbrBattleHudLayout.RollHeight);
         MouseFilter = MouseFilterEnum.Stop;
         MouseDefaultCursorShape = CursorShape.PointingHand;
         ZIndex = 30;
 
         BuildUi();
+        MouseEntered += OnMouseEntered;
+        MouseExited += OnMouseExited;
         RestoreSavedPosition();
         Refresh();
     }
 
     public override void _ExitTree()
     {
+        MouseEntered -= OnMouseEntered;
+        MouseExited -= OnMouseExited;
         BindHistory(null);
     }
 
@@ -85,6 +96,7 @@ public partial class NRollHistoryWidget : Control
                 MouseDefaultCursorShape = CursorShape.PointingHand;
             }
 
+            RefreshCapsule();
             AcceptEvent();
             return;
         }
@@ -97,6 +109,7 @@ public partial class NRollHistoryWidget : Control
             {
                 _hasDragged = true;
                 MouseDefaultCursorShape = CursorShape.Move;
+                RefreshCapsule();
             }
 
             if (_hasDragged)
@@ -135,6 +148,7 @@ public partial class NRollHistoryWidget : Control
         }
 
         _history = history;
+        _shownCount = -1;
         if (_history != null)
         {
             _history.DisplayAmountChanged += Refresh;
@@ -146,105 +160,29 @@ public partial class NRollHistoryWidget : Control
 
     private void BuildUi()
     {
-        PanelContainer panel = new()
+        // NinePatchRect keeps its caps at source size, so the 84px-tall capsule is laid out at
+        // source scale and shrunk to 64px, like the preview's border-image (80px caps drawn at 61px).
+        float scale = HbrBattleHudLayout.RollScale;
+        _cap = new NinePatchRect
         {
-            Name = "RollHistoryPanel",
+            Name = "Capsule",
+            Size = new Vector2(HbrBattleHudLayout.RollWidth / scale, HbrBattleHudLayout.RollSourceHeight),
+            Scale = Vector2.One * scale,
+            Texture = HbrBattleHudArt.Texture(IdleTexture),
+            PatchMarginLeft = HbrBattleHudLayout.RollSourceCap,
+            PatchMarginRight = HbrBattleHudLayout.RollSourceCap,
+            TextureFilter = HbrBattleHudArt.MipmapFilter,
             MouseFilter = MouseFilterEnum.Ignore
         };
-        panel.AddThemeStyleboxOverride(
-            "panel",
-            new StyleBoxFlat
-            {
-                BgColor = new Color(0.035f, 0.055f, 0.085f, 0.94f),
-                BorderColor = new Color(0.38f, 0.72f, 0.92f, 0.95f),
-                BorderWidthBottom = 2,
-                BorderWidthLeft = 2,
-                BorderWidthRight = 2,
-                BorderWidthTop = 2,
-                ContentMarginBottom = 8,
-                ContentMarginLeft = 10,
-                ContentMarginRight = 12,
-                ContentMarginTop = 8,
-                CornerRadiusBottomLeft = 8,
-                CornerRadiusBottomRight = 8,
-                CornerRadiusTopLeft = 8,
-                CornerRadiusTopRight = 8
-            });
-        SetFullRect(panel);
-        AddChild(panel);
+        AddChild(_cap);
 
-        HBoxContainer row = new()
-        {
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        row.AddThemeConstantOverride(
-            ThemeConstants.BoxContainer.Separation,
-            10);
-        panel.AddChild(row);
-
-        TextureRect icon = new()
-        {
-            Name = "RollHistoryIcon",
-            CustomMinimumSize = new Vector2(50f, 50f),
-            Texture = ResourceLoader.Load<Texture2D>(IconPath),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        row.AddChild(icon);
-
-        VBoxContainer textColumn = new()
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        textColumn.AddThemeConstantOverride(
-            ThemeConstants.BoxContainer.Separation,
-            0);
-        row.AddChild(textColumn);
-
-        Label titleLabel = CreateLabel(
-            "出目历史",
-            21,
-            new Color("F4F7FFFF"));
-        titleLabel.SizeFlagsVertical = SizeFlags.ExpandFill;
-        textColumn.AddChild(titleLabel);
-
-        _countLabel = CreateLabel(
-            "本场记录：0",
-            16,
-            new Color("9EDCF7FF"));
-        _countLabel.SizeFlagsVertical = SizeFlags.ExpandFill;
-        textColumn.AddChild(_countLabel);
-    }
-
-    private static Label CreateLabel(
-        string text,
-        int fontSize,
-        Color color)
-    {
-        Label label = new()
-        {
-            Text = text,
-            VerticalAlignment = VerticalAlignment.Center,
-            MouseFilter = MouseFilterEnum.Ignore
-        };
-        label.AddThemeFontOverride(
-            ThemeConstants.Label.Font,
-            ResourceLoader.Load<Font>(FontPath));
-        label.AddThemeFontSizeOverride(
-            ThemeConstants.Label.FontSize,
-            fontSize);
-        label.AddThemeColorOverride(
-            ThemeConstants.Label.FontColor,
-            color);
-        label.AddThemeColorOverride(
-            ThemeConstants.Label.FontOutlineColor,
-            new Color("0C1724E8"));
-        label.AddThemeConstantOverride(
-            ThemeConstants.Label.OutlineSize,
-            5);
-        return label;
+        _titleLabel = HbrBattleHudArt.Label("RollHistoryTitle", HbrBattleHudLayout.RollTitle,
+            HbrBattleHudLayout.RollTitleSize, Colors.White, 2);
+        HbrBattleHudArt.Outline(_titleLabel, TextOutline, 6);
+        AddChild(_titleLabel);
+        _countLabel = HbrBattleHudArt.Label("RollHistoryCount", "0", HbrBattleHudLayout.RollCountSize, CountColor);
+        HbrBattleHudArt.Outline(_countLabel, TextOutline, 6);
+        AddChild(_countLabel);
     }
 
     private void Refresh()
@@ -255,17 +193,75 @@ public partial class NRollHistoryWidget : Control
             return;
         }
 
-        if (AmnesiaRollVisibilityHelper.IsRollHidden(_history.Owner))
+        _isHidden = AmnesiaRollVisibilityHelper.IsRollHidden(_history.Owner);
+        if (_isHidden)
         {
-            _countLabel.Text = "你的记忆笼上了一层雾";
+            _countLabel.Text = HbrBattleHudLayout.RollHidden;
             TooltipText = "失忆\n无法查看掷骰出目。";
-            return;
+        }
+        else
+        {
+            int count = _history.RollHistory.Count;
+            bool grew = _shownCount >= 0 && count > _shownCount;
+            _shownCount = count;
+            _countLabel.Text = count.ToString();
+            TooltipText =
+                $"出目历史\n本场共 {count} 次掷骰。\n左键点击查看，拖动可移动；右键也可查看。";
+            if (grew) Bump();
         }
 
-        int count = _history.RollHistory.Count;
-        _countLabel.Text = $"本场记录：{count}";
-        TooltipText =
-            $"出目历史\n本场共 {count} 次掷骰。\n左键点击查看，拖动可移动；右键也可查看。";
+        LayoutText();
+        RefreshCapsule();
+    }
+
+    // Title and count are centred together, 12px apart, 2px above the middle.
+    private void LayoutText()
+    {
+        float width = TextWidth(_titleLabel, HbrBattleHudLayout.RollTitleSize);
+        float countWidth = Math.Max(TextWidth(_countLabel, HbrBattleHudLayout.RollCountSize), 14f);
+        float left = (HbrBattleHudLayout.RollWidth - width - HbrBattleHudLayout.RollTextGap - countWidth) / 2f;
+        float height = HbrBattleHudLayout.RollHeight - 2f;
+        _titleLabel.Position = new Vector2(left, 0f);
+        _titleLabel.Size = new Vector2(width, height);
+        _countLabel.Position = new Vector2(left + width + HbrBattleHudLayout.RollTextGap, 0f);
+        _countLabel.Size = new Vector2(countWidth, height);
+        _countLabel.PivotOffset = _countLabel.Size / 2f;
+    }
+
+    private static float TextWidth(Label label, int size) =>
+        label.GetThemeFont("font").GetStringSize(label.Text, HorizontalAlignment.Left, -1, size).X + 2f;
+
+    private void RefreshCapsule()
+    {
+        if (_cap == null) return;
+        bool pressed = _isPointerDown && !_hasDragged;
+        string texture = pressed ? PressedTexture : _isHovered ? HoverTexture : IdleTexture;
+        _cap.Texture = HbrBattleHudArt.Texture(_isHidden ? texture + "_amnesia" : texture);
+        Color text = _isHidden ? DisabledColor : Colors.White;
+        _titleLabel.AddThemeColorOverride("font_color", text);
+        _countLabel.AddThemeColorOverride("font_color", _isHidden ? DisabledColor :
+            pressed || _isHovered ? Colors.White : CountColor);
+    }
+
+    private void Bump()
+    {
+        _countLabel.Scale = Vector2.One * HbrBattleHudLayout.CountBumpScale;
+        _bumpTween?.Kill();
+        _bumpTween = CreateTween();
+        _bumpTween.TweenProperty(_countLabel, "scale", Vector2.One, 0.5)
+            .SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Expo);
+    }
+
+    private void OnMouseEntered()
+    {
+        _isHovered = true;
+        RefreshCapsule();
+    }
+
+    private void OnMouseExited()
+    {
+        _isHovered = false;
+        RefreshCapsule();
     }
 
     private void OpenHistory()
@@ -325,14 +321,5 @@ public partial class NRollHistoryWidget : Control
             Math.Max(
                 minimum.Y,
                 viewportSize.Y - Size.Y - ViewportPadding));
-    }
-
-    private static void SetFullRect(Control control)
-    {
-        control.SetAnchorsPreset(LayoutPreset.FullRect);
-        control.OffsetLeft = 0f;
-        control.OffsetTop = 0f;
-        control.OffsetRight = 0f;
-        control.OffsetBottom = 0f;
     }
 }

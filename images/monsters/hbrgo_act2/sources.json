@@ -223,7 +223,7 @@
   {
    "file": "images/monsters/hbrgo_act2/barrel_walker_cutout.png",
    "monster": "BarrelWalker",
-   "sha256": "2F115F7E43A752D38737827071929791049289F20F78989D37A5D4044DA8F443",
+   "sha256": "E9014919BD66D717CB73C37AC544BAA6545FB973379EF75C94A1F0F0D40AC7D2",
    "size": [
     478,
     625
@@ -234,7 +234,13 @@
     "extracted_png": "images/cache/71608cf88ee71d52919841693ef2d8ca/a143c38366f87adbccd77bf538b97d2e/107f494f1637422e_-2472613664761882901_BarrelWalkerDefault.png",
     "sha256": "CB048F1C71097D50F9A4A93409D263C59FE98B95A988CC84D2BC7472A5A07525"
    },
-   "cut": {}
+   "cut": {},
+   "alpha_cleanup": {
+    "date": "2026-11-07",
+    "previous_sha256": "2F115F7E43A752D38737827071929791049289F20F78989D37A5D4044DA8F443",
+    "note": "Background removed by lowering alpha only (RGB unchanged): the lavender building above the right pod, the floor between the body and the right ring, the ground block, and the broken lower part and stem of the left ring.",
+    "script": "D:/stsmod/outputs/monster-alpha-cleanup-20261107/cleanup.py"
+   }
   }
  ]
 }

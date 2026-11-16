@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC02_10_Battle01: a heal hopper and two puppets.
+// HBR MC02_10_Battle01: a heal hopper and two puppets; the second puppet
+// starts one dp step ahead.
 public sealed class MarionettesWithHealerNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -20,11 +21,13 @@ public sealed class MarionettesWithHealerNormal : EncounterModel, IHbrgoEncounte
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var second = (Marionette)ModelDb.Monster<Marionette>().ToMutable();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<Marionette>().ToMutable(), null),
             (ModelDb.Monster<HealHopper>().ToMutable(), null),
-            (ModelDb.Monster<Marionette>().ToMutable(), null)
+            (second, null)
         };
     }
 }

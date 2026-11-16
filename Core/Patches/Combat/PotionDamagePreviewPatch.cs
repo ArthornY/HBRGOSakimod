@@ -26,16 +26,8 @@ internal static class PotionDamageHoverTipPatch
     {
         string details = PotionDamagePreviewHelper.GetTargetDetails(__instance);
         if (string.IsNullOrEmpty(details)) return;
-        HoverTip updated = new(__instance.Title, __result.Description + "\n" + details, __result.Icon)
-        {
-            Id = __result.Id,
-            IsSmart = __result.IsSmart,
-            IsDebuff = __result.IsDebuff,
-            IsInstanced = __result.IsInstanced,
-            ShouldOverrideTextOverflow = __result.ShouldOverrideTextOverflow
-        };
-        if (__result.CanonicalModel != null) updated.SetCanonicalModel(__result.CanonicalModel);
-        __result = updated;
+        __result = HoverTipCompatibility.Copy(__result, __instance.Title.GetFormattedText(),
+            __result.Description + "\n" + details);
     }
 }
 

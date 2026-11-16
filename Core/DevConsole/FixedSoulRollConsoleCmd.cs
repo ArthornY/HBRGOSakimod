@@ -11,6 +11,8 @@ namespace HBRGOSakiMod.Core.DevConsole;
 public sealed class FixedSoulRollConsoleCmd : AbstractConsoleCmd
 {
     private const string _subcommand = "watashikakamininanimashu";
+    // Only for typing by hand: the OD gauge sends HbrOverclockNetActions instead
+    // (2026-11-09). Typed, it is a console command and excludes the run from the upload.
     public const string ActivateOverclockSubcommand = "__activate_overclock";
     public const string SummonRedCrimsonSubcommand =
         "__summon_red_crimson";

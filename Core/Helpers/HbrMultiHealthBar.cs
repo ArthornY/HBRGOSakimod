@@ -7,8 +7,8 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 
 namespace HBRGOSakiMod.Core.Helpers;
 
-// The three reviving bosses expose actual phase receipts, not a combined HP
-// pool. Reserve gauges show remaining lives without inventing their future HP.
+// Reviving bosses expose actual phase receipts. Narara's reserves instead
+// partition its unchanged total HP; the helper owns those exact boundaries.
 internal static class HbrMultiHealthBar
 {
     private sealed class Display
@@ -25,13 +25,16 @@ internal static class HbrMultiHealthBar
     private static readonly ConditionalWeakTable<Control, Display> Displays = new();
 
     internal static bool HasMultipleHpPhases(Creature creature) =>
-        creature?.Monster is FlatHand or SkullFeather or DeathSlug;
+        creature?.Monster is FlatHand or SkullFeather or DeathSlug ||
+        NararaLayeredHpHelper.IsEnabled(creature);
 
     internal static int GetRemainingBars(Creature creature) => creature?.Monster switch
     {
         FlatHand flatHand => Math.Clamp(3 - flatHand.Respawns, 1, 3),
         SkullFeather skullFeather => Math.Clamp(3 - skullFeather.Phase, 1, 2),
         DeathSlug deathSlug => Math.Clamp(3 - deathSlug.Phase, 1, 2),
+        NararaShibaBossMonster when NararaLayeredHpHelper.IsEnabled(creature) =>
+            Math.Clamp(NararaLayeredHpHelper.GetRemainingLayers(creature), 1, 4),
         _ => 1
     };
 

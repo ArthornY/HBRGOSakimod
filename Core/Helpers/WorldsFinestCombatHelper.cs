@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Models.Cards;
+using HBRGOSakiMod.Core.Models.Capabilities;
+using MegaCrit.Sts2.Core.Entities.Powers;
 using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
@@ -35,10 +37,6 @@ internal static class WorldsFinestCombatHelper
         internal Player Player;
         internal WorldsFinestHbrgoSaki Card;
         internal CardModel[] CombatCopies;
-        internal int RecoveryTier;
-        internal bool RecoverySelected;
-        internal bool RestoreHp;
-        internal bool RestoreDp;
         internal bool Committed;
     }
     private static readonly AsyncLocal<DamageScope> Current = new();
@@ -48,7 +46,7 @@ internal static class WorldsFinestCombatHelper
 
     private static IEnumerable<WorldsFinestHbrgoSaki> PermanentCards(Player player) =>
         player?.Deck?.Cards.OfType<WorldsFinestHbrgoSaki>().Where(card => card.IsMutable &&
-            card.Owner == player && !card.HasBeenRemovedFromState && card.Pile?.Type == PileType.Deck) ??
+            card.Owner == player && !card.HasBeenRemovedFromState && !ThirtyGProposalState.IsDisabled(card) && card.Pile?.Type == PileType.Deck) ??
         Enumerable.Empty<WorldsFinestHbrgoSaki>();
 
     internal static decimal GetDamageMultiplier(Creature target)
@@ -69,7 +67,12 @@ internal static class WorldsFinestCombatHelper
         Creature phantom = PhantomHelper.GetLivingPhantom(player);
         if (phantom != null)
             await PhantomHelper.RestoreDp(context, phantom, amount, card);
-        else player.GetRelic<DeflectorProtection>()?.RestoreDp((int)Math.Min(amount, int.MaxValue));
+        else
+        {
+            int restored = player.GetRelic<DeflectorProtection>()?.RestoreDp((int)Math.Min(
+                YanagiButlerCombatHelper.ScaleRecovery(card, amount), int.MaxValue)) ?? 0;
+            MariaRepentanceCombatHelper.OnDpRestored(player.Creature, restored, card);
+        }
     }
 
     internal static async Task StartCombat(ICombatState combatState)
@@ -90,6 +93,38 @@ internal static class WorldsFinestCombatHelper
             await PowerCmd.Apply<SpiritTalismanPower>(new ThrowingPlayerChoiceContext(),
                 target, 1m, owner.Creature, source);
         }
+    }
+
+    internal static async Task CleanseOneDebuff(CardModel card)
+    {
+        Creature owner = card?.Owner?.Creature;
+        if (owner?.IsAlive != true) return;
+        // Hidden debuffs may be structural combat state. Cleanse only visible
+        // status abilities, by native PowerType, and preserve every unrelated one.
+        PowerModel[] choices = owner.Powers.Where(power => power.Type == PowerType.Debuff &&
+            power.IsVisible && power.Amount > 0).ToArray();
+        if (choices.Length == 0) return;
+        PowerModel selected = choices.FirstOrDefault(power => power is HbrVirusPower) ??
+            choices[card.Owner.RunState.Rng.CombatCardGeneration.NextInt(choices.Length)];
+        await PowerCmd.Remove(selected);
+    }
+
+    internal static async Task AfterThirtyOneACardPlayed(PlayerChoiceContext context, CardPlay play)
+    {
+        CardModel played = play?.Card;
+        Player player = played?.Owner;
+        if (!ThirtyOneAKeywordRules.IsThirtyOneACard(played) || player?.Creature?.IsAlive != true ||
+            !HbrBattleStatsHelper.IsEnabled(player.Creature)) return;
+        WorldsFinestHbrgoSaki source = PermanentCards(player).FirstOrDefault(card => card.HasUpgradeEffect(1));
+        if (source == null) return;
+        // Permanent garden upgrades are capabilities, rather than one listener
+        // per physical copy. Multiple copies do not multiply this one play's +2.
+        foreach (Creature enemy in player.Creature.CombatState.GetOpponentsOf(player.Creature)
+            .Where(enemy => enemy.IsAlive).ToArray())
+            if (enemy.GetPower<SpiritTalismanPower>() is { Amount: > 0 } talisman &&
+                talisman.Amount < SpiritTalismanPower.MaximumAmount)
+                await PowerCmd.ModifyAmount(context, talisman,
+                    Math.Min(2, SpiritTalismanPower.MaximumAmount - talisman.Amount), player.Creature, source);
     }
 
     internal static DamageScope BeginDamage()
@@ -146,7 +181,6 @@ internal static class WorldsFinestCombatHelper
         {
             Player = player,
             Card = card,
-            RecoveryTier = card.HasUpgradeEffect(2) ? 2 : card.HasUpgradeEffect(1) ? 1 : 0,
             CombatCopies = player.PlayerCombatState?.AllCards.Where(copy =>
                 !copy.HasBeenRemovedFromState && ReferenceEquals(copy.DeckVersion, card)).ToArray() ??
                 Array.Empty<CardModel>()
@@ -175,26 +209,8 @@ internal static class WorldsFinestCombatHelper
             foreach (CardModel copy in revival.CombatCopies)
                 if (!copy.HasBeenRemovedFromState && copy.Pile?.IsCombatPile == true)
                     await CardPileCmd.RemoveFromCombat(copy, skipVisuals: true);
-            if (!revival.RecoverySelected)
-            {
-                if (revival.RecoveryTier >= 2)
-                    revival.RestoreHp = revival.RestoreDp = true;
-                else if (revival.RecoveryTier == 1)
-                {
-                    // Use the saved run's deterministic stream, and select only
-                    // after this permanent card has really been consumed.
-                    revival.RestoreHp = revival.Player.RunState.Rng.Niche.NextInt(2) == 0;
-                    revival.RestoreDp = !revival.RestoreHp;
-                }
-                revival.RecoverySelected = true;
-            }
-            if (revival.RestoreHp)
-                await CreatureCmd.SetCurrentHp(revival.Player.Creature,
-                    LargeCreatureHealthHelper.GetMaxHp(revival.Player.Creature));
-            else if (revival.RecoveryTier == 0)
-                await CreatureCmd.SetCurrentHp(revival.Player.Creature, 1m);
-            if (revival.RestoreDp)
-                revival.Player.GetRelic<DeflectorProtection>()?.RestoreDpAfterHalfBodyRevival();
+            await CreatureCmd.SetCurrentHp(revival.Player.Creature, 1m);
+            revival.Player.GetRelic<DeflectorProtection>()?.RestoreDpAfterHalfBodyRevival();
             revival.Committed = true;
         }
     }

@@ -41,6 +41,7 @@ public sealed class DoublePowersHbrgoSaki : CardModel
             .Concat(Owner.Creature.CombatState.Enemies)
             .SelectMany(creature => creature.Powers)
             .Where(power =>
+                power is not CountedRollPower &&
                 power is not HighDimensionalShellPower &&
                 power is not PhaseWarpPower &&
                 power is not ShieldLockPower)
@@ -48,13 +49,26 @@ public sealed class DoublePowersHbrgoSaki : CardModel
                     ? exact.PercentState.GetPercent(power.Amount) : (decimal)power.Amount,
                 DuplicateCounters: PowerDuplicationBookkeepingHelper.SnapshotCounters(power),
                 DebuffPercent: HbrPercentDebuffHelper.IsEnabled(power)
-                    ? (decimal?)HbrPercentDebuffHelper.GetEffectPercent(power) : null))
+                    ? (decimal?)HbrPercentDebuffHelper.GetEffectPercent(power) : null,
+                EffectPercent: power is HbrEffectPower effect ? (decimal?)effect.EffectPotency : null,
+                Remaining: power is IHbrEffectInstance instance ? instance.Remaining : power.Amount,
+                FaithAmount: power is HbrFaithPower faith ? faith.ExactAmount : System.Numerics.BigInteger.Zero))
             .ToArray();
-        foreach (var (power, amount, duplicateCounters, debuffPercent) in powers)
+        foreach (var creature in Owner.Creature.CombatState.Allies
+                     .Concat(Owner.Creature.CombatState.Enemies))
+        {
+            await HbrRollPowerHelper.DoubleAll(choiceContext, creature, Owner.Creature, this);
+        }
+        foreach (var (power, amount, duplicateCounters, debuffPercent, effectPercent, remaining, faithAmount) in powers)
         {
             // Refund/expiry bookkeeping must also double when a permanent and
             // temporary stat cancel out, leaving no visible stat power.
             duplicateCounters?.Invoke();
+            if (power is HbrFaithPower)
+            {
+                if (power.Owner?.Powers.Contains(power) == true) HbrFaithResource.Gain(power.Owner, faithAmount);
+                continue;
+            }
             if (amount == 0)
                 continue;
 
@@ -65,15 +79,24 @@ public sealed class DoublePowersHbrgoSaki : CardModel
                 continue;
             }
 
+            if (power is HbrEffectPower effect && effectPercent.HasValue)
+            {
+                await effect.DoubleExisting(choiceContext, effectPercent.Value, remaining, Owner.Creature, this);
+                continue;
+            }
+
             // The matching total stat is doubled separately from this snapshot.
             using TemporaryStatDuplicationScope scope =
                 TemporaryStatDuplicationScope.Begin(power, this);
+            int before = power.Amount;
             await PowerCmd.ModifyAmount(
                 choiceContext,
                 power,
                 amount,
                 Owner.Creature,
                 this);
+            if (power is HbrCalamityPower calamity && power.Amount > before)
+                calamity.SetRemainingTurns((int)System.Math.Min(int.MaxValue, (long)remaining * 2));
         }
     }
 

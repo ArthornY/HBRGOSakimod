@@ -34,8 +34,20 @@ public sealed class SwordheartPower : PowerModel
             return 0;
         }
 
+        return GetKeptMaximum(creature) *
+            SwordheartClarityPower.GetSwordheartMaximumMultiplier(creature);
+    }
+
+    // Swordheart is kept between combats (design v3: 「跨回合、跨战斗都保留」), up to the base
+    // seven plus lasting raises; raises that last only this combat end with it.
+    public static int GetKeptMaximum(Creature creature)
+    {
+        if (creature?.Player?.Character is not HbrgoSaki31O)
+        {
+            return 0;
+        }
+
         return BaseMaxAmount +
-            SwordheartClarityPower.GetSwordheartMaxBonus(creature) +
             HbrgoSakiHextechCompatLoader
                 .GetSwordheartMaximumBonus(creature);
     }
@@ -64,10 +76,7 @@ public sealed class SwordheartPower : PowerModel
             return true;
         }
 
-        MagicSwordModePower magicSwordMode =
-            target.GetPower<MagicSwordModePower>();
-        if (magicSwordMode != null &&
-            !magicSwordMode.IsGrantingClaritySwordheart)
+        if (target.HasPower<MagicSwordModePower>())
         {
             modifiedAmount = 0m;
             return true;
@@ -82,38 +91,5 @@ public sealed class SwordheartPower : PowerModel
 
         modifiedAmount = cappedAmount;
         return true;
-    }
-
-    public override async Task AfterPowerAmountChanged(PlayerChoiceContext choiceContext, PowerModel power, decimal amount, Creature applier, CardModel cardSource)
-    {
-        if (Owner.Player?.Character is not HbrgoSaki31O ||
-            power is not SwordheartPower ||
-            power.Owner != Owner ||
-            power.Amount < GetMaxAmount(Owner) ||
-            Owner.HasPower<MagicSwordModePower>())
-        {
-            return;
-        }
-
-        if (Owner.Player?.PlayerCombatState == null ||
-            Owner.CombatState == null ||
-            Owner.Player.PlayerCombatState.AllCards.Any(card =>
-                card is MagicSwordModeHbrgoSaki &&
-                !card.HasBeenRemovedFromState &&
-                card.Pile?.IsCombatPile == true &&
-                card.Pile.Type != PileType.Exhaust))
-        {
-            return;
-        }
-
-        CardModel magicSwordModeCard =
-            Owner.CombatState.CreateCard<MagicSwordModeHbrgoSaki>(Owner.Player);
-        using (MagicSwordHandCapacityHelper.AllowOneExtraSlot())
-        {
-            await CardPileCmd.AddGeneratedCardToCombat(
-                magicSwordModeCard,
-                PileType.Hand,
-                Owner.Player);
-        }
     }
 }

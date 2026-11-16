@@ -26,7 +26,10 @@ public sealed class OverclockUpgradeHbrgoSaki : CardModel
     {
         get
         {
-            Overclock overclock = ModelDb.Relic<Overclock>();
+            // A played/library-owned card can show this party's current act
+            // allowance; canonical templates must never read mutable Owner.
+            Overclock overclock = IsMutable ? Owner?.GetRelic<Overclock>() : null;
+            overclock ??= ModelDb.Relic<Overclock>();
             return new IHoverTip[]
             {
                 new HoverTip(
@@ -39,7 +42,7 @@ public sealed class OverclockUpgradeHbrgoSaki : CardModel
 
     public OverclockUpgradeHbrgoSaki()
         : base(
-            3,
+            2,
             CardType.Power,
             CardRarity.Rare,
             TargetType.Self)

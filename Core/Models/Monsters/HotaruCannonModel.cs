@@ -25,7 +25,9 @@ public abstract class HotaruCannonModel : MonsterModel
     // has no gameplay HP, receives no damage, and never intercepts player hits.
     public override int MinInitialHp => 1;
     public override int MaxInitialHp => 1;
-    public override bool IsHealthBarVisible => false;
+    // v0.113 moved this visibility rule to MonsterModel.IsInteractable.
+    // The runtime bridge handles both native getters without a removed override.
+    public bool IsHealthBarVisible => false;
     public override bool HasDeathSfx => false;
     public override bool ShouldFadeAfterDeath => false;
     public override bool ShouldShowInCompendium => false;
@@ -80,6 +82,8 @@ public abstract class HotaruCannonModel : MonsterModel
         text.Add("Repeat", HotaruCannonVigorHelper.GetPlannedHitCount(Relic, Kind, HotaruCannonPhase.Start));
         if (template.Contains("{EndDamage", StringComparison.Ordinal))
             text.Add("EndDamage", HotaruCannonStatsHelper.FormatDamagePreview(cannon, HotaruCannonSkillPowerHelper.AbsolutionEndDamage * PhaseMultiplier(HotaruCannonPhase.End)));
+        // Contest's extra damage per debuff kind on the target (per lost six-sense
+        // resistance before 2026-11-09); the variable keeps its name.
         text.Add("ResistanceBonus", PhaseMultiplier(HotaruCannonPhase.End));
         text.Add("EndRepeat", EndHitCount);
         string upgrades = Relic == null ? string.Empty : HotaruCannonUpgrades.ObtainedEffects(Relic, Kind);

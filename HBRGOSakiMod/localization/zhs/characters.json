@@ -53,5 +53,10 @@
   "HBRGO_SAKI_30A.cardsModifierTitle": "丰川祥子（30A）卡牌",
   "HBRGO_SAKI_30A.cardsModifierDescription": "丰川祥子（30A）的卡牌现在会出现在奖励和商店中。",
   "HBRGO_SAKI_30A.eventDeathPrevention": "现在还不能倒下。",
-  "HBRGO_SAKI_30A.unlockText": "使用丰川祥子（31O）击败一次FlatHand后解锁。"
+  "HBRGO_SAKI_30A.unlockText": "使用丰川祥子（31O）击败一次FlatHand后解锁。",
+  "HBRGO_SAKI_MOD_CHARACTER_HBRGO_HOTARU.shortTitle": "汐见萤",
+  "HBRGO_HOTARU.shortTitle": "汐见萤",
+  "HBRGO_SAKI.shortTitle": "人造救世主",
+  "HBRGO_SAKI_31O.shortTitle": "丰川祥子（31O）",
+  "HBRGO_SAKI_30A.shortTitle": "丰川祥子（30A）"
 }

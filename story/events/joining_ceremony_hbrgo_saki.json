@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "id": "JOINING_CEREMONY_HBRGO_SAKI",
+  "title": "入队仪式",
+  "eventPool": "shared",
+  "conditions": {
+    "partyCharacters": [
+      "HbrgoSaki31O",
+      "HbrgoSaki30A",
+      "HbrgoHotaru"
+    ],
+    "acts": [
+      1
+    ],
+    "oncePerRun": true,
+    "afterEventIds": []
+  },
+  "presentation": {
+    "background": "res://images/events/hbrgo_saki_mod_event_joining_ceremony_hbrgo_saki.png",
+    "dialogueStyle": "original",
+    "choicePortrait": "res://images/characters/hbrgo_saki_normal.png",
+    "thoughtPortrait": "",
+    "portraitLayout": {
+      "x": 46,
+      "y": 672,
+      "size": 184,
+      "imageScale": 1,
+      "imageOffsetX": 0,
+      "imageOffsetY": 0
+    }
+  },
+  "startPage": "INITIAL",
+  "pages": [
+    {
+      "id": "INITIAL",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你突然感觉眼前一黑，睁开眼，你看到了熟悉的场景：那是一座学校的礼堂，像是在举行入学典礼的样子，但横幅上写的是“入队仪式”？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "台下是数十名像是穿着学生制服的女性，还有一只...白虎？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "台上的身着军装的紫发女性在发表着演讲：",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "？？？",
+          "text": "......诚如前述，本基地拥有完整的教学体系。稍后会由负责指导你们的教官补充细节，务必仔细聆听。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你尝试看清台上人的面庞，但察觉没过。她的脸上笼罩了一团黑雾。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "不止如此，当你试图注意任何一人时，她们的脸庞都会被黑雾笼罩，你甚至想不起来她们的名字。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "CONJECTURE",
+          "text": "难道说...",
+          "description": "将两个选项连接起来。",
+          "nextPage": "CONJECTURE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "NOODLES",
+          "text": "你知道刀削面吗？",
+          "description": "循着脑海中的声音继续回想。",
+          "nextPage": "NOODLES",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "EHE_CHUMI",
+          "text": "诶嘿啾咪",
+          "description": "说出脑海中突然浮现的话。",
+          "nextPage": "EHE_CHUMI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "CONJECTURE",
+      "choicePrompt": "难道说...",
+      "choiceMode": "combine",
+      "choiceLeft": [
+        "我们",
+        "我",
+        "妹妹"
+      ],
+      "choiceRight": [
+        "的记忆被封印了",
+        "被绑架了",
+        "回去了"
+      ],
+      "background": "",
+      "lines": [],
+      "choices": [
+        {
+          "id": "WE_SEALED",
+          "text": "我们的记忆被封印了",
+          "description": "才能+8",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "Talent",
+            "senseAmount": 8,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "WE_KIDNAPPED",
+          "text": "我们被绑架了",
+          "description": "单纯+8",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "WE_RETURNED",
+          "text": "我们回去了",
+          "description": "获得2瓶随机药水",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0,
+            "potions": 2
+          }
+        },
+        {
+          "id": "I_SEALED",
+          "text": "我的记忆被封印了",
+          "description": "领袖魅力+8",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "I_KIDNAPPED",
+          "text": "我被绑架了",
+          "description": "获得一次稀有卡奖励",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 3,
+            "cardRarity": "rare"
+          }
+        },
+        {
+          "id": "I_RETURNED",
+          "text": "我回去了",
+          "description": "疯狂+8",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "SISTER_SEALED",
+          "text": "妹妹的记忆被封印了",
+          "description": "删除一张牌",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0,
+            "cardRemovals": 1
+          }
+        },
+        {
+          "id": "SISTER_KIDNAPPED",
+          "text": "妹妹被绑架了",
+          "description": "精神力+8",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "MentalStrength",
+            "senseAmount": 8,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "SISTER_RETURNED",
+          "text": "妹妹回去了",
+          "description": "温柔+8",
+          "nextPage": "CONJECTURE_RESULT",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "CONJECTURE_RESULT",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "难道说...",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [],
+      "characters": []
+    },
+    {
+      "id": "NOODLES",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "dialogue",
+          "speaker": "？？？",
+          "text": "哈？",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "随着你脑海中的这道声音落地，你依稀可以听见旁边有一道声音说着：",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "dialogue",
+          "speaker": "？？？",
+          "text": "你不知道吗？就是一只手拿着面团，另一只手拿刀。站在开水锅前把面条切成细长的薄片，下进锅里煮的那种面！",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "所有六感+2，获得一次卡牌奖励",
+          "description": "接受这段突如其来的记忆。",
+          "nextPage": "END",
+          "rewards": {
+            "sense": "All",
+            "senseAmount": 2,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "EHE_CHUMI",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "dialogue",
+          "speaker": "？？？",
+          "text": "别说了！",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        },
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你的脑海中突然出现了这样一道怒吼，她不属于你，应该也不属于跟你使用一具身体的“妹妹”。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+4，DP上限+10",
+          "description": "接受这道不属于你的怒吼。",
+          "nextPage": "END",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 4,
+            "cardChoices": 0,
+            "maxDp": 10
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "END",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [],
+      "choices": [],
+      "characters": []
+    }
+  ]
+}

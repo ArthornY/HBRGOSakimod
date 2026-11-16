@@ -1,0 +1,4 @@
+{
+  "TAINTED.hbrAdditiveDescription": "打出时获得[blue]{Amount}[/blue]层[gold]污染[/gold]，使受到的每段攻击额外增加[blue]{HbrAdditivePercent}%[/blue]基础技能威力，至敌方回合结束。",
+  "TAINTED.hbrAdditiveExtraCardText": "获得{Amount}层污染（受到的攻击额外增加[blue]{HbrAdditivePercent}%[/blue]基础技能威力）。"
+}

@@ -66,6 +66,17 @@
             "senseAmount": 0,
             "cardChoices": 0
           }
+        },
+        {
+          "id": "MORE_MEMORIES",
+          "text": "更多回忆",
+          "description": "选择另一段回忆。",
+          "nextPage": "MORE_MEMORIES_1",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
         }
       ],
       "characters": []
@@ -122,6 +133,473 @@
       ],
       "choices": [],
       "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_1",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_MUA",
+          "text": "大岛六宇亚",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_MUA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_KOZUE",
+          "text": "柊木梢",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_KOZUE",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_CAROL",
+          "text": "卡罗尔·利帕",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_CAROL",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_SATOMI",
+          "text": "藏里见",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_SATOMI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_VRITIKA",
+          "text": "芙莉缇卡·巴拉克里希兰",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_VRITIKA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "NEXT_MEMORIES",
+          "text": "下一页",
+          "description": "查看更多回忆。",
+          "nextPage": "MORE_MEMORIES_2",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MORE_MEMORIES_2",
+      "title": "更多回忆",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "选择一段回忆。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "MEET_ISUZU",
+          "text": "大岛五十铃",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_ISUZU",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_INORI",
+          "text": "夏目祈",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_INORI",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_HISAME",
+          "text": "小笠原绯雨",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_HISAME",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "MEET_AINA",
+          "text": "瑞原爱奈",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "MEMORY_AINA",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        },
+        {
+          "id": "RETURN_TO_INITIAL",
+          "text": "返回",
+          "description": "返回最初的回忆选项。",
+          "nextPage": "INITIAL",
+          "rewards": {
+            "sense": "",
+            "senseAmount": 0,
+            "cardChoices": 0
+          }
+        }
+      ],
+      "characters": []
+    },
+    {
+      "id": "MEMORY_MUA",
+      "title": "大岛六宇亚",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了大岛六宇亚。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "mua"
+      ]
+    },
+    {
+      "id": "MEMORY_KOZUE",
+      "title": "柊木梢",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了柊木梢。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "kozue"
+      ]
+    },
+    {
+      "id": "MEMORY_CAROL",
+      "title": "卡罗尔·利帕",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了卡罗尔·利帕。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "carol"
+      ]
+    },
+    {
+      "id": "MEMORY_SATOMI",
+      "title": "藏里见",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了藏里见。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "疯狂+8，从3张卡牌中选择1张获得。",
+          "description": "疯狂+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Madness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "satomi"
+      ]
+    },
+    {
+      "id": "MEMORY_VRITIKA",
+      "title": "芙莉缇卡·巴拉克里希兰",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了芙莉缇卡·巴拉克里希兰。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "description": "领袖魅力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "LeadershipCharm",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "vritika"
+      ]
+    },
+    {
+      "id": "MEMORY_ISUZU",
+      "title": "大岛五十铃",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了大岛五十铃。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "精神力+8，从3张卡牌中选择1张获得。",
+          "description": "精神力+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "MentalStrength",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "isuzu"
+      ]
+    },
+    {
+      "id": "MEMORY_INORI",
+      "title": "夏目祈",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了夏目祈。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "温柔+8，从3张卡牌中选择1张获得。",
+          "description": "温柔+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Gentleness",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "inori"
+      ]
+    },
+    {
+      "id": "MEMORY_HISAME",
+      "title": "小笠原绯雨",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了小笠原绯雨。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "hisame"
+      ]
+    },
+    {
+      "id": "MEMORY_AINA",
+      "title": "瑞原爱奈",
+      "choicePrompt": "",
+      "background": "",
+      "lines": [
+        {
+          "kind": "narration",
+          "speaker": "",
+          "text": "你想起了瑞原爱奈。",
+          "portrait": "",
+          "background": "",
+          "portraitLayout": null,
+          "characters": null
+        }
+      ],
+      "choices": [
+        {
+          "id": "TAKE_REWARD",
+          "text": "单纯+8，从3张卡牌中选择1张获得。",
+          "description": "单纯+8，从3张卡牌中选择1张获得。",
+          "nextPage": "SCENE_2",
+          "rewards": {
+            "sense": "Simplicity",
+            "senseAmount": 8,
+            "cardChoices": 3
+          }
+        }
+      ],
+      "characters": [],
+      "metCharacters": [
+        "aina"
+      ]
     }
   ]
 }

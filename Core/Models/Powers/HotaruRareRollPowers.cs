@@ -9,6 +9,7 @@ using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
@@ -72,7 +73,9 @@ public sealed class HotaruTraceOldScarPower : HotaruTurnLedgerPower
     {
         modifiedCost = originalCost;
         if (card?.IsMutable != true || card.Owner?.Creature != Owner || card.EnergyCost.CostsX) return false;
-        int discount = SixSenseCardCapability.GetAttributes(card).Sum(attribute => ActiveAmountForTag((int)attribute));
+        // Tags are card types (attack, skill, power) since 2026-11-09; they were six-sense attributes.
+        int discount = card.Type is CardType.Attack or CardType.Skill or CardType.Power
+            ? ActiveAmountForTag((int)card.Type) : 0;
         if (discount <= 0) return false;
         modifiedCost = Math.Max(0m, originalCost - discount);
         return modifiedCost != originalCost;
@@ -83,9 +86,9 @@ public sealed class HotaruTraceOldScarPower : HotaruTurnLedgerPower
         get
         {
             LocString text = base.Description;
-            string[] active = IsMutable ? ElectronicSoldierManual.AllSixSenseAttributes
-                .Where(attribute => ActiveAmountForTag((int)attribute) > 0)
-                .Select(attribute => $"{ElectronicSoldierManual.GetSenseTitle(attribute)}：-{ActiveAmountForTag((int)attribute)}")
+            string[] active = IsMutable ? HotaruRareRollHelper.TraceOldScarTypes
+                .Where(entry => ActiveAmountForTag((int)entry.Type) > 0)
+                .Select(entry => $"{entry.Title}：-{ActiveAmountForTag((int)entry.Type)}")
                 .ToArray() : Array.Empty<string>();
             text.Add("Discounts", string.Join("、", active));
             return text;

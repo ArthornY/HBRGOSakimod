@@ -1,0 +1,4 @@
+{
+  "TAINTED.hbrAdditiveDescription": "When played, gain [blue]{Amount}[/blue] [gold]Tainted[/gold], adding [blue]{HbrAdditivePercent}%[/blue] base skill power to each incoming attack hit until the end of the enemy turn.",
+  "TAINTED.hbrAdditiveExtraCardText": "Gain {Amount} Tainted (+[blue]{HbrAdditivePercent}%[/blue] base skill power to incoming attacks)."
+}

@@ -18,6 +18,9 @@ public sealed class YoHbrgoSaki : CardModel
 
     public override string BetaPortraitPath => PortraitPath;
 
+    public override IEnumerable<CardKeyword> CanonicalKeywords =>
+        new[] { CardKeyword.Exhaust };
+
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
         HoverTipFactory.FromPower<MidsummerHellCursePower>()

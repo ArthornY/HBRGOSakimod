@@ -16,9 +16,11 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Hooks;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Afflictions;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Potions;
@@ -29,7 +31,7 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 static class OverchargeChecks { public static void Run(string reportPath)=>EffectChecks.Run(reportPath); }
 
-static class EffectChecks
+static partial class EffectChecks
 {
     const BindingFlags F=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.Static;
     const string ProductionId="hbr.effect-skill.checks.production";
@@ -74,8 +76,9 @@ static class EffectChecks
         (IDisposable)Call("HbrEffectSkillDamageContext","Begin",target,dealer,card,raw,props,statSource)!;
     static Task<IEnumerable<DamageResult>> Command(Creature? dealer,decimal raw,ValueProp props=ValueProp.Unpowered,CardModel? card=null,IEnumerable<Creature>? targets=null)
     {
-        object?[] args=[null,targets??new[]{Enemy},raw,props,dealer,card,null];
-        return (Task<IEnumerable<DamageResult>>)Invoke(Canonical,null,args.Take(Canonical.GetParameters().Length).ToArray())!;
+        Type wrapper=Mod.GetType("HBRGOSakiMod.Core.Compatibility.CreatureCommandCompatibility",true)!;
+        MethodInfo entry=wrapper.GetMethods(F).Single(method=>method.Name=="Damage"&&method.GetParameters() is var p&&p.Length==7&&p[1].ParameterType==typeof(IEnumerable<Creature>));
+        return (Task<IEnumerable<DamageResult>>)Invoke(entry,null,null,targets??new[]{Enemy},raw,props,dealer,card,null)!;
     }
     static decimal Actual(Creature target,Creature? dealer,decimal raw,ValueProp props,CardModel? card)
     {
@@ -97,8 +100,12 @@ static class EffectChecks
     static bool VisualTask(ref Task __result){__result=Task.CompletedTask;return false;}
     static bool Listeners(ref IEnumerable<AbstractModel> __result)
     {__result=Combat.Creatures.SelectMany(creature=>creature.Powers).Cast<AbstractModel>().Concat(Player.Relics).ToArray();return false;}
-    static bool Terminal(IEnumerable<Creature> targets,decimal amount,ValueProp props,Creature? dealer,CardModel? cardSource,ref Task<IEnumerable<DamageResult>> __result)
+    static bool Terminal(object[] __args,ref Task<IEnumerable<DamageResult>> __result)
     {
+        Type api=Mod.GetType("HBRGOSakiMod.Core.Compatibility.NativeDamageApiCompatibility",true)!;
+        var targets=(IEnumerable<Creature>)Invoke(api.GetMethod("ReadTargets",F)!,null,new object?[]{__args})!;
+        decimal amount=(decimal)__args[2];ValueProp props=(ValueProp)__args[3];
+        Creature? dealer=__args[4] as Creature;CardModel? cardSource=__args[5] as CardModel;
         LastCommand=AsyncValue("HbrEffectSkillDamageContext","CurrentCommand");
         if(ThrowSync)throw new InvalidOperationException("controlled-sync-effect-leaf");
         __result=Body(targets,amount,props,dealer,cardSource);return false;
@@ -180,8 +187,8 @@ static class EffectChecks
         harmony.Patch(typeof(CombatState).GetMethod("IterateHookListeners")!,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(Listeners),F)!){priority=Priority.First});
         foreach(Type type in Mod.GetTypes().Where(type=>type.IsDefined(typeof(HarmonyPatch),false)&&
             (type.Name.StartsWith("ExactDamagePercent",StringComparison.Ordinal)||type.Name is "HighDimensionalShellStackAmountPatch" or "DamageAmplificationStackingPatch")))harmony.CreateClassProcessor(type).Patch();
-        foreach(string name in new[]{"HbrNativeFixedResourcePatch","HbrEffectSkillDamageContextPatch","HbrNumericCriticalScopePatch","HbrAbsoluteBaseDamageCommandPatch","HbrAbsoluteBaseDamageHookPatch","HpOnlyDamageContextPatch","HbrNativeEffectSkillDamagePatch","HbrNativePotionEffectSkillDamagePatch","HbrNativeThornsDamagePatch",
-            "HbrNativeEffectSkillDescriptionPatch","HbrNativeThornsSkillDescriptionPatch","HbrNativeEffectSkillTextPatch","HbrMerchantRelicSkillDescriptionPatch"})
+        foreach(string name in new[]{"HbrNativeFixedResourcePatch","HbrEffectSkillDamageContextPatch","HbrNumericCriticalScopePatch","HbrAbsoluteBaseDamageCommandPatch","HbrAbsoluteBaseDamageHookPatch","HpOnlyDamageContextPatch","HbrNativeEffectSkillDamagePatch","HbrNativePotionEffectSkillDamagePatch","HbrNativeThornsDamagePatch","HbrNativeGalvanicDamagePatch","HbrNativeRelicEffectSkillDamagePatch","HbrNativeDamageOverTimePatch","HbrNativePoisonPreviewPatch",
+            "HbrNativeEffectSkillDescriptionPatch","HbrNativeThornsSkillDescriptionPatch","HbrNativeGalvanizedSkillDescriptionPatch","HbrNativeGalvanicHoverTipPatch","HbrNativeEffectSkillTextPatch","HbrMerchantRelicSkillDescriptionPatch"})
         {
             Type? type=Mod.GetType("HBRGOSakiMod.Core.Patches.Combat."+name)??Mod.GetType("HBRGOSakiMod.Core.Patches."+name);
             if(type==null)continue;
@@ -194,12 +201,13 @@ static class EffectChecks
         }
         foreach(Type type in new[]{typeof(HotaruDamageAmplificationPower)}){ModelDb.Inject(type);Set(ModelDb.GetById<PowerModel>(ModelDb.GetId(type)),"<Id>k__BackingField",ModelDb.GetId(type));}
         foreach(MethodInfo flash in new[]{typeof(PowerModel),typeof(RelicModel)}.SelectMany(type=>type.GetMethods(F)).Where(method=>method.Name=="Flash").Distinct())harmony.Patch(flash,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(Skip),F)!));
+        foreach(MethodInfo vfx in typeof(VfxCmd).GetMethods(F).Where(method=>method.Name=="PlayOnCreature"))harmony.Patch(vfx,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(Skip),F)!));
         foreach(MethodInfo visual in typeof(Kusarigama).GetMethods(F).Where(method=>method.Name=="Visuals"&&method.ReturnType==typeof(Task)))harmony.Patch(visual,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(VisualTask),F)!));
         Type energy=typeof(PowerModel).Assembly.GetType("MegaCrit.Sts2.Core.Helpers.EnergyIconHelper",true)!;
         foreach(MethodInfo method in energy.GetMethods(F).Where(method=>method.Name=="GetPrefix"))harmony.Patch(method,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(Energy),F)!));
         foreach(MethodInfo method in energy.GetMethods(F).Where(method=>method.Name=="GetPool"))harmony.Patch(method,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(EnergyPool),F)!));
         harmony.Patch(AccessTools.DeclaredMethod(typeof(MiniatureCannon),"ModifyDamageAdditive"),postfix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(ObserveMiniatureAdditive),F)!));
-        Canonical=typeof(CreatureCmd).GetMethods(F).Where(method=>method.Name=="Damage"&&method.GetParameters() is var p&&p.Length is 6 or 7&&p[1].ParameterType==typeof(IEnumerable<Creature>)&&p[2].ParameterType==typeof(decimal)).OrderByDescending(method=>method.GetParameters().Length).First();
+        Canonical=(MethodInfo)Mod.GetType("HBRGOSakiMod.Core.Compatibility.NativeDamageApiCompatibility",true)!.GetField("Command",F)!.GetValue(null)!;
         new Harmony("hbr.effect-skill.checks.terminal").Patch(Canonical,prefix:new HarmonyMethod(typeof(EffectChecks).GetMethod(nameof(Terminal),F)!){priority=Priority.Last,after=[ProductionId]});Reset();
     }
     static async Task NativeThornsCase()
@@ -214,6 +222,43 @@ static class EffectChecks
             "real Thorns command keeps original recursion flags, owner dealer, target and null card");
         Check(thorns.Amount==2&&Enemy.GetPower<ThornsPower>()!.Amount==2,"native Thorns counters unchanged after retaliation");Clean("native Thorns");
     }
+    static async Task NativeGalvanicCase()
+    {
+        // Globe Head's Galvanic hits whoever plays a Galvanized card, with no dealer. Like an
+        // enemy's Thorns, its raw stacks are that enemy's skill on the incoming curve.
+        Localization();ModelDb.Inject(typeof(Galvanized));
+        Set(ModelDb.GetById<AfflictionModel>(ModelDb.GetId(typeof(Galvanized))),"<Id>k__BackingField",ModelDb.GetId(typeof(Galvanized)));
+        ValueProp props=ValueProp.Unpowered|ValueProp.Move;
+        async Task<(Hit hit,GalvanicPower power,AfflictionModel affliction)> Play(bool hbr)
+        {
+            Reset(hbr);var power=Power<GalvanicPower>(Enemy,8);var card=Owned<Inflame>();
+            var affliction=(AfflictionModel)ModelDb.Affliction<Galvanized>().ToMutable();affliction.Amount=8;affliction.Card=card;Set(card,"<Affliction>k__BackingField",affliction);
+            var play=Blank<CardPlay>();Set(play,"<Card>k__BackingField",card);
+            await (Task)Native(power,"AfterCardPlayed",new ThrowingPlayerChoiceContext(),play)!;
+            Check(Hits.Count==1,$"real native Galvanic handler issues one command for a Galvanized card (HBR {hbr})");
+            return (Hits.Single(),power,affliction);
+        }
+        string HoverTipText(GalvanicPower power)
+        {
+            IHoverTip tip=((IEnumerable<IHoverTip>)Invoke(AccessTools.PropertyGetter(typeof(GalvanicPower),"ExtraHoverTips"),power)!).First();
+            return (string)tip.GetType().GetProperty("Description")!.GetValue(tip)!;
+        }
+        var (hit,galvanic,galvanized)=await Play(true);
+        Cases.Add(new{source="Galvanic",hit.Raw,hit.Final,props=hit.Props.ToString(),hit.Enabled,hit.Sample});
+        Check(hit.Enabled&&hit.Raw==8m&&hit.Props==props&&ReferenceEquals(hit.Target,Hero)&&hit.Dealer==null&&hit.Card==null,
+            "real Galvanic command keeps raw8, native flags, the playing hero as target and null dealer and card");
+        Hits.Clear();using(Begin(Hero,null,null,8m,props,Enemy))await Command(null,8m,props,null,new[]{Hero});
+        Equal(hit.Final,Hits.Single().Final,"native Galvanic8 resolves exactly as the enemy's declared skill");
+        Check(hit.Final>8m&&hit.Final!=800m,"Galvanic uses the enemy incoming curve rather than literal8 or environmental800");
+        Check(galvanic.Amount==8&&galvanized.Amount==8,"native Galvanic and Galvanized counters unchanged");Clean("native Galvanic");
+        string cardText=galvanized.DynamicExtraCardText!.GetFormattedText(),tipText=HoverTipText(galvanic);
+        Check(cardText.Contains("8000")&&!cardText.Contains('%'),"Galvanized card text shows numeric eight-unit hero damage basis without coefficient wording");
+        Check(tipText.Contains("800")&&!tipText.Contains('%'),"cardless Galvanized hover tip built by the enemy uses its numeric incoming skill basis");
+        var (native,nativePower,nativeAffliction)=await Play(false);
+        Equal(native.Final,8m,"disabled HBR Galvanic keeps native8 damage");Clean("disabled HBR Galvanic");
+        Check(nativeAffliction.DynamicExtraCardText!.GetFormattedText().Contains('8')&&!HoverTipText(nativePower).Contains('%'),
+            "disabled HBR Galvanized card text and hover tip keep native8");
+    }
     static async Task PrimitiveCases()
     {
         foreach(decimal raw in new[]{6m,2m,3m})
@@ -226,7 +271,7 @@ static class EffectChecks
         {int before=RngCount(RunState.Rng.Niche);Equal(Preview(Enemy,Hero,6m,ValueProp.Unpowered,null),decimal.Floor(Base(6m)),"explicit direct preview receives skill attributes");Check(RngCount(RunState.Rng.Niche)==before,"direct preview never advances own critical RNG");}
         Equal(Preview(Enemy,Hero,2m,ValueProp.Unpowered,null),2m,"disposed preview cannot leak declaration into unknown damage");
         Reset();using(Begin(Enemy,null,null,3m))await Command(null,3m);
-        Equal(Hits.Single().Final,3000m,"declaration with no dealer uses environmental raw units times1000");Check(RngCount(RunState.Rng.Niche)==0,"environmental skill has no actor critical sample");
+        Equal(Hits.Single().Final,300m,"declaration with no dealer uses environmental raw units times the100 player HP scale");Check(RngCount(RunState.Rng.Niche)==0,"environmental skill has no actor critical sample");
         Reset(false);await Declared(2m);Equal(Hits.Single().Final,2m,"legacy mode retains original native effect damage");
     }
     static async Task ModifiersAndIsolationCases()
@@ -234,7 +279,7 @@ static class EffectChecks
         Reset();Power<StrengthPower>(Hero,20);Power<WeakPower>(Hero,1);Power<VulnerablePower>(Enemy,1);
         var amp=PowerCmd.Apply<HotaruDamageAmplificationPower>(null!,Hero,25m,Hero,null,true).GetAwaiter().GetResult()!;
         var vigor=Power<VigorPower>(Hero,999);
-        await Declared(6m);Equal(Hits.Single().Final,decimal.Floor(Base(6m,120m)*1.25m*.75m*1.5m),"effect damage combines current actor attributes, native Weak/Vulnerable and persistent HBR amplification once");
+        await Declared(6m);Equal(Hits.Single().Final,decimal.Floor(Base(6m,140m)*1.25m*.75m*1.5m),"effect damage combines current actor attributes, native Weak/Vulnerable and persistent HBR amplification once");
         Check(vigor.Amount==999&&amp.DamagePercent==25m,"effect command and calculation neither borrow nor change native Vigor or persistent amplification");
         Reset();var card=Owned<StrikeIronclad>();var nib=Owned<PenNib>();Set(nib,"_attackToDouble",card);Set(nib,"_attacksPlayed",9);
         Set(Player,"_relics",new List<RelicModel>{State<RelicModel>("Manual"),nib});
@@ -261,17 +306,18 @@ static class EffectChecks
         foreach(string outer in new[]{"PrecalculatedDamageContext","HbrAbsoluteBaseDamageContext"})
         {
             Reset();var card=Owned<StrikeIronclad>();ValueProp props=ValueProp.Move;
+            decimal retained=outer=="PrecalculatedDamageContext"?6m:decimal.Floor(Base(.006m));
             using((IDisposable)(outer=="PrecalculatedDamageContext"?Call(outer,"Begin",card,Enemy,6m):Call(outer,"Begin",Hero,card,Enemy,6m))!)
             {
-                Equal(Preview(Enemy,Hero,6m,props,card),6m,outer+" retains resolved unknown preview behavior");
+                Equal(Preview(Enemy,Hero,6m,props,card),retained,outer+" retains its declared resolved or world-basis preview behavior");
                 using(Begin(Enemy,Hero,card,6m,props))
                     Equal(Preview(Enemy,Hero,6m,props,card),decimal.Floor(Base(6m)),outer+" cannot suppress newly declared skill preview conversion");
-                Equal(Preview(Enemy,Hero,6m,props,card),6m,outer+" restores resolved preview after explicit skill scope disposal");
+                Equal(Preview(Enemy,Hero,6m,props,card),retained,outer+" restores its basis after explicit skill scope disposal");
                 Check(RngCount(RunState.Rng.Niche)==0,outer+" explicit preview does not consume actual RNG");
-                await Command(Hero,6m,props,card);Equal(Hits.Single().Final,6m,outer+" retains resolved unknown actual command");Hits.Clear();
+                await Command(Hero,6m,props,card);Equal(Hits.Single().Final,retained,outer+" retains its declared resolved or world-basis actual command");Hits.Clear();
                 await Declared(6m,Hero,card,props);Equal(Hits.Single().Final,decimal.Floor(Base(6m)),outer+" cannot suppress newly declared actual skill conversion");
                 Check(ReferenceEquals(Hits.Single().Card,card)&&Hits.Single().Props==props,outer+" actual skill retains original card attribution and powered flags");
-                Hits.Clear();await Command(Hero,6m,props,card);Equal(Hits.Single().Final,6m,outer+" restores resolved actual damage after explicit skill scope disposal");
+                Hits.Clear();await Command(Hero,6m,props,card);Equal(Hits.Single().Final,retained,outer+" restores its actual basis after explicit skill scope disposal");
             }
             Clean(outer+" isolation");
         }
@@ -315,7 +361,7 @@ static class EffectChecks
         System.Runtime.Loader.AssemblyLoadContext.Default.Resolving+=(context,name)=>{string path=Path.Combine(nativeRuntime,name.Name+".dll");return File.Exists(path)?context.LoadFromAssemblyPath(path):null;};
         var manager=Blank<LocManager>();Set(manager,"<Language>k__BackingField","zhs");Set(manager,"<CultureInfo>k__BackingField",CultureInfo.InvariantCulture);Set(manager,"<StringComparer>k__BackingField",StringComparer.Ordinal);
         typeof(LocManager).GetField("<Instance>k__BackingField",F)!.SetValue(null,manager);var tables=new Dictionary<string,LocTable>();
-        foreach(string table in new[]{"cards","relics","powers","events","static_hover_tips","card_keywords"})
+        foreach(string table in new[]{"cards","relics","powers","events","potions","static_hover_tips","card_keywords","afflictions"})
         {
             var text=new Dictionary<string,string>();string native=Path.Combine("D:/stsmod/sts/localization/zhs",table+".json");
             if(File.Exists(native))foreach(var pair in JsonSerializer.Deserialize<Dictionary<string,string>>(File.ReadAllText(native))!)text[pair.Key]=pair.Value;
@@ -331,7 +377,7 @@ static class EffectChecks
         await (Task)Native(burn,"OnTurnEndInHand",new ThrowingPlayerChoiceContext())!;
         Hit hit=Hits.Single();Cases.Add(new{source="Burn.OnTurnEndInHand",hit.Raw,hit.Final,props=hit.Props.ToString(),hit.Enabled,hit.Sample,dealer=hit.Dealer==null?"null":ReferenceEquals(hit.Dealer,Hero)?"hero":"other",card=hit.Card?.GetType().Name});
         Check(hit.Enabled&&hit.Final>2m,"real native Burn hand-turn-end handler reaches declared skill calculation instead of literal2");
-        Equal(hit.Final,decimal.Floor(Base(2m)),"native Burn raw2 resolves exact actor skill damage1285");
+        Equal(hit.Final,200m,"native Burn raw2 is environmental hand-tick damage200 rather than the holder's skill");
         Check(ReferenceEquals(hit.Target,Hero)&&hit.Raw==2m&&hit.Props==burn.DynamicVars.Damage.Props&&burn.DynamicVars.Damage.BaseValue==2m&&ReferenceEquals(hit.Dealer,Hero)&&ReferenceEquals(hit.Card,burn),"Burn handler retains native target, raw DamageVar flags and raw storage");Clean("native Burn handler");
         Reset();var fire=Owned<FirePotion>();
         await (Task)Native(fire,"OnUse",new ThrowingPlayerChoiceContext(),Enemy)!;
@@ -346,15 +392,17 @@ static class EffectChecks
         hit=Hits.Single();Equal(hit.Final,1m,"unknown HP-only amount1 keeps native already-resolved behavior despite DP");Check(hit.HpOnly&&!hit.Enabled,"unknown HP-only command owns HP route without declaring a skill");Hits.Clear();
         using(Begin(Enemy,Hero,source,1m,props))await (Task)Call("HpOnlyDamageContext","Damage",new ThrowingPlayerChoiceContext(),Enemy,1m,Hero,source)!;
         hit=Hits.Single();Cases.Add(new{source="explicitHpOnly",hit.Raw,hit.Final,props=hit.Props.ToString(),hit.Enabled,hit.HpOnly,hit.Sample,dp=shell.CurrentDp});
-        Equal(hit.Final,decimal.Floor(Base(1m,140m)),"explicit HP-only raw1 converts with HP weighted-stat140 despite a positive target DP pool");
-        Check(hit.Final!=decimal.Floor(Base(1m,120m))&&hit.HpOnly&&hit.Enabled&&hit.Raw==1m&&hit.Props==props&&ReferenceEquals(hit.Dealer,Hero)&&ReferenceEquals(hit.Card,source),"HP-only skill bypasses old resolved-base shortcut, preserves attribution and does not select DP weighted-stat120");
+        Equal(hit.Final,decimal.Floor(Base(1m,130m)),"explicit HP-only raw1 uses physical weighted-stat130 regardless of positive target DP");
+        Check(hit.Final!=decimal.Floor(Base(1m,120m))&&hit.HpOnly&&hit.Enabled&&hit.Raw==1m&&hit.Props==props&&ReferenceEquals(hit.Dealer,Hero)&&ReferenceEquals(hit.Card,source),"HP-only skill bypasses old resolved-base shortcut, preserves attribution and does not reuse the retired DP-biased weighted-stat120");
         Equal(shell.CurrentDp,2000m,"HP-only calculation smoke never spends its terminal-isolated target DP");Clean("HP-only effect");
         Check(AsyncValue("HpOnlyDamageContext","Pending")==null&&AsyncValue("HpOnlyDamageContext","Current")==null,"native HP-only helper and canonical postfix close their pending/current frames");
     }
     static async Task NativeEventAdapterCases()
     {
         Localization();ModelDb.Inject(typeof(RoyalPoison));
-        foreach((string name,string handler,decimal raw) in new[]{("AbyssalBaths","OnImmerse",3m),("RoomFullOfCheese","Search",14m),("RoundTeaParty","ContinueFight",11m),("TheLegendsWereTrue","SlowlyFindAnExit",8m)})
+        foreach((string name,string handler,decimal raw,string option) in new[]{("AbyssalBaths","OnImmerse",3m,"ABYSSAL_BATHS.pages.INITIAL.options.IMMERSE"),
+            ("RoomFullOfCheese","Search",14m,"ROOM_FULL_OF_CHEESE.pages.INITIAL.options.SEARCH"),("RoundTeaParty","ContinueFight",11m,"ROUND_TEA_PARTY.pages.INITIAL.options.PICK_FIGHT"),
+            ("TheLegendsWereTrue","SlowlyFindAnExit",8m,"THE_LEGENDS_WERE_TRUE.pages.INITIAL.options.SLOWLY_FIND_AN_EXIT")})
         {
             Reset();Type type=typeof(ModelDb).Assembly.GetType("MegaCrit.Sts2.Core.Models.Events."+name,true)!;
             var model=(EventModel)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(type);
@@ -366,27 +414,38 @@ static class EffectChecks
             DamageVar variable=model.DynamicVars.Damage;Equal(variable.BaseValue,raw,"native event raw DamageVar remains original: "+name);
             MethodInfo adapter=calls.Single();object?[] args=adapter.GetParameters().Select(parameter=>parameter.ParameterType==typeof(DamageVar)?(object)variable:
                 parameter.ParameterType==typeof(Creature)?(parameter.Name=="target"?Hero:null):parameter.ParameterType==typeof(PlayerChoiceContext)?new ThrowingPlayerChoiceContext():null).ToArray();
-            await (Task)Invoke(adapter,null,args)!;Hit hit=Hits.Single();Equal(hit.Final,raw*1000m,"actual native event typed adapter declares environmental skill units: "+name);
+            await (Task)Invoke(adapter,null,args)!;Hit hit=Hits.Single();Equal(hit.Final,raw*100m,"actual native event typed adapter declares environmental skill units: "+name);
             Check(hit.Enabled&&hit.Raw==raw&&ReferenceEquals(hit.Target,Hero)&&hit.Dealer==null&&hit.Card==null&&hit.Props==variable.Props,
                 "event command retains target, null dealer/card and original DamageVar flags: "+name);
             Check(RngCount(RunState.Rng.Niche)==0&&variable.BaseValue==raw,"event environment has no actor critical RNG and does not rewrite storage: "+name);Clean("native event adapter "+name);
+            // Environmental damage displays its amount and keeps the native point unit, not a coefficient.
+            string text=OptionText(model,option);
+            Check(text.Contains($"[red]{raw*100m}[/red]点")&&!text.Contains('%'),"native event option text shows environmental amount "+raw*100m+": "+name);
+            H("Mode",false,1);
+            Check(OptionText(model,option).Contains($"[red]{raw}[/red]点"),"disabled HBR event option text keeps native "+raw+": "+name);
         }
+    }
+    static string OptionText(EventModel model,string option)
+    {
+        LocString text=model.GetOptionDescription(option)!;
+        foreach(DynamicVar variable in model.DynamicVars.Values)text.Add(variable);
+        return text.GetFormattedText();
     }
     static void DescriptionAndSourceCases()
     {
         Reset();Localization();var kusa=Owned<Kusarigama>();decimal raw=kusa.DynamicVars.Damage.BaseValue;
         string text=kusa.DynamicDescription.GetFormattedText();
-        Check(text.Contains("100%")&&!text.Contains('{'),"real native Kusarigama DynamicDescription and SmartFormat display100percent coefficient");Equal(kusa.DynamicVars.Damage.BaseValue,raw,"description never rewrites Kusarigama raw DamageVar");
+        Check(text.Contains("6000")&&!text.Contains('%')&&!text.Contains('{'),"real native Kusarigama DynamicDescription shows numeric six-unit damage basis");Equal(kusa.DynamicVars.Damage.BaseValue,raw,"description never rewrites Kusarigama raw DamageVar");
         var burn=Owned<Burn>();text=burn.Description.GetFormattedText();
-        Check(text.Contains("33.33%")&&!text.Contains('{'),"native Burn diff-format description safely displays two units as33point33percent skill");Equal(burn.DynamicVars.Damage.BaseValue,2m,"native Burn stores raw2 after formatting");
+        Check(text.Contains("200")&&!text.Contains("2000")&&!text.Contains('%')&&!text.Contains('{'),"native Burn diff-format description safely shows environmental hand-tick damage200");Equal(burn.DynamicVars.Damage.BaseValue,2m,"native Burn stores raw2 after formatting");
         var thorns=Power<ThornsPower>(Hero,2);LocString smart=thorns.SmartDescription;smart.Add("OwnerName","测试角色");
         Invoke(AccessTools.Method(typeof(PowerModel),"AddDumbVariablesToDescription"),thorns,smart,null);
-        Check(smart.GetFormattedText().Contains("33.33%")&&thorns.Amount==2,"native Thorns description displays33point33percent without changing two-stack counter");
+        Check(smart.GetFormattedText().Contains("2000")&&!smart.GetFormattedText().Contains('%')&&thorns.Amount==2,"native Thorns description shows numeric damage without changing its two-stack counter");
         var merchant=new Kusarigama();
-        string native=merchant.DynamicDescription.GetFormattedText();Check(!native.Contains("100%"),"unowned canonical Kusarigama stays native without merchant context");
+        string native=merchant.DynamicDescription.GetFormattedText();Check(!native.Contains("6000"),"unowned canonical Kusarigama stays native without merchant context");
         using((IDisposable)Call("HbrNativeEffectSkillHelper","BeginMerchantDisplay",merchant,Player)!)
-            Check(merchant.DynamicDescription.GetFormattedText().Contains("100%"),"explicit merchant context renders unowned Kusarigama as100percent without Owner access");
-        Check(!merchant.DynamicDescription.GetFormattedText().Contains("100%"),"merchant scope cleanup leaves following canonical description native");
+            Check(merchant.DynamicDescription.GetFormattedText().Contains("6000"),"explicit merchant context renders unowned Kusarigama numeric skill basis without Owner access");
+        Check(!merchant.DynamicDescription.GetFormattedText().Contains("6000"),"merchant scope cleanup leaves following canonical description native");
         foreach((Type model,decimal expected) in new[]{(typeof(Burn),2m),(typeof(Decay),2m),(typeof(Infection),3m),(typeof(Toxic),5m),(typeof(Wither),3m)})
         {
             var card=(CardModel)Activator.CreateInstance(model)!;Set(card,"<IsMutable>k__BackingField",true);Set(card,"_owner",Player);
@@ -430,7 +489,7 @@ static class EffectChecks
         Reset();(mini,card)=MiniatureSetup();Power<StrengthPower>(Hero,20);Power<WeakPower>(Hero,1);Power<VulnerablePower>(Enemy,1);
         PowerCmd.Apply<HotaruDamageAmplificationPower>(null!,Hero,25m,Hero,null,true).GetAwaiter().GetResult();
         await Command(Hero,6m,ValueProp.Move,card);
-        Equal(Hits.Single().Final,decimal.Floor((Base(6m,120m)+Base(3m,120m))*.75m*1.5m*1.25m),"Miniature Cannon skill bonus shares current attributes, Weak, Vulnerable and persistent amplification exactly once");
+        Equal(Hits.Single().Final,decimal.Floor((Base(6m,140m)+Base(3m,140m))*.75m*1.5m*1.25m),"Miniature Cannon skill bonus shares current attributes, Weak, Vulnerable and persistent amplification exactly once");
         Reset(seed:FindSeed(true));(mini,card)=MiniatureSetup();await Command(Hero,6m,ValueProp.Move,card);
         Equal(Hits.Single().Final,13500m,"Miniature Cannon base9000 and bonus4500 use the same successful native critical roll");
         Check(RngCount(RunState.Rng.Niche)==1,"Miniature Cannon additional skill component never draws a second critical sample");
@@ -449,8 +508,8 @@ static class EffectChecks
         Reset(false);(mini,card)=MiniatureSetup();await Command(Hero,6m,ValueProp.Move,card);Equal(Hits.Single().Final,9m,"legacy mode retains native additive3 instead of HBR skill conversion");
         Reset(seed:FindSeed(true));(mini,card)=MiniatureSetup();
         using((IDisposable)Call("HbrAbsoluteBaseDamageContext","Begin",Hero,card,Enemy,6m)!)await Command(Hero,6m,ValueProp.Move,card);
-        Equal(Hits.Single().Final,decimal.Floor(6m+Base(3m)),"absolute world-space base6 remains unconverted while Miniature Cannon adds its independent50percent component");
-        Check(RngCount(RunState.Rng.Niche)==0,"absolute world-space attack bonus follows existing noncritical rule and consumes no RNG even with a critical seed");
+        Equal(Hits.Single().Final,decimal.Floor((.006m+3m)*1500m),"absolute world-space base6 normalizes once and shares the critical skill curve with Miniature Cannon");
+        Check(RngCount(RunState.Rng.Niche)==1,"absolute world-space attack and bonus share one critical sample");
         Reset();(mini,card)=MiniatureSetup();
         using((IDisposable)Call("PrecalculatedDamageContext","Begin",card,Enemy,6m)!)await Command(Hero,6m,ValueProp.Move,card);
         Equal(Hits.Single().Final,6m,"already-precalculated attack continues to skip the entire additive phase");
@@ -468,12 +527,12 @@ static class EffectChecks
         }
         finally{Set(Hero,"<Monster>k__BackingField",null);}
         Reset();Localization();(mini,card)=MiniatureSetup();
-        string text=mini.DynamicDescription.GetFormattedText();Check(text.Contains("50%")&&!text.Contains('{'),"native owned Miniature Cannon SmartFormat description displays50percent additional skill coefficient");
+        string text=mini.DynamicDescription.GetFormattedText();Check(text.Contains("3000")&&!text.Contains('%')&&!text.Contains('{'),"native owned Miniature Cannon description shows numeric additional skill basis");
         Equal(mini.DynamicVars["ExtraDamage"].BaseValue,3m,"Miniature Cannon description formatting leaves ordinary ExtraDamage variable at3");
-        var merchant=new MiniatureCannon();Check(!merchant.DynamicDescription.GetFormattedText().Contains("50%"),"unowned canonical Miniature Cannon stays native without explicit merchant context");
+        var merchant=new MiniatureCannon();Check(!merchant.DynamicDescription.GetFormattedText().Contains("3000"),"unowned canonical Miniature Cannon stays native without explicit merchant context");
         using((IDisposable)Call("HbrNativeEffectSkillHelper","BeginMerchantDisplay",merchant,Player)!)
-            Check(merchant.DynamicDescription.GetFormattedText().Contains("50%"),"explicit merchant scope displays unowned Miniature Cannon50percent skill coefficient");
-        Check(!merchant.DynamicDescription.GetFormattedText().Contains("50%"),"Miniature Cannon merchant scope restores canonical native formatting after disposal");
+            Check(merchant.DynamicDescription.GetFormattedText().Contains("3000"),"explicit merchant scope displays unowned Miniature Cannon numeric additional skill basis");
+        Check(!merchant.DynamicDescription.GetFormattedText().Contains("3000"),"Miniature Cannon merchant scope restores canonical native formatting after disposal");
     }
     static readonly List<decimal> VigorCalls=[];
     static void ObserveVigorAdditive(decimal __result)=>VigorCalls.Add(__result);
@@ -522,7 +581,7 @@ static class EffectChecks
     static async Task VigorSkillCases()
     {
         InstallVigorLifetime();decimal actual=await VigorNativeHit();Equal(actual,decimal.Floor(Base(9m)),"native Vigor3 joins base6 as one150percent coefficient before the attribute curve");
-        actual=await VigorNativeHit(modifiers:true);Equal(actual,decimal.Floor(Base(9m,120m)*.75m*1.5m*1.25m),"Vigor coefficient shares actor stats and native Weak Vulnerable persistent amplification");
+        actual=await VigorNativeHit(modifiers:true);Equal(actual,decimal.Floor(Base(9m,140m)*.75m*1.5m*1.25m),"Vigor coefficient shares actor stats and native Weak Vulnerable persistent amplification");
         actual=await VigorNativeHit(critical:true);Equal(actual,13500m,"combined Vigor150percent skill shares the attack critical curve once");Check(RngCount(RunState.Rng.Niche)==1,"combined Vigor critical calculation draws only one native sample");
         actual=await VigorNativeHit(hbr:false);Equal(actual,9m,"legacy native attack retains original raw6 plus3 additive behavior and consumption");
         Reset();var vigor=Power<VigorPower>(Hero,3);VigorCalls.Clear();await Command(Hero,6m,ValueProp.Unpowered);
@@ -531,7 +590,7 @@ static class EffectChecks
         Reset();vigor=Power<VigorPower>(Hero,3);H("Act",3);await Command(Hero,6m,ValueProp.Move);Equal(Hits.Single().Final,1m,"high enemy parameter applies only one minimum to combined base plus Vigor");
         Reset(seed:FindSeed(true));vigor=Power<VigorPower>(Hero,3);var absoluteCard=Owned<StrikeIronclad>();
         using((IDisposable)Call("HbrAbsoluteBaseDamageContext","Begin",Hero,absoluteCard,Enemy,250m)!)await Command(Hero,250m,ValueProp.Move,absoluteCard);
-        Equal(Hits.Single().Final,decimal.Floor(250m+Base(3m)),"absolute world base250 keeps its units while Vigor adds one independent noncritical50percent component");Check(RngCount(RunState.Rng.Niche)==0,"absolute Vigor contribution never introduces a natural critical sample");
+        Equal(Hits.Single().Final,decimal.Floor((.25m+3m)*1500m),"absolute world base250 normalizes once before combining Vigor and the same critical curve");Check(RngCount(RunState.Rng.Niche)==1,"absolute Vigor uses one original critical sample");
         Reset();vigor=Power<VigorPower>(Hero,3);var resolvedCard=Owned<StrikeIronclad>();VigorCalls.Clear();
         using((IDisposable)Call("PrecalculatedDamageContext","Begin",resolvedCard,Enemy,6m)!)await Command(Hero,6m,ValueProp.Move,resolvedCard);
         Equal(Hits.Single().Final,6m,"precalculated world damage skips Vigor collection and additive phase");Check(VigorCalls.Count==0,"precalculated command never evaluates native Vigor a second time");
@@ -573,8 +632,10 @@ static class EffectChecks
     }
     public static void Run(string reportPath)
     {
-        bool ok=false;string? error=null;
-        try{Install();NativeKusarigamaCase().GetAwaiter().GetResult();NativeThornsCase().GetAwaiter().GetResult();PrimitiveCases().GetAwaiter().GetResult();ModifiersAndIsolationCases().GetAwaiter().GetResult();ResolvedContextCases().GetAwaiter().GetResult();NativeEventAdapterCases().GetAwaiter().GetResult();NativeStatusPotionAndHpOnlyCases().GetAwaiter().GetResult();DescriptionAndSourceCases();MiniatureCannonCases().GetAwaiter().GetResult();VigorSkillCases().GetAwaiter().GetResult();ok=true;}
+        if(System.Environment.GetEnvironmentVariable("HBR_NATIVE_HAND_TICK_ONLY")=="1")
+        {RunNativeHandTick(reportPath);return;}
+        bool ok=false;string? error=null;ReportDirectory=Path.GetDirectoryName(Path.GetFullPath(reportPath))!;
+        try{Install();NativeKusarigamaCase().GetAwaiter().GetResult();NativeThornsCase().GetAwaiter().GetResult();NativeGalvanicCase().GetAwaiter().GetResult();PrimitiveCases().GetAwaiter().GetResult();ModifiersAndIsolationCases().GetAwaiter().GetResult();ResolvedContextCases().GetAwaiter().GetResult();NativeEventAdapterCases().GetAwaiter().GetResult();NativeStatusPotionAndHpOnlyCases().GetAwaiter().GetResult();DescriptionAndSourceCases();MiniatureCannonCases().GetAwaiter().GetResult();VigorSkillCases().GetAwaiter().GetResult();NativeRelicDamageCases().GetAwaiter().GetResult();NativeDamageOverTimeCases().GetAwaiter().GetResult();NativeEnemyDamageTextCases();SixSenseRemovalStructureCases();SixSenseRemovalCases().GetAwaiter().GetResult();SixSenseRemovalTextCases();SixSenseOverflowCases().GetAwaiter().GetResult();EatPassersbyCases().GetAwaiter().GetResult();EatPassersbyTextCases();TriggerTextCases().GetAwaiter().GetResult();DodgeCases().GetAwaiter().GetResult();DodgeTextCases();ManualGlossaryCases();SixSenseCardFaceCases();RetiredCharacterCases();FateDiceCases().GetAwaiter().GetResult();MagicSwordBalanceCases().GetAwaiter().GetResult();MagicSwordTurnEndCases();MagicSwordOverclockCases().GetAwaiter().GetResult();UnifiedRollModifierCases().GetAwaiter().GetResult();MoonlightReplayCases().GetAwaiter().GetResult();BeyondProtectionMergeCases().GetAwaiter().GetResult();SynergyCounterCases().GetAwaiter().GetResult();SakuraRainCases().GetAwaiter().GetResult();MagicSwordCrackCases().GetAwaiter().GetResult();SwordheartClarityCases().GetAwaiter().GetResult();MagicSwordCostDisplayCases().GetAwaiter().GetResult();FormTransitionFullEffectCases().GetAwaiter().GetResult();CrimsonFocusedShotCases().GetAwaiter().GetResult();ThreeCardBalanceCases().GetAwaiter().GetResult();CardTemplateBalanceCases().GetAwaiter().GetResult();DualSwordsChaseCases().GetAwaiter().GetResult();CrimsonStatInteractionCases().GetAwaiter().GetResult();UnifiedEffectDamageCases().GetAwaiter().GetResult();DesuwaCases().GetAwaiter().GetResult();ok=true;}
         catch(Exception failure){error=failure.ToString();Console.Error.WriteLine(failure);}
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
         File.WriteAllText(reportPath,JsonSerializer.Serialize(new{ok,checks=Passed.Count,passed=Passed,error,cases=Cases,

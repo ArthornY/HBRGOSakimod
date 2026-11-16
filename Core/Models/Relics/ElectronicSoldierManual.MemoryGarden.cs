@@ -44,6 +44,7 @@ public partial class ElectronicSoldierManual
         if (card?.IsMutable == true && ReferenceEquals(card.Owner, Owner) &&
             (oldPileType == PileType.Deck || card.Pile?.Type == PileType.Deck))
         {
+            SynchronizeMemoryGardenUpgradePoints();
             await TeamCollectionRelics.EnsureObtained(Owner);
             HbrMemoryGardenRestStory.RefreshPermanentCards(Owner);
             await ThirtyACollectionUpgrades.Resolve(this);
@@ -52,6 +53,7 @@ public partial class ElectronicSoldierManual
 
     public override async Task AfterRoomEntered(AbstractRoom room)
     {
+        StealFateShop(room);
         MemoryGardenUpgradePointsHelper.OnRoomEntered(this, room);
         HbrMemoryGardenProgression.Synchronize(Owner);
         await TeamCollectionRelics.EnsureObtained(Owner);
@@ -107,6 +109,11 @@ public partial class ElectronicSoldierManual
         MemoryFragmentMapData = source.MemoryFragmentMapData;
         MemoryGardenUpgradePoints = source.MemoryGardenUpgradePoints;
         MemoryGardenSixSenseUpgradeTier = source.MemoryGardenSixSenseUpgradeTier;
+        MemoryGardenSixSenseRuleVersion = source.MemoryGardenSixSenseRuleVersion;
+        MemoryGardenInitialDeckSize = source.MemoryGardenInitialDeckSize;
+        MemoryGardenDeckHighWater = source.MemoryGardenDeckHighWater;
+        MemoryGardenDeckUpgradeTier = source.MemoryGardenDeckUpgradeTier;
+        MemoryGardenDeckRuleVersion = source.MemoryGardenDeckRuleVersion;
         MemoryGardenUpgradeRewardedRooms = source.MemoryGardenUpgradeRewardedRooms;
         HbrBattleProgressData = source.HbrBattleProgressData;
     }

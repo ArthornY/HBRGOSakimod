@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC04ExpKirigamine02_02_R05.
+// HBR MC04ExpKirigamine02_02_R05: CorollaKnifeSmall_01 and _02.
 public sealed class CorollaKnivesNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -19,10 +19,12 @@ public sealed class CorollaKnivesNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        CorollaKnife second = (CorollaKnife)ModelDb.Monster<CorollaKnife>().ToMutable();
+        second.MoveTableVariant = CorollaKnife.SecondVariant;
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<CorollaKnife>().ToMutable(), null),
-            (ModelDb.Monster<CorollaKnife>().ToMutable(), null)
+            (second, null)
         };
     }
 }

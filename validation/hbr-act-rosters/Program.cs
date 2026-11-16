@@ -12,6 +12,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
@@ -32,6 +33,9 @@ static partial class ActRosterChecks
     static readonly List<string> Passed = [];
     static readonly List<object> Cases = [];
     static readonly List<(Type Monster, int Damage, int Hits)> Attacks = [];
+    // The target scope of each recorded attack (HbrgoAttackTargets: Players,
+    // AllUnits or MinimumDp).
+    static readonly List<string> AttackScopes = [];
     static readonly List<(Creature Target, decimal Amount, ValueProp Props)> Blocks = [];
     static readonly List<(Creature[] Targets, decimal Amount, ValueProp Props, Creature Dealer)> Extra = [];
     static int Ascension;
@@ -72,8 +76,17 @@ static partial class ActRosterChecks
 
     // ---- installation ------------------------------------------------------
 
-    static bool AttackLeaf(object __instance, int damage, int hitCount, ref Task __result)
-    { Attacks.Add((__instance.GetType(), damage, hitCount)); __result = Task.CompletedTask; return false; }
+    // Every monster attack goes through PerformAttackOn (PerformAttack passes
+    // Players); its scope is an internal enum, so it is read from the arguments.
+    static bool AttackLeaf(object __instance, object?[] __args, ref Task __result)
+    {
+        Attacks.Add((__instance.GetType(), (int)__args[0]!, (int)__args[1]!));
+        AttackScopes.Add(__args[2]!.ToString()!);
+        // A move-table monster's tracked attack: the hit passed the hero's block.
+        if (SimulatePassThrough) RecordPassThrough(Hero, SimulatedPassedDamage);
+        if (KillHeroAfterAttack) Set(Hero, "_currentHp", 0);
+        __result = Task.CompletedTask; return false;
+    }
     static bool AnimationLeaf(ref Task __result) { __result = Task.CompletedTask; return false; }
     static bool BlockLeaf(object?[] __args, ref Task<decimal> __result)
     { Blocks.Add(((Creature)__args[0]!, (decimal)__args[1]!, (ValueProp)__args[2]!)); __result = Task.FromResult(0m); return false; }
@@ -98,12 +111,15 @@ static partial class ActRosterChecks
     {
         FixtureCall("Setup");
         var harmony = new Harmony("hbr.act-rosters.checks");
+        foreach (string name in new[] { "HbrEffectApplicationPatch", "HbrEffectInstanceStackingPatch" })
+            Check(harmony.CreateClassProcessor(ModType("HBRGOSakiMod.Core.Patches.Combat." + name)).Patch().Count > 0,
+                "installs common independent-effect boundary " + name);
         // Production HBR attack/defense-down application boundaries, as in
         // validation/hbr-separated-debuffs.
         foreach (Type type in Mod.GetTypes().Where(t => t.IsDefined(typeof(HarmonyPatch), false) &&
             t.Name.StartsWith("HbrPercentDebuff", StringComparison.Ordinal)))
             Check(harmony.CreateClassProcessor(type).Patch().Count > 0, "installs " + type.Name);
-        harmony.Patch(AccessTools.Method(typeof(HbrgoStaticMonster), "PerformAttack"),
+        harmony.Patch(AccessTools.Method(typeof(HbrgoStaticMonster), "PerformAttackOn"),
             prefix: new HarmonyMethod(typeof(ActRosterChecks).GetMethod(nameof(AttackLeaf), F)!));
         harmony.Patch(AccessTools.Method(typeof(CreatureCmd), nameof(CreatureCmd.TriggerAnim)),
             prefix: new HarmonyMethod(typeof(ActRosterChecks).GetMethod(nameof(AnimationLeaf), F)!));
@@ -119,9 +135,14 @@ static partial class ActRosterChecks
             .Single(m => m.Name == "Damage" && m.GetParameters() is var p && p.Length == 5 &&
                 p[1].ParameterType == typeof(IEnumerable<Creature>));
         harmony.Patch(extra, prefix: new HarmonyMethod(typeof(ActRosterChecks).GetMethod(nameof(ExtraLeaf), F)!));
+        MethodInfo single = ModType("HBRGOSakiMod.Core.Compatibility.CreatureCommandCompatibility").GetMethods(F)
+            .Single(m => m.Name == "Damage" && m.GetParameters() is var p && p.Length == 7 &&
+                p[1].ParameterType == typeof(Creature));
+        harmony.Patch(single, prefix: new HarmonyMethod(typeof(ActRosterChecks).GetMethod(nameof(SingleDamageLeaf), F)!));
         // Only the roster lookup is replaced; the segment builder itself runs.
         harmony.Patch(AccessTools.Method(ModType("HBRGOSakiMod.Core.Helpers.PhantomHelper"), "GetFusionEffectData"),
             prefix: new HarmonyMethod(typeof(ActRosterChecks).GetMethod(nameof(FusionDataLeaf), F)!));
+        InstallTableLeaves(harmony);
         Type ledger = ModType("HBRGOSakiMod.Core.Patches.Combat.HighDimensionalShellNativeAmountPatch");
         Check(harmony.CreateClassProcessor(ledger).Patch().Count == 1, "installs production exact-DP SetAmount bridge");
         // The production act pool patches for acts one to three, on the real ActModel getters.
@@ -134,15 +155,17 @@ static partial class ActRosterChecks
             typeof(HBRGOSakiConfig).GetField(row.Item1, F)!.SetValue(null, row.Item2);
 
         foreach (Type type in new[] { typeof(WeakPower), typeof(VulnerablePower), typeof(StrengthPower),
-            typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower) })
+            typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower), typeof(IntangiblePower) }.Concat(TablePowerTypes))
             Inject(type);
 #if HBR_BETA_NATIVE
         typeof(Creature).Assembly.GetType("MegaCrit.Sts2.Core.Modding.AssemblyInfo", true)!.GetMethod("Init", F)!.Invoke(null, null);
         typeof(ModelIdSerializationCache).GetMethod("Init", F)!.Invoke(null, null);
-        foreach (Type type in new[] { typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower), typeof(CrestHopper) })
+        foreach (Type type in new[] { typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower), typeof(CrestHopper) }
+            .Concat(TableSavedTypes))
             typeof(ModelIdSerializationCache).GetMethod("CacheSavedPropertiesForTypeDebug", F)!.Invoke(null, [type]);
 #else
-        foreach (Type type in new[] { typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower), typeof(CrestHopper) })
+        foreach (Type type in new[] { typeof(HbrAttackDownPower), typeof(HbrDefenseDownPower), typeof(CrestHopper) }
+            .Concat(TableSavedTypes))
             SavedPropertiesTypeCache.InjectTypeIntoCache(type);
 #endif
         // Canonical monster and encounter models for ModelDb.Monster<T>() and
@@ -201,6 +224,8 @@ static partial class ActRosterChecks
                 MonsterModel monster = Mutable(spec.Type);
                 Equal(monster.MinInitialHp, ascension == 0 ? spec.Min0 : spec.Min10, $"{spec.Type.Name} asc{ascension} min native HP");
                 Equal(monster.MaxInitialHp, ascension == 0 ? spec.Max0 : spec.Max10, $"{spec.Type.Name} asc{ascension} max native HP");
+                // Move-table monsters roll from their original tables (MoveTableChecks.cs).
+                if (IsTableMonster(spec.Type)) continue;
                 MoveState[] order = CycleOrder(Machine(monster));
                 Check(order.Select(m => m.Id).SequenceEqual(spec.Moves.Select(m => m.Id)),
                     $"{spec.Type.Name} asc{ascension} cycles {string.Join(" -> ", spec.Moves.Select(m => m.Id))}");
@@ -276,6 +301,13 @@ static partial class ActRosterChecks
                     string node = canonical.BossNodePath.Replace("res://", "");
                     foreach (string suffix in new[] { "", "_outline" })
                         Check(File.Exists(Path.Combine(RepositoryRoot, node + suffix + ".png")), $"{spec.Type.Name} boss node {node}{suffix}.png exists");
+                    // The top bar and run history load this pair by encounter ID; a missing one
+                    // throws while the run's UI initializes, before the map is set up.
+                    foreach (string? icon in new[] {
+                        ImageHelper.GetRoomIconPath(MapPointType.Boss, RoomType.Boss, canonical.Id),
+                        ImageHelper.GetRoomIconOutlinePath(MapPointType.Boss, RoomType.Boss, canonical.Id) })
+                        Check(icon != null && File.Exists(Path.Combine(RepositoryRoot, icon.Replace("res://", ""))),
+                            $"{spec.Type.Name} boss icon {icon} exists");
                 }
             }
         }
@@ -341,7 +373,7 @@ static partial class ActRosterChecks
         Ascension = ascension;
         Set(State<object>("RunState"), "<AscensionLevel>k__BackingField", ascension);
         Set(Combat, "_enemies", new List<Creature>());
-        Attacks.Clear(); Blocks.Clear(); Extra.Clear();
+        Attacks.Clear(); AttackScopes.Clear(); Blocks.Clear(); Extra.Clear(); SingleDamage.Clear();
         FusionData = "";
     }
 
@@ -375,7 +407,7 @@ static partial class ActRosterChecks
 
     static void MoveCases()
     {
-        foreach (MonsterSpec spec in Monsters)
+        foreach (MonsterSpec spec in Monsters.Where(m => !IsTableMonster(m.Type)))
         foreach (bool hbr in new[] { true, false })
         foreach (int ascension in new[] { 0, 10 })
         foreach (MoveSpec move in spec.Moves)
@@ -392,7 +424,10 @@ static partial class ActRosterChecks
             int damage = ascension == 0 ? move.Damage0 : move.Damage10;
             int hits = ascension == 0 ? move.Hits0 : move.Hits10;
             if (damage > 0)
+            {
                 Check(Attacks.Count == 1 && Attacks[0] == (spec.Type, damage, hits), $"{label} attacks {damage} x{hits}");
+                Check(AttackScopes.SequenceEqual(["Players"]), label + " keeps the native targets (player creatures)");
+            }
             else
                 Check(Attacks.Count == 0, label + " does not attack");
             int blockAmount = ascension == 0 ? move.Block0 : move.Block10;
@@ -425,7 +460,9 @@ static partial class ActRosterChecks
     {
         Type effects = ModType("HBRGOSakiMod.Core.Models.Monsters.IHbrgoPhantomAttackEffects");
         MethodInfo after = effects.GetMethod("AfterPhantomAttackIntent", F)!;
-        var expected = Monsters.Where(m => m.Moves.Any(x => x.Debuff != "" && x.Damage0 > 0)).ToArray();
+        // Move-table monsters restore theirs through IHbrgoPhantomAttackResults instead.
+        var expected = Monsters.Where(m => !IsTableMonster(m.Type) &&
+            m.Moves.Any(x => x.Debuff != "" && x.Damage0 > 0)).ToArray();
         Check(Monsters.Where(m => effects.IsAssignableFrom(m.Type)).Select(m => m.Type)
             .SequenceEqual(expected.Select(m => m.Type)), "exactly the attack+debuff monsters restore phantom side effects");
         foreach (MonsterSpec spec in expected)
@@ -603,12 +640,20 @@ static partial class ActRosterChecks
 
     static void ResourceCases()
     {
+        using var shares = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot,
+            "docs/reference/hbr-enemy-resource-shares-20261114.json")));
         foreach (MonsterSpec spec in Monsters)
         {
             Reset(true, 0);
             Creature actor = Actor(spec.Type, 1000);
-            Equal((decimal)Static("HBRGOSakiMod.Core.Helpers.HbrEnemyResourceAdapter", "GetMaxHpScale", actor)!, 700m,
-                spec.Type.Name + " uses the shared x700 HBR HP profile");
+            object tables = actor.Monster.GetType().GetProperty("MoveTables", F)!.GetValue(actor.Monster)!;
+            string label = (string)tables.GetType().GetProperty("EnemyLabel", F)!.GetValue(tables)!;
+            JsonElement row = shares.RootElement.GetProperty("rows").EnumerateArray().Single(item =>
+                item.GetProperty("class").GetString() == spec.Type.Name && item.GetProperty("variant").GetString() == label);
+            decimal originalHp = row.GetProperty("hp").GetDecimal(), originalDp = row.GetProperty("dp").GetDecimal();
+            Equal((decimal)Static("HBRGOSakiMod.Core.Helpers.HbrEnemyResourceAdapter", "GetMaxHpScale", actor)!,
+                900m * originalHp / (originalHp + originalDp),
+                spec.Type.Name + " uses its original variant's HP share of the unchanged900 total");
             Reset(false, 0);
             actor = Actor(spec.Type, 1000);
             Equal((decimal)Static("HBRGOSakiMod.Core.Helpers.HbrEnemyResourceAdapter", "GetMaxHpScale", actor)!, 1m,
@@ -624,6 +669,7 @@ static partial class ActRosterChecks
         PoolCases();
         MoveCases();
         PhantomEffectCases();
+        MoveTableCases();
         FusionCases();
         SegmentCases();
         FileCases();

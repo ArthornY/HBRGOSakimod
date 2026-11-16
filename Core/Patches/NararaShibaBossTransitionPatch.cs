@@ -251,7 +251,7 @@ internal static class DoorStoryCombatRewardsProceedPatch
 
         ____proceedButton.Disable();
         // This resumes the parent event without an act vote or another ActFloor increment.
-        TaskHelper.RunSafely(RunManager.Instance.ProceedFromTerminalRewardsScreen());
+        TaskHelper.RunSafely(RunManager.Instance.ProceedFromTerminalRewardsScreenCompat());
         return false;
     }
 }

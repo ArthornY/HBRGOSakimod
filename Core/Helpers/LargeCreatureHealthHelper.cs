@@ -47,8 +47,10 @@ internal static class LargeCreatureHealthHelper
     {
         if (amount < 0m) throw new ArgumentException("amount must be non-negative.");
         decimal maximum = BigCombatNumbers.ClampStat(amount);
-        decimal current = Math.Min(GetCurrentHp(creature), maximum);
+        decimal current = NararaLayeredHpHelper.BeforeMaximumWrite(
+            creature, Math.Min(GetCurrentHp(creature), maximum), maximum, out bool broke);
         StoreAndProject(creature, current, maximum);
+        NararaLayeredHpHelper.AfterHpWrite(creature, broke);
         HBRGOSakiMod.Core.Patches.Combat.TerrorEelHealthThreshold.Sync(creature);
         PhantomCeremonialBeastHelper.RefreshPlowThreshold(creature);
     }
@@ -56,8 +58,10 @@ internal static class LargeCreatureHealthHelper
     internal static void SetCurrentHp(Creature creature, decimal amount)
     {
         if (amount < 0m) throw new ArgumentException("Current HP must be positive", nameof(amount));
-        StoreAndProject(creature, Math.Min(BigCombatNumbers.ClampStat(amount), GetMaxHp(creature)),
-            GetMaxHp(creature));
+        decimal requested = Math.Min(BigCombatNumbers.ClampStat(amount), GetMaxHp(creature));
+        decimal current = NararaLayeredHpHelper.BeforeHpWrite(creature, requested, out bool broke);
+        StoreAndProject(creature, current, GetMaxHp(creature));
+        NararaLayeredHpHelper.AfterHpWrite(creature, broke);
     }
 
     internal static void Heal(Creature creature, decimal amount) => creature.HealInternal(amount);
@@ -100,7 +104,9 @@ internal static class LargeCreatureHealthHelper
     {
         if (!HasLargeHealth(creature)) return creature.LoseHpInternal(amount, props);
         decimal oldHp = GetCurrentHp(creature);
-        SetCurrentHp(creature, 0m);
+        // Explicit native death/cleanup clears the whole ledger, rather than
+        // recursively consuming one phase at a time through the damage shield.
+        using (NararaLayeredHpHelper.BypassForKill()) SetCurrentHp(creature, 0m);
         DeathDrains.Remove(creature);
         DeathDrains.Add(creature, new DeathDrain(oldHp));
         return new DamageResult(creature, props)

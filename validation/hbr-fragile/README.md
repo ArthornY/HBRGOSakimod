@@ -26,10 +26,11 @@ shared actual/preview damage; final flooring and caps; and native localization
 formatting with one decimal place for display. Disabled HBR mode retains its
 original stacking, duration and fixed 50% effect.
 
-Narara regression cases register and attach a real Ritsu SixSense capability,
-create an active boss with real resistance, and use the actual `Begin` /
-`CaptureTargets` / `Close` scope. They exercise the native apply entry for the
-captured card, source-less effects, unrelated cards and cleanup. No scope target
+Narara regression cases: nullification is switched off with the six-sense card
+attributes (2026-11-09). An older nullification beside full old resistances is
+inactive, the actual `Begin` / `CaptureTargets` / `Close` scope captures no
+target, no card is nullified, and inside the card's play a stronger application
+replaces the weakest instance as usual. No scope target
 is inserted by the fixture. Autoplay cases use the real `Suppress` scope and
 observe native `PowerIncreased` silence, removal events and `AfterRemoved`.
 A counted `Cmd.CustomScaledWait` leaf confirms that scoped new applications and
@@ -115,8 +116,8 @@ complete live multiplayer session.
 
 The same fixture also covers the changed damage-cap bridge and Doom predicate:
 actual cannon self-immunity enters the complete native damage hook; a real
-Narara SixSense card scope keeps its zero cap across resistance changes without
-leaking to unrelated sources or recipients. The actual production Doom Harmony
+switched-off Narara nullification caps nothing, even inside a card's own play,
+and the full native hook damages the boss. The actual production Doom Harmony
 patch resolves the stable public and beta private predicate. Both direct native
 predicate calls and `DoomPower.GetDoomedCreatures` read a saved five-billion HP
 ledger while the visible native HP proxy is one, then verify exact threshold

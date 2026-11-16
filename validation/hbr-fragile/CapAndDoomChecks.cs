@@ -58,27 +58,21 @@ static class CapAndDoomChecks
             object? previousEnemies=enemyField.GetValue(combat);Set(combat,"_enemies",new List<Creature>{boss});
             try
             {
+                // Nullification is switched off (2026-11-09): the compatibility bridge still
+                // resolves, and caps nothing even inside a card's own play.
                 var nullification=Power<NararaNullificationPower>(boss);
                 var resistance=Power<SixSenseResistancePower>(boss);
                 typeof(SixSenseResistancePower).GetProperty("Resistances",F)!.SetValue(resistance,new[]{10,10,10,10,10,10});
                 var card=(FragileHbrgoSaki)Invoke("TestCard")!;
-                var capability=ModelCapabilityRegistry.Create<SixSenseCardCapability>();Set(capability,"_attribute",SixSenseAttribute.Simplicity);
-                card.Capabilities().Add(capability,false,false);
                 var scope=Helper("NararaNullificationHelper","Begin",card)!;
                 try
                 {
-                    Check((bool)Helper("NararaNullificationHelper","IsCardNullified",boss,card)!,"real scoped SixSense card is captured by Narara resistance");
-                    Equal(Cap(nullification,boss,hero,card),0,"Narara compatibility bridge applies zero cap to captured source card");
-                    Equal(Damage(boss,hero,card),0,"full native Hook uses Narara zero cap for captured source card");
-                    Equal(Cap(nullification,enemy,hero,card),decimal.MaxValue,"Narara cap cannot leak to another recipient");
-                    var unrelated=(FragileHbrgoSaki)Invoke("TestCard")!;
-                    Equal(Cap(nullification,boss,hero,unrelated),decimal.MaxValue,"unrelated card source does not inherit outer captured cap");
-                    Check(Damage(boss,hero,unrelated)>0,"full native Hook still damages Narara from an unrelated source card");
-                    typeof(SixSenseResistancePower).GetProperty("Resistances",F)!.SetValue(resistance,new int[6]);
-                    Equal(Cap(nullification,boss,hero,card),0,"captured immunity survives resistance changes within that same card play");
+                    Check(!(bool)Helper("NararaNullificationHelper","IsCardNullified",boss,card)!,"a scoped card is not captured by the switched-off nullification");
+                    Equal(Cap(nullification,boss,hero,card),decimal.MaxValue,"Narara compatibility bridge applies no cap to the card's own play");
+                    Check(Damage(boss,hero,card)>0,"full native Hook damages Narara from the card's own play");
                 }
                 finally{Helper("NararaNullificationHelper","Close",scope);}
-                Equal(Cap(nullification,boss,hero,card),decimal.MaxValue,"closed scope and cleared resistance restore ordinary damage cap");
+                Equal(Cap(nullification,boss,hero,card),decimal.MaxValue,"closed scope keeps the ordinary damage cap");
             }
             finally{Set(combat,"_enemies",previousEnemies);Reset();}
 

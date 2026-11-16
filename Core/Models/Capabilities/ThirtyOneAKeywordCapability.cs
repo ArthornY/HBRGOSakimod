@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.HoverTips;
@@ -33,8 +34,8 @@ public sealed class ThirtyOneAKeywordCapability : CardCapability,
     public IEnumerable<IHoverTip> GetHoverTips(CardModel card)
     {
         if (!ReferenceEquals(card, Owner) || !ThirtyOneAKeywordRules.IsThirtyOneACard(card)) yield break;
-        yield return new HoverTip(ModKeywordRegistry.GetTitle(KeywordId),
-            new LocString("card_keywords", KeywordId + ".description")) { Id = KeywordId };
+        yield return HoverTipCompatibility.CreateKeyword(ModKeywordRegistry.GetTitle(KeywordId),
+            new LocString("card_keywords", KeywordId + ".description"), KeywordId);
     }
 
 }

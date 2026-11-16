@@ -53,12 +53,19 @@ public static class HbrStoryCharacterCatalog
         new HbrStoryCharacterEntry("inori", "夏目祈", "31F"),
         new HbrStoryCharacterEntry("maki", "黑泽真希", "31F"),
 
-        new HbrStoryCharacterEntry("yuina", "白河结奈", "30G"),
+        new HbrStoryCharacterEntry("yuina", "白河由依奈", "30G"),
         new HbrStoryCharacterEntry("monaka", "月城最中", "30G"),
         new HbrStoryCharacterEntry("miya", "桐生美也", "30G"),
         new HbrStoryCharacterEntry("chie", "菅原千惠", "30G"),
         new HbrStoryCharacterEntry("hisame", "小笠原绯雨", "30G"),
         new HbrStoryCharacterEntry("satomi", "藏里见", "30G"),
+
+        new HbrStoryCharacterEntry("carol", "卡罗尔・利帕", "31X"),
+        new HbrStoryCharacterEntry("yingxia", "李映夏", "31X"),
+        new HbrStoryCharacterEntry("irene", "艾琳・雷德梅茵", "31X"),
+        new HbrStoryCharacterEntry("vritika", "芙莉缇卡・巴拉克里希兰", "31X"),
+        new HbrStoryCharacterEntry("maria", "玛利亚・德・安洁莉斯", "31X"),
+        new HbrStoryCharacterEntry("charlotta", "夏洛塔・斯科波夫斯卡娅", "31X"),
 
         new HbrStoryCharacterEntry("tezuka_saki", "手冢咲", "司令部"),
         new HbrStoryCharacterEntry("nanami", "七濑七海", "司令部"),

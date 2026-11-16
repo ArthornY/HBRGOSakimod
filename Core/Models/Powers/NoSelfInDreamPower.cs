@@ -18,7 +18,7 @@ public sealed class NoSelfInDreamPower : PowerModel
 {
     public const decimal FinalDamageMultiplier = 1.5m;
 
-    private const decimal _allyDamageMultiplier = 0.1m;
+    private const decimal _allyDamageMultiplier = 0.01m;
 
     public override PowerType Type => PowerType.Buff;
 
@@ -50,7 +50,7 @@ public sealed class NoSelfInDreamPower : PowerModel
         Creature target,
         CardModel cardSource)
     {
-        if (dealer != Owner ||
+        if (Amount <= 0 || dealer != Owner ||
             target == null ||
             target.Side == Owner.Side ||
             result.TotalDamage <= 0 ||
@@ -69,19 +69,19 @@ public sealed class NoSelfInDreamPower : PowerModel
             .GetTeammatesOf(Owner)
             .Where(creature => creature.IsAlive)
             .ToArray();
-        if (allies.Length == 0)
+        NoSelfInDreamBacklashHelper.Backlash[] backlash =
+            NoSelfInDreamBacklashHelper.Reserve(Owner, result, allyDamage, allies);
+        if (backlash.Length == 0)
         {
             return;
         }
 
         Flash();
-        await CreatureCommandCompatibility.Damage(
-            choiceContext,
-            allies,
-            allyDamage,
-            ValueProp.Unpowered,
-            null,
-            null);
+        foreach (var group in backlash.GroupBy(hit => hit.Amount))
+            await NoSelfInDreamBacklashContext.Damage(
+                choiceContext,
+                group.Select(hit => hit.Target).ToArray(),
+                group.Key);
     }
 
     public override async Task AfterSideTurnEnd(

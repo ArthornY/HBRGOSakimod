@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -19,12 +20,7 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class SaviorGrandEntranceDamageScopePatch
 {
-    private static MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-        .Where(method => method.Name == nameof(CreatureCmd.Damage))
-        .Where(method => method.GetParameters() is var parameters && parameters.Length is 6 or 7 &&
-            parameters[1].ParameterType == typeof(IEnumerable<Creature>) && parameters[2].ParameterType == typeof(decimal) &&
-            parameters[5].ParameterType == typeof(CardModel))
-        .OrderByDescending(method => method.GetParameters().Length).First();
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
 
     // RollMultiHitDamagePatch prepares the actual winning dice first.
     [HarmonyPriority(Priority.Last)]

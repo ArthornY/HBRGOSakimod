@@ -24,14 +24,15 @@ public sealed class ExtremeDodgeHbrgoSaki : CardModel
         new DynamicVar[]
         {
             HbrSkillVars.Block(200m, ValueProp.Move),
-            new PowerVar<ExtremeDodgeRollPenaltyPower>(2m)
+            new DynamicVar("RollBonus", -10m),
+            new DynamicVar("RollUses", 2m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
             HoverTipFactory.Static(StaticHoverTip.Block),
-            HoverTipFactory.FromPower<ExtremeDodgeRollPenaltyPower>()
+            HoverTipFactory.FromPower<RollBonusPower>()
         };
 
     public override bool GainsBlock => true;
@@ -49,10 +50,11 @@ public sealed class ExtremeDodgeHbrgoSaki : CardModel
             Owner.Creature,
             DynamicVars.Block,
             cardPlay);
-        await PowerCmd.Apply<ExtremeDodgeRollPenaltyPower>(
+        await RollBonusPower.Apply(
             choiceContext,
             Owner.Creature,
-            DynamicVars["ExtremeDodgeRollPenaltyPower"].BaseValue,
+            (int)DynamicVars["RollBonus"].BaseValue,
+            (int)DynamicVars["RollUses"].BaseValue,
             Owner.Creature,
             this);
     }

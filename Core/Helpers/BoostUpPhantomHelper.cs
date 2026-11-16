@@ -21,7 +21,7 @@ internal static class BoostUpPhantomHelper
     internal static bool HasThunderInPermanentDeck(Player player) =>
         player?.Character is HbrgoSaki30A &&
         player.Deck.Cards.OfType<BoostUpHbrgoSaki>()
-            .Any(card => card.HasUpgradeEffect(6));
+            .Any(card => !ThirtyGProposalState.IsDisabled(card) && card.HasUpgradeEffect(6));
 
     internal static Task PerformThunderStartAction(Creature phantom)
     {

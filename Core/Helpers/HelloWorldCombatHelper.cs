@@ -28,7 +28,7 @@ internal static class HelloWorldCombatHelper
         return target.CombatState.Players
             .Where(player => player.Creature.Side != target.Side)
             .Sum(player => player.Deck.Cards.OfType<HelloWorldHbrgoSaki>()
-                .Count(card => card.HasUpgradeEffect(2)));
+                .Count(card => !ThirtyGProposalState.IsDisabled(card) && card.HasUpgradeEffect(2)));
     }
 
     internal static int CalculateCapIncrease(bool hasBreak, int fragile,
@@ -61,7 +61,8 @@ internal static class HelloWorldCombatHelper
                 await CreatureCommandCompatibility.LoseBlock(context, owner, startingBlock, owner);
                 int lostBlock = Math.Max(0, startingBlock - owner.Block);
                 if (lostBlock > 0)
-                    await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, owner, lostBlock, owner, card);
+                    await PowerCmd.Apply<HotaruDamageAmplificationPower>(context, owner,
+                        HbrBattleStatsHelper.IsEnabled(owner) ? lostBlock / 100m : lostBlock, owner, card);
             }
         }
 
@@ -69,28 +70,6 @@ internal static class HelloWorldCombatHelper
             await PowerCmd.Apply<MyLegendNextAttackPower>(context, owner, 2m, owner, card);
     }
 
-    private static async Task RemoveRandomBuffs(HelloWorldHbrgoSaki card, Creature enemy, int count)
-    {
-        // Hidden powers implement combat mechanics, including boss revival and
-        // phase transitions. They are not dispellable status buffs.
-        // Native revival, replacement and minion identity can use visible Buffs.
-        // Native Strength and Dexterity remain Buff models at negative amounts.
-        // Removing those would help the enemy rather than strip an actual buff.
-        List<PowerModel> candidates = enemy.Powers.Where(power =>
-            power.IsVisible && power.Type == PowerType.Buff &&
-            power is not (AdaptablePower or SteamEruptionPower or ReattachPower or
-                InfestedPower or StockPower or SurprisePower or IllusionPower or MinionPower or
-                SandpitPower) &&
-            (power is not (StrengthPower or DexterityPower) || power.Amount > 0)).ToList();
-        List<PowerModel> selected = new();
-        while (selected.Count < count && candidates.Count > 0)
-        {
-            int index = card.Owner.RunState.Rng.CombatCardGeneration.NextInt(0, candidates.Count);
-            selected.Add(candidates[index]);
-            candidates.RemoveAt(index);
-        }
-
-        foreach (PowerModel power in selected)
-            if (enemy.Powers.Contains(power)) await PowerCmd.Remove(power);
-    }
+    private static Task RemoveRandomBuffs(HelloWorldHbrgoSaki card, Creature enemy, int count) =>
+        PowerDispelRules.RandomRemoveBuffs(card.Owner, enemy, count);
 }

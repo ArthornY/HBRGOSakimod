@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -39,6 +40,7 @@ public sealed class NormalStatePower : PowerModel
         }
 
         int restoredDp = deflectorProtection.RestoreDpByMaxPercent(_dpRecoveryPercent);
+        MariaRepentanceCombatHelper.OnDpRestored(Owner, restoredDp, null, fromAbility: true);
         if (restoredDp > 0)
         {
             Flash();

@@ -33,15 +33,18 @@ public sealed class HotaruFingertipHabit : HotaruCannonCard
 public sealed class HotaruLightPoints : HotaruCannonCard
 {
     public HotaruLightPoints() : base(1, CardType.Skill, CardRarity.Uncommon, HotaruTargetTypes.OwnedCannon) { }
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("ResistanceLoss", 1m) };
+    // It cut every enemy's highest six-sense resistance; since 2026-11-09 each
+    // point became one stack of a debuff that enemy does not have yet.
+    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[] { new IntVar("Times", 1m) };
+    protected override IEnumerable<IHoverTip> ExtraHoverTips => HbrMissingDebuffHelper.HoverTips();
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         if (!Millsage.IsOwnedCannon(play.Target, Owner)) return;
-        HotaruUncommonCannonHelper.QueueLight(play.Target, DynamicVars["ResistanceLoss"].IntValue);
+        HotaruUncommonCannonHelper.QueueLight(play.Target, DynamicVars["Times"].IntValue);
         await Owner.GetRelic<Millsage>().TriggerAllEffects(play.Target, context, this, play);
     }
-    protected override void OnUpgrade() => DynamicVars["ResistanceLoss"].UpgradeValueBy(1m);
+    protected override void OnUpgrade() => DynamicVars["Times"].UpgradeValueBy(1m);
 }
 
 [CustomID("HOTARU_AWAIT_REPLY")]

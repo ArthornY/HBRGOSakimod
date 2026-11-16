@@ -6,7 +6,6 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
@@ -24,11 +23,6 @@ public sealed class SwordheartClarityHbrgoSaki : CardModel
         HoverTipFactory.FromPower<SwordheartPower>()
     };
 
-    protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
-    {
-        new PowerVar<SwordheartClarityPower>(2m)
-    };
-
     public SwordheartClarityHbrgoSaki()
         : base(2, CardType.Power, CardRarity.Rare, TargetType.Self)
     {
@@ -36,25 +30,18 @@ public sealed class SwordheartClarityHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        // This is a combat-wide rule, rather than a stackable source of swordheart.
+        if (Owner.Creature.HasPower<SwordheartClarityPower>()) return;
         await PowerCmd.Apply<SwordheartClarityPower>(
             choiceContext,
             Owner.Creature,
-            DynamicVars["SwordheartClarityPower"].BaseValue,
+            1m,
             Owner.Creature,
             this);
-
-        MagicSwordModePower magicSwordMode =
-            Owner.Creature.GetPower<MagicSwordModePower>();
-        if (magicSwordMode != null)
-        {
-            await magicSwordMode.GrantSwordheartFromClarity(
-                choiceContext,
-                this);
-        }
     }
 
     protected override void OnUpgrade()
     {
-        DynamicVars["SwordheartClarityPower"].UpgradeValueBy(2m);
+        AddKeyword(CardKeyword.Innate);
     }
 }

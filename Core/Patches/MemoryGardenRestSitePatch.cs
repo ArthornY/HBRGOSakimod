@@ -22,5 +22,9 @@ internal static class MemoryGardenRestSitePatch
         if (HotaruCannonUpgrades.CanAccess(player) &&
             !__result.Any(option => option.OptionId == HotaruCannonUpgradeRestSiteOption.Id))
             __result.Add(new HotaruCannonUpgradeRestSiteOption(player));
+        // 修骰子 appears while 31O's fate dice has a crack.
+        if (FateDiceRepairRestSiteOption.ShouldOffer(player) &&
+            !__result.Any(option => option.OptionId == FateDiceRepairRestSiteOption.Id))
+            __result.Add(new FateDiceRepairRestSiteOption(player));
     }
 }

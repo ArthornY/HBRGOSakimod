@@ -16,10 +16,10 @@ using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace HBRGOSakiMod.Core.Models.Powers;
 
-// Amount is stat reduction. Duration is independent and never presented as
-// additional reduction stacks, including a refresh by a weaker application.
+// Every original Misfortune application is independent (None/EnemyTurnEnd).
+// Amount is its fixed stat reduction; duration never changes that reduction.
 [CustomID("HBR_CALAMITY_POWER")]
-public sealed class HbrCalamityPower : PowerModel, ICustomPower
+public sealed class HbrCalamityPower : PowerModel, ICustomPower, IHbrEffectInstance
 {
     internal const int InitialDuration = 2;
 
@@ -28,7 +28,15 @@ public sealed class HbrCalamityPower : PowerModel, ICustomPower
 
     public override PowerType Type => PowerType.Debuff;
     public override PowerStackType StackType => PowerStackType.Counter;
-    public override PowerInstanceType InstanceType => PowerInstanceType.None;
+    public override PowerInstanceType InstanceType => PowerInstanceType.Instanced;
+    decimal IHbrEffectInstance.EffectPotency => Amount;
+    int IHbrEffectInstance.Remaining => RemainingTurns;
+    HbrEffectProfile IHbrEffectInstance.EffectProfile =>
+        new(HbrEffectLimit.None, HbrEffectExit.EnemyTurnEnd, InitialDuration);
+
+    public static decimal GetTotalReduction(Creature creature) => creature?.Powers
+        .OfType<HbrCalamityPower>().Where(power => power.RemainingTurns > 0)
+        .Aggregate(0m, (sum, power) => DamageAmplificationLimits.AddSaturated(sum, Math.Max(0, power.Amount))) ?? 0m;
     public string CustomPackedIconPath => "res://images/powers/hbr_calamity_power.png";
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
@@ -51,14 +59,17 @@ public sealed class HbrCalamityPower : PowerModel, ICustomPower
         RemainingTurns = InitialDuration;
     }
 
-    public override async Task BeforeSideTurnStart(PlayerChoiceContext choiceContext,
-        CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
+    internal void SetRemainingTurns(int remaining)
     {
-        if (Owner == null || side != Owner.Side || !participants.Contains(Owner) ||
-            !ReferenceEquals(Owner.CombatState, combatState)) return;
-        // This is an actual turn-start countdown, not native Amount duration.
-        // Neither a player-side first-tick skip nor an unrelated extra turn
-        // changes it. Native removal releases the reduction when time is up.
+        AssertMutable();
+        RemainingTurns = Math.Max(0, remaining);
+        Owner?.InvokePowerModified(this, 0, true);
+    }
+
+    public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext,
+        CombatSide side, IEnumerable<Creature> participants)
+    {
+        if (!HbrEffectRules.ShouldTick(this, ((IHbrEffectInstance)this).EffectProfile, side)) return;
         RemainingTurns = Math.Max(0, RemainingTurns - 1);
         Flash();
         if (RemainingTurns == 0 || Amount <= 0)

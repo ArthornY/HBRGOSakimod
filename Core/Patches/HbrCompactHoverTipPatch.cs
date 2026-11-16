@@ -6,9 +6,11 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 
@@ -25,21 +27,26 @@ internal static class HbrCompactHoverTipPatch
         yield return RequireMethod(typeof(NPreviewCardHolder), "CreateHoverTips", Type.EmptyTypes);
         yield return RequireMethod(typeof(NInspectCardScreen), "UpdateCardDisplay", Type.EmptyTypes);
         yield return RequireMethod(typeof(NMerchantCard), "CreateHoverTip", Type.EmptyTypes);
+        yield return RequireMethod(typeof(NCreature), "OnFocus", Type.EmptyTypes);
+        yield return RequireMethod(typeof(NCreature), "ShowCreatureHoverTips", new[] { typeof(CombatState) });
+        yield return RequireMethod(typeof(NRelicInventoryHolder), "OnFocus", Type.EmptyTypes);
     }
 
     private static MethodInfo RequireMethod(Type type, string name, Type[] parameters) =>
         AccessTools.DeclaredMethod(type, name, parameters)
         ?? throw new MissingMethodException(type.FullName, name);
 
+    private static (Type Model, string Helper) Source(Type caller) =>
+        caller == typeof(NPower) ? (typeof(PowerModel), nameof(HbrCompactHoverTipHelper.ForPower))
+        : caller == typeof(NCreature) ? (typeof(Creature), nameof(HbrCompactHoverTipHelper.ForCreature))
+        : caller == typeof(NRelicInventoryHolder) ? (typeof(RelicModel), nameof(HbrCompactHoverTipHelper.ForRelic))
+        : (typeof(CardModel), nameof(HbrCompactHoverTipHelper.ForCard));
+
     private static IEnumerable<CodeInstruction> Transpiler(
         IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
-        bool isPower = __originalMethod.DeclaringType == typeof(NPower);
-        Type modelType = isPower ? typeof(PowerModel) : typeof(CardModel);
-        string helperName = isPower
-            ? nameof(HbrCompactHoverTipHelper.ForPower)
-            : nameof(HbrCompactHoverTipHelper.ForCard);
-        MethodInfo getter = AccessTools.PropertyGetter(modelType, nameof(PowerModel.HoverTips));
+        (Type modelType, string helperName) = Source(__originalMethod.DeclaringType);
+        MethodInfo getter = AccessTools.PropertyGetter(modelType, nameof(CardModel.HoverTips));
         MethodInfo replacement = RequireMethod(typeof(HbrCompactHoverTipHelper), helperName,
             new[] { modelType });
 
@@ -63,5 +70,13 @@ internal static class HbrCompactHoverTipPatch
             operand = replacement
         };
         return result;
+    }
+
+    private static void Prefix(out int __state) => __state = HbrHoverDetail.Builds;
+
+    // Remember who opened the tooltip, so holding the full-text key can rebuild it.
+    private static void Postfix(object __instance, int __state)
+    {
+        if (HbrHoverDetail.Builds != __state) HbrHoverDetail.Track(__instance);
     }
 }

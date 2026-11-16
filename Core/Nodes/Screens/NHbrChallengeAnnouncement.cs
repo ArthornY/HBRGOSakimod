@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Collections.Generic;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
@@ -44,9 +45,9 @@ public partial class NHbrChallengeAnnouncement : Control, IScreenContext
         if (_hotkeyManager != null)
         {
             _hotkeyManager.AddBlockingScreen(this);
-            _hotkeyManager.PushHotkeyPressedBinding(MegaInput.cancel, Close);
-            _hotkeyManager.PushHotkeyPressedBinding(MegaInput.pauseAndBack, Close);
-            _hotkeyManager.PushHotkeyPressedBinding(MegaInput.select, Confirm);
+            _hotkeyManager.PushHotkeyPressedBindingCompat(MegaInput.cancel, Close);
+            _hotkeyManager.PushHotkeyPressedBindingCompat(MegaInput.pauseAndBack, Close);
+            _hotkeyManager.PushHotkeyPressedBindingCompat(MegaInput.select, Confirm);
             _blocking = true;
         }
         if (ActiveScreenContext.Instance.IsCurrent(this)) _close.GrabFocus();
@@ -103,9 +104,9 @@ public partial class NHbrChallengeAnnouncement : Control, IScreenContext
         if (!_blocking) return;
         _blocking = false;
         if (!GodotObject.IsInstanceValid(_hotkeyManager)) return;
-        _hotkeyManager.RemoveHotkeyPressedBinding(MegaInput.cancel, Close);
-        _hotkeyManager.RemoveHotkeyPressedBinding(MegaInput.pauseAndBack, Close);
-        _hotkeyManager.RemoveHotkeyPressedBinding(MegaInput.select, Confirm);
+        _hotkeyManager.RemoveHotkeyPressedBindingCompat(MegaInput.cancel, Close);
+        _hotkeyManager.RemoveHotkeyPressedBindingCompat(MegaInput.pauseAndBack, Close);
+        _hotkeyManager.RemoveHotkeyPressedBindingCompat(MegaInput.select, Confirm);
         _hotkeyManager.RemoveBlockingScreen(this);
     }
 

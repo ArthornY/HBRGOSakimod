@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR ImprisonRandom icon",
+  "importedPath": "res://images/powers/hbr_imprison_power.png",
+  "sha256": "99edf7a6b14471e1bb77624ee8d9b300ab8882d1523be56d66c00c63ec6685b4",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconImprison.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "5202612595754160611",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_5202612595754160611_IconImprison.png",
+    "sourceSha256": "99edf7a6b14471e1bb77624ee8d9b300ab8882d1523be56d66c00c63ec6685b4",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrImprisonPower",
+    "originalEffect": "ImprisonRandom",
+    "small": "res://images/powers/hbr_imprison_power.png",
+    "big": "res://images/powers/hbr_imprison_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

@@ -12,6 +12,7 @@ namespace HBRGOSakiMod.Core.Patches;
 [HarmonyPatch(typeof(CardModel), nameof(CardModel.OnPlayWrapper))]
 internal static class ModeRestrictedCardPlayPatch
 {
+    [HarmonyPriority(Priority.Last)]
     private static bool Prefix(
         CardModel __instance,
         PlayerChoiceContext choiceContext,
@@ -19,11 +20,10 @@ internal static class ModeRestrictedCardPlayPatch
         bool isAutoPlay,
         ResourceInfo resources,
         bool skipCardPileVisuals,
-        out ModeTransitionPlayState __state,
         ref Task __result)
     {
-        __state = ModeTransitionHelper.BeginCardPlay(__instance);
-        if (__state.RequiredMode == ReptureCardMode.None)
+        ModeTransitionPlayState state = ModeTransitionHelper.BeginCardPlay(__instance);
+        if (state.RequiredMode == ReptureCardMode.None && !DualSwordsChaseHelper.NeedsPlayScope(__instance))
         {
             return true;
         }
@@ -35,25 +35,8 @@ internal static class ModeRestrictedCardPlayPatch
             isAutoPlay,
             resources,
             skipCardPileVisuals,
-            __state);
+            state);
         return false;
-    }
-
-    private static void Postfix(
-        CardModel __instance,
-        ModeTransitionPlayState __state,
-        ref Task __result)
-    {
-        if (!__state.HasEffectContext ||
-            __state.RequiredMode != ReptureCardMode.None)
-        {
-            return;
-        }
-
-        __result = FinishUnchangedPlay(
-            __result,
-            __instance,
-            __state);
     }
 
     private static async Task SwitchThenPlay(
@@ -65,59 +48,18 @@ internal static class ModeRestrictedCardPlayPatch
         bool skipCardPileVisuals,
         ModeTransitionPlayState state)
     {
-        bool modeChanged = false;
-        try
-        {
-            modeChanged =
-                await ModeTransitionHelper.EnterRequiredModeBeforePlay(
-                    choiceContext,
-                    card,
-                    state.RequiredMode);
-            await OnPlayWrapperOriginal(
-                card,
-                choiceContext,
-                target,
-                isAutoPlay,
-                resources,
-                skipCardPileVisuals);
-        }
-        finally
-        {
-            try
-            {
-                if (state.QuickSwitch != null)
-                {
-                    await state.QuickSwitch.FinishReservation(
-                        choiceContext,
-                        card,
-                        modeChanged);
-                }
-
-            }
-            finally
-            {
-                ModeTransitionHelper.EndCardPlay(
-                    card,
-                    state);
-            }
-        }
-    }
-
-    private static async Task FinishUnchangedPlay(
-        Task original,
-        CardModel card,
-        ModeTransitionPlayState state)
-    {
-        try
-        {
-            await original;
-        }
-        finally
-        {
-            ModeTransitionHelper.EndCardPlay(
-                card,
-                state);
-        }
+        using var chase = DualSwordsChaseHelper.BeginPlay(card, isAutoPlay);
+        await ModeTransitionHelper.EnterRequiredModeBeforePlay(
+            choiceContext,
+            card,
+            state.RequiredMode);
+        await OnPlayWrapperOriginal(
+            card,
+            choiceContext,
+            target,
+            isAutoPlay,
+            resources,
+            skipCardPileVisuals);
     }
 
     [HarmonyReversePatch]

@@ -319,6 +319,7 @@ public sealed class NotOverYetPower : PowerModel
     private CardModel CreateGeneratedAttack(CardRarity rarity)
     {
         List<CardModel> candidates = Owner.Player.Deck.Cards
+            .Where(MagicSwordCombatTemplateHelper.CanGenerateFromDeck)
             .Where(card => card.Type == CardType.Attack)
             .Where(card => card.Rarity == rarity)
             .Where(card =>
@@ -334,7 +335,7 @@ public sealed class NotOverYetPower : PowerModel
             CardModel deckCard = candidates[selectedIndex];
             CardModel copy = Owner.CombatState.CloneCard(deckCard);
             copy.DeckVersion = deckCard;
-            DualSwordsCopyHelper.RecordCopy(copy);
+            CardCopyContextHelper.RecordCopy(copy);
             SyncUpgradeLevelFromDeck(copy, deckCard);
             return copy;
         }
@@ -380,7 +381,7 @@ public sealed class NotOverYetPower : PowerModel
         if (costsX)
         {
             int xEnergy = card.Owner.PlayerCombatState?.Energy ?? 0;
-            DualSwordsCopyHelper.RecordXEnergySpent(card, xEnergy);
+            CardCopyContextHelper.RecordXEnergySpent(card, xEnergy);
         }
 
         try
@@ -395,7 +396,7 @@ public sealed class NotOverYetPower : PowerModel
         }
         finally
         {
-            DualSwordsCopyHelper.Clear(card);
+            CardCopyContextHelper.Clear(card);
             RemoveAllTargetGeneratedCard(card);
             await RemoveGeneratedCardFromCombat(card);
         }

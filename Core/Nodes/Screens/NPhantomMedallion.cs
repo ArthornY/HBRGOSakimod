@@ -50,7 +50,8 @@ public partial class NPhantomMedallion : Control
         bool active,
         bool checkable,
         string footer,
-        string tooltip)
+        string tooltip,
+        bool featured = false)
     {
         NPhantomMedallion medallion = new()
         {
@@ -62,18 +63,22 @@ public partial class NPhantomMedallion : Control
             MouseDefaultCursorShape = CursorShape.PointingHand,
             TooltipText = tooltip
         };
-        medallion.Build(card, entry, diameter, checkable, footer);
+        medallion.Build(card, entry, diameter, checkable, footer, featured);
         return medallion;
     }
 
-    // Portrait inside the circular mask, shared with the larger detail and preview circles.
-    internal static Control CreatePortraitCircle(Texture2D portrait, float diameter)
+    // Portrait inside the circular mask, shared with the larger detail and preview circles. The portrait is a
+    // cutout, so the dark backdrop shows around the monster as in the v2 preview; featured circles (the detail
+    // portrait and the fusion preview) use the preview's lighter centre.
+    internal static Control CreatePortraitCircle(Texture2D portrait, float diameter, bool featured = false)
     {
         TextureRect mask = PhantomRosterArt.Image(PhantomRosterArt.CircleMask, Vector2.Zero, Vector2.One * diameter);
         mask.ClipChildren = ClipChildrenMode.Only;
-        ColorRect backdrop = new()
+        TextureRect backdrop = new()
         {
-            Color = new Color(0.16f, 0.1f, 0.28f),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            Texture = featured ? PhantomRosterArt.FeaturedPortraitBackdrop : PhantomRosterArt.PortraitBackdrop,
             MouseFilter = MouseFilterEnum.Ignore
         };
         backdrop.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -102,7 +107,8 @@ public partial class NPhantomMedallion : Control
         return mask;
     }
 
-    private void Build(PhantomChoiceHbrgoSaki card, PhantomRosterEntry entry, float diameter, bool checkable, string footer)
+    private void Build(PhantomChoiceHbrgoSaki card, PhantomRosterEntry entry, float diameter, bool checkable, string footer,
+        bool featured)
     {
         float width = WidthFor(diameter);
         Vector2 center = new(width / 2f, Top + diameter / 2f);
@@ -117,7 +123,7 @@ public partial class NPhantomMedallion : Control
             AddChild(_halo);
         }
 
-        Control portrait = CreatePortraitCircle(PhantomRosterArt.GetPortrait(entry.MonsterId), diameter);
+        Control portrait = CreatePortraitCircle(PhantomRosterArt.GetPortrait(entry.MonsterId), diameter, featured);
         portrait.Position = Centered(diameter);
         AddChild(portrait);
         if (_active)

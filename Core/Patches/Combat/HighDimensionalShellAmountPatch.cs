@@ -97,12 +97,13 @@ internal static class HighDimensionalShellStackAmountPatch
     private static int PrepareOffset(decimal amount, PowerModel power) => power switch
     {
         HighDimensionalShellPower shell => shell.PrepareNativeDpOffset(amount),
+        HbrFaithPower faith => faith.PrepareNativeOffset(amount),
         IExactDamagePercentPower percentage => percentage.PercentState.PrepareNativePercentOffset(power.Amount, amount),
         _ => (int)amount
     };
 
     private static int OffsetForNotification(decimal amount, PowerModel power) =>
-        power is HighDimensionalShellPower ? decimal.Sign(decimal.Truncate(amount))
+        power is HighDimensionalShellPower or HbrFaithPower ? decimal.Sign(decimal.Truncate(amount))
             : power is IExactDamagePercentPower
                 ? decimal.Sign(amount) : (int)amount;
 }

@@ -422,12 +422,13 @@ internal static class HbrgoSakiVariantPreference
             : ModelDb.Character<HbrgoSaki30A>();
     }
 
+    // Only 30A is the 30A variant; the retired 人造救世主 shows as 31O.
     internal static HbrgoSakiVariant FromCharacter(
         CharacterModel character)
     {
-        return character is HbrgoSaki31O
-            ? HbrgoSakiVariant.ThirtyOneO
-            : HbrgoSakiVariant.ThirtyA;
+        return character is HbrgoSaki30A
+            ? HbrgoSakiVariant.ThirtyA
+            : HbrgoSakiVariant.ThirtyOneO;
     }
 
     private static void OnRunEnded(RunEndedEvent evt)

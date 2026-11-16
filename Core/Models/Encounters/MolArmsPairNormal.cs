@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC04BExpDay05Desert01_R05.
+// HBR MC04BExpDay05Desert01_R05: both use MolArmsSmall's table; the second
+// starts one step ahead so the boosted all-unit attacks do not coincide.
 public sealed class MolArmsPairNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -19,10 +20,12 @@ public sealed class MolArmsPairNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        MolArms second = (MolArms)ModelDb.Monster<MolArms>().ToMutable();
+        second.StartDpTableAt(MolArms.PairOffsetStep);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<MolArms>().ToMutable(), null),
-            (ModelDb.Monster<MolArms>().ToMutable(), null)
+            (second, null)
         };
     }
 }

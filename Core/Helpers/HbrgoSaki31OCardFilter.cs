@@ -110,7 +110,7 @@ internal static class HbrgoSaki31OCardFilter
         typeof(BeyondProtectionHbrgoSaki),
         typeof(MagicSwordUniversalityHbrgoSaki),
         typeof(MimicReminiscenceHbrgoSaki),
-        typeof(QuickThinkingHbrgoSaki),
+        typeof(DesuwaHbrgoSaki),
         typeof(SwitchingSlashHbrgoSaki),
         typeof(ConsecutiveSlashHbrgoSaki),
         typeof(ChargedShotHbrgoSaki),
@@ -120,6 +120,11 @@ internal static class HbrgoSaki31OCardFilter
         typeof(GodspeedHbrgoSaki),
         typeof(WithMeHbrgoSaki),
         typeof(LiveHbrgoSaki),
+        typeof(ArpeggioHbrgoSaki),
+        typeof(MimicShootingStarSongHbrgoSaki),
+        typeof(MimicHeartFlutterSlideHbrgoSaki),
+        typeof(MimicDivineCraftHbrgoSaki),
+        typeof(MimicWillActivationHbrgoSaki),
         typeof(TrainingTimeHbrgoSaki),
         typeof(HasteHbrgoSaki),
         typeof(FateHbrgoSaki),
@@ -142,6 +147,7 @@ internal static class HbrgoSaki31OCardFilter
 
     private static readonly HashSet<Type> ThirtyOneOExcludedTypes = new()
     {
+        typeof(QuickThinkingHbrgoSaki),
         typeof(MimicEvilEyeTidalSlashHbrgoSaki),
         typeof(SoulIntimidationHbrgoSaki),
         typeof(CollectSoulHbrgoSaki),

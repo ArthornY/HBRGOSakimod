@@ -45,7 +45,7 @@ public sealed class DragonArrowHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        int energySpent = DualSwordsCopyHelper.TakeXEnergySpent(
+        int energySpent = CardCopyContextHelper.TakeXEnergySpent(
             this,
             cardPlay.Resources.EnergySpent);
         decimal damage = ModeTransitionHelper.GetAdjustedEffectAmount(

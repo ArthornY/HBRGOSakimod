@@ -42,6 +42,7 @@ public partial class NInspectCardHoverTips : Node
         _cards = _tips.GetNodeOrNull<Control>("cardHoverTipContainer");
         _viewport = GetViewport();
         _viewport.SizeChanged += QueueLayout;
+        _tips.ItemRectChanged += QueueLayout;
         if (Usable(Inspect)) Inspect.Resized += QueueLayout;
         if (Usable(Card)) Card.Resized += QueueLayout;
         if (Usable(_text)) _text.Resized += QueueLayout;
@@ -69,7 +70,9 @@ public partial class NInspectCardHoverTips : Node
             if (_entries.Count == 0) return;
         }
 
-        Transform2D inverse = _tips.GetGlobalTransformWithCanvas().AffineInverse();
+        CanvasItem frame = _tips.GetParent() as CanvasItem;
+        Transform2D inverse = frame != null ? frame.GetGlobalTransformWithCanvas().AffineInverse() : Transform2D.Identity;
+        Transform2D tipsToFrame = inverse * _tips.GetGlobalTransformWithCanvas();
         Rect2 viewport = inverse * _tips.GetViewportRect();
         Rect2 card = Bounds(Card, inverse);
         if (!card.HasArea()) return;
@@ -81,11 +84,9 @@ public partial class NInspectCardHoverTips : Node
         ReserveArrow(Inspect.GetNodeOrNull<Control>("%RightArrow"), RightButtonX(Inspect), inverse, ref reserved);
         Reserve(Inspect.GetNodeOrNull<Control>("%Upgrade"), inverse, ref reserved);
         Reserve(Inspect.GetNodeOrNull<Control>("MemoryGardenCompendiumSkillsButton"), inverse, ref reserved);
-        if (_scroll == null && !NeedsSidebar(viewport, reserved, inverse)) return;
-
-        float width = 360f;
-        foreach (Control entry in _entries)
-            if (Usable(entry)) width = Math.Max(width, entry.GetCombinedMinimumSize().X);
+        // Always use the same measured column on compact/full rebuilds. Long
+        // translated titles wrap inside it instead of widening native columns.
+        const float width = 360f;
         // Keep normal tips below the top bar and leave room for the scrollbar,
         // so its appearance cannot clip the native text's minimum width.
         float top = Math.Max(viewport.Position.Y, reserved.Position.Y);
@@ -95,8 +96,10 @@ public partial class NInspectCardHoverTips : Node
             readingArea, reserved, width + 20f);
         if (!placement.Bounds.HasArea()) return;
         if (_scroll == null) CreateSidebar(width);
-        _scroll.Position = placement.Bounds.Position;
-        _scroll.Scale = Vector2.One * placement.Scale;
+        Transform2D local = InspectCardHoverTipLayoutHelper.InParentFrame(tipsToFrame, placement.Bounds.Position, placement.Scale);
+        _scroll.Position = local.Origin;
+        _scroll.Rotation = local.Rotation;
+        _scroll.Scale = local.Scale;
         _scroll.Size = placement.Bounds.Size / placement.Scale;
     }
 
@@ -105,17 +108,6 @@ public partial class NInspectCardHoverTips : Node
         if (!Usable(parent)) return;
         foreach (Node node in parent.GetChildren())
             if (node is Control entry && Usable(entry) && entry.Visible) _entries.Add(entry);
-    }
-
-    private bool NeedsSidebar(Rect2 viewport, Rect2 reserved, Transform2D inverse)
-    {
-        foreach (Control entry in _entries)
-        {
-            Rect2 bounds = Bounds(entry, inverse);
-            if (bounds.HasArea() && (bounds.Intersects(reserved.Grow(12f)) || !viewport.Encloses(bounds)))
-                return true;
-        }
-        return false;
     }
 
     private void CreateSidebar(float width)
@@ -140,7 +132,11 @@ public partial class NInspectCardHoverTips : Node
         _scroll.AddChild(_column);
         _scroll.GetVScrollBar().FocusMode = Control.FocusModeEnum.None;
         foreach (Control entry in _entries)
-            if (Usable(entry)) entry.Reparent(_column, false);
+            if (Usable(entry))
+            {
+                HandCardHoverTipLayoutHelper.WrapText(entry);
+                entry.Reparent(_column, false);
+            }
         if (Usable(_text)) _text.Hide();
         if (Usable(_cards)) _cards.Hide();
         // Native MarginContainer text tips propagate fit-content height changes
@@ -190,6 +186,7 @@ public partial class NInspectCardHoverTips : Node
 
     public override void _ExitTree()
     {
+        if (GodotObject.IsInstanceValid(_tips)) _tips.ItemRectChanged -= QueueLayout;
         if (GodotObject.IsInstanceValid(_viewport)) _viewport.SizeChanged -= QueueLayout;
         if (GodotObject.IsInstanceValid(Inspect)) Inspect.Resized -= QueueLayout;
         if (GodotObject.IsInstanceValid(Card)) Card.Resized -= QueueLayout;

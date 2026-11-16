@@ -4,8 +4,11 @@ using BaseLib.Abstracts;
 using Godot;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
@@ -21,21 +24,21 @@ public sealed class BeyondProtectionPower : PowerModel, ICustomPower
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int ConvertedDp { get; private set; }
 
-    private decimal? _exactDamagePercent;
+    private decimal? _legacyDamagePercent;
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public string DamagePercentData
     {
-        get => _exactDamagePercent.HasValue ? DamageAmplificationLimits.Format(DamagePercent) : string.Empty;
+        get => _legacyDamagePercent.HasValue ? DamageAmplificationLimits.Format(DamagePercent) : string.Empty;
         private set
         {
             if (string.IsNullOrEmpty(value)) return;
-            _exactDamagePercent = DamageAmplificationLimits.Parse(value);
+            _legacyDamagePercent = DamageAmplificationLimits.Parse(value);
         }
     }
 
-    // The old integer remains readable; gameplay and new saves use an exact
-    // percentage bank without changing DP/HP that must later be returned.
-    public decimal DamagePercent => DamageAmplificationLimits.Clamp(_exactDamagePercent ?? ConvertedDp * DamagePercentPerDp);
+    // Old saved fields are migration input only. New conversions put their
+    // exact percentage in HotaruDamageAmplificationPower, never in this model.
+    public decimal DamagePercent => DamageAmplificationLimits.Clamp(_legacyDamagePercent ?? ConvertedDp * DamagePercentPerDp);
 
     public override PowerType Type => PowerType.Buff;
     public override PowerStackType StackType => PowerStackType.Single;
@@ -45,40 +48,78 @@ public sealed class BeyondProtectionPower : PowerModel, ICustomPower
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
 
-    public override LocString Description
+    public override LocString Description => Describe(base.Description);
+
+    internal LocString CompactDescription => Describe(
+        LocString.GetIfExists("powers", Id.Entry + ".compactDescription") ?? base.Description);
+
+    private LocString Describe(LocString text)
     {
-        get
-        {
-            LocString text = base.Description;
-            DeflectorProtection protection = IsMutable ? Owner?.Player?.GetRelic<DeflectorProtection>() : null;
-            text.Add("DamagePercent", DamagePercent);
-            text.Add("TemporaryMaxHp", (decimal)(protection?.BeyondProtectionPlayerMaxHp ?? 0) +
-                (protection?.BeyondProtectionPhantomMaxHp ?? 0));
-            text.Add("DpToReturn", protection?.BeyondProtectionDpToReturn ?? 0);
-            return text;
-        }
+        DeflectorProtection protection = IsMutable ? Owner?.Player?.GetRelic<DeflectorProtection>() : null;
+        text.Add("TemporaryMaxHp", (decimal)(protection?.BeyondProtectionPlayerMaxHp ?? 0) +
+            (protection?.BeyondProtectionPhantomMaxHp ?? 0));
+        text.Add("DpToReturn", protection?.BeyondProtectionDpToReturn ?? 0);
+        return text;
     }
 
-    internal void AddConvertedDp(int removedDp)
+    internal async Task AddConvertedDp(PlayerChoiceContext context, int removedDp, CardModel cardSource)
     {
         AssertMutable();
+        await MigrateLegacyDamage(context);
         int converted = Math.Max(0, removedDp);
-        _exactDamagePercent = DamageAmplificationLimits.Clamp(DamagePercent + converted * DamagePercentPerDp);
-        ConvertedDp = (int)Math.Clamp((long)ConvertedDp + converted, 0, int.MaxValue);
+        if (converted > 0)
+            await GrantResolvedDamageBonus(context, converted * DamagePercentPerDp);
         InvokeDisplayAmountChanged();
         Owner?.InvokePowerModified(this, 0, true);
     }
 
+    private Task GrantResolvedDamageBonus(PlayerChoiceContext context, decimal percent) =>
+        // The lost DP already resolved this value. A card source would let
+        // Roll multiply it again; the ability still belongs to this holder.
+        PowerCmd.Apply<HotaruDamageAmplificationPower>(context, Owner, percent, Owner, null);
+
+    internal async Task MigrateLegacyDamage(PlayerChoiceContext context)
+    {
+        if (!IsMutable || Owner == null) return;
+        decimal percent = DamagePercent;
+        int converted = ConvertedDp;
+        decimal? exact = _legacyDamagePercent;
+        // Clear before callbacks can play another card and re-enter migration.
+        ConvertedDp = 0;
+        _legacyDamagePercent = null;
+        if (percent <= 0m) return;
+        try
+        {
+            await GrantResolvedDamageBonus(context, percent);
+        }
+        catch
+        {
+            ConvertedDp = converted;
+            _legacyDamagePercent = exact;
+            throw;
+        }
+    }
+
+    public override Task AfterApplied(Creature applier, CardModel cardSource) =>
+        MigrateLegacyDamage(new ThrowingPlayerChoiceContext());
+
+    public override Task BeforeCombatStart() =>
+        MigrateLegacyDamage(new ThrowingPlayerChoiceContext());
+
+    public override Task BeforeCardPlayed(CardPlay cardPlay) =>
+        cardPlay?.Card?.Owner?.Creature == Owner
+            ? MigrateLegacyDamage(new ThrowingPlayerChoiceContext())
+            : Task.CompletedTask;
+
+    // Keep the old callable boundary harmless for compatibility. Only the
+    // unified damage-amplification ability now participates in damage hooks.
     public decimal ModifyDamageMultiplicative(Creature target, decimal amount,
-        ValueProp props, Creature dealer, CardModel cardSource) =>
-        dealer == Owner && !props.HasFlag(ValueProp.Unpowered)
-            ? HbrgoSakiDamageMultiplierHelper.Add(1m + DamagePercent / 100m, this)
-            : 1m;
+        ValueProp props, Creature dealer, CardModel cardSource) => 1m;
 
     public override Task AfterCombatEnd(CombatRoom room)
     {
         ConvertedDp = 0;
-        _exactDamagePercent = null;
+        _legacyDamagePercent = null;
         InvokeDisplayAmountChanged();
         return Task.CompletedTask;
     }

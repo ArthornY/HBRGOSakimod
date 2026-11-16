@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Commands.Builders;
@@ -25,10 +27,12 @@ internal static class LegendAttackContextSupport
         AccessTools.Field(typeof(AttackContext), "_attackCommand");
     private static readonly ConditionalWeakTable<AttackContext, State> Contexts = new();
     private static readonly ConditionalWeakTable<AttackCommand, State> Commands = new();
+    private static readonly ConditionalWeakTable<Creature, List<State>> Actors = new();
 
     internal sealed class State
     {
         internal AttackCommand Command;
+        internal int VirtualExtraHits;
         internal readonly List<Segment> Segments = new();
     }
 
@@ -38,20 +42,25 @@ internal static class LegendAttackContextSupport
     internal static async Task<AttackContext> Track(Task<AttackContext> task)
     {
         AttackContext context = await task;
-        if (CommandField?.GetValue(context) is not AttackCommand command ||
-            command.Attacker?.Powers.OfType<MyLegendNextAttackBasePower>()
-                .Any(power => power.GetReservedApplications(command) > 0) != true)
+        if (CommandField?.GetValue(context) is not AttackCommand command || command.Attacker == null)
             return context;
+        int virtualExtraHits = HbrComboHelper.NativeVirtualExtraHits(command);
+        if (virtualExtraHits <= 0 && !command.Attacker.Powers.OfType<MyLegendNextAttackBasePower>()
+                .Any(power => power.GetReservedApplications(command) > 0)) return context;
 
-        State state = new() { Command = command };
+        State state = new() { Command = command, VirtualExtraHits = virtualExtraHits };
         Contexts.Add(context, state);
         Commands.Add(command, state);
+        Actors.GetOrCreateValue(command.Attacker).Add(state);
         return context;
     }
 
     internal static State Find(Creature dealer, CardModel card, ValueProp props)
     {
         if (dealer == null || card == null || !props.HasFlag(ValueProp.Move)) return null;
+        if (Actors.TryGetValue(dealer, out List<State> states))
+            for (int index = states.Count - 1; index >= 0; index--)
+                if (ReferenceEquals(states[index].Command.ModelSource, card)) return states[index];
         foreach (MyLegendNextAttackBasePower power in dealer.Powers.OfType<MyLegendNextAttackBasePower>())
         {
             AttackCommand command = power.ReservedAttack;
@@ -80,6 +89,7 @@ internal static class LegendAttackContextSupport
         // recording/disposal or extra BeforeAttack notification can occur.
         Contexts.Remove(context);
         Commands.Remove(state.Command);
+        if (Actors.TryGetValue(state.Command.Attacker, out List<State> states)) states.Remove(state);
         result = new ValueTask(ReplayAndDispose(context, state));
         return true;
     }
@@ -90,6 +100,12 @@ internal static class LegendAttackContextSupport
         {
             if (state.Segments.Count == 0 || state.Command.Attacker?.IsAlive != true) return;
             List<Segment> expanded = new(state.Segments);
+            if (state.VirtualExtraHits > 0)
+            {
+                Segment last = expanded.LastOrDefault(segment => !segment.Props.HasFlag(ValueProp.Unpowered));
+                if (last != null)
+                    for (int index = 0; index < state.VirtualExtraHits; index++) expanded.Add(last);
+            }
             foreach (MyLegendNextAttackBasePower power in state.Command.Attacker.Powers
                          .OfType<MyLegendNextAttackBasePower>()
                          .OrderBy(power => power.DoublesHitCount)
@@ -142,29 +158,16 @@ internal static class LegendAttackContextDisposePatch
 [HarmonyPatch]
 internal static class LegendAttackContextDamagePatch
 {
-    private static MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-        .Where(method => method.Name == nameof(CreatureCmd.Damage))
-        .Where(method =>
-        {
-            ParameterInfo[] parameters = method.GetParameters();
-            return parameters.Length is 6 or 7 &&
-                   parameters[0].ParameterType == typeof(PlayerChoiceContext) &&
-                   parameters[1].ParameterType == typeof(IEnumerable<Creature>) &&
-                   parameters[2].ParameterType == typeof(decimal) &&
-                   parameters[3].ParameterType == typeof(ValueProp) &&
-                   parameters[4].ParameterType == typeof(Creature) &&
-                   parameters[5].ParameterType == typeof(CardModel);
-        })
-        .OrderBy(method => method.GetParameters().Length).FirstOrDefault() ??
-        throw new MissingMethodException(typeof(CreatureCmd).FullName, nameof(CreatureCmd.Damage));
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
 
-    private static void Prefix(PlayerChoiceContext choiceContext, IEnumerable<Creature> targets,
+    private static void Prefix(PlayerChoiceContext choiceContext, object[] __args,
         decimal amount, ValueProp props, Creature dealer, CardModel cardSource,
         out (LegendAttackContextSupport.State State, LegendAttackContextSupport.Segment Segment) __state)
     {
         LegendAttackContextSupport.State state = LegendAttackContextSupport.Find(dealer, cardSource, props);
         __state = state == null ? default : (state,
-            new LegendAttackContextSupport.Segment(choiceContext, targets.ToArray(), amount, props, dealer, cardSource));
+            new LegendAttackContextSupport.Segment(choiceContext,
+                NativeDamageApiCompatibility.ReadTargets(__args).ToArray(), amount, props, dealer, cardSource));
     }
 
     private static void Postfix(

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Godot;
 using HBRGOSakiMod.Core.Config;
 using HBRGOSakiMod.Core.Helpers;
+using HBRGOSakiMod.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -13,6 +14,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Hooks;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
@@ -45,11 +47,13 @@ internal interface IHighDimensionalShellBreakOverride
 
 public class HighDimensionalShellPower : PowerModel
 {
+    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
+        new[] { HoverTipFactory.FromPower<HbrAttackDownPower>() };
     private static readonly HarmonyLib.AccessTools.FieldRef<PowerModel, int> NativeAmount =
         HarmonyLib.AccessTools.FieldRefAccess<PowerModel, int>("_amount");
-    public const int NormalBreakAmount = 3;
-    public const int EliteBreakAmount = 4;
-    public const int BossBreakAmount = 5;
+    public const int NormalBreakAmount = 2;
+    public const int EliteBreakAmount = 3;
+    public const int BossBreakAmount = 4;
 
     private const int EnhancedShellAscensionLevel = 10;
     private const decimal IncomingDamageMultiplier = 0.75m;
@@ -76,10 +80,27 @@ public class HighDimensionalShellPower : PowerModel
     public decimal MaximumDp => MaximumAmount;
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HasOvercapDp { get; protected set; }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int DpRecoveryOverflowPercent { get; protected set; }
+
+    private decimal CurrentDpCeiling => HasOvercapDp
+        ? BigCombatNumbers.ClampStat(BigCombatNumbers.MultiplyPositive(MaximumAmount,
+            HbrDpRecoveryLimit.Ratio(DpRecoveryOverflowPercent))) : MaximumAmount;
+
+    internal void AllowOvercapRecovery() => AllowOvercapRecoveryWithCeiling(1.2m);
+    internal void AllowOvercapRecoveryWithCeiling(decimal ceilingRatio)
+    {
+        DpRecoveryOverflowPercent = Math.Max(DpRecoveryOverflowPercent, HbrDpRecoveryLimit.ToPercent(ceilingRatio));
+        HasOvercapDp = true;
+    }
+
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public string CurrentDpData
     {
         get => _hasExactDp ? DpAmountCodec.Format(_currentDp) : string.Empty;
-        private set
+        protected set
         {
             if (string.IsNullOrEmpty(value)) return;
             _currentDp = DpAmountCodec.Parse(value);
@@ -136,6 +157,7 @@ public class HighDimensionalShellPower : PowerModel
         _retainExactDpOnAttachment = false;
         _currentDp = current;
         _hasExactDp = true;
+        if (Owner != null && current <= MaximumAmount) { HasOvercapDp = false; DpRecoveryOverflowPercent = 0; }
         CardDamageHistoryHelper.RecordDpDamage(Owner,
             Math.Min(dpDamage, Math.Max(0m, previous - current)));
         int proxy = DpAmountCodec.ToNative(current);
@@ -201,6 +223,7 @@ public class HighDimensionalShellPower : PowerModel
         {
             LocString text = base.Description;
             if (IsMutable && Owner != null) text.Add("Amount", CurrentDp);
+            text.Add("breakAmount", GetDisplayedBreakAmount());
             return text;
         }
     }
@@ -247,6 +270,13 @@ public class HighDimensionalShellPower : PowerModel
     public static decimal CalculateAmount(Creature creature)
     {
         if (creature == null) return 0m;
+        // GoldHopper's original DP, whatever the settings, act or difficulty.
+        if (creature.Monster is IHbrgoFixedEnemyResources fixedResources &&
+            EnemyStatScalingHelper.IsEnemy(creature))
+        {
+            return Math.Max(0m, fixedResources.FixedMaxDp);
+        }
+
         decimal maxHpRatio = BaseMaxHpRatio;
         if (creature.Side == CombatSide.Enemy)
         {
@@ -263,7 +293,7 @@ public class HighDimensionalShellPower : PowerModel
             maxHpRatio *= GetEnemyShellMultiplier(creature);
         }
 
-        return CalculateAmount(HbrEnemyResourceAdapter.GetDpReferenceMaximum(creature), maxHpRatio);
+        return HbrEnemyResourceAdapter.CalculateMaximumDp(creature, maxHpRatio);
     }
 
     internal static decimal GetEnemyShellMultiplier(Creature creature) =>
@@ -280,7 +310,10 @@ public class HighDimensionalShellPower : PowerModel
     private static decimal CalculateAmount(decimal maxHp, decimal maxHpRatio) =>
         BigCombatNumbers.ScaleHealth(Math.Max(0m, maxHp), maxHpRatio);
 
-    protected virtual decimal MaximumAmount => CalculateAmount(Owner);
+    // Virus (a phantom's VirusRandom on an enemy) lowers the maximum while it
+    // lasts. A player's phantom shell overrides this; monsters never give it Virus.
+    protected virtual decimal MaximumAmount => ThirtyOneXBondHelper.ScaleMaximumDp(Owner,
+        HbrVirusPower.LowerMaximum(Owner, CalculateAmount(Owner)));
 
     internal decimal MaxAmount => MaximumAmount;
 
@@ -292,6 +325,8 @@ public class HighDimensionalShellPower : PowerModel
         CardModel cardSource)
     {
         NotifyShellApplied();
+        // A move-table monster restarts its dp table when the shell returns.
+        (Owner?.Monster as HbrgoMoveTableMonster)?.OnShellApplied();
         return CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
     }
 
@@ -342,6 +377,9 @@ public class HighDimensionalShellPower : PowerModel
 
         return IncomingDamageMultiplier;
     }
+
+    internal bool WouldBreakFromAttack(decimal amount) => amount > 0m && !_pendingBreak && CurrentDp > 0m &&
+        amount >= Math.Max(0m, CurrentDp - PendingExtraDpDamage);
 
     public virtual bool TryAbsorb(decimal amount)
     {
@@ -409,6 +447,7 @@ public class HighDimensionalShellPower : PowerModel
         }
         else if (actualDamage > 0m)
         {
+            await ResolveIntermediateDpBreakStatus(choiceContext);
             await CombatPreviewRefreshHelper.RefreshOpponentIntents(Owner);
         }
 
@@ -459,9 +498,27 @@ public class HighDimensionalShellPower : PowerModel
         return restoredAmount;
     }
 
+    internal decimal RestoreWithLimit(decimal amount, bool allowOvercap)
+        => RestoreWithCeiling(amount, allowOvercap, 1.2m);
+
+    internal decimal RestoreWithCeiling(decimal amount, bool allowOvercap, decimal ceilingRatio)
+    {
+        if (amount <= 0m || !CanRestoreDp) return 0m;
+        decimal maximum = MaximumAmount;
+        decimal ceiling = allowOvercap
+            ? BigCombatNumbers.ClampStat(BigCombatNumbers.MultiplyPositive(maximum,
+                HbrDpRecoveryLimit.Ratio(HbrDpRecoveryLimit.ToPercent(ceilingRatio)))) : maximum;
+        decimal restored = Math.Min(BigCombatNumbers.ClampStat(amount), Math.Max(0m, ceiling - CurrentDp));
+        if (restored <= 0m) return 0m;
+        if (CurrentDp + restored > maximum) AllowOvercapRecoveryWithCeiling(ceilingRatio);
+        SetDpAmount(CurrentDp + restored);
+        Flash();
+        return restored;
+    }
+
     internal void ClampToMaximum()
     {
-        decimal maximumAmount = MaximumAmount;
+        decimal maximumAmount = CurrentDpCeiling;
         if (CurrentDp > maximumAmount)
         {
             SetDpAmount(maximumAmount);
@@ -501,6 +558,8 @@ public class HighDimensionalShellPower : PowerModel
             _pendingExtraDpDamage.Pop();
         }
 
+        await ResolveIntermediateDpBreakStatus(choiceContext);
+
         if (!_pendingBreak)
         {
             return;
@@ -509,8 +568,13 @@ public class HighDimensionalShellPower : PowerModel
         Creature brokenOwner = Owner;
         bool hbrOrdinaryShell = GetType() == typeof(HighDimensionalShellPower) &&
             HbrBattleStatsHelper.IsEnabled(brokenOwner);
+        bool alreadyBroken = brokenOwner.HasPower<BreakPower>();
         _pendingBreak = false;
         await ResolveBreak(choiceContext, 0);
+        DemonKingAndFamiliarBondHelper.OnDpBroken(brokenOwner, dealer, cardSource, props, alreadyBroken);
+        AkariAceCombatHelper.OnEnemyBroken(dealer, brokenOwner, cardSource, props, alreadyBroken);
+          KuraSatomiCombatHelper.OnEnemyBroken(dealer, brokenOwner, cardSource, props, alreadyBroken);
+          HisameCloseSlashCombatHelper.OnEnemyBroken(dealer, brokenOwner, cardSource, props, alreadyBroken);
         // The ordinary DP absorber discards this hit's HP overflow. Its break
         // still earns a fixed destruction share after the hit, while layered
         // bosses and other custom shell subclasses keep their own rules.
@@ -541,6 +605,7 @@ public class HighDimensionalShellPower : PowerModel
         PlayerChoiceContext choiceContext,
         int extraBreak)
     {
+        await HbrDpBreakStatusHelper.Apply(choiceContext, Owner);
         IHighDimensionalShellObserver[] observers = GetObservers();
         IHighDimensionalShellBreakOverride[] breakOverrides = observers
             .OfType<IHighDimensionalShellBreakOverride>()
@@ -575,19 +640,11 @@ public class HighDimensionalShellPower : PowerModel
                     null);
             }
 
-            // Resume a registered interrupted intent after the stun instead
-            // of falling back to the monster's last performed move.
-            if (!suppressDefaultBreak)
+            if (!suppressDefaultBreak && Owner.Monster is HbrgoMoveTableMonster tableMonster)
             {
-                string interruptedMoveId = null;
-                if (Owner.Monster?.NextMove is { } interruptedMove &&
-                    Owner.Monster.MoveStateMachine.States.ContainsKey(
-                        interruptedMove.Id))
-                {
-                    interruptedMoveId = interruptedMove.Id;
-                }
-
-                await CreatureCmd.Stun(Owner, interruptedMoveId);
+                // DP breaks never replace an intent with Stunned, including
+                // special bosses. Explicit skill stuns use their own commands.
+                tableMonster.OnShellBroken();
             }
         }
 
@@ -600,6 +657,10 @@ public class HighDimensionalShellPower : PowerModel
                 choiceContext);
         }
     }
+
+    // Layered DP may refill immediately without removing this shell. Its own
+    // receipt resolves through both native damage and DP-only damage paths.
+    protected virtual Task ResolveIntermediateDpBreakStatus(PlayerChoiceContext context) => Task.CompletedTask;
 
     private int GetBreakAmount()
     {
@@ -614,6 +675,9 @@ public class HighDimensionalShellPower : PowerModel
             RoomType.Elite => EliteBreakAmount,
             _ => NormalBreakAmount,
         };
+        // Monster requirements 6-9 change HBR numerics only. Preserve the
+        // previous 3/4/5 room bases for legacy/original-mode encounters.
+        if (!HbrBattleStatsHelper.IsEnabled(Owner)) baseAmount++;
         return baseAmount + HelloWorldCombatHelper.GetInitialBreakBonus(Owner);
     }
 

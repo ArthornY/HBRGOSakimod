@@ -134,8 +134,14 @@ internal static class HighHitDamagePowerFlightPatch
 {
     // Native PlayPowerCardFlyVfx creates another NCard when one does not exist,
     // even when the caller already requested skipCardPileVisuals.
-    private static bool Prefix(ref Task __result) =>
-        HighHitDamagePresentation.SkipTask(ref __result);
+    private static bool Prefix(CardModel __instance, ref Task __result)
+    {
+        if (!HighHitDamageVisualHelper.ShouldSkipPresentationWait()) return true;
+        // Existing hand/play nodes still need their native flight owner to free
+        // them. Keep the fast no-node path from manufacturing repeated cards.
+        if (PowerCardPlayVisualsHelper.HasUnclaimedTableCard(__instance)) return true;
+        return HighHitDamagePresentation.SkipTask(ref __result);
+    }
 }
 
 [HarmonyPatch(typeof(NCard), nameof(NCard.AnimMultiCardPlay))]

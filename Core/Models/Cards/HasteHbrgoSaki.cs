@@ -12,6 +12,9 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
+// Retired (2026-11-09): it gave Dexterity for each six-sense resistance broken.
+// The resistances are gone, so it is no longer offered; saved runs that still
+// hold it can play it, and only the upgrade's draw remains.
 public sealed class HasteHbrgoSaki : CardModel
 {
     public override string PortraitPath => ImageHelper.GetImagePath(
@@ -23,13 +26,6 @@ public sealed class HasteHbrgoSaki : CardModel
         new DynamicVar[]
         {
             new CardsVar(0)
-        };
-
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new[]
-        {
-            HoverTipFactory.FromPower<DexterityPower>(),
-            HoverTipFactory.FromPower<HastePower>()
         };
 
     public HasteHbrgoSaki()
@@ -45,8 +41,6 @@ public sealed class HasteHbrgoSaki : CardModel
         PlayerChoiceContext choiceContext,
         CardPlay cardPlay)
     {
-        await PowerCmd.Apply<HastePower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
-
         if (DynamicVars.Cards.BaseValue > 0m)
         {
             await CardPileCmd.Draw(

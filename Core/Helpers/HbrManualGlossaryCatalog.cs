@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Godot;
+using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Helpers;
@@ -36,11 +37,26 @@ internal static class HbrManualGlossaryCatalog
             return comparison != 0 ? comparison : StringComparer.Ordinal.Compare(left.Id, right.Id);
         });
 
+    // Kept registered only so older saves and combat states load; nothing gives
+    // them any more, so the manual leaves them out. The six-sense card effects and
+    // resistances were removed on 2026-11-09, together with the cards built on
+    // resistances. Narara's new opposed-roll nullification is active and is
+    // deliberately not part of this retired set.
+    internal static readonly IReadOnlySet<Type> RetiredPowerTypes = new HashSet<Type>
+    {
+        typeof(SixSenseResistancePower), typeof(SixSenseCombatPower), typeof(SixSenseLeadershipPower),
+        typeof(SixSenseGentlenessPower), typeof(SixSenseMentalStrengthPower), typeof(GodspeedPower),
+        typeof(HastePower), typeof(BreakInsightPower),
+        typeof(StrengthenPower), typeof(NextRollBonusPower), typeof(ExtremeDodgeRollPenaltyPower),
+        typeof(CrushYouLikeABugReplayPower), typeof(DualSwordsCounterPower), typeof(BowCounterPower),
+        typeof(QuickSwitchPower)
+    };
+
     internal static IReadOnlyList<HbrManualGlossaryEntry> Build(bool hbrNumericsEnabled = false)
     {
         Dictionary<string, HbrManualGlossaryEntry> entries = new(StringComparer.Ordinal);
         LocTable powers = LocManager.Instance.GetTable("powers");
-        foreach (Type type in HbrManualGlossaryDiscovery.ReferencedPowerTypes)
+        foreach (Type type in HbrManualGlossaryDiscovery.ReferencedPowerTypes.Where(type => !RetiredPowerTypes.Contains(type)))
         {
             PowerModel power = ModelDb.DebugPower(type);
             AddEntry(entries, powers, "powers", power.Id.Entry,
@@ -127,20 +143,24 @@ internal static class HbrManualGlossaryCatalog
             (prefix == SixSensePrefix || prefix.StartsWith(SixSensePrefix + ".", StringComparison.Ordinal));
         string descriptionKey = sixSense && table.HasEntry(prefix + ".menuDescription")
             ? prefix + ".menuDescription" : prefix + ".description";
-        if (hbrNumericsEnabled && sixSense && table.HasEntry(prefix + ".hbrMenuDescription"))
+        if (tableName == "powers" && hbrNumericsEnabled && table.HasEntry(prefix + ".hbrReferenceDescription"))
+            descriptionKey = prefix + ".hbrReferenceDescription";
+        else if (tableName == "powers" && table.HasEntry(prefix + ".referenceDescription"))
+            descriptionKey = prefix + ".referenceDescription";
+        else if (hbrNumericsEnabled && sixSense && table.HasEntry(prefix + ".hbrMenuDescription"))
             descriptionKey = prefix + ".hbrMenuDescription";
         else if (hbrNumericsEnabled && table.HasEntry(prefix + ".hbrDescription"))
             descriptionKey = prefix + ".hbrDescription";
         string raw = table.HasEntry(descriptionKey) ? table.GetRawText(descriptionKey) : descriptionFallback;
-        if (hbrNumericsEnabled && prefix == SixSensePrefix)
-            raw = raw.Replace("{statName}", "对应战斗属性", StringComparison.Ordinal)
-                .Replace("{statBonus}", "（2×有效等级）", StringComparison.Ordinal);
         if (tableName == "card_keywords" && !sixSense)
         {
             foreach ((string suffix, string heading) in DescriptionVariants)
                 if (table.HasEntry(prefix + suffix))
                     raw += $"\n\n[b]{heading}[/b]\n" + table.GetRawText(prefix + suffix);
         }
+        // Some power templates read one live instance; the manual writes the rule instead.
+        var notes = new List<string>();
+        raw = HbrManualGlossaryStaticText.Rewrite(tableName, prefix, raw, hbrNumericsEnabled, notes);
         string id = tableName + ":" + prefix;
         Rect2? region = null;
         if (sixSense && prefix.StartsWith(SixSensePrefix + ".", StringComparison.Ordinal) &&
@@ -150,9 +170,9 @@ internal static class HbrManualGlossaryCatalog
             iconPath = SixSenseBadgeHelper.AtlasPath;
             region = SixSenseBadgeHelper.AtlasRegion(attribute);
             if (hbrNumericsEnabled)
-                raw = $"每级使{HbrBattleStatsHelper.GetBattleStatTitle(attribute)} +{HbrBattleStatsHelper.SenseStatGainPerLevel}，按已确认有效等级结算。等级不直接增加掷骰出目。\n\n" + raw;
+                raw = $"每级使战斗属性{HbrBattleStatsHelper.GetBattleStatTitle(attribute)} +{HbrBattleStatsHelper.SenseStatGainPerLevel}，按已确认有效等级结算。\n" + raw;
         }
-        entries[id] = CreateEntry(id, title, raw, sixSense ? "六感" : category, iconPath, region);
+        entries[id] = CreateEntry(id, title, raw, sixSense ? "六感" : category, iconPath, region, notes);
     }
 
     private static readonly (string suffix, string heading)[] DescriptionVariants =
@@ -187,8 +207,9 @@ internal static class HbrManualGlossaryCatalog
     }
 
     private static HbrManualGlossaryEntry CreateEntry(
-        string id, string title, string raw, string category, string iconPath, Rect2? region = null) =>
-        new(id, title, HbrManualGlossaryPresentation.FormatDescription(raw, id), category, iconPath, region);
+        string id, string title, string raw, string category, string iconPath, Rect2? region = null,
+        IEnumerable<string> notes = null) =>
+        new(id, title, HbrManualGlossaryPresentation.FormatEntry(raw, id, notes), category, iconPath, region);
 
     private static IReadOnlyList<HbrManualGlossaryEntry> Order(IEnumerable<HbrManualGlossaryEntry> entries) =>
         Array.AsReadOnly(entries.OrderBy(entry => entry, EntryOrder).ToArray());

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using HBRGOSakiMod.Core.Helpers;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Afflictions;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Nodes.Relics;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
@@ -39,11 +41,58 @@ internal static class HbrNativeThornsSkillDescriptionPatch
         yield return AccessTools.PropertyGetter(typeof(PowerModel), nameof(PowerModel.RemoteDescription));
     }
 
+    // Thorns and damage over time state their stacks as the damage they deal.
     private static void Postfix(PowerModel __instance, LocString __result)
     {
         if (__instance is ThornsPower && __instance.IsMutable &&
             HbrBattleStatsHelper.IsEnabled(__instance.Owner))
-            HbrNativeEffectSkillHelper.TagDescription(__result, "Amount", __instance.Amount);
+            HbrNativeEffectSkillHelper.TagDescription(__result, "Amount", __instance.Amount, __instance.Owner);
+        else HbrNativeEffectSkillHelper.TagDamageOverTime(__instance, __result);
+    }
+}
+
+// A Galvanized card's owner decides the mode. Galvanic's own hover tip builds a
+// cardless affliction, so that power's enemy decides it while the tip is built.
+[HarmonyPatch]
+internal static class HbrNativeGalvanizedSkillDescriptionPatch
+{
+    [ThreadStatic] private static Creature _hoverTipOwner;
+
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        yield return AccessTools.PropertyGetter(typeof(AfflictionModel), nameof(AfflictionModel.DynamicDescription));
+        yield return AccessTools.PropertyGetter(typeof(AfflictionModel), nameof(AfflictionModel.DynamicExtraCardText));
+    }
+
+    private static void Postfix(AfflictionModel __instance, LocString __result)
+    {
+        if (__instance is not Galvanized) return;
+        Creature owner = __instance.HasCard ? __instance.Card.Owner?.Creature : _hoverTipOwner;
+        if (HbrBattleStatsHelper.IsEnabled(owner))
+            HbrNativeEffectSkillHelper.TagDescription(__result, "Amount", __instance.Amount, owner);
+    }
+
+    internal static Creature BeginHoverTip(Creature owner)
+    {
+        Creature previous = _hoverTipOwner;
+        _hoverTipOwner = owner;
+        return previous;
+    }
+
+    internal static void EndHoverTip(Creature previous) => _hoverTipOwner = previous;
+}
+
+[HarmonyPatch(typeof(GalvanicPower), "ExtraHoverTips", MethodType.Getter)]
+internal static class HbrNativeGalvanicHoverTipPatch
+{
+    private static void Prefix(GalvanicPower __instance, out Creature __state) =>
+        __state = HbrNativeGalvanizedSkillDescriptionPatch.BeginHoverTip(
+            __instance.IsMutable ? __instance.Owner : null);
+
+    private static Exception Finalizer(Exception __exception, Creature __state)
+    {
+        HbrNativeGalvanizedSkillDescriptionPatch.EndHoverTip(__state);
+        return __exception;
     }
 }
 

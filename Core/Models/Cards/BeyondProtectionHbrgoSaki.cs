@@ -25,7 +25,8 @@ public sealed class BeyondProtectionHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars => new[] { new CardsVar(0) };
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new[] { HoverTipFactory.FromPower<BeyondProtectionPower>() };
+        new[] { HoverTipFactory.FromPower<BeyondProtectionPower>(),
+            HoverTipFactory.FromPower<HotaruDamageAmplificationPower>() };
 
     public BeyondProtectionHbrgoSaki() : base(0, CardType.Skill, CardRarity.Rare, TargetType.Self) { }
 
@@ -53,7 +54,7 @@ public sealed class BeyondProtectionHbrgoSaki : CardModel
             {
                 BeyondProtectionPower power = Owner.Creature.GetPower<BeyondProtectionPower>() ??
                     await PowerCmd.Apply<BeyondProtectionPower>(choiceContext, Owner.Creature, 1m, Owner.Creature, this);
-                power?.AddConvertedDp(removedDp);
+                if (power != null) await power.AddConvertedDp(choiceContext, removedDp, this);
                 await protection.ResolveMentalStrengthDpLossRewards(choiceContext, this);
             }
         }

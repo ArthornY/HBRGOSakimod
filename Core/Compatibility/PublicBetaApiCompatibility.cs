@@ -57,6 +57,20 @@ internal static class AttackCommandCompatibilityExtensions
 
 internal static class CreatureCommandCompatibility
 {
+    private static readonly MethodInfo LoseMaxHpMethod =
+        typeof(CreatureCmd).GetMethods(BindingFlags.Static | BindingFlags.Public)
+            .Single(method => method.Name == nameof(CreatureCmd.LoseMaxHp) &&
+                method.GetParameters().Length == 4);
+
+    internal static Task LoseMaxHp(PlayerChoiceContext context, Creature creature,
+        decimal amount, bool isFromCard, CardModel cardSource = null)
+    {
+        object source = LoseMaxHpMethod.GetParameters()[3].ParameterType == typeof(bool)
+            ? isFromCard : cardSource;
+        return (Task)CompatibilityReflection.Invoke(LoseMaxHpMethod, null,
+            [context, creature, amount, source]);
+    }
+
     private static readonly MethodInfo SingleTargetDamageMethod =
         FindDamageMethod(typeof(Creature));
 
@@ -171,7 +185,7 @@ internal static class CreatureCommandCompatibility
             .Where(candidate =>
             {
                 ParameterInfo[] parameters = candidate.GetParameters();
-                return parameters.Length is 6 or 7 &&
+                return parameters.Length is 6 or 7 or 8 &&
                     parameters[1].ParameterType == targetType &&
                     parameters[2].ParameterType == typeof(decimal) &&
                     parameters[3].ParameterType == typeof(ValueProp) &&
@@ -197,12 +211,29 @@ internal static class CreatureCommandCompatibility
     {
         object[] arguments = method.GetParameters().Length == 6
             ? [choiceContext, target, amount, props, dealer, cardSource]
-            : [choiceContext, target, amount, props, dealer, cardSource, cardPlay];
+            : method.GetParameters().Length == 7
+                ? [choiceContext, target, amount, props, dealer, cardSource, cardPlay]
+                : [choiceContext, target, amount, props, dealer, cardSource, cardPlay, ModifyDamageHookType.All];
+        if (HBRGOSakiMod.Core.Helpers.ThirtyOneBEnemyActionHelper.HasPending)
+            return PrepareThenInvokeDamage(method, arguments, target, dealer, props);
         return (Task<IEnumerable<DamageResult>>)
             CompatibilityReflection.Invoke(
                 method,
                 target: null,
                 arguments);
+    }
+
+    private static async Task<IEnumerable<DamageResult>> PrepareThenInvokeDamage(
+        MethodInfo method, object[] arguments, object target, Creature dealer, ValueProp props)
+    {
+        // This compatibility bridge invokes native overloads by reflection,
+        // so it has no canonical call operand for the call-site transpiler.
+        // Snapshot a lazy Creature query only on this pending-effects path;
+        // native beta forwarding still owns construction of its VFX records.
+        Creature[] targets = target is Creature creature ? [creature] : ((IEnumerable<Creature>)target).ToArray();
+        if (target is not Creature) arguments[1] = targets;
+        await HBRGOSakiMod.Core.Helpers.ThirtyOneBEnemyActionHelper.PrepareDamageTargets(targets, dealer, props);
+        return await (Task<IEnumerable<DamageResult>>)CompatibilityReflection.Invoke(method, null, arguments);
     }
 }
 

@@ -27,8 +27,7 @@ public sealed class ConsecutiveSlashHbrgoSaki : CardModel
         new DynamicVar[]
         {
             HbrSkillVars.Damage(100m, ValueProp.Move, divisor: 3m),
-            new RepeatVar(_hitCount),
-            HbrSkillVars.DamageBonus("ResistanceDamage", 50m)
+            new RepeatVar(_hitCount)
         };
 
     protected override bool IsPlayable => CanUseDualSwordsCard();
@@ -79,11 +78,9 @@ public sealed class ConsecutiveSlashHbrgoSaki : CardModel
         }
     }
 
+    // The per-lost-resistance bonus left with the six-sense resistances (2026-11-09).
     internal decimal GetDamageForTarget(Creature target) =>
-        ModeTransitionHelper.GetAdjustedEffectAmount(this,
-            DynamicVars.Damage.BaseValue +
-            SixSenseCombatHelper.TargetResistanceBreakCount(target) *
-            DynamicVars["ResistanceDamage"].BaseValue);
+        ModeTransitionHelper.GetAdjustedEffectAmount(this, DynamicVars.Damage.BaseValue);
 
     protected override void OnUpgrade()
     {

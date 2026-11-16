@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "cues": {
+    "AS_Recollection_Coming": {
+      "sampleRate": 44100,
+      "channels": 2,
+      "totalSamples": 133796,
+      "sourceTotalSamples": 133796,
+      "sourceLoopEnd": null,
+      "sourceSha256": "06598C6AFE0D3F76506E3B3BA82C781896B256405765C60E984CD23F7F45075C",
+      "oggSha256": "424f2d9c9523434403be53b91fd5a3d1fa84e66dd5c6e2964676df4661598798",
+      "loopStart": null,
+      "loopEnd": null,
+      "bytes": 59861,
+      "method": "intro preserved; publication ends at source loopEnd when looping; no silence trim/downmix/resample; libvorbis quality6; independent vgmstream sample count",
+      "decoderSha256": "29df08c557ada8269c92a6abfe3886ad2f65849b0b26ba78a0819b363bbc5b85",
+      "waveformCorrelation": 0.9872712332300346,
+      "decodedSamples": 133796,
+      "encoderVersion": "17.0.0",
+      "scriptSha256": "cb42a0a82c89a08fdf8f73ba372ec317ff7cf54e2610eff72c0c33bc7e615040",
+      "path": "res://sounds/story/424f2d9c9523434403be53b91fd5a3d1fa84e66dd5c6e2964676df4661598798.ogg"
+    }
+  }
+}

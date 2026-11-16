@@ -33,7 +33,6 @@ public partial class NTopBarHealthHud : Node
     private (int Hp, int MaxHp, int Block, HpDisplay Display, int Poison, int Doom)? _viewValues;
     private NDeflectorProtectionDpBar _viewDp;
     private Control _viewBlock;
-    private Control _viewResistance;
     private Control _viewActionBar;
     private bool _viewExtrasDirty = true;
     private bool _enabled;
@@ -154,7 +153,6 @@ public partial class NTopBarHealthHud : Node
         if (!Usable(_view)) return;
         RefreshViewExtraBindings();
         if (Usable(_viewBlock) && _viewBlock.Visible) _viewBlock.Hide();
-        if (Usable(_viewResistance) && _viewResistance.Visible) _viewResistance.Hide();
         if (Usable(_viewActionBar) && _viewActionBar.Visible) _viewActionBar.Hide();
         if (Usable(_viewDp)) _viewDp.ShowCurrentRoll = false;
     }
@@ -166,9 +164,8 @@ public partial class NTopBarHealthHud : Node
         if (!_viewExtrasDirty) return;
         _viewExtrasDirty = false;
         // Ritsu attachments can arrive after Ready or be replaced. The native
-        // block subtree is fixed; attachment child changes invalidate all four.
+        // block subtree is fixed; attachment child changes invalidate all three.
         _viewBlock = _view.GetNodeOrNull<Control>("%BlockContainer");
-        _viewResistance = _view.GetNodeOrNull<Control>("SixSenseResistanceRow");
         _viewActionBar = _view.GetNodeOrNull<Control>("RedCrimsonActionBar");
         _viewDp = _view.GetNodeOrNull<NDeflectorProtectionDpBar>("DeflectorProtectionDpBar");
     }

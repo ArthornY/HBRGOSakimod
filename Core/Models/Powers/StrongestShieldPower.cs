@@ -35,6 +35,7 @@ public class StrongestShieldPower : PowerModel
             ? 0.25m : DamageMultiplier;
 
     private int _pendingSwordheartAmount;
+    private List<RollPowerReservation> _pendingRollPowerReservations = new();
 
     public override PowerType Type => PowerType.Buff;
 
@@ -109,6 +110,7 @@ public class StrongestShieldPower : PowerModel
         int roll = winningRoll.FinalRoll;
         RecordRollHistory(winningRoll, discardedRolls, cardSource);
         HbrgoSakiPresentationBridge.NotifyRollResolved(RollOwner, roll);
+        ThirtyOneOClassRelicHelper.QueueResolvedRoll(RollOwner, winningRoll);
         RegisterCriticalSuccess(winningRoll);
         PendingSwordheartAmount += GetSwordheartAmount(winningRoll);
         return roll > GetThreshold();
@@ -130,8 +132,14 @@ public class StrongestShieldPower : PowerModel
 
     private async Task CompleteIncomingRoll(PlayerChoiceContext choiceContext, CardModel cardSource)
     {
+        await ThirtyOneOClassRelicHelper.ResolvePendingRollRewards(choiceContext, RollOwner);
+        List<RollPowerReservation> reservations = _pendingRollPowerReservations;
+        _pendingRollPowerReservations = new();
+        if (reservations != null)
+            await HbrRollPowerHelper.ConsumeReservations(choiceContext, reservations, cardSource);
         if (RollOwner?.GetRelic<Millsage>() is { } millsage)
             await millsage.ResolveCriticalCannonRewards(choiceContext);
+        await RanaByakkoCombatHelper.ResolvePendingRawCritical(choiceContext, RollOwner);
         StrengthenPower strengthen = Owner.GetPower<StrengthenPower>();
         if (strengthen != null)
         {
@@ -173,6 +181,9 @@ public class StrongestShieldPower : PowerModel
         int rollIndex,
         out IReadOnlyList<SoulRollBreakdown> discardedRolls)
     {
+        RollPowerReservation countedRoll = HbrRollPowerHelper.Reserve(Owner);
+        if (countedRoll != null)
+            (_pendingRollPowerReservations ??= new()).Add(countedRoll);
         List<SoulRollBreakdown> rolls = new()
         {
             SoulRollBreakdown.FromFinalRoll(
@@ -186,7 +197,8 @@ public class StrongestShieldPower : PowerModel
                 "基础骰")
         };
         GuideLittleHand guideLittleHand = RollOwner?.GetRelic<GuideLittleHand>();
-        if (guideLittleHand != null)
+        bool allowAdvantage = !HbrFateDiceRollHelper.BlocksAdvantage(RollOwner);
+        if (allowAdvantage && guideLittleHand != null)
         {
             rolls.Add(SoulRollBreakdown.FromFinalRoll(
                 RollDeterministicD100(
@@ -204,7 +216,7 @@ public class StrongestShieldPower : PowerModel
 
         StrengthenPower strengthen = Owner.GetPower<StrengthenPower>();
         bool useStrengthen = strengthen?.TryReserveRoll() == true;
-        if (useStrengthen)
+        if (allowAdvantage && useStrengthen)
         {
             rolls.Add(SoulRollBreakdown.FromFinalRoll(
                 RollDeterministicD100(
@@ -219,7 +231,7 @@ public class StrongestShieldPower : PowerModel
 
         ProtagonistPrivilegePower protagonistPrivilege =
             Owner.GetPower<ProtagonistPrivilegePower>();
-        if (protagonistPrivilege != null)
+        if (allowAdvantage && protagonistPrivilege != null)
         {
             rolls.Add(SoulRollBreakdown.FromFinalRoll(
                 RollDeterministicD100(
@@ -232,7 +244,7 @@ public class StrongestShieldPower : PowerModel
                 "优势骰：主人公特典"));
         }
 
-        if (HotaruEndgameEffectsHelper.HasAdvantage(RollOwner))
+        if (allowAdvantage && HotaruEndgameEffectsHelper.HasAdvantage(RollOwner))
         {
             rolls.Add(SoulRollBreakdown.FromFinalRoll(
                 RollDeterministicD100(target, dealer, amount, props, cardSource, ++rollIndex),
@@ -243,7 +255,18 @@ public class StrongestShieldPower : PowerModel
             Owner.GetPower<ExtremeDodgeRollPenaltyPower>();
         bool useRollPenalty =
             rollPenalty?.TryReserveRoll() == true;
+        if (allowAdvantage)
+        {
+            for (int index = 0; index < (countedRoll?.ExtraDice ?? 0); index++)
+                rolls.Add(SoulRollBreakdown.FromFinalRoll(
+                    RollDeterministicD100(target, dealer, amount, props, cardSource, ++rollIndex),
+                    "优势骰：能力"));
+        }
+        if (HbrFateDiceRollHelper.BlocksAdvantage(RollOwner) && rolls.Count > 1)
+            rolls.RemoveRange(1, rolls.Count - 1);
         List<SoulRollBonusDetail> sharedBonuses = new();
+        if (countedRoll?.BonusPercent is { } countedBonus && countedBonus != 0)
+            sharedBonuses.Add(new SoulRollBonusDetail(countedBonus, "掷骰加成", isPercentage: true));
         int iridescenceBonus = RollOwner?.GetRelic<HotaruIridescence>()?.RollBonus ?? 0;
         if (iridescenceBonus != 0)
         {
@@ -256,14 +279,6 @@ public class StrongestShieldPower : PowerModel
             sharedBonuses.Add(new SoulRollBonusDetail(
                 tourGuidePenalty, "导游之力", isPercentage: true));
         }
-        // Incoming attacks may carry another player's card source. Only a roll
-        // belonging to the affected card's owner inherits its attribute penalty.
-        int nullificationPenalty = NararaNullificationPenaltyHelper.GetRollPenalty(cardSource, RollOwner);
-        if (nullificationPenalty != 0)
-        {
-            sharedBonuses.Add(new SoulRollBonusDetail(
-                nullificationPenalty, "无效化", isPercentage: true));
-        }
         int highSongBonus = LostStarSongSupportPower.GetRollBonus(Owner);
         if (highSongBonus != 0)
         {
@@ -274,14 +289,14 @@ public class StrongestShieldPower : PowerModel
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 strengthen.RollBonus,
-                "强化", isPercentage: true));
+                "吉兆", isPercentage: true));
         }
 
         if (useRollPenalty)
         {
             sharedBonuses.Add(new SoulRollBonusDetail(
                 ExtremeDodgeRollPenaltyPower.RollPenalty,
-                "极限闪避", isPercentage: true));
+                "间不容发", isPercentage: true));
         }
 
         if (protagonistPrivilege != null)
@@ -415,9 +430,10 @@ public class StrongestShieldPower : PowerModel
             return 0;
         }
 
+        // Same swordheart rules as the card rolls (design v3, section 2).
         if (RollKeywordRules.IsCriticalRoll(player, roll))
         {
-            return SwordheartPower.GetMaxAmount(Owner);
+            return RollKeywordRules.GetCriticalSwordheartAmount(player);
         }
 
         return RollKeywordRules.GetRegularSwordheartAmount(player, roll);
@@ -431,6 +447,9 @@ public class StrongestShieldPower : PowerModel
             return;
         }
 
+        if (roll.BaseRoll is >= 1 and <= RollKeywordRules.RollMaximum &&
+            roll.BaseRoll >= RollKeywordRules.GetCriticalMinimum(player))
+            RanaByakkoCombatHelper.QueueRawCritical(player);
         RollKeywordCombatState.RecordCriticalSuccess(player);
         player.GetRelic<ElectronicSoldierManual>()?
             .QueueSixSenseReward();
@@ -449,5 +468,6 @@ public class StrongestShieldPower : PowerModel
     {
         base.AfterCloned();
         _pendingSwordheartAmount = 0;
+        _pendingRollPowerReservations = new();
     }
 }

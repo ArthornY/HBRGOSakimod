@@ -376,7 +376,7 @@ public partial class NPhantomRosterScreen
         Vector2 center = new(260f, 230f);
         AddDetailRing(circle, PhantomRosterArt.RingOuter, 540f, center, 0.07f);
         AddDetailRing(circle, PhantomRosterArt.RingInner, 410f, center, -0.1f);
-        Control portrait = NPhantomMedallion.CreatePortraitCircle(PhantomRosterArt.GetPortrait(current.Value.MonsterId), 330f);
+        Control portrait = NPhantomMedallion.CreatePortraitCircle(PhantomRosterArt.GetPortrait(current.Value.MonsterId), 330f, featured: true);
         portrait.Position = center - Vector2.One * 165f;
         circle.AddChild(portrait);
         circle.AddChild(PhantomRosterArt.Image(PhantomRosterArt.FrameActive, center - Vector2.One * 208f, Vector2.One * 416f));
@@ -866,7 +866,8 @@ public partial class NPhantomRosterScreen
             entry.InstanceId == _relic.ActiveRosterEntryId,
             checkable: false,
             $"融合槽位 {used}/{entry.FusionSlotCount}",
-            StripBbcode(card.GetBaseStatsRichText(_relic.Owner?.GetRelic<ElectronicSoldierManual>())));
+            StripBbcode(card.GetBaseStatsRichText(_relic.Owner?.GetRelic<ElectronicSoldierManual>())),
+            featured: true);
         medallion.FocusMode = FocusModeEnum.None;
         medallion.MouseDefaultCursorShape = CursorShape.Arrow;
         _upgradePreviewSlot.AddChild(medallion);

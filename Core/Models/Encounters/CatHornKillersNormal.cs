@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC03_15_Battle02.
+// HBR MC03_15_Battle02; the second starts one dp step ahead.
 public sealed class CatHornKillersNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -19,10 +19,12 @@ public sealed class CatHornKillersNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var second = (CatHornKiller)ModelDb.Monster<CatHornKiller>().ToMutable();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<CatHornKiller>().ToMutable(), null),
-            (ModelDb.Monster<CatHornKiller>().ToMutable(), null)
+            (second, null)
         };
     }
 }

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR SpiritDownRate icon",
+  "importedPath": "res://images/powers/hbr_spirit_down_power.png",
+  "sha256": "928911d27e7cda8e88e54af0f9f91952d99900e3aa3a90fbf7f9a17af188cd16",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "Original texture with a programmatic corner arrow composited over it (Pillow polygon, 8x supersampled, blue down arrow with a dark outline, bottom-right corner). No resizing, recoloring of the original pixels outside the arrow, crop or AI generation. Reason: the original shares this base art between the buff and the debuff and draws the up/down label separately; the arrow marks the down variant.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconSpirit.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-7630550320695555994",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_-7630550320695555994_IconSpirit.png",
+    "sourceSha256": "a47a2fe844df7f21dfdd7d41c6dbbc29ef4a24c56c333a014ead3df411262ccb",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrSpiritDownPower",
+    "originalEffect": "SpiritDownRate",
+    "small": "res://images/powers/hbr_spirit_down_power.png",
+    "big": "res://images/powers/hbr_spirit_down_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

@@ -14,6 +14,9 @@ internal static class PowerDuplicationBookkeepingHelper
 
     internal static Action SnapshotCounters(PowerModel power)
     {
+        if (power is SynergyPower synergy)
+            return synergy.SnapshotCounterDuplication();
+
         if (power is PhantomTenderBenefitPower benefit)
             return benefit.SnapshotCounterDuplication();
 

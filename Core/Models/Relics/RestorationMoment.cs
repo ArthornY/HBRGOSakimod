@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -219,7 +220,7 @@ public sealed class RestorationMoment : RelicModel, IModRightClickableRelic
                 combatState
                     .GetOpponentsOf(creature)
                     .Where(target => target.IsHittable));
-            NCombatRoom.Instance?.SetCreatureIsInteractable(
+            NCombatRoom.Instance?.SetCreatureIsInteractableCompat(
                 creature,
                 on: true);
         }

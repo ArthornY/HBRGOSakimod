@@ -19,13 +19,13 @@ public partial class NPhantomPortraitRenderer : Node
     private static readonly MethodInfo SetAnimationMethod = typeof(MegaAnimationState).GetMethod(
         nameof(MegaAnimationState.SetAnimation), new[] { typeof(string), typeof(bool), typeof(int) });
 
-    private readonly Queue<(MonsterModel Monster, ImageTexture Texture, Action<bool, bool> Completed)> _queue = new();
+    private readonly Queue<(MonsterModel Monster, ImageTexture Texture, PhantomPortraitStyle Style, Action<bool, bool> Completed)> _queue = new();
     private bool _rendering;
     private string _activeMonsterId;
     private string _renderStage;
 
-    internal void Enqueue(MonsterModel monster, ImageTexture texture, Action<bool, bool> completed) =>
-        _queue.Enqueue((monster, texture, completed));
+    internal void Enqueue(MonsterModel monster, ImageTexture texture, PhantomPortraitStyle style, Action<bool, bool> completed) =>
+        _queue.Enqueue((monster, texture, style, completed));
 
     public override void _Ready() => ProcessMode = ProcessModeEnum.Always;
 
@@ -35,27 +35,28 @@ public partial class NPhantomPortraitRenderer : Node
         {
             _rendering = true;
             var request = _queue.Dequeue();
-            _ = RenderRequest(request.Monster, request.Texture, request.Completed);
+            _ = RenderRequest(request.Monster, request.Texture, request.Style, request.Completed);
         }
     }
 
-    private async Task RenderRequest(MonsterModel monster, ImageTexture texture, Action<bool, bool> completed)
+    private async Task RenderRequest(MonsterModel monster, ImageTexture texture, PhantomPortraitStyle style,
+        Action<bool, bool> completed)
     {
         bool succeeded = false;
         bool retryable = true;
         try
         {
-            _activeMonsterId = monster.Id.ToString();
+            _activeMonsterId = style == PhantomPortraitStyle.Cutout ? $"{monster.Id} (cutout)" : monster.Id.ToString();
             TraceStage("begin");
             // Keep queue ownership outside the rendering state machine. An entry
             // failure must also release the queue, not strand every later card.
-            await Render(monster, texture);
+            await Render(monster, texture, style);
             succeeded = true;
         }
         catch (Exception exception)
         {
             retryable = exception is not PhantomPortraitUnavailableException;
-            GD.PushWarning($"Phantom portrait {monster.Id} at {_renderStage}: {exception}");
+            GD.PushWarning($"Phantom portrait {_activeMonsterId} at {_renderStage}: {exception}");
         }
         finally
         {
@@ -85,7 +86,7 @@ public partial class NPhantomPortraitRenderer : Node
         _ => null
     };
 
-    private async Task Render(MonsterModel monster, ImageTexture texture)
+    private async Task Render(MonsterModel monster, ImageTexture texture, PhantomPortraitStyle style)
     {
         SubViewport viewport = null;
         try
@@ -95,7 +96,7 @@ public partial class NPhantomPortraitRenderer : Node
             {
                 TraceStage("load-static-image");
                 using Image isolated = ResourceLoader.Load<Texture2D>(isolatedPath).GetImage();
-                await UpdateTexture(texture, isolated);
+                await UpdateTexture(texture, isolated, style);
                 return;
             }
 
@@ -147,7 +148,7 @@ public partial class NPhantomPortraitRenderer : Node
                 bounds = RelativeTransform(framingRoot, visuals.Bounds)
                     * new Rect2(Vector2.Zero, visuals.Bounds.Size);
             TraceStage($"portrait-body {body.GetClass()} bounds={bounds}");
-            await CapturePortrait(viewport, texture, framingRoot, bounds);
+            await CapturePortrait(viewport, texture, framingRoot, bounds, style);
         }
         finally
         {
@@ -250,7 +251,8 @@ public partial class NPhantomPortraitRenderer : Node
         GC.KeepAlive(spine);
     }
 
-    private async Task CapturePortrait(SubViewport viewport, ImageTexture texture, Node2D visuals, Rect2 bounds)
+    private async Task CapturePortrait(SubViewport viewport, ImageTexture texture, Node2D visuals, Rect2 bounds,
+        PhantomPortraitStyle style)
     {
         if (!HasUsableBounds(bounds))
             throw new PhantomPortraitUnavailableException("Monster has no usable portrait bounds.");
@@ -265,7 +267,7 @@ public partial class NPhantomPortraitRenderer : Node
         using Image captured = viewport.GetTexture().GetImage();
         viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
         TraceStage("update-card-texture");
-        await UpdateTexture(texture, captured);
+        await UpdateTexture(texture, captured, style);
     }
 
     private static void SetPortraitPose(MegaSprite spine)
@@ -334,7 +336,7 @@ public partial class NPhantomPortraitRenderer : Node
         }
     }
 
-    private async Task UpdateTexture(ImageTexture texture, Image source)
+    private async Task UpdateTexture(ImageTexture texture, Image source, PhantomPortraitStyle style)
     {
         if (source.IsCompressed()) source.Decompress();
         source.Convert(Image.Format.Rgba8);
@@ -345,7 +347,9 @@ public partial class NPhantomPortraitRenderer : Node
         SceneTree tree = GetTree();
         // The bounds scan and bilinear sampling touch only managed pixels and
         // can otherwise consume a whole combat frame for each new monster.
-        Task<byte[]> composition = Task.Run(() => PhantomPortraitCompositor.Compose(rgba, width, height));
+        Task<byte[]> composition = Task.Run(() => style == PhantomPortraitStyle.Cutout
+            ? PhantomPortraitCompositor.ComposeCutout(rgba, width, height)
+            : PhantomPortraitCompositor.Compose(rgba, width, height));
         // Observe the worker from a game-thread signal instead of awaiting its
         // continuation: all Godot image and texture calls must stay on that thread.
         while (!composition.IsCompleted)

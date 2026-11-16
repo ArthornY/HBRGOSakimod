@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "HBR IconBattleGimmickStatus original icon",
+  "importedPath": "res://images/powers/barrel_demise_countdown_power.png",
+  "sha256": "4fcb2748ba217eae858602c9dcd87d930fddf579aba254404955526bac8f5fea",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconBattleGimmickStatus.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-8978996579005092851",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:\\stsmod\\.ai-collab\\handoffs\\monster-req-20261114\\icons\\IconBattleGimmickStatus.png",
+    "sourceSha256": "4fcb2748ba217eae858602c9dcd87d930fddf579aba254404955526bac8f5fea"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.BarrelDemiseCountdownPower",
+    "small": "res://images/powers/barrel_demise_countdown_power.png",
+    "big": "res://images/powers/barrel_demise_countdown_power.png"
+  },
+  "limits": "Source asset provenance only. No Godot importer, package or in-game visual run."
+}

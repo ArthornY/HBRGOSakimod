@@ -108,29 +108,33 @@ static class DpRecoveryChecks
             Check(command.Props == ValueProp.Move && command.CardPlay == null, label + " keeps Move flags and null card play");
         }
     }
+    // Since the fourth move-table batch (2026-11-08) Repair β is the original
+    // CrestHopper_HealAll1: every living ally, the healer included, regains
+    // 400/4000 = 10% of its own maximum DP, with no block.
+    static decimal RepairBeta(HighDimensionalShellPower dp, decimal current) =>
+        Math.Min(dp.MaximumDp, current + decimal.Ceiling(dp.MaximumDp * 0.1m));
     static void HopperCases()
     {
         foreach (bool hbr in new[] { true, false }) foreach (int ascension in new[] { 0, 10 })
         {
             Reset(hbr, ascension); Creature hopper = Actor<HealHopper>(), target = Actor<AbyssKnocker>();
             var hopperDp = Shell(hopper, 100m); var targetDp = Shell(target, 100m); var heroDp = Shell(Hero, 100m);
-            decimal raw = ascension >= (int)AscensionLevel.DeadlyEnemies ? 5m : 4m;
-            decimal expected = raw * (hbr ? 100m : 1m); decimal hp = target.CurrentHp;
+            decimal expected = RepairBeta(targetDp, 100m) - 100m; decimal hp = target.CurrentHp;
             Move(hopper, "RepairBetaMove");
-            Equal(targetDp.CurrentDp, 100m + expected, $"HBR{hbr} asc{ascension} real HealHopper restores teammate DP");
-            Equal(hopperDp.CurrentDp, 100m + expected, "real teammate selector includes the acting HealHopper");
+            Equal(targetDp.CurrentDp, 100m + expected, $"HBR{hbr} asc{ascension} real HealHopper restores 10% of a teammate's maximum DP");
+            Equal(hopperDp.CurrentDp, RepairBeta(hopperDp, 100m), "real teammate selector includes the acting HealHopper");
             Equal(heroDp.CurrentDp, 100m, "enemy repair does not reach player-side DP");
             Equal(target.CurrentHp, hp, "repair changes DP only and leaves HP untouched");
-            VerifyBlocks(raw, [hopper, target], "HealHopper");
-            Cases.Add(new { monster = "HealHopper", hbr, ascension, raw, dpGain = expected, block = raw });
+            Check(Blocks.Count == 0, "HealHopper's Repair β gives no block (the original has none)");
+            Cases.Add(new { monster = "HealHopper", hbr, ascension, share = 0.1m, dpGain = expected, block = 0m });
         }
         Reset(true, 10); Creature first = Actor<HealHopper>(34300), second = Actor<HealHopper>(34300), receiver = Actor<AbyssKnocker>(34300);
         Shell(first, 100m); Shell(second, 100m); var dp = Shell(receiver, 7862m);
         Equal(dp.MaximumDp, 14700m, "screenshot resource setup uses actual HBR enemy DP maximum 14700");
         Move(first, "RepairBetaMove"); Move(second, "RepairBetaMove");
-        Equal(dp.CurrentDp, 8862m, "two ascension-10 HealHoppers restore 1000 total DP rather than 10");
+        Equal(dp.CurrentDp, 10802m, "two ascension-10 HealHoppers each restore 1470 (10% of 14700) DP");
         Equal(receiver.CurrentHp, 34300m, "two repairs preserve screenshot bottom HP 34300");
-        Check(Blocks.Count == 6 && Blocks.All(b => b.Amount == 5m), "two repairs retain all six unscaled block coefficients");
+        Check(Blocks.Count == 0, "two repairs give no block");
     }
     static void HopperGuards()
     {
@@ -143,15 +147,28 @@ static class DpRecoveryChecks
         Equal(full.CurrentDp, full.MaximumDp, "actual shell Restore clamps scaled repair to remaining DP capacity");
         Equal(brokenDp.CurrentDp, 100m, "Break prevents ally DP recovery");
         Equal(deadDp.CurrentDp, 100m, "dead teammate is excluded from repair");
-        VerifyBlocks(5m, [hopper, broken], "guarded HealHopper");
+        Check(Blocks.Count == 0, "guarded HealHopper gives no block");
         Blocks.Clear(); Move(hopper, "RepairBetaMove");
         Equal(full.CurrentDp, full.MaximumDp, "repeated repair leaves full DP at its cap");
         Equal(brokenDp.CurrentDp, 100m, "repeated repair continues to respect Break");
     }
     static void OtherMonsterCases()
     {
+        // AbyssKnocker's recovery is the original AbyssKnocker_Buff01 since the
+        // fourth move-table batch: 3000/44200 of its own maximum DP, no block.
+        foreach (bool hbr in new[] { true, false })
+        {
+            Reset(hbr); Creature knocker = Actor<AbyssKnocker>(); var knockerDp = Shell(knocker, 100m);
+            decimal gain = decimal.Ceiling(knockerDp.MaximumDp * (3000m / 44200m));
+            Move(knocker, "RecoveryMove");
+            Equal(knockerDp.CurrentDp, Math.Min(knockerDp.MaximumDp, 100m + gain),
+                $"HBR{hbr} real AbyssKnocker.RecoveryMove restores 3000/44200 of its maximum DP");
+            Equal(knocker.CurrentHp, 1_000_000m, "AbyssKnocker DP recovery does not heal HP");
+            Check(Blocks.Count == 0, "AbyssKnocker's recovery gives no block (the original has none)");
+            Cases.Add(new { monster = "AbyssKnocker", hbr, share = 3000m / 44200m, dpGain = gain, block = 0m });
+        }
         foreach (bool hbr in new[] { true, false }) foreach (var row in new (Type Monster, string Move, decimal Recovery, decimal? Block)[] {
-            (typeof(AbyssKnocker), "RecoveryMove", 10m, 10m), (typeof(DeathSlug), "RecoveryMove", 30m, null),
+            (typeof(DeathSlug), "RecoveryMove", 30m, null),
             (typeof(FlatHand), "HealMove", 40m, 30m), (typeof(SkullFeather), "HealMove", 100m, 50m) })
         {
             Reset(hbr); MonsterModel monster = (MonsterModel)Invoke(typeof(Checks).GetMethod("Blank", F)!.MakeGenericMethod(row.Monster), null)!;
@@ -187,8 +204,8 @@ static class DpRecoveryChecks
             nativeSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Creature).Assembly.Location))),
             sourceNativeSha256 = Environment.GetEnvironmentVariable("HBR_NATIVE_SOURCE_SHA256"), runtimeProfile = Environment.GetEnvironmentVariable("HBR_NATIVE_PROFILE"),
             telemetryIsolation = Environment.GetEnvironmentVariable("HBR_TELEMETRY_ISOLATION"),
-            boundary = "Real custom HealHopper, AbyssKnocker, DeathSlug, FlatHand and SkullFeather recovery Move bodies; real CombatState teammate selection, HBR enablement, fixed-resource conversion, shell Restore/clamp and production exact-DP bridge with native PowerModel.SetAmount. Animation, Flash and final GainBlock leaf are isolated; block parameters are captured before their separate numerical pipeline. Ascension integer choice is controlled to select the real authored 4/5 values. No game process, rendered bars, full native block engine, saves, packaging or installed-file changes. Beta uses verified telemetry-only isolation." }, new JsonSerializerOptions { WriteIndented = true }));
-        Console.WriteLine((ok ? "PASS " : "FAIL ") + Passed.Count + " enemy fixed-DP recovery checks");
+            boundary = "Real custom HealHopper and AbyssKnocker recovery Move bodies (original shares of maximum DP since the fourth move-table batch, no block) and DeathSlug, FlatHand and SkullFeather fixed recoveries; real CombatState teammate selection, HBR enablement, fixed-resource conversion, shell Restore/clamp and production exact-DP bridge with native PowerModel.SetAmount. Animation, Flash and final GainBlock leaf are isolated; block parameters are captured before their separate numerical pipeline. No game process, rendered bars, full native block engine, saves, packaging or installed-file changes. Beta uses verified telemetry-only isolation." }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine((ok ? "PASS " : "FAIL ") + Passed.Count + " enemy DP recovery checks");
         if (!ok) throw new Exception("Inspect " + reportPath);
     }
 }

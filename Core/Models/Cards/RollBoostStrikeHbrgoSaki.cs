@@ -29,13 +29,14 @@ public sealed class RollBoostStrikeHbrgoSaki : CardModel
         new DynamicVar[]
         {
             HbrSkillVars.Damage(350m, ValueProp.Move, divisor: 3m),
-            new PowerVar<NextRollBonusPower>(10m)
+            new DynamicVar("RollBonus", 10m),
+            new DynamicVar("RollUses", 1m)
         };
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips =>
         new IHoverTip[]
         {
-            HoverTipFactory.FromPower<NextRollBonusPower>()
+            HoverTipFactory.FromPower<RollBonusPower>()
         };
 
     public RollBoostStrikeHbrgoSaki()
@@ -72,12 +73,11 @@ public sealed class RollBoostStrikeHbrgoSaki : CardModel
             .WithHitFx("vfx/vfx_attack_slash")
             .Execute(choiceContext);
 
-        await PowerCmd.Apply<NextRollBonusPower>(
+        await RollBonusPower.Apply(
             choiceContext,
             Owner.Creature,
-            ModeTransitionHelper.GetAdjustedEffectAmount(
-                this,
-                DynamicVars["NextRollBonusPower"].BaseValue),
+            (int)DynamicVars["RollBonus"].BaseValue,
+            (int)DynamicVars["RollUses"].BaseValue,
             Owner.Creature,
             this);
     }
@@ -85,6 +85,6 @@ public sealed class RollBoostStrikeHbrgoSaki : CardModel
     protected override void OnUpgrade()
     {
         DynamicVars.Damage.UpgradeDamageByPercent(100m, divisor: 3m);
-        DynamicVars["NextRollBonusPower"].UpgradeValueBy(10m);
+        DynamicVars["RollBonus"].UpgradeValueBy(10m);
     }
 }

@@ -34,7 +34,6 @@ internal static class SaviorGrandEntranceCombatHelper
         internal bool Claimed;
     }
     private static readonly AsyncLocal<DamageScope> Current = new();
-    private static readonly AsyncLocal<int> DpFollowupDepth = new();
     private static readonly AsyncLocal<MaxHpHeal> MaxHpHealing = new();
     private static readonly ConditionalWeakTable<DamageResult, RawReceipt> RawReceipts = new();
 
@@ -43,15 +42,17 @@ internal static class SaviorGrandEntranceCombatHelper
     internal static bool HasEnemyUpgrade(Creature target, int id) =>
         target?.CombatState?.GetOpponentsOf(target).Any(owner => HasUpgradeEffect(owner, id)) == true;
     internal static bool HasEnemyUpgradeEffect(Creature target, int id) => HasEnemyUpgrade(target, id);
-    internal static bool CanConsumeDpFollowup(Creature dealer) =>
-        DpFollowupDepth.Value == 0 && HasUpgradeEffect(dealer, 3);
+    // The former DP follow-up upgrade was removed; old receipt collection must
+    // not reinterpret its ID as the new once-per-turn all-enemy stun.
+    internal static bool CanConsumeDpFollowup(Creature dealer) => false;
     internal static int GetRawCriticalMinimumReduction(Creature owner) =>
-        HasUpgradeEffect(owner, 0) ? DodgeCombatHelper.GetAmount(owner) : 0;
+        !HasUpgradeEffect(owner, 0) ? 0 : HbrBattleStatsHelper.IsEnabled(owner)
+            ? Math.Min(6, ThirtyOneAKeywordRules.GetPermanentDistinctCount(owner?.Player))
+            : DodgeCombatHelper.GetAmount(owner);
     internal static decimal GetDamageMultiplier(Creature target, Creature dealer, ValueProp props)
     {
         decimal multiplier = 1m;
         if (HasEnemyUpgrade(target, 1) && target.IsStunned) multiplier *= 1.25m;
-        if (HasEnemyUpgrade(target, 6)) multiplier *= 1m + 0.1m * SixSenseCombatHelper.TargetResistanceBreakCount(target);
         return multiplier;
     }
     internal static bool TryGetHealingEnemyOwner(Creature target, out Creature owner)
@@ -132,20 +133,27 @@ internal static class SaviorGrandEntranceCombatHelper
         Creature dealer, DamageResult result, ValueProp props, Creature target, CardModel cardSource)
     {
         if (dealer != power.Owner || target?.Side == power.Owner.Side || target == null || result == null) return;
-        if (RawReceipts.TryGetValue(result, out RawReceipt receipt) && receipt.Dealer == dealer)
+        if (!RawReceipts.TryGetValue(result, out RawReceipt receipt) || receipt.Dealer != dealer) return;
+        RawReceipts.Remove(result);
+        bool all = HbrBattleStatsHelper.IsEnabled(dealer) && power.TryTakeAllEnemyStun();
+        Creature[] targets = all
+            ? dealer.CombatState.GetOpponentsOf(dealer).Where(enemy => enemy.IsAlive).ToArray()
+            : new[] { target };
+        foreach (Creature enemy in targets)
         {
-            RawReceipts.Remove(result);
-            if (target.IsAlive && target.Monster != null && !target.IsStunned) await CreatureCmd.Stun(target);
+            if (!enemy.IsAlive || enemy.Monster == null || enemy.IsStunned) continue;
+            await CreatureCmd.Stun(enemy);
+            if (enemy.IsStunned) await OnEnemyStunned(context, dealer, enemy, cardSource);
         }
-        if (!CanConsumeDpFollowup(dealer) ||
-            !HpOnlyDamageContext.TryTakeSaviorDpReceipt(result, out decimal spent) || spent <= 0m ||
-            !target.IsHittable) return;
-        DpFollowupDepth.Value++;
-        try
-        {
-            using var skill = HbrEffectSkillDamageContext.Begin(target, dealer, cardSource, 1m, ValueProp.Unpowered, dealer);
-            await CreatureCommandCompatibility.Damage(context, target, 1m, ValueProp.Unpowered, dealer, cardSource);
-        }
-        finally { DpFollowupDepth.Value--; }
+    }
+
+    internal static async Task OnEnemyStunned(PlayerChoiceContext context, Creature dealer,
+        Creature target, CardModel source = null)
+    {
+        if (target?.IsAlive != true || !target.IsStunned || dealer == null ||
+            target.Side == dealer.Side || !HbrBattleStatsHelper.IsEnabled(target) ||
+            !HasUpgradeEffect(dealer, 7)) return;
+        await HbrPercentDebuffApplication.ApplyBasis<HbrDefenseDownPower>(context, target, 20m,
+            dealer, source, new HbrEffectProfile(HbrEffectLimit.Default, HbrEffectExit.EnemyTurnEnd, 2));
     }
 }

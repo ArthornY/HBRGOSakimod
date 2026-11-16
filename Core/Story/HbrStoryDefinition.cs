@@ -15,7 +15,8 @@ public sealed class HbrStoryDefinition
     public const int SupportedSchemaVersion = 1;
     public const int MaximumChoicesPerPage = 6;
     public const int MaximumCombinedChoicesPerPage = 9;
-    public const int ExtendedGameplayVersion = 1;
+    // Version 2 adds the "All" sense reward; older runtimes reject it as an unknown sense.
+    public const int ExtendedGameplayVersion = 2;
     public const int MemoryGardenEncounterVersion = 2;
     public const int MaximumCharactersPerScene = 8;
     public const string EventIdPrefix = "HBRGO_SAKI_MOD_EVENT_";
@@ -43,7 +44,8 @@ public sealed class HbrStoryDefinition
 
     [JsonIgnore]
     public bool UsesExtendedGameplay => Pages.Any(page => page.MetCharacters.Count > 0 || page.ChoiceMode != "list" || page.ChoiceLeft.Count > 0 || page.ChoiceRight.Count > 0
-        || page.Choices.Any(choice => choice.Combat.Length > 0 || choice.Rewards.CardRarity != "default"
+        || page.Choices.Any(choice => choice.Combat.Length > 0 || choice.Rewards.Sense == HbrStoryRewards.AllSenses
+            || choice.Rewards.CardRarity != "default"
             || choice.Rewards.Potions > 0 || choice.Rewards.CardRemovals > 0 || choice.Rewards.CardUpgrades > 0
             || choice.Rewards.HealFull || choice.Rewards.MaxDp > 0));
 
@@ -63,6 +65,14 @@ public sealed class HbrStoryDefinition
                     property.ShouldSerialize = (_, value) => !Equals(value, "");
                 else if (info.Type == typeof(HbrStoryRewards) && property.Name == "cardRarity")
                     property.ShouldSerialize = (_, value) => !Equals(value, "default");
+                else if (info.Type == typeof(HbrStoryLine) && property.Name == "direction")
+                    property.ShouldSerialize = (_, value) => value is IReadOnlyList<HbrStoryDirection> directions && directions.Count > 0;
+                else if (info.Type == typeof(HbrStoryLine) && property.Name == "voice")
+                    property.ShouldSerialize = (_, value) => value is string voice && voice.Length > 0;
+                else if (info.Type == typeof(HbrStoryCharacter) && property.Name == "voiceCharacter")
+                    property.ShouldSerialize = (_, value) => value is string identity && identity.Length > 0;
+                else if (info.Type == typeof(HbrStoryPresentation) && property.Name is "characterFadeDuration" or "expressionFadeDuration")
+                    property.ShouldSerialize = (_, value) => !Equals(value, .3d);
             }
         });
         return resolver;
@@ -120,6 +130,9 @@ public sealed class HbrStoryDefinition
         Require(Presentation.DialogueStyle is "classic" or "original", source,
             "presentation.dialogueStyle 必须为 classic 或 original。");
         CheckPortraitLayout(Presentation.PortraitLayout, source, "presentation.portraitLayout", optional: false);
+        Require(double.IsFinite(Presentation.CharacterFadeDuration) && Presentation.CharacterFadeDuration is >= 0 and <= 60 &&
+            double.IsFinite(Presentation.ExpressionFadeDuration) && Presentation.ExpressionFadeDuration is >= 0 and <= 60,
+            source, "人物／表情淡化时间必须为0–60秒（0为关闭）。");
 
         HashSet<string> pageIds = new(StringComparer.Ordinal);
         foreach (HbrStoryPage page in Pages)
@@ -153,6 +166,17 @@ public sealed class HbrStoryDefinition
                 CheckImagePath(line.Background, source, $"{page.Id}.lines[{lineIndex}].background", optional: true);
                 CheckPortraitLayout(line.PortraitLayout, source, $"{page.Id}.lines[{lineIndex}].portraitLayout", optional: true);
                 CheckCharacters(line.Characters, source, $"{page.Id}.lines[{lineIndex}].characters", optional: true);
+                Require(line.Direction != null && line.Direction.Count <= HbrStoryDirectionCatalog.MaximumDirectionsPerLine && line.Voice != null,
+                    source, $"{page.Id}.lines[{lineIndex}] 的演出必须为数组（最多128项），voice不能为null。");
+                if (line.Voice.Length > 0) HbrStoryResources.CheckCue(line.Voice, source);
+                var desiredIds = page.ResolveCharacters(lineIndex).Select(character => character.Id).ToArray();
+                var targetIds = line.Direction.Any(direction => direction?.Op == "scene")
+                    ? page.ResolveCharacters(lineIndex - 1).Select(character => character.Id).ToArray() : desiredIds;
+                foreach (var direction in line.Direction)
+                {
+                    HbrStoryDirectionCatalog.Validate(direction, $"{source}/{page.Id}.lines[{lineIndex}]", targetIds);
+                    if (direction.Op == "scene") targetIds = desiredIds;
+                }
                 lineIndex++;
             }
 
@@ -168,7 +192,7 @@ public sealed class HbrStoryDefinition
                 Require(choice.Combat is "" or "nararaShibaBoss", source, $"{page.Id}/{choice.Id}.combat 仅支持空字符串或 nararaShibaBoss。");
                 HbrStoryRewards rewards = choice.Rewards;
                 Require(rewards != null && rewards.Sense != null, source, $"{page.Id}/{choice.Id} 的 rewards 不能为 null。");
-                Require(rewards.Sense.Length == 0 || SenseNames.Contains(rewards.Sense), source,
+                Require(rewards.Sense.Length == 0 || rewards.Sense == HbrStoryRewards.AllSenses || SenseNames.Contains(rewards.Sense), source,
                     $"{page.Id}/{choice.Id} 使用了未知六感：{rewards.Sense}。");
                 Require(rewards.SenseAmount is >= 0 and <= 99, source, "senseAmount 必须在 0–99 之间。");
                 Require(rewards.Sense.Length > 0 || rewards.SenseAmount == 0, source, "未选择六感时，senseAmount 必须为 0。");
@@ -277,6 +301,9 @@ public sealed class HbrStoryDefinition
             CheckIdentifier(character.Id, source, characterField + ".id");
             Require(ids.Add(character.Id), source, $"{field} 有重复人物编号：{character.Id}。");
             CheckImagePath(character.Image, source, characterField + ".image", optional: false);
+            Require(character.VoiceCharacter != null && (character.VoiceCharacter.Length == 0
+                || CharacterName.IsMatch(character.VoiceCharacter)), source,
+                $"{characterField}.voiceCharacter 必须为空、原作人物代码或稳定人物编号。");
             CheckNumber(character.X, -1600, 3200, source, characterField + ".x");
             CheckNumber(character.Y, -900, 1800, source, characterField + ".y");
             CheckNumber(character.Height, 40, 2400, source, characterField + ".height");
@@ -336,6 +363,8 @@ public sealed class HbrStoryPresentation
     public string ChoicePortrait { get; init; } = string.Empty;
     public string ThoughtPortrait { get; init; } = string.Empty;
     public HbrPortraitLayout PortraitLayout { get; init; } = new();
+    public double CharacterFadeDuration { get; init; } = .3;
+    public double ExpressionFadeDuration { get; init; } = .3;
 }
 
 public sealed class HbrStoryPage
@@ -397,6 +426,8 @@ public sealed class HbrStoryLine
     public string Background { get; init; } = string.Empty;
     public HbrPortraitLayout PortraitLayout { get; init; }
     public IReadOnlyList<HbrStoryCharacter> Characters { get; init; }
+    public IReadOnlyList<HbrStoryDirection> Direction { get; init; } = Array.Empty<HbrStoryDirection>();
+    public string Voice { get; init; } = string.Empty;
 
     /// <summary>Portrait geometry only overrides the current line, never subsequent lines.</summary>
     public HbrPortraitLayout ResolvePortraitLayout(HbrStoryPresentation presentation) =>
@@ -419,6 +450,8 @@ public sealed class HbrStoryCharacter
 {
     public required string Id { get; init; }
     public required string Image { get; init; }
+    /// <summary>Optional native character code or stable story ID used only to identify voiced mouth animation.</summary>
+    public string VoiceCharacter { get; init; } = "";
     public float X { get; init; } = 800;
     public float Y { get; init; } = 900;
     public float Height { get; init; } = 820;
@@ -438,6 +471,9 @@ public sealed class HbrStoryChoice
 
 public sealed class HbrStoryRewards
 {
+    /// <summary>Sense value that raises each of the six senses by <see cref="SenseAmount"/>.</summary>
+    public const string AllSenses = "All";
+
     public string Sense { get; init; } = string.Empty;
     public int SenseAmount { get; init; }
     public int CardChoices { get; init; }

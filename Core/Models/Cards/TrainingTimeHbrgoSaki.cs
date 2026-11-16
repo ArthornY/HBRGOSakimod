@@ -22,7 +22,7 @@ public sealed class TrainingTimeHbrgoSaki : CardModel
     protected override IEnumerable<DynamicVar> CanonicalVars =>
         new DynamicVar[]
         {
-            new PowerVar<TrainingTimePower>(1m),
+            new PowerVar<TrainingTimePower>(5m),
             new CardsVar(0)
         };
 

@@ -38,18 +38,15 @@ public sealed class HotaruUnfadingScars : HotaruCannonCard
 [CustomID("HOTARU_TRACE_OLD_SCAR")]
 public sealed class HotaruTraceOldScar : HotaruCannonCard
 {
-    public HotaruTraceOldScar() : base(1, CardType.Skill, CardRarity.Rare, TargetType.AnyEnemy) { }
+    // It cut a chosen six-sense resistance and discounted that attribute's cards;
+    // with both layers removed (2026-11-09) it discounts a chosen card type.
+    public HotaruTraceOldScar() : base(1, CardType.Skill, CardRarity.Rare, TargetType.Self) { }
     protected override IEnumerable<DynamicVar> CanonicalVars => new DynamicVar[]
     {
-        new IntVar("ResistanceLoss", 2), new IntVar("CostReduction", 1)
+        new IntVar("CostReduction", 1)
     };
-    protected override IEnumerable<IHoverTip> ExtraHoverTips => new[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
-    protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
-    {
-        ArgumentNullException.ThrowIfNull(play.Target);
-        await HotaruRareRollHelper.ChooseResistanceAndDiscount(context, this, play.Target,
-            DynamicVars["ResistanceLoss"].IntValue, DynamicVars["CostReduction"].IntValue);
-    }
+    protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
+        await HotaruRareRollHelper.ChooseCardTypeAndDiscount(context, this, DynamicVars["CostReduction"].IntValue);
     protected override void OnUpgrade() => EnergyCost.UpgradeBy(-1);
 }
 

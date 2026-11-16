@@ -67,8 +67,11 @@ internal static class MemoryGardenUpgradePointsHelper
     internal static void Synchronize(ElectronicSoldierManual manual)
     {
         if (manual?.IsMutable != true || Balances.GetOrCreateValue(manual).Depth > 0) return;
-        int tier = (int)Math.Min(int.MaxValue, GetTotalSixSensePoints(manual) / 30L);
+        int tier = (int)Math.Min(int.MaxValue, GetTotalSixSensePoints(manual) / 60L);
         manual.ClaimMemoryGardenSixSenseTier(tier);
+        if (manual.Owner?.Deck is { } deck && manual.Owner.Character is { } character)
+            manual.ClaimMemoryGardenDeckSize(manual.MemoryGardenDeckRuleVersion == 0
+                ? () => character.StartingDeck.Count() : null, deck.Cards.Count);
     }
 
     internal static IDisposable BeginBalanceUpdate(ElectronicSoldierManual manual)

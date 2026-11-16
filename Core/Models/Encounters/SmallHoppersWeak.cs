@@ -5,6 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
+// Mod encounter (no original battle): a SmallHopper with a HealHopper or a
+// second SmallHopper; two SmallHoppers start one dp step apart.
 public sealed class SmallHoppersWeak : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -24,10 +26,16 @@ public sealed class SmallHoppersWeak : EncounterModel, IHbrgoEncounter
         MonsterModel first = Rng.NextBool()
             ? ModelDb.Monster<HealHopper>().ToMutable()
             : ModelDb.Monster<SmallHopper>().ToMutable();
+        var second = (SmallHopper)ModelDb.Monster<SmallHopper>().ToMutable();
+        if (first is SmallHopper)
+        {
+            second.StartDpTableAt(1);
+        }
+
         return new (MonsterModel, string)[]
         {
             (first, null),
-            (ModelDb.Monster<SmallHopper>().ToMutable(), null)
+            (second, null)
         };
     }
 }

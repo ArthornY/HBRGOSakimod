@@ -8,6 +8,7 @@ using HBRGOSakiMod.Core.Models.Capabilities;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Nodes.Cards;
 using HBRGOSakiMod.Core.Nodes.Screens;
 using HBRGOSakiMod.Core.Story;
 using MegaCrit.Sts2.Core.Commands;
@@ -30,7 +31,8 @@ internal sealed record MemoryGardenChoice(
     string CharacterName,
     bool IsUpgrade,
     bool IsAvailable,
-    string StatusText);
+    string StatusText,
+    bool IsComplete = false);
 
 internal static partial class HbrMemoryGarden
 {
@@ -51,6 +53,48 @@ internal static partial class HbrMemoryGarden
         new("tsukasa", "东城司", typeof(MoreThanOneTruthHbrgoSaki)),
         new("karen", "朝仓可怜", typeof(CrushYouLikeABugHbrgoSaki)),
         new("tezuka_saki", "手冢咲", typeof(SummerGrassDreamHbrgoSaki)),
+        new("byakko", "白虎", typeof(ByakkoRoarHbrgoSaki)),
+        new("erika", "苍井绘里香", typeof(PeacefulMemoriesHbrgoSaki)),
+        new("ichigo", "水濑莓", typeof(HellfireBurnHbrgoSaki)),
+        new("sumomo", "水濑李", typeof(FrozenMistMeowHbrgoSaki)),
+        new("kozue", "柊木梢", typeof(InnocentRequiemHbrgoSaki)),
+        new("seika", "樋口圣华", typeof(FreshDeathHbrgoSaki)),
+        new("wakki", "山胁・冯・伊瓦尔", typeof(WorldIsMyLaboratoryHbrgoSaki)),
+        new("yayoi", "丰后弥生", typeof(WorldConquestHbrgoSaki)),
+        new("adelheid", "神崎阿迪尔海德", typeof(ItsNinjaShowtimeHbrgoSaki)),
+        new("miko", "天音巫呼", typeof(ImmortalRecollectionHbrgoSaki)),
+        new("seira", "樱庭星罗", typeof(StarsGuideYouHbrgoSaki)),
+        new("mari", "佐月麻里", typeof(AllOrdersConfirmedHbrgoSaki)),
+        new("misato", "二阶堂三乡", typeof(TengenBrilliantMoveHbrgoSaki)),
+        new("iroha", "石井色叶", typeof(PaintTheWorldMyColorHbrgoSaki)),
+        new("fubuki", "命吹雪", typeof(MakeAChangeKillYourselfHbrgoSaki)),
+        new("risa", "室伏理沙", typeof(AlwaysKeepYourChinUpHbrgoSaki)),
+        new("akari", "伊达朱里", typeof(AcePlayerIsNotMeHbrgoSaki)),
+        new("aina", "瑞原爱奈", typeof(DiveAsDeepAsIWantHbrgoSaki)),
+        new("ichiko", "大岛一千子", typeof(EldestOshimaIsHereHbrgoSaki)),
+        new("nina", "大岛二以奈", typeof(NarcissismIsFineHbrgoSaki)),
+        new("minori", "大岛三野里", typeof(YourCombatDeliveryIsHereHbrgoSaki)),
+        new("yotsuha", "大岛四叶草", typeof(AbsolutelyNoEffortHbrgoSaki)),
+        new("isuzu", "大岛五十铃", typeof(OpenTheLockHbrgoSaki)),
+        new("mua", "大岛六宇亚", typeof(IWillNotFallHbrgoSaki)),
+        new("yuina", "白河由依奈", typeof(NoblesseObligeHbrgoSaki)),
+        new("miya", "桐生美也", typeof(ExorcisingStringResoundHbrgoSaki)),
+        new("monaka", "月城最中", typeof(WindForestFireMountainHbrgoSaki)),
+        new("satomi", "藏里见", typeof(HarvestBountifulGrainsHbrgoSaki)),
+        new("chie", "菅原千惠", typeof(CuteIsInvincibleHbrgoSaki)),
+        new("hisame", "小笠原绯雨", typeof(SlashIfCloseHbrgoSaki)),
+        new("mion", "柳美音", typeof(AsTheYoungLadyCommandsHbrgoSaki)),
+        new("kanata", "丸山奏多", typeof(LetMeShowYouClassHbrgoSaki)),
+        new("shiki", "华村诗纪", typeof(ThisIsMyStageHbrgoSaki)),
+        new("chiroru", "松冈千吕瑠", typeof(LeaveAnyBattlefieldToMeHbrgoSaki)),
+        new("inori", "夏目祈", typeof(LegacyFlashHbrgoSaki)),
+        new("maki", "黑泽真希", typeof(FollowBehindMeHbrgoSaki)),
+        new("carol", "卡罗尔·利帕", typeof(ReadySteadyDieHbrgoSaki)),
+        new("irene", "艾琳·雷德梅茵", typeof(ThereIsOnlyOneTruthHbrgoSaki)),
+        new("maria", "玛利亚·德·安洁莉斯", typeof(RepentanceTimeHbrgoSaki)),
+        new("vritika", "芙莉缇卡·巴拉克里希兰", typeof(NumbersAreTheSourceHbrgoSaki)),
+        new("yingxia", "李映夏", typeof(WitnessMySupremacyHbrgoSaki)),
+        new("charlotta", "夏洛塔·斯科波夫斯卡娅", typeof(LoveCharlottaHbrgoSaki)),
         new("nanami", "七濑七海", typeof(BoostUpHbrgoSaki))
     };
 
@@ -105,21 +149,54 @@ internal static partial class HbrMemoryGarden
             bool isUpgrade = owned != null;
             bool hasEffect = owned == null || HbrMemoryGardenUpgradeCatalog.GetAvailableEffectIds(owned).Count > 0;
             bool available = hasUpgradePoint && hasEffect;
-            // Previews never enter a card scope. New cards read the next six-sense
-            // result from an independent RNG snapshot; owned cards keep theirs.
+            // Previews never enter a card scope.
             CardModel preview = owned == null
                 ? canonical.ToMutable()
                 : (CardModel)owned.ClonePreservingMutability();
             if (preview.Owner == null) preview.Owner = player;
             if (owned == null) HbrMemoryGardenProgression.SynchronizePreview(preview, player);
-            if (owned == null) SixSenseCardCapability.PreviewIfMissing(preview, player);
             string status = !hasEffect ? "已获得全部升级效果"
                 : !hasUpgradePoint ? "升级点不足；获得或升级需要1个升级点。"
                 : owned == null ? "消耗1个升级点获得这张卡牌。"
                 : $"已获得 {owned.CurrentUpgradeLevel}/{owned.MaxUpgradeLevel} 种升级效果；消耗1个升级点选择一种新效果。";
-            choices.Add(new(preview, character.Name, isUpgrade, available, status));
+            choices.Add(new(preview, character.Name, isUpgrade, available, status, IsComplete: !hasEffect));
         }
         return choices;
+    }
+
+    internal static int CharacterCount => Characters.Length;
+
+    // The fourteen memories, by card type: their names come back with upgrades (HbrMemoryTitleState).
+    internal static bool IsGardenCard(CardModel card)
+    {
+        if (card == null) return false;
+        Type type = card.GetType();
+        return Characters.Any(entry => entry.CardType == type);
+    }
+
+    internal static string CharacterIdOf(CardModel card)
+    {
+        if (card == null) return null;
+        Type type = card.GetType();
+        return Characters.FirstOrDefault(entry => entry.CardType == type)?.Id;
+    }
+
+    // Garden characters this player has met, in the stored order.
+    internal static IReadOnlyList<string> GetMetCharacterIds(Player player) =>
+        player?.GetRelic<ElectronicSoldierManual>() is { } manual
+            ? ReadEncounters(manual.MemoryGardenMetCharacters)
+                .Where(id => Characters.Any(entry => entry.Id == id)).OrderBy(id => id, StringComparer.Ordinal).ToList()
+            : Array.Empty<string>();
+
+    // Unowned display copies of the characters not met yet. The native grid
+    // still updates their card visuals before the garden covers their faces;
+    // passing a canonical model makes mutable-only preview reads throw.
+    internal static IReadOnlyList<CardModel> GetUnmetCards(IEnumerable<MemoryGardenChoice> met)
+    {
+        HashSet<Type> metTypes = met.Select(choice => choice.PreviewCard.GetType()).ToHashSet();
+        return Characters.Where(entry => !metTypes.Contains(entry.CardType))
+            .Select(entry => ModelDb.GetById<CardModel>(ModelDb.GetId(entry.CardType)).ToMutable())
+            .ToList();
     }
 
     private static CardModel FindOwnedCard(Player player, ModelId id) => player.Deck.Cards
@@ -269,7 +346,7 @@ internal static partial class HbrMemoryGarden
         if (LocalContext.IsMe(player) && RunManager.Instance.NetService.Type != NetGameType.Replay)
         {
             effectId = TestMode.IsOn ? offers[0].EffectId
-                : await NMemoryGardenUpgradeScreen.Choose(card.Title, offers, noticeKey);
+                : await NMemoryGardenUpgradeScreen.Choose(HbrMemoryTitleState.Title(card), offers, noticeKey);
             scope.ThrowIfInvalid();
             scope.Synchronizer.SyncLocalChoice(player, choiceId,
                 PlayerChoiceResult.FromIndex(effectId >= 0 ? effectId : null));
@@ -286,9 +363,11 @@ internal static partial class HbrMemoryGarden
             !player.Deck.Cards.Any(ownedCard => ReferenceEquals(ownedCard, card)) ||
             card.CurrentUpgradeLevel != previousLevel || !offers.Any(offer => offer.EffectId == effectId))
             return false;
-        return commitUpgrade == null
+        bool upgraded = commitUpgrade == null
             ? HbrMemoryGardenUpgradeCatalog.TryApplyUpgrade(card, effectId)
             : commitUpgrade(card, effectId);
+        if (upgraded) HbrMemoryGardenUpgradeStories.OnUpgradeCommitted(card, previousLevel);
+        return upgraded;
     }
 
     internal static void AuthorizeCopy(CardModel original, CardModel copy)

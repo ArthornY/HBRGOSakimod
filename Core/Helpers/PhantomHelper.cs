@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -113,12 +114,14 @@ internal static class PhantomHelper
     internal static async Task RestoreDp(
         PlayerChoiceContext choiceContext, Creature phantom, decimal amount, CardModel cardSource)
     {
+        amount = YanagiButlerCombatHelper.ScaleRecovery(cardSource, amount);
         if (phantom?.IsAlive != true || amount <= 0)
         {
             return;
         }
 
         HighDimensionalShellPower shell = phantom.GetPower<HighDimensionalShellPower>();
+        decimal before = shell?.CurrentDp ?? 0m;
         if (shell != null)
         {
             shell.Restore(amount);
@@ -130,6 +133,8 @@ internal static class PhantomHelper
                 Math.Min(amount, PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom)),
                 cardSource?.Owner?.Creature ?? phantom.PetOwner?.Creature ?? phantom, cardSource);
         }
+        MariaRepentanceCombatHelper.OnDpRestored(phantom,
+            (phantom.GetPower<HighDimensionalShellPower>()?.CurrentDp ?? 0m) - before, cardSource);
     }
 
     internal static int GetActionsPerformed(Player owner)
@@ -280,6 +285,7 @@ internal static class PhantomHelper
                 PhantomPlayerBenefitContext.Begin(phantom, targets);
             await move.PerformMove(targets);
             await benefitScope.Flush();
+            await ThirtyAClassRelicsHelper.AfterAction(phantom);
             monster.MoveStateMachine?.OnMovePerformed(move);
             if (phantom.IsAlive && combatState.ContainsCreature(phantom))
             {
@@ -458,6 +464,9 @@ internal static class PhantomHelper
                 }
 
                 IReadOnlyList<Creature> attackedTargets = Array.Empty<Creature>();
+                // Which targets took damage past their block, for move-table
+                // monsters whose statuses attach only then.
+                using HbrEnemyHitTracker.Scope hitScope = HbrEnemyHitTracker.Begin();
                 if (attackToBlock != null)
                 {
                     await PerformAttackIntentAsBlock(
@@ -481,12 +490,18 @@ internal static class PhantomHelper
                 }
                 else
                 {
-                    attackedTargets = await PerformAttackIntent(
+                    // A move-table monster's original all-unit skill hits every
+                    // enemy; its lowest-DP skill picks the enemy with the least DP.
+                    HbrgoMoveTarget? tableTarget = HbrgoMoveTableMonster.MoveTargetOf(phantom.Monster, move.Id);
+                    attackedTargets = await PerformAttackIntentOn(
                         phantom,
                         targets,
                         segments,
                         poisonPerSegment,
-                        preferredAttackTarget);
+                        tableTarget == HbrgoMoveTarget.MinimumDp && preferredAttackTarget == null
+                            ? LowestDpTarget(targets)
+                            : preferredAttackTarget,
+                        tableTarget == HbrgoMoveTarget.All);
                     await ResolveKillKissFusions(phantom);
                 }
 
@@ -528,6 +543,13 @@ internal static class PhantomHelper
                 else if (phantom.Monster is NararaShibaBossMonster narara)
                 {
                     await narara.AfterPhantomIntentPerformed(move, targets);
+                }
+                else if (phantom.Monster is IHbrgoPhantomAttackResults attackResults)
+                {
+                    IReadOnlyList<Creature> hitTargets = attackedTargets
+                        .Where(IsValidPhantomTarget).ToArray();
+                    await attackResults.AfterPhantomAttack(move, hitTargets,
+                        hitTargets.Where(hitScope.Passed).ToArray(), hitTargets.Sum(hitScope.Amount));
                 }
                 else if (phantom.Monster is IHbrgoPhantomAttackEffects attackEffects)
                 {
@@ -655,15 +677,39 @@ internal static class PhantomHelper
         };
     }
 
-    private static async Task<IReadOnlyList<Creature>> PerformAttackIntent(
+    private static Creature LowestDpTarget(IReadOnlyList<Creature> targets) =>
+        targets.Where(IsValidPhantomTarget)
+            .OrderBy(target => target.GetPower<HighDimensionalShellPower>()?.CurrentDp ?? 0m)
+            .FirstOrDefault();
+
+    private static Task<IReadOnlyList<Creature>> PerformAttackIntent(
         Creature phantom,
         IReadOnlyList<Creature> targets,
         IReadOnlyList<decimal> segments,
         int poisonPerSegment,
         Creature preferredTarget)
     {
+        return PerformAttackIntentOn(
+            phantom,
+            targets,
+            segments,
+            poisonPerSegment,
+            preferredTarget,
+            allUnitMove: false);
+    }
+
+    // allUnitMove: a move-table monster's original all-unit skill hits every
+    // enemy, as the 30A sweep does.
+    private static async Task<IReadOnlyList<Creature>> PerformAttackIntentOn(
+        Creature phantom,
+        IReadOnlyList<Creature> targets,
+        IReadOnlyList<decimal> segments,
+        int poisonPerSegment,
+        Creature preferredTarget,
+        bool allUnitMove)
+    {
         List<Creature> attackedTargets = new();
-        bool attackAllEnemies =
+        bool attackAllEnemies = allUnitMove ||
             phantom.HasPower<PhantomNextAttackAllEnemiesPower>();
         Creature target = !attackAllEnemies &&
             preferredTarget != null &&
@@ -678,6 +724,8 @@ internal static class PhantomHelper
         bool dealtUnblockedDamage = false;
         using var damageBatch = HighHitDamageVisualHelper.BeginDirectDamageBatch(
             segments.Count, phantom, null, ValueProp.Move);
+        using var checkmate = segments.Count > 0 && (attackAllEnemies || target != null)
+            ? ThirtyAClassRelicsHelper.BeginAttack(phantom, damageBatch) : null;
         using var destructionSkill = HbrBattleStatsHelper.IsEnabled(phantom)
             ? HbrDestructionGainHelper.BeginSkill(phantom, null, segments.Count) : null;
         try
@@ -2615,7 +2663,7 @@ internal static class PhantomHelper
         MomentOfReign.ArrangePhantomVisuals(minion);
         minion.HpDisplay = HpDisplay.Normal;
         MegaCrit.Sts2.Core.Nodes.Rooms.NCombatRoom.Instance?
-            .SetCreatureIsInteractable(minion, true);
+            .SetCreatureIsInteractableCompat(minion, true);
         minion.PrepareForNextTurn(
             minion.CombatState.GetOpponentsOf(minion)
                 .Where(IsValidPhantomTarget));
@@ -2684,6 +2732,7 @@ internal static class PhantomHelper
 
         if (IsOwnedMainPhantom(phantom, owner))
         {
+            await ThirtyAClassRelicsHelper.AfterAction(phantom);
             if (owner.Creature.GetPower<InMyNamePower>() is { } inMyName)
             {
                 await inMyName.AfterPhantomActed(phantom);

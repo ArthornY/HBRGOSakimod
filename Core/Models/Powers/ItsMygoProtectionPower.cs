@@ -121,6 +121,8 @@ public sealed class ItsMygoProtectionPower : PowerModel, ICustomPower
             if (RetaliationEnabled && dealer.IsHittable)
             {
                 // The reflected amount is a base damage value: enemy Block still applies.
+                using var reflectedSkill = HbrBattleStatsHelper.IsEnabled(Owner)
+                    ? HbrEffectSkillDamageContext.BeginWorld(dealer, Owner, null, rawDamage, ValueProp.Unpowered) : null;
                 IEnumerable<DamageResult> reflected = await CreatureCommandCompatibility.Damage(
                     choiceContext, dealer, rawDamage, ValueProp.Unpowered, Owner, null);
                 if (RecoveryEnabled && Owner.IsAlive && GetActiveShield(Owner) != null)
@@ -128,7 +130,11 @@ public sealed class ItsMygoProtectionPower : PowerModel, ICustomPower
                     long dealt = reflected.Where(hit => hit.Receiver == dealer)
                         .Sum(hit => (long)Math.Max(0, hit.UnblockedDamage));
                     int recovery = (int)Math.Min(int.MaxValue, dealt / 4);
-                    if (recovery > 0) Owner.Player.GetRelic<DeflectorProtection>()?.RestoreDp(recovery);
+                    if (recovery > 0)
+                    {
+                        int restored = Owner.Player.GetRelic<DeflectorProtection>()?.RestoreDp(recovery) ?? 0;
+                        MariaRepentanceCombatHelper.OnDpRestored(Owner, restored, null, fromAbility: true);
+                    }
                 }
             }
 

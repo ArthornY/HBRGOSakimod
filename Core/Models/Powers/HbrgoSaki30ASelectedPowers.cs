@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Patches.Combat;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -33,14 +35,14 @@ public sealed class ChargeInReserveNextTurnPower : PowerModel
     }
 }
 
-public sealed class RefuseToLeavePower : PowerModel
+public sealed class RefuseToLeavePower : PowerModel, IHbrAfterDeathListener
 {
     public override PowerType Type => PowerType.Buff;
     public override PowerStackType StackType => PowerStackType.Counter;
     public override Color AmountLabelColor => new("F2C15F");
     public override LocString Description => HbrSkillBlockDescription.ForPower(this,
         base.Description, "REFUSE_TO_LEAVE_POWER.hbrDescription", IsMutable ? Amount : 0m);
-    public override async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target,
+    public async Task AfterDeath(PlayerChoiceContext choiceContext, Creature target,
         bool wasRemovalPrevented, float deathAnimLength)
     {
         if (wasRemovalPrevented || !Owner.IsAlive || CombatManager.Instance.IsOverOrEnding ||
@@ -159,11 +161,14 @@ public sealed class UnbrokenRemnantPower : PowerModel
             Owner.Player.GetRelic<MomentOfReign>()?.TryUsePhantomDpRecovery() != true) return;
         Flash();
         var shell = phantom.GetPower<PhantomHighDimensionalShellPower>();
+        decimal previousDp = shell?.CurrentDp ?? 0m;
         if (shell != null)
             shell.Restore(HbrResourceValueHelper.Fixed(Owner, Amount));
         else
             await PowerCmd.Apply<PhantomHighDimensionalShellPower>(choiceContext, phantom,
                 Math.Min(HbrResourceValueHelper.Fixed(Owner, Amount), PhantomHighDimensionalShellPower.CalculateInitialAmount(phantom)), Owner, null);
+        MariaRepentanceCombatHelper.OnDpRestored(phantom,
+            (phantom.GetPower<HighDimensionalShellPower>()?.CurrentDp ?? 0m) - previousDp, null, fromAbility: true);
         await PowerCmd.Apply<StrengthPower>(choiceContext, phantom, StrengthGain, Owner, null);
     }
     protected override void AfterCloned()
@@ -209,6 +214,20 @@ public sealed class PainResonancePower : PowerModel
     public override PowerType Type => PowerType.Buff;
     public override PowerStackType StackType => PowerStackType.Counter;
     public override Color AmountLabelColor => new("F2C15F");
+    // Under HBR each hit is its holder's skill, six stacks to 100%, like Eat Passersby.
+    public override LocString Description
+    {
+        get
+        {
+            bool owned = IsMutable && Owner != null;
+            if (owned ? !HbrBattleStatsHelper.IsEnabled(Owner) : !HbrVigorSkillDescriptionPatch.IsHbrCardHover)
+                return base.Description;
+            LocString text = new("powers", "PAIN_RESONANCE_POWER.hbrDescription");
+            text.Add("DamageSkill", owned ? HbrNativeEffectSkillHelper.FormatPercent(Amount)
+                : $"（层数×{HbrNativeEffectSkillHelper.FormatPercent(1m)}）");
+            return text;
+        }
+    }
     internal void QueuePhantomDamage()
     {
         if (CombatManager.Instance.IsOverOrEnding) return;
@@ -235,6 +254,10 @@ public sealed class PainResonancePower : PowerModel
                 if (targets.Length == 0) continue;
                 Creature enemy = targets[Owner.CombatState.RunState.Rng.CombatTargets.NextInt(0, targets.Length)];
                 Flash();
+                // Declared as its holder's skill on that enemy. Without HBR numerics the
+                // declaration stays inactive and deals the stacks.
+                using var skill = HbrEffectSkillDamageContext.Begin(enemy, Owner, null, Amount,
+                    ValueProp.Unpowered, Owner);
                 await CreatureCommandCompatibility.Damage(choiceContext, enemy, Amount, ValueProp.Unpowered, Owner, null);
             }
         }

@@ -1,0 +1,22 @@
+{
+  "DOUBLE_ARMOR_BREAK_HBRGO_SAKI.title": "Dissonance",
+  "EAT_PASSERSBY_HBRGO_SAKI.title": "Go no Sen",
+  "I_ONLY_KNOW_WHAT_I_KNOW_HBRGO_SAKI.title": "Repeat Sign",
+  "RECALL_HBRGO_SAKI.title": "Recapitulation",
+  "SWIFT_HBRGO_SAKI.title": "Rondo",
+  "COMMUNICATION_MEETING_HBRGO_SAKI.title": "Rehearsal",
+  "STRENGTH_AMPLIFICATION_HBRGO_SAKI.title": "Blazing Claws",
+  "COMMAND_STRIKE_HBRGO_SAKI.title": "Answer Me",
+  "READY_TO_GO_HBRGO_SAKI.title": "Embers Still Glow",
+  "DELIBERATION_HBRGO_SAKI.title": "Sift Through Memories",
+  "SOUL_IMPACT_HBRGO_SAKI.title": "Soul-Devouring Scythe",
+  "SACRIFICIAL_ATTACK_HBRGO_SAKI.title": "Days Together",
+  "COORDINATED_ATTACK_HBRGO_SAKI.title": "Impromptu Session",
+  "RAPID_CHARGING_HBRGO_SAKI.title": "Kindling",
+  "HOTARU_STIMULATE.title": "Light Up",
+  "HOTARU_SALVO.title": "Everyone, Together",
+  "HOTARU_OVERCHARGE.title": "Overflowing Light",
+  "ACCURACY.hbrAdditiveDescription": "Each [gold]Shiv[/gold] attack hit gains an additional [blue]{HbrAdditivePercent}%[/blue] base skill power.",
+  "CALCIFY.hbrAdditiveDescription": "Each of [gold]Osty[/gold]'s attack hits gains an additional [blue]{HbrAdditivePercent}%[/blue] base skill power.",
+  "PHANTOM_BLADES.hbrAdditiveDescription": "[gold]Shivs[/gold] have [gold]Retain[/gold].\nEach hit of the first Shiv you play each turn gains an additional [blue]{HbrAdditivePercent}%[/blue] base skill power."
+}

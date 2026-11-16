@@ -16,6 +16,8 @@ namespace HBRGOSakiMod.Core.Helpers;
 // ordinary cannons on one calculation path without scanning combat each frame.
 internal static class HotaruEndgameEffectsHelper
 {
+    internal const decimal RedemptionDamagePerPercent = 5000m;
+
     private static Millsage ActiveRelic(Player player)
     {
         Millsage relic = player?.GetRelic<Millsage>();
@@ -62,8 +64,12 @@ internal static class HotaruEndgameEffectsHelper
         if (relic.EndgameSign > 0)
         {
             if (relic.WasCannonRetired(HotaruCannonKind.Contest))
+            {
+                decimal percent = HbrBattleStatsHelper.IsEnabled(relic.Owner)
+                    ? receipt.ActualDamage / RedemptionDamagePerPercent : receipt.ActualDamage;
                 await PowerCmd.Apply<HotaruTurnDamageAmplificationPower>(context, relic.Owner.Creature,
-                    receipt.ActualDamage, relic.Owner.Creature, receipt.CardSource);
+                    percent, relic.Owner.Creature, receipt.CardSource);
+            }
             return;
         }
 

@@ -10,6 +10,7 @@
     <GodotSharpAssemblyPath Condition="'$(GodotSharpAssemblyPath)' == ''">C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll</GodotSharpAssemblyPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../hotaru-overcharge/TelemetryIsolation.cs" Link="TelemetryIsolation.cs" />
     <Compile Include="../hbr-fragile/Program.cs" Link="FragileFixture.cs" />
     <Compile Include="../hbr-fragile/ScarsChecks.cs" Link="OriginalScarsChecks.cs" />
     <Compile Include="../hbr-fragile/CapAndDoomChecks.cs" Link="OriginalCapAndDoomChecks.cs" />

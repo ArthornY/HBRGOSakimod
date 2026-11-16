@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR BindRandom icon",
+  "importedPath": "res://images/powers/hbr_bind_power.png",
+  "sha256": "abff169d884d37942eed6b5db147e1638ad71b5bb7b1216a87141a14b6c90d3d",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconBind.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-4415869667109288469",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_-4415869667109288469_IconBind.png",
+    "sourceSha256": "abff169d884d37942eed6b5db147e1638ad71b5bb7b1216a87141a14b6c90d3d",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrBindPower",
+    "originalEffect": "BindRandom",
+    "small": "res://images/powers/hbr_bind_power.png",
+    "big": "res://images/powers/hbr_bind_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

@@ -49,6 +49,10 @@ internal static class HbrVigorSkillDescriptionPatch
         return scope;
     }
 
+    // Whether the card whose hover tips are being built belongs to an HBR player. A mod
+    // power's canonical tip in those hover tips reads the same scope.
+    internal static bool IsHbrCardHover => HbrBattleStatsHelper.IsEnabled(_cardHover?.Owner);
+
     [HarmonyPriority(Priority.Last)]
     private static void Postfix(PowerModel __instance, MethodBase __originalMethod, ref LocString __result)
     {

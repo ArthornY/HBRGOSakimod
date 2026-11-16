@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using HBRGOSakiMod.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -75,10 +77,11 @@ internal static class MoreThanOneTruthCombatHelper
 
     internal static bool HasPermanentUpgrade(Player player, int id) =>
         player?.Deck?.Cards.OfType<MoreThanOneTruthHbrgoSaki>().Any(card => card.IsMutable &&
-            card.Owner == player && !card.HasBeenRemovedFromState && card.Pile?.Type == PileType.Deck &&
+            card.Owner == player && !card.HasBeenRemovedFromState && !ThirtyGProposalState.IsDisabled(card) && card.Pile?.Type == PileType.Deck &&
             card.HasUpgradeEffect(id)) == true;
     internal static bool IsExtraTurn(Player player) => player?.Creature?.CombatState != null &&
         (OverclockImmediateTurnCoordinator.IsActiveFor(player) ||
+         PersonalImmediateTurnCoordinator.IsActiveFor(player) ||
          CombatManager.Instance.PlayersTakingExtraTurn.Contains(player));
     internal static bool IsVirtualMindsEye(Creature owner)
     {
@@ -87,19 +90,21 @@ internal static class MoreThanOneTruthCombatHelper
     }
     internal static bool CanReenterExtraTurnDeck(CardModel card) =>
         card is MoreThanOneTruthHbrgoSaki truth && truth.IsMutable &&
-        !truth.HasBeenRemovedFromState && truth.Owner != null &&
+        !truth.HasBeenRemovedFromState && !ThirtyGProposalState.IsDisabled(truth) && truth.Owner != null &&
         truth.Pile?.Type == PileType.Deck && truth.HasUpgradeEffect(1);
-    internal static async Task ApplyRandomResistanceBreak(PlayerChoiceContext context, MoreThanOneTruthHbrgoSaki card)
+    // Called by the single extra-turn entry boundary, once the owner's turn is
+    // established. It never observes a teammate entering an ordinary turn.
+    internal static async Task OnExtraTurnEntered(PlayerChoiceContext context, Player player)
     {
-        if (card?.HasUpgradeEffect(5) != true || card.Owner?.Creature?.CombatState == null) return;
-        foreach (Creature enemy in card.Owner.Creature.CombatState.Enemies.Where(SixSenseCombatHelper.IsEligibleEnemy).ToArray())
-            await SixSenseCombatHelper.BreakRandomResistances(context, card.Owner, enemy, card, 1);
-    }
-    internal static void OnResistanceTransition(Player player, Creature enemy, int before, int after)
-    {
-        if (before < 6 && after == 6 && enemy?.Side != player?.Creature?.Side &&
-            HasPermanentUpgrade(player, 2))
-            OverclockImmediateTurnCoordinator.RequestResistanceReward(player);
+        if (player?.Creature?.IsAlive != true || !HbrBattleStatsHelper.IsEnabled(player.Creature)) return;
+        if (HasPermanentUpgrade(player, 2)) await PlayerCmd.GainEnergy(1m, player);
+        if (HasPermanentUpgrade(player, 5))
+        {
+            CardModel source = player.Deck.Cards.OfType<MoreThanOneTruthHbrgoSaki>()
+                .First(card => card.IsMutable && !card.HasBeenRemovedFromState && !ThirtyGProposalState.IsDisabled(card) && card.HasUpgradeEffect(5));
+            foreach (Creature ally in TeamCombatHelper.GetLivingAllies(player.Creature))
+                await HbrComboPower.Grant<HbrComboSmallPower>(context, ally, player.Creature, source);
+        }
     }
     internal static PlayScope BeginPlay(CardModel card, bool isAutoPlay, ResourceInfo resources)
     {

@@ -39,8 +39,7 @@ internal static class NararaGiftCopyHelper
 
     internal static int GetXSurcharge(CardModel card) =>
         card?.EnergyCost.CostsX == true
-            ? (int)Math.Min(int.MaxValue, (long)GetCount(card) +
-                (NararaNullificationPenaltyHelper.IsPenalized(card) ? 1 : 0))
+            ? GetCount(card)
             : 0;
 
     internal static int SubtractXSurcharge(CardModel card, int capturedEnergy)

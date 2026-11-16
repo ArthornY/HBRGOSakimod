@@ -15,6 +15,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace HBRGOSakiMod.Core.Models.Cards;
 
@@ -61,16 +62,17 @@ public sealed class HotaruBuoy : HotaruCannonCard
     public HotaruBuoy() : base(0, CardType.Skill, CardRarity.Common, TargetType.AnyEnemy) { }
 
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
+    // It cut the target's highest six-sense resistance; since 2026-11-09 each point
+    // became one stack of a debuff the target does not have yet.
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { new IntVar("ResistanceLoss", 1m) };
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
+        new DynamicVar[] { new IntVar("Times", 1m), new PowerVar<WeakPower>(1m), new PowerVar<VulnerablePower>(1m), new PowerVar<FragilePower>(1m) };
+    protected override IEnumerable<IHoverTip> ExtraHoverTips => HbrMissingDebuffHelper.HoverTips();
 
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) =>
-        SixSenseCombatHelper.ReduceHighestResistance(context, Owner, play.Target, this,
-            BigCombatNumbers.ToNativeSigned(DynamicVars["ResistanceLoss"].BaseValue));
+        HbrMissingDebuffHelper.ApplyRandomMissing(context, play.Target, Owner.Creature, this,
+            DynamicVars["Times"].IntValue);
 
-    protected override void OnUpgrade() => DynamicVars["ResistanceLoss"].UpgradeValueBy(1m);
+    protected override void OnUpgrade() => DynamicVars["Times"].UpgradeValueBy(1m);
 }
 
 [CustomID("HOTARU_ECHO_LOCATION")]

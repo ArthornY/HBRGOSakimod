@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC03_17_Battle01.
+// HBR MC03_17_Battle01; the second octopus tail starts one dp step ahead.
 public sealed class OctopusTailKillersNormal : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -20,11 +20,13 @@ public sealed class OctopusTailKillersNormal : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        var second = (OctopusTailKiller)ModelDb.Monster<OctopusTailKiller>().ToMutable();
+        second.StartDpTableAt(1);
         return new (MonsterModel, string)[]
         {
             (ModelDb.Monster<OctopusTailKiller>().ToMutable(), null),
             (ModelDb.Monster<CrestHopperKiller>().ToMutable(), null),
-            (ModelDb.Monster<OctopusTailKiller>().ToMutable(), null)
+            (second, null)
         };
     }
 }

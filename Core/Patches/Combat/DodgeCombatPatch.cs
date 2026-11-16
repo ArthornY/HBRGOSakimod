@@ -16,7 +16,7 @@ internal static class DodgeVisibleBlockPatch
     private static void Postfix(Creature __instance, ref int __result)
     {
         if (!DodgeCombatHelper.ReadsNativeBlock(__instance) && DodgeCombatHelper.CountsAsBlock(__instance))
-            __result = (int)Math.Min(int.MaxValue, (long)__result + DodgeCombatHelper.GetAmount(__instance));
+            __result = (int)Math.Min(int.MaxValue, (long)__result + DodgeCombatHelper.GetBlockValue(__instance));
     }
 }
 

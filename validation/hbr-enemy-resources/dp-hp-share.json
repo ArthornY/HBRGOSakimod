@@ -1,0 +1,426 @@
+{
+ "totalPerNativeHp": 900,
+ "note": "HBR default: HP 700 + DP 200 per native HP at the default 20% shell setting",
+ "rows": [
+  {
+   "class": "Marionette",
+   "name": "提线木偶",
+   "variant": "MarionetteDefaultVirtual",
+   "dp": 3600,
+   "hp": 3600,
+   "dpShare": 0.5,
+   "hpPerNativeHp": 450.0,
+   "dpPerNativeHp": 450.0
+  },
+  {
+   "class": "Marionette",
+   "name": "提线木偶",
+   "variant": "MarionetteSmallVirtual_first",
+   "dp": 2000,
+   "hp": 2000,
+   "dpShare": 0.5,
+   "hpPerNativeHp": 450.0,
+   "dpPerNativeHp": 450.0
+  },
+  {
+   "class": "CatHorn",
+   "name": "猫角兽",
+   "variant": "CatHornDefaultVirtual",
+   "dp": 5400,
+   "hp": 10800,
+   "dpShare": 0.333333,
+   "hpPerNativeHp": 600.0,
+   "dpPerNativeHp": 300.0
+  },
+  {
+   "class": "CatHorn",
+   "name": "猫角兽",
+   "variant": "CatHornSmallVirtual_first",
+   "dp": 3000,
+   "hp": 6000,
+   "dpShare": 0.333333,
+   "hpPerNativeHp": 600.0,
+   "dpPerNativeHp": 300.0
+  },
+  {
+   "class": "WireSlasher",
+   "name": "旋轮",
+   "variant": "WireSlasherDefaultDark",
+   "dp": 7600,
+   "hp": 6200,
+   "dpShare": 0.550725,
+   "hpPerNativeHp": 404.3478,
+   "dpPerNativeHp": 495.6522
+  },
+  {
+   "class": "OctopusTail",
+   "name": "章鱼尾",
+   "variant": "OctopusTailDefaultVirtual",
+   "dp": 8400,
+   "hp": 5600,
+   "dpShare": 0.6,
+   "hpPerNativeHp": 360.0,
+   "dpPerNativeHp": 540.0
+  },
+  {
+   "class": "TargetWireFrame",
+   "name": "线圈巨轮",
+   "variant": "TargetWireFrameSmallVirtual",
+   "dp": 6200,
+   "hp": 7600,
+   "dpShare": 0.449275,
+   "hpPerNativeHp": 495.6522,
+   "dpPerNativeHp": 404.3478
+  },
+  {
+   "class": "NeedleBird",
+   "name": "针嘴鸟",
+   "variant": "NeedleBirdSmallVirtual_MC02",
+   "dp": 27800,
+   "hp": 31600,
+   "dpShare": 0.468013,
+   "hpPerNativeHp": 478.7879,
+   "dpPerNativeHp": 421.2121
+  },
+  {
+   "class": "CrowHorse",
+   "name": "鸦头马",
+   "variant": "CrowHorseDefaultVirtual",
+   "dp": 21600,
+   "hp": 32400,
+   "dpShare": 0.4,
+   "hpPerNativeHp": 540.0,
+   "dpPerNativeHp": 360.0
+  },
+  {
+   "class": "IvoryScooper",
+   "name": "象牙异蛛",
+   "variant": "IvoryScooperDefaultVirtual",
+   "dp": 16000,
+   "hp": 50000,
+   "dpShare": 0.242424,
+   "hpPerNativeHp": 681.8182,
+   "dpPerNativeHp": 218.1818
+  },
+  {
+   "class": "CrestHopper",
+   "name": "CrestHopper（嵴冠跳虫）",
+   "variant": "CrestHopperDefaultVirtual",
+   "dp": 4000,
+   "hp": 6600,
+   "dpShare": 0.377358,
+   "hpPerNativeHp": 560.3774,
+   "dpPerNativeHp": 339.6226
+  },
+  {
+   "class": "HealHopper",
+   "name": "HealHopper（治愈跳虫）",
+   "variant": "CrestHopperHealVirtual",
+   "dp": 4000,
+   "hp": 6600,
+   "dpShare": 0.377358,
+   "hpPerNativeHp": 560.3774,
+   "dpPerNativeHp": 339.6226
+  },
+  {
+   "class": "HealHopper",
+   "name": "HealHopper（治愈跳虫）",
+   "variant": "CrestHopperHealVirtual_MC03",
+   "dp": 2000,
+   "hp": 3300,
+   "dpShare": 0.377358,
+   "hpPerNativeHp": 560.3774,
+   "dpPerNativeHp": 339.6226
+  },
+  {
+   "class": "Knocker",
+   "name": "Knocker（重锤）",
+   "variant": "DarkKnockerSmallVirtual",
+   "dp": 2000,
+   "hp": 5000,
+   "dpShare": 0.285714,
+   "hpPerNativeHp": 642.8571,
+   "dpPerNativeHp": 257.1429
+  },
+  {
+   "class": "ClayKnocker",
+   "name": "ClayKnocker（黏土重锤）",
+   "variant": "DarkKnockerDefaultVirtual",
+   "dp": 3600,
+   "hp": 9000,
+   "dpShare": 0.285714,
+   "hpPerNativeHp": 642.8571,
+   "dpPerNativeHp": 257.1429
+  },
+  {
+   "class": "AbyssKnocker",
+   "name": "AbyssKnocker（深渊重锤）",
+   "variant": "AbyssKnockerDefaultVirtual_MC02",
+   "dp": 44200,
+   "hp": 73600,
+   "dpShare": 0.375212,
+   "hpPerNativeHp": 562.309,
+   "dpPerNativeHp": 337.691
+  },
+  {
+   "class": "MarionetteKiller",
+   "name": "死亡玩偶／诅咒玩偶",
+   "variant": "MarionetteKiller2",
+   "dp": 1700,
+   "hp": 1700,
+   "dpShare": 0.5,
+   "hpPerNativeHp": 450.0,
+   "dpPerNativeHp": 450.0
+  },
+  {
+   "class": "MarionetteKiller",
+   "name": "死亡玩偶／诅咒玩偶",
+   "variant": "MarionetteKillerCurse",
+   "dp": 2600,
+   "hp": 4300,
+   "dpShare": 0.376812,
+   "hpPerNativeHp": 560.8696,
+   "dpPerNativeHp": 339.1304
+  },
+  {
+   "class": "CrestHopperKiller",
+   "name": "杀手跳虫",
+   "variant": "CrestHopperKiller2",
+   "dp": 2400,
+   "hp": 4000,
+   "dpShare": 0.375,
+   "hpPerNativeHp": 562.5,
+   "dpPerNativeHp": 337.5
+  },
+  {
+   "class": "DarkKnockerKiller",
+   "name": "杀手重锤",
+   "variant": "DarkKnockerKillerVirtual",
+   "dp": 2800,
+   "hp": 6700,
+   "dpShare": 0.294737,
+   "hpPerNativeHp": 634.7368,
+   "dpPerNativeHp": 265.2632
+  },
+  {
+   "class": "CatHornKiller",
+   "name": "猫角兽γ",
+   "variant": "CatHornKillerVirtual",
+   "dp": 4000,
+   "hp": 8000,
+   "dpShare": 0.333333,
+   "hpPerNativeHp": 600.0,
+   "dpPerNativeHp": 300.0
+  },
+  {
+   "class": "OctopusTailKiller",
+   "name": "章鱼尾γ",
+   "variant": "OctopusTailKillerVirtual",
+   "dp": 6200,
+   "hp": 4100,
+   "dpShare": 0.601942,
+   "hpPerNativeHp": 358.2524,
+   "dpPerNativeHp": 541.7476
+  },
+  {
+   "class": "AbyssKnockerKiller",
+   "name": "深渊重锤S",
+   "variant": "AbyssKnockerKillerVirtual_MC03",
+   "dp": 11000,
+   "hp": 18400,
+   "dpShare": 0.37415,
+   "hpPerNativeHp": 563.2653,
+   "dpPerNativeHp": 336.7347
+  },
+  {
+   "class": "TargetWireFrameKiller",
+   "name": "线圈巨轮γ",
+   "variant": "TargetWireFrameKiller_Day2E01",
+   "dp": 7000,
+   "hp": 13000,
+   "dpShare": 0.35,
+   "hpPerNativeHp": 585.0,
+   "dpPerNativeHp": 315.0
+  },
+  {
+   "class": "PileGolemEdge",
+   "name": "石柱像",
+   "variant": "PileGolemEdgeSmall",
+   "dp": 14000,
+   "hp": 29000,
+   "dpShare": 0.325581,
+   "hpPerNativeHp": 606.9767,
+   "dpPerNativeHp": 293.0233
+  },
+  {
+   "class": "DiamondEyeball",
+   "name": "钻石眼魔",
+   "variant": "DiamondEyeballDefaultVirtual_MC03_01",
+   "dp": 32800,
+   "hp": 19500,
+   "dpShare": 0.627151,
+   "hpPerNativeHp": 335.5641,
+   "dpPerNativeHp": 564.4359
+  },
+  {
+   "class": "BarrelWalker",
+   "name": "BarrelWalker",
+   "variant": "BarrelWalkerDefaultFire_MC04_02",
+   "dp": 31000,
+   "hp": 47000,
+   "dpShare": 0.397436,
+   "hpPerNativeHp": 542.3077,
+   "dpPerNativeHp": 357.6923
+  },
+  {
+   "class": "BalbFlea",
+   "name": "灯胆跳虫",
+   "variant": "BalbFleaDefault",
+   "dp": 3500,
+   "hp": 5600,
+   "dpShare": 0.384615,
+   "hpPerNativeHp": 553.8462,
+   "dpPerNativeHp": 346.1538
+  },
+  {
+   "class": "TriClaw",
+   "name": "三爪镖／三角镖",
+   "variant": "TriClawSmall",
+   "dp": 6400,
+   "hp": 3600,
+   "dpShare": 0.64,
+   "hpPerNativeHp": 324.0,
+   "dpPerNativeHp": 576.0
+  },
+  {
+   "class": "TriClaw",
+   "name": "三爪镖／三角镖",
+   "variant": "TriClawDefault",
+   "dp": 3200,
+   "hp": 2000,
+   "dpShare": 0.615385,
+   "hpPerNativeHp": 346.1538,
+   "dpPerNativeHp": 553.8462
+  },
+  {
+   "class": "BigotryGate",
+   "name": "异议之门",
+   "variant": "BigotryGateSmall_01",
+   "dp": 5900,
+   "hp": 2500,
+   "dpShare": 0.702381,
+   "hpPerNativeHp": 267.8571,
+   "dpPerNativeHp": 632.1429
+  },
+  {
+   "class": "BigotryGate",
+   "name": "异议之门",
+   "variant": "BigotryGateSmall_02",
+   "dp": 5900,
+   "hp": 2500,
+   "dpShare": 0.702381,
+   "hpPerNativeHp": 267.8571,
+   "dpPerNativeHp": 632.1429
+  },
+  {
+   "class": "BigotryGate",
+   "name": "异议之门",
+   "variant": "BigotryGateDefault_01",
+   "dp": 7300,
+   "hp": 3500,
+   "dpShare": 0.675926,
+   "hpPerNativeHp": 291.6667,
+   "dpPerNativeHp": 608.3333
+  },
+  {
+   "class": "CorollaKnife",
+   "name": "花冠利刃",
+   "variant": "CorollaKnifeSmall_01",
+   "dp": 4400,
+   "hp": 6200,
+   "dpShare": 0.415094,
+   "hpPerNativeHp": 526.4151,
+   "dpPerNativeHp": 373.5849
+  },
+  {
+   "class": "CorollaKnife",
+   "name": "花冠利刃",
+   "variant": "CorollaKnifeSmall_02",
+   "dp": 4400,
+   "hp": 6200,
+   "dpShare": 0.415094,
+   "hpPerNativeHp": 526.4151,
+   "dpPerNativeHp": 373.5849
+  },
+  {
+   "class": "MolArms",
+   "name": "巨肌魔臂",
+   "variant": "MolArmsSmall",
+   "dp": 6000,
+   "hp": 15000,
+   "dpShare": 0.285714,
+   "hpPerNativeHp": 642.8571,
+   "dpPerNativeHp": 257.1429
+  },
+  {
+   "class": "ShrimpCrab",
+   "name": "磐石异蟹",
+   "variant": "ShrimpCrabDefault_01",
+   "dp": 21500,
+   "hp": 8500,
+   "dpShare": 0.716667,
+   "hpPerNativeHp": 255.0,
+   "dpPerNativeHp": 645.0
+  },
+  {
+   "class": "ShrimpCrab",
+   "name": "磐石异蟹",
+   "variant": "ShrimpCrabDefault_02",
+   "dp": 21500,
+   "hp": 8500,
+   "dpShare": 0.716667,
+   "hpPerNativeHp": 255.0,
+   "dpPerNativeHp": 645.0
+  },
+  {
+   "class": "SlimySerpent",
+   "name": "触手巨蛇",
+   "variant": "SlimySerpentDefault",
+   "dp": 76000,
+   "hp": 20000,
+   "dpShare": 0.791667,
+   "hpPerNativeHp": 187.5,
+   "dpPerNativeHp": 712.5
+  },
+  {
+   "class": "GiraffeHalo",
+   "name": "长颈怪环",
+   "variant": "GiraffeHaloDefault_01",
+   "dp": 7500,
+   "hp": 25000,
+   "dpShare": 0.230769,
+   "hpPerNativeHp": 692.3077,
+   "dpPerNativeHp": 207.6923
+  },
+  {
+   "class": "ArachneLine",
+   "name": "阿拉克尼巨蛛",
+   "variant": "ArachneLineDefault",
+   "dp": 41000,
+   "hp": 56000,
+   "dpShare": 0.42268,
+   "hpPerNativeHp": 519.5876,
+   "dpPerNativeHp": 380.4124
+  },
+  {
+   "class": "PillarGuardian",
+   "name": "三柱守卫",
+   "variant": "PillarGuardianDefault",
+   "dp": 21000,
+   "hp": 60000,
+   "dpShare": 0.259259,
+   "hpPerNativeHp": 666.6667,
+   "dpPerNativeHp": 233.3333
+  }
+ ]
+}

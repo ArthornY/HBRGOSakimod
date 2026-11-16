@@ -1,3 +1,16 @@
 {
-  "HBR_NATIVE_EFFECT_SKILL_DAMAGE.description": "{SkillPower}% skill power"
+  "HBR_NATIVE_EFFECT_SKILL_DAMAGE.description": "{SkillPower}% skill power",
+  "HBR_NATIVE_MR_STRUGGLES.description": "At the start of your turn, deal damage to ALL enemies equal to {HbrEffectSkillPower}% skill power times the turn number.",
+  "HBRGO_THIRTY_ONE_D_SCOUTING.title": "31D 侦察",
+  "HBRGO_THIRTY_ONE_D_SCOUTING.description": "带有31D小徽章的节点已经侦察。图标表示实际房间类型；悬停可查看事件、记忆碎片的回忆与人物，或宝箱为每名玩家保留的遗物。只显示房间类型，不预告战斗中的敌人。",
+  "HBRGO_RISA_DP.title": "DP 回复",
+  "HBRGO_RISA_DP.description": "DP先于生命承受伤害。本张牌按每名目标自己的最大DP回复，单独处理玩家与幻影的DP池，不把玩家的回复转移给其幻影。治愈微笑及真心款待可将当前DP补至上限的120%，不提高DP上限。",
+  "HBR_CLASS_RELIC_MODE_SWITCH.title": "Change Form",
+  "HBR_CLASS_RELIC_MODE_SWITCH.description": "Triggers when entering Bow, Dual Swords or Scythe form. Opening or closing Magic Sword does not count.",
+  "HBR_CLASS_RELIC_SIX_SENSE_POINTS.title": "Six Sense Points",
+  "HBR_CLASS_RELIC_SIX_SENSE_POINTS.description": "Allocate these points in the Electronic Soldier Manual to raise the corresponding Six Sense.",
+  "HBR_CLASS_RELIC_CRITICAL_SUCCESS.title": "Critical Success",
+  "HBR_CLASS_RELIC_CRITICAL_SUCCESS.description": "Triggers whenever a roll resolves as a Critical Success, including absolute, guaranteed and treated-as successes.",
+  "HBR_CLASS_RELIC_FORM_CARD.title": "Form Card",
+  "HBR_CLASS_RELIC_FORM_CARD.description": "A card marked as a Bow Form card or a Dual Swords Form card."
 }

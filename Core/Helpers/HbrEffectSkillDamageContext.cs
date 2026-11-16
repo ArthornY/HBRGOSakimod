@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Models.Powers;
 using HBRGOSakiMod.Core.Patches.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
@@ -31,6 +33,8 @@ internal static class HbrEffectSkillDamageContext
         internal ValueProp Props;
         internal bool Active = true;
         internal int Claimed;
+        internal bool IsWorldAmount;
+        internal bool IsEnvironmentalSelfDamage;
 
         internal bool Matches(Creature target, Creature dealer, CardModel card, ValueProp props) =>
             Active && (Target == null || ReferenceEquals(Target, target)) &&
@@ -51,6 +55,7 @@ internal static class HbrEffectSkillDamageContext
         internal bool Enabled;
         internal bool Active = true;
         internal int? CriticalSample;
+        internal readonly List<HbrEffectPower> CountedEffects = new();
     }
 
     internal sealed class CalculationScope : IDisposable
@@ -61,6 +66,8 @@ internal static class HbrEffectSkillDamageContext
         internal decimal InputDamage;
         internal bool Enabled;
         internal bool BaseClaimed;
+        internal bool CriticalResolved;
+        internal bool WasCritical;
         internal bool Active = true;
 
         public void Dispose()
@@ -83,6 +90,34 @@ internal static class HbrEffectSkillDamageContext
         return scope;
     }
 
+    // Reflections and resource-derived damage already use combat-world units.
+    // Keep the native request intact; normalize once at the shared formula boundary.
+    internal static Scope BeginWorld(Creature target, Creature nativeDealer, CardModel card,
+        decimal worldAmount, ValueProp nativeProps, Creature statSource = null)
+    {
+        Scope scope = Begin(target, nativeDealer, card, worldAmount, nativeProps, statSource);
+        scope.IsWorldAmount = true;
+        return scope;
+    }
+
+    // The native card overload attributes a status tick to its owner's
+    // creature. Preserve that attribution without borrowing its attributes,
+    // outgoing buffs, attack charges or critical chance for the tick's math.
+    internal static Scope BeginEnvironmental(Creature target, Creature nativeDealer, CardModel card,
+        decimal rawUnits, ValueProp nativeProps)
+    {
+        Scope scope = Begin(target, nativeDealer, card, rawUnits, nativeProps);
+        scope.StatSource = null;
+        scope.IsEnvironmentalSelfDamage = true;
+        return scope;
+    }
+
+    internal static bool IsCurrentEnvironmentalSelfDamage => IsCurrentEffectCalculation &&
+        CurrentCalculation.Value.Intent.IsEnvironmentalSelfDamage;
+
+    internal static bool IsCurrentWorldBasis => IsCurrentEffectCalculation &&
+        CurrentCalculation.Value.Intent.IsWorldAmount;
+
     internal static CommandScope BeginCommand(ref IEnumerable<Creature> targets, decimal amount,
         ValueProp props, Creature dealer, CardModel cardSource)
     {
@@ -102,6 +137,9 @@ internal static class HbrEffectSkillDamageContext
         if (enabled) enabled = Interlocked.CompareExchange(ref intent.Claimed, 1, 0) == 0 && intent.Active;
         // Even an unknown nested command shadows its parent's enabled scope.
         CommandScope command = new() { Previous = previous, Intent = intent, Enabled = enabled };
+        if (enabled && intent.StatSource is { } source && HbrBattleStatsHelper.IsEnabled(source))
+            foreach (HbrEffectPower effect in source.Powers.OfType<HbrEffectPower>())
+                if (effect.TryReserveEffect(command, source)) command.CountedEffects.Add(effect);
         CurrentCommand.Value = command;
         return command;
     }
@@ -164,7 +202,8 @@ internal static class HbrEffectSkillDamageContext
     }
 
     internal static ValueProp GetPersistentEffectProps(ValueProp nativeProps) =>
-        IsCurrentEffectCalculation && CurrentCalculation.Value.Intent.Props == nativeProps
+        IsCurrentEffectCalculation && !IsCurrentEnvironmentalSelfDamage &&
+        CurrentCalculation.Value.Intent.Props == nativeProps
             ? (nativeProps & ~ValueProp.Unpowered) | ValueProp.Move : nativeProps;
 
     // Arithmetic hooks may ask an existing source context to identify a hit.
@@ -204,8 +243,25 @@ internal static class HbrEffectSkillDamageContext
             command.CriticalSample ??= run.Rng.Niche.NextInt(10000);
             sample = command.CriticalSample.Value;
         }
-        return sample <
-            HbrOriginalNumericFormula.CriticalProbability(luck, enemyParameter) * 10000m;
+        decimal bonus = DamageAmplificationLimits.AddSaturated(
+            ElectronicSoldierManual.GetEquipmentCriticalRate(source),
+            HBRGOSakiMod.Core.Models.Powers.HbrCriticalRateUpPower.GetTotalPercent(source));
+        bool critical = sample <
+            HbrOriginalNumericFormula.CriticalProbability(luck, enemyParameter,
+                bonus) * 10000m;
+        calculation.CriticalResolved = true;
+        calculation.WasCritical = critical;
+        return critical;
+    }
+
+    internal static decimal GetCriticalDamageMultiplier(Creature target, Creature dealer,
+        CardModel card, ValueProp props)
+    {
+        CalculationScope calculation = CurrentCalculation.Value;
+        return IsCurrentEffectCalculation && calculation.CriticalResolved && calculation.WasCritical &&
+            calculation.Intent.Matches(target, dealer, card, props)
+                ? HBRGOSakiMod.Core.Models.Powers.HbrCriticalDamageUpPower.GetMultiplier(calculation.Intent.StatSource)
+                : 1m;
     }
 
     internal static void RestoreCaller(CommandScope scope)
@@ -217,13 +273,25 @@ internal static class HbrEffectSkillDamageContext
     {
         if (scope == null) return;
         scope.Active = false;
+        foreach (HbrEffectPower effect in scope.CountedEffects) effect.ReleaseEffectAttack(scope);
         RestoreCaller(scope);
     }
 
     internal static async Task<IEnumerable<DamageResult>> Finish(Task<IEnumerable<DamageResult>> original,
         CommandScope scope)
     {
-        try { return await original; }
+        try
+        {
+            IEnumerable<DamageResult> results = await original;
+            if (scope is { Enabled: true, Active: true } && scope.CountedEffects.Count > 0)
+            {
+                DamageResult[] recorded = results?.ToArray() ?? Array.Empty<DamageResult>();
+                foreach (HbrEffectPower effect in scope.CountedEffects)
+                    await effect.CompleteEffectAttack(scope, recorded.Length > 0);
+                return recorded;
+            }
+            return results;
+        }
         finally { Close(scope); }
     }
 }

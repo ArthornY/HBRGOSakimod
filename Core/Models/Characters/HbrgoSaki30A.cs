@@ -5,6 +5,7 @@ using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.CardPools;
 using HBRGOSakiMod.Core.Models.Cards;
 using HBRGOSakiMod.Core.Models.Relics;
+using HBRGOSakiMod.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Models;
 using STS2RitsuLib.Scaffolding.Characters;
 
@@ -13,6 +14,8 @@ namespace HBRGOSakiMod.Core.Models.Characters;
 [CustomID("HBRGO_SAKI_30A")]
 public sealed class HbrgoSaki30A : HbrgoSaki, IModCharacterVanillaSelectionPolicy
 {
+    public override RelicPoolModel RelicPool => ModelDb.RelicPool<HBRGOSaki30ARelicPool>();
+
     public override CardPoolModel CardPool =>
         ModelDb.CardPool<HBRGOSaki30ACardPool>();
 

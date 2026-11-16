@@ -33,7 +33,7 @@ internal static class HbrSkillBlockDescription
         decimal block = live ? HbrSkillBlockHelper.ResolveUnpowered(recipient, nativeUnits) : 0m;
         description.Add("amountBlock", block);
         description.Add("blockPreview", live
-            ? $"（按当前知性预计{block.ToString("0.##", CultureInfo.InvariantCulture)}点）"
-            : "（实际格挡按获得者知性结算）");
+            ? $"（按当前智慧预计{block.ToString("0.##", CultureInfo.InvariantCulture)}点）"
+            : "（实际格挡按获得者智慧结算）");
     }
 }

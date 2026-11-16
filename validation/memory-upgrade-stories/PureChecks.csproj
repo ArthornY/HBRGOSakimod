@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup><ItemGroup>
+<Compile Include="Pure.cs" />
+<Compile Include="../../Core/Story/HbrMemoryUpgradeStoryDefinition.cs" Link="Definition.cs" />
+<Compile Include="../../Core/Story/HbrStoryDefinition.cs" Link="ExistingDefinition.cs" />
+<Compile Include="../../Core/Story/HbrStoryCharacterCatalog.cs" Link="ExistingCatalog.cs" />
+</ItemGroup></Project>

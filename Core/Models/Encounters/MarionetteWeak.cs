@@ -5,7 +5,8 @@ using MegaCrit.Sts2.Core.Rooms;
 
 namespace HBRGOSakiMod.Core.Models.Encounters;
 
-// HBR MC01_01_Battle01: a lone puppet.
+// HBR MC01_01_Battle01: a lone puppet, the tutorial's
+// MarionetteSmallVirtual_first.
 public sealed class MarionetteWeak : EncounterModel, IHbrgoEncounter
 {
     public override RoomType RoomType => RoomType.Monster;
@@ -21,9 +22,11 @@ public sealed class MarionetteWeak : EncounterModel, IHbrgoEncounter
     protected override IReadOnlyList<(MonsterModel, string)>
         GenerateMonsters()
     {
+        Marionette puppet = (Marionette)ModelDb.Monster<Marionette>().ToMutable();
+        puppet.MoveTableVariant = Marionette.TutorialVariant;
         return new (MonsterModel, string)[]
         {
-            (ModelDb.Monster<Marionette>().ToMutable(), null)
+            (puppet, null)
         };
     }
 }

@@ -239,7 +239,8 @@ public partial class MomentOfReign
     }
 
     internal async Task RedirectMaxHpChange(decimal delta, PhantomMaxHpChange change,
-        PlayerChoiceContext choiceContext = null, bool isFromCard = false)
+        PlayerChoiceContext choiceContext = null, bool isFromCard = false,
+        MegaCrit.Sts2.Core.Models.CardModel cardSource = null)
     {
         AssertMutable();
         if (delta == 0 && change is PhantomMaxHpChange.Gain or PhantomMaxHpChange.Lose) return;
@@ -289,8 +290,8 @@ public partial class MomentOfReign
                     decimal rawTarget = Math.Min(MaximumPhantomHp,
                         LargeCreatureHealthHelper.GetMaxHp(phantom) + nextAdjustment - previousAdjustment);
                     decimal loss = Math.Max(0m, LargeCreatureHealthHelper.GetMaxHp(phantom) - rawTarget);
-                    await CreatureCmd.LoseMaxHp(choiceContext ?? new ThrowingPlayerChoiceContext(),
-                        phantom, loss, isFromCard);
+                    await CreatureCommandCompatibility.LoseMaxHp(choiceContext ?? new ThrowingPlayerChoiceContext(),
+                        phantom, loss, isFromCard, cardSource);
                     if (LargeCreatureHealthHelper.GetMaxHp(phantom) != targetMaxHp)
                         await CreatureCmd.SetMaxHp(phantom, targetMaxHp);
                     break;

@@ -1,0 +1,584 @@
+{
+  "schema": "hbrgo-run/1",
+  "uploadId": "6f1c2a7e-4b8d-4c1f-9a3e-2d5b7c9e0f14",
+  "installId": "b2e4d6f8-1a3c-4e5f-8a7b-9c0d1e2f3a4b",
+  "modVersion": "1.3.0.12",
+  "gameVersion": "v0.111.0",
+  "uploadedAt": "2026-11-08T12:58:09Z",
+  "run": {
+    "recorder": {
+      "version": 1,
+      "features": ["map", "floors", "combat", "hbr", "shop_offers", "event_offers", "names", "integrity"],
+      "partial": false,
+      "fromFloor": 1,
+      "sessions": 1,
+      "notes": []
+    },
+    "rules": {
+      "rollTiers": { "first": 50, "second": 76, "third": 91, "max": 100 }
+    },
+    "startedAt": "2026-11-08T12:31:40Z",
+    "endedAt": "2026-11-08T12:58:03Z",
+    "playSeconds": 1497,
+    "character": "CHARACTER.HBRGO_SAKI_31O",
+    "ascension": 10,
+    "seed": "K3R7Q2M9X1AB",
+    "gameMode": "standard",
+    "modifiers": [],
+    "outcome": "abandoned",
+    "killedBy": null,
+    "floorReached": 6,
+    "integrity": { "modifiers": [], "consoleUsed": false, "otherGameplayMods": false },
+    "multiplayer": null,
+    "locale": "zhs",
+    "acts": [
+      {
+        "index": 0,
+        "id": "ACT.OVERGROWTH",
+        "map": {
+          "cols": 7,
+          "rows": 7,
+          "start": [3, 0],
+          "boss": [3, 7],
+          "secondBoss": null,
+          "nodes": [
+            { "at": [3, 0], "type": "ancient", "next": [[1, 1], [3, 1], [5, 1]] },
+            { "at": [1, 1], "type": "monster", "next": [[2, 2]] },
+            { "at": [3, 1], "type": "monster", "next": [[2, 2], [4, 2]] },
+            { "at": [5, 1], "type": "monster", "next": [[4, 2]] },
+            { "at": [2, 2], "type": "unknown", "next": [[2, 3], [3, 3]] },
+            { "at": [4, 2], "type": "monster", "next": [[3, 3]] },
+            { "at": [2, 3], "type": "shop", "next": [[2, 4]] },
+            { "at": [3, 3], "type": "unknown", "next": [[4, 4]] },
+            { "at": [2, 4], "type": "rest_site", "next": [[2, 5]] },
+            { "at": [4, 4], "type": "treasure", "next": [[4, 5]] },
+            { "at": [2, 5], "type": "monster", "next": [[3, 6]] },
+            { "at": [4, 5], "type": "elite", "next": [[3, 6]] },
+            { "at": [3, 6], "type": "rest_site", "next": [[3, 7]] },
+            { "at": [3, 7], "type": "boss", "next": [] }
+          ]
+        },
+        "path": [[3, 0], [3, 1], [2, 2], [2, 3], [2, 4], [2, 5]],
+        "floors": [
+          {
+            "floor": 1,
+            "actFloor": 1,
+            "at": [3, 0],
+            "pointType": "ancient",
+            "rooms": [
+              { "type": "event", "model": "EVENT.NEOW" }
+            ],
+            "choices": {
+              "ancientChoices": [
+                {
+                  "offered": [
+                    { "key": "ARCANE_SCROLL" },
+                    { "key": "NUTRITIOUS_OYSTER" },
+                    { "key": "SMALL_CAPSULE" }
+                  ],
+                  "picked": { "key": "ARCANE_SCROLL" }
+                }
+              ],
+              "relicsGained": [
+                { "id": "RELIC.ARCANE_SCROLL", "source": "ancient" }
+              ]
+            },
+            "stats": {
+              "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000, "gold": 99,
+              "goldGained": 0, "goldSpent": 0, "goldLost": 0, "damageTaken": 0, "hpHealed": 0
+            }
+          },
+          {
+            "floor": 2,
+            "actFloor": 2,
+            "at": [3, 1],
+            "pointType": "monster",
+            "rooms": [
+              {
+                "type": "monster",
+                "model": "ENCOUNTER.CREST_HOPPER_WEAK",
+                "monsters": ["MONSTER.CREST_HOPPER"],
+                "turns": 2,
+                "combat": {
+                  "attempt": 1,
+                  "creatures": {
+                    "p": { "kind": "player", "id": "CHARACTER.HBRGO_SAKI_31O" },
+                    "e0": { "kind": "enemy", "id": "MONSTER.CREST_HOPPER", "hbrParameter": 156 }
+                  },
+                  "hbr": {
+                    "battleLevel": 1,
+                    "stats": { "strength": 110, "dexterity": 110, "intelligence": 110, "vitality": 110, "spirit": 110, "luck": 110 },
+                    "senses": { "madness": 5, "leadershipCharm": 5, "talent": 5, "gentleness": 5, "mentalStrength": 5, "simplicity": 5 },
+                    "unspentSensePoints": 0,
+                    "critRatePercent": 0,
+                    "equipment": {
+                      "equipped": [],
+                      "bonus": { "strength": 0, "dexterity": 0, "intelligence": 0, "vitality": 0, "spirit": 0, "luck": 0, "dp": 0, "critRatePercent": 0 },
+                      "effects": {}
+                    }
+                  },
+                  "rounds": [
+                    {
+                      "round": 1,
+                      "start": {
+                        "p": {
+                          "hp": 3500, "maxHp": 3500, "block": 0, "dp": 7000, "maxDp": 7000,
+                          "energy": 3, "od": 0,
+                          "piles": { "hand": 0, "draw": 10, "discard": 0, "exhaust": 0 },
+                          "powers": []
+                        },
+                        "e0": {
+                          "hp": 420, "maxHp": 420, "block": 0, "dp": 783, "maxDp": 783,
+                          "powers": [ { "id": "POWER.DESTRUCTION_RATE_POWER", "amount": 100 } ],
+                          "intents": [ { "type": "attack", "move": "ATTACK_MOVE", "damage": 420, "hits": 1 } ]
+                        }
+                      },
+                      "events": [
+                        { "type": "turn_start", "side": "player" },
+                        { "type": "draw", "by": "p", "card": { "uid": 1, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 2, "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 3, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 4, "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 5, "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0 } },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 1, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 },
+                          "target": "e0", "energy": 1,
+                          "dealt": { "total": 207, "hp": 0, "dp": 207, "blocked": 0, "kills": 0 }
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 1, "label": "打击",
+                          "base": 63, "final": 63, "dice": "基础骰", "bonuses": [],
+                          "tier": "first", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "damage", "from": "p", "to": "e0", "src": { "cardUid": 1 }, "amount": 207, "blocked": 0, "hpLoss": 0, "dpLoss": 207 },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 4, "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 0 },
+                          "target": "e0", "energy": 1,
+                          "dealt": { "total": 360, "hp": 0, "dp": 360, "blocked": 0, "kills": 0 }
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 4, "label": "魔剑幸运七",
+                          "base": 92, "final": 92, "dice": "基础骰", "bonuses": [],
+                          "tier": "third", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "damage", "from": "p", "to": "e0", "src": { "cardUid": 4 }, "amount": 360, "blocked": 0, "hpLoss": 0, "dpLoss": 360 },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 2, "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0 },
+                          "target": null, "energy": 1
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 2, "label": "防御",
+                          "base": 31, "final": 31, "dice": "基础骰", "bonuses": [],
+                          "tier": "none", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "block", "to": "p", "src": { "cardUid": 2 }, "amount": 500 },
+                        { "type": "turn_end", "side": "player" },
+                        { "type": "turn_start", "side": "enemy" },
+                        { "type": "move", "by": "e0", "move": "ATTACK_MOVE" },
+                        { "type": "damage", "from": "e0", "to": "p", "src": { "move": "ATTACK_MOVE" }, "amount": 420, "blocked": 420, "hpLoss": 0, "dpLoss": 0 },
+                        { "type": "turn_end", "side": "enemy" }
+                      ],
+                      "end": {
+                        "p": { "hp": 3500, "block": 80, "dp": 7000 },
+                        "e0": { "hp": 420, "block": 0, "dp": 216 }
+                      }
+                    },
+                    {
+                      "round": 2,
+                      "start": {
+                        "p": {
+                          "hp": 3500, "maxHp": 3500, "block": 0, "dp": 7000, "maxDp": 7000,
+                          "energy": 3, "od": 24,
+                          "piles": { "hand": 0, "draw": 5, "discard": 5, "exhaust": 0 },
+                          "powers": []
+                        },
+                        "e0": {
+                          "hp": 420, "maxHp": 420, "block": 0, "dp": 216, "maxDp": 783,
+                          "powers": [ { "id": "POWER.DESTRUCTION_RATE_POWER", "amount": 100 } ],
+                          "intents": [ { "type": "attack", "move": "COMBO_MOVE", "damage": 60, "hits": 8 } ]
+                        }
+                      },
+                      "events": [
+                        { "type": "turn_start", "side": "player" },
+                        { "type": "draw", "by": "p", "card": { "uid": 6, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 7, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 8, "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 9, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 10, "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0 } },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 6, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 },
+                          "target": "e0", "energy": 1,
+                          "dealt": { "total": 216, "hp": 0, "dp": 216, "blocked": 0, "kills": 0 }
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 6, "label": "打击",
+                          "base": 88, "final": 88, "dice": "基础骰", "bonuses": [],
+                          "tier": "second", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "damage", "from": "p", "to": "e0", "src": { "cardUid": 6 }, "amount": 216, "blocked": 0, "hpLoss": 0, "dpLoss": 216 },
+                        { "type": "power", "to": "e0", "from": "p", "src": { "cardUid": 6 }, "power": "POWER.DESTRUCTION_RATE_POWER", "delta": 30, "amount": 130 },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 7, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 },
+                          "target": "e0", "energy": 1,
+                          "dealt": { "total": 351, "hp": 351, "dp": 0, "blocked": 0, "kills": 0 }
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 7, "label": "打击",
+                          "base": 100, "final": 100, "dice": "基础骰", "bonuses": [],
+                          "tier": "critical", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "damage", "from": "p", "to": "e0", "src": { "cardUid": 7 }, "amount": 351, "blocked": 0, "hpLoss": 351, "dpLoss": 0 },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 9, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 },
+                          "target": "e0", "energy": 1,
+                          "dealt": { "total": 269, "hp": 69, "dp": 0, "blocked": 0, "kills": 1 }
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 9, "label": "打击",
+                          "base": 55, "final": 55, "dice": "基础骰", "bonuses": [],
+                          "tier": "first", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "damage", "from": "p", "to": "e0", "src": { "cardUid": 9 }, "amount": 269, "blocked": 0, "hpLoss": 69, "dpLoss": 0, "overkill": 200, "killed": true },
+                        { "type": "death", "who": "e0" }
+                      ],
+                      "end": {
+                        "p": { "hp": 3500, "block": 0, "dp": 7000 },
+                        "e0": { "hp": 0, "block": 0, "dp": 0 }
+                      }
+                    }
+                  ],
+                  "result": {
+                    "outcome": "win",
+                    "rounds": 2,
+                    "player": { "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000 },
+                    "dealt": { "total": 1403, "hp": 420, "dp": 783, "blocked": 0, "kills": 1 },
+                    "taken": { "total": 420, "hp": 0, "dp": 0, "blocked": 420 }
+                  }
+                }
+              }
+            ],
+            "choices": {
+              "cardChoices": [
+                {
+                  "source": "reward",
+                  "offered": [
+                    { "id": "CARD.STRENGTHEN_HBRGO_SAKI", "upgrade": 0, "rarity": "common" },
+                    { "id": "CARD.SWALLOW_REVERSAL_HBRGO_SAKI", "upgrade": 0, "rarity": "common" },
+                    { "id": "CARD.PER_TURN_CHARGE_HBRGO_SAKI", "upgrade": 0, "rarity": "uncommon" }
+                  ],
+                  "picked": [ { "id": "CARD.SWALLOW_REVERSAL_HBRGO_SAKI", "upgrade": 0, "rarity": "common" } ],
+                  "skipped": false
+                }
+              ],
+              "potionChoices": [
+                { "offered": ["POTION.WEAK_POTION"], "picked": "POTION.WEAK_POTION" }
+              ],
+              "cardsGained": [ { "id": "CARD.SWALLOW_REVERSAL_HBRGO_SAKI", "upgrade": 0 } ],
+              "potionsGained": ["POTION.WEAK_POTION"]
+            },
+            "hbr": {
+              "levelBefore": 1,
+              "levelAfter": 2,
+              "senseGained": 1,
+              "senseAllocations": [ { "madness": 1 } ]
+            },
+            "stats": {
+              "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000, "gold": 116,
+              "goldGained": 17, "goldSpent": 0, "goldLost": 0, "damageTaken": 0, "hpHealed": 0
+            }
+          },
+          {
+            "floor": 3,
+            "actFloor": 3,
+            "at": [2, 2],
+            "pointType": "unknown",
+            "rooms": [
+              { "type": "event", "model": "EVENT.HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI" }
+            ],
+            "choices": {
+              "eventChoices": [
+                {
+                  "event": "EVENT.HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI",
+                  "page": "INITIAL",
+                  "offered": [
+                    { "key": "HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI.pages.INITIAL.options.CHOICE.title", "text": "椎名立希" },
+                    { "key": "HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI.pages.INITIAL.options.CHOICE_KAREN.title", "text": "朝仓可怜" }
+                  ],
+                  "picked": { "key": "HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI.pages.INITIAL.options.CHOICE.title", "text": "椎名立希" }
+                },
+                {
+                  "event": "EVENT.HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI",
+                  "page": "TAKI",
+                  "offered": [
+                    { "key": "HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI.pages.TAKI.options.CHOICE.title", "text": "获得8点领袖魅力，从3张卡牌中选择1张获得" }
+                  ],
+                  "picked": { "key": "HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI.pages.TAKI.options.CHOICE.title", "text": "获得8点领袖魅力，从3张卡牌中选择1张获得" }
+                }
+              ],
+              "cardChoices": [
+                {
+                  "source": "event",
+                  "offered": [
+                    { "id": "CARD.SLIDE_STEP_HBRGO_SAKI", "upgrade": 0, "rarity": "common" },
+                    { "id": "CARD.DRINK_TEA_HBRGO_SAKI", "upgrade": 0, "rarity": "common" },
+                    { "id": "CARD.QUICK_SWITCH_HBRGO_SAKI", "upgrade": 0, "rarity": "common" }
+                  ],
+                  "picked": [],
+                  "skipped": true
+                }
+              ]
+            },
+            "hbr": {
+              "senseChanges": [
+                { "attribute": "leadershipCharm", "delta": 8, "source": "EVENT.HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI" }
+              ]
+            },
+            "stats": {
+              "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000, "gold": 116,
+              "goldGained": 0, "goldSpent": 0, "goldLost": 0, "damageTaken": 0, "hpHealed": 0
+            }
+          },
+          {
+            "floor": 4,
+            "actFloor": 4,
+            "at": [2, 3],
+            "pointType": "shop",
+            "rooms": [
+              { "type": "shop" }
+            ],
+            "choices": {
+              "shop": {
+                "offered": {
+                  "cards": [
+                    { "card": { "id": "CARD.SLIDE_STEP_HBRGO_SAKI", "upgrade": 0 }, "price": 52 },
+                    { "card": { "id": "CARD.STRENGTHEN_HBRGO_SAKI", "upgrade": 0 }, "price": 49 },
+                    { "card": { "id": "CARD.QUICK_SWITCH_HBRGO_SAKI", "upgrade": 0 }, "price": 38, "onSale": true }
+                  ],
+                  "relics": [ { "id": "RELIC.MINIATURE_TENT", "price": 162 } ],
+                  "potions": [ { "id": "POTION.DP_POTION_HBRGO_SAKI", "price": 53 } ],
+                  "removalPrice": 75
+                },
+                "bought": [
+                  { "kind": "removal", "card": { "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 }, "price": 75 }
+                ]
+              },
+              "cardsRemoved": [ { "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } ]
+            },
+            "hbr": {
+              "equipmentOffers": [
+                { "item": { "template": "SBooster_0101", "kind": "booster", "stars": 1, "name": "第一阶段", "rolls": [], "plus": [] }, "price": 25 },
+                { "item": { "template": "SBooster_0102", "kind": "booster", "stars": 2, "name": "高墙", "rolls": [], "plus": [] }, "price": 40 }
+              ],
+              "equipment": [
+                {
+                  "action": "buy",
+                  "item": { "itemId": 1, "template": "SBooster_0101", "kind": "booster", "stars": 1, "name": "第一阶段", "rolls": [], "plus": [] },
+                  "price": 25
+                },
+                { "action": "equip", "itemId": 1, "slot": "booster", "index": 0 }
+              ]
+            },
+            "stats": {
+              "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000, "gold": 16,
+              "goldGained": 0, "goldSpent": 100, "goldLost": 0, "damageTaken": 0, "hpHealed": 0
+            }
+          },
+          {
+            "floor": 5,
+            "actFloor": 5,
+            "at": [2, 4],
+            "pointType": "rest_site",
+            "rooms": [
+              { "type": "rest_site" }
+            ],
+            "choices": {
+              "rest": [
+                { "choice": "SMITH", "card": { "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 1 } }
+              ],
+              "cardsUpgraded": [ { "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 1 } ]
+            },
+            "stats": {
+              "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000, "gold": 16,
+              "goldGained": 0, "goldSpent": 0, "goldLost": 0, "damageTaken": 0, "hpHealed": 0
+            }
+          },
+          {
+            "floor": 6,
+            "actFloor": 6,
+            "at": [2, 5],
+            "pointType": "monster",
+            "rooms": [
+              {
+                "type": "monster",
+                "model": "ENCOUNTER.SMALL_HOPPERS_WEAK",
+                "monsters": ["MONSTER.SMALL_HOPPER", "MONSTER.SMALL_HOPPER"],
+                "turns": 1,
+                "combat": {
+                  "attempt": 1,
+                  "creatures": {
+                    "p": { "kind": "player", "id": "CHARACTER.HBRGO_SAKI_31O" },
+                    "e0": { "kind": "enemy", "id": "MONSTER.SMALL_HOPPER", "hbrParameter": 180 },
+                    "e1": { "kind": "enemy", "id": "MONSTER.SMALL_HOPPER", "hbrParameter": 180 }
+                  },
+                  "hbr": {
+                    "battleLevel": 2,
+                    "stats": { "strength": 130, "dexterity": 144, "intelligence": 128, "vitality": 128, "spirit": 128, "luck": 128 },
+                    "senses": { "madness": 6, "leadershipCharm": 13, "talent": 5, "gentleness": 5, "mentalStrength": 5, "simplicity": 5 },
+                    "unspentSensePoints": 0,
+                    "critRatePercent": 0,
+                    "equipment": {
+                      "equipped": [
+                        {
+                          "slot": "booster", "index": 0,
+                          "item": { "itemId": 1, "template": "SBooster_0101", "kind": "booster", "stars": 1, "name": "第一阶段", "rolls": [], "plus": [] }
+                        }
+                      ],
+                      "bonus": { "strength": 14, "dexterity": 14, "intelligence": 14, "vitality": 14, "spirit": 14, "luck": 14, "dp": 0, "critRatePercent": 0 },
+                      "effects": {}
+                    }
+                  },
+                  "rounds": [
+                    {
+                      "round": 1,
+                      "start": {
+                        "p": {
+                          "hp": 3500, "maxHp": 3500, "block": 0, "dp": 7000, "maxDp": 7000,
+                          "energy": 3, "od": 0,
+                          "piles": { "hand": 0, "draw": 10, "discard": 0, "exhaust": 0 },
+                          "powers": []
+                        },
+                        "e0": {
+                          "hp": 380, "maxHp": 380, "block": 0, "dp": 500, "maxDp": 500,
+                          "powers": [ { "id": "POWER.DESTRUCTION_RATE_POWER", "amount": 100 } ],
+                          "intents": [ { "type": "attack", "move": "ATTACK_MOVE", "damage": 300, "hits": 1 } ]
+                        },
+                        "e1": {
+                          "hp": 380, "maxHp": 380, "block": 0, "dp": 500, "maxDp": 500,
+                          "powers": [ { "id": "POWER.DESTRUCTION_RATE_POWER", "amount": 100 } ],
+                          "intents": [ { "type": "attack", "move": "COMBO_MOVE", "damage": 50, "hits": 4 } ]
+                        }
+                      },
+                      "events": [
+                        { "type": "turn_start", "side": "player" },
+                        { "type": "draw", "by": "p", "card": { "uid": 1, "id": "CARD.SWALLOW_REVERSAL_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 2, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 3, "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 1 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 4, "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "draw", "by": "p", "card": { "uid": 5, "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0 } },
+                        { "type": "potion", "by": "p", "potion": "POTION.WEAK_POTION", "target": "e1" },
+                        { "type": "power", "to": "e1", "from": "p", "src": { "potion": "POTION.WEAK_POTION" }, "power": "POWER.WEAK_POWER", "delta": 1, "amount": 1 },
+                        {
+                          "type": "play", "by": "p",
+                          "card": { "uid": 3, "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 1 },
+                          "target": "e0", "energy": 1,
+                          "dealt": { "total": 420, "hp": 0, "dp": 420, "blocked": 0, "kills": 0 }
+                        },
+                        {
+                          "type": "roll", "by": "p", "cardUid": 3, "label": "魔剑幸运七",
+                          "base": 77, "final": 77, "dice": "基础骰", "bonuses": [],
+                          "tier": "second", "critMin": 100, "absCritMin": 777, "discarded": []
+                        },
+                        { "type": "damage", "from": "p", "to": "e0", "src": { "cardUid": 3 }, "amount": 420, "blocked": 0, "hpLoss": 0, "dpLoss": 420 }
+                      ]
+                    }
+                  ],
+                  "result": {
+                    "outcome": "abandoned",
+                    "rounds": 1,
+                    "player": { "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000 },
+                    "dealt": { "total": 420, "hp": 0, "dp": 420, "blocked": 0, "kills": 0 },
+                    "taken": { "total": 0, "hp": 0, "dp": 0, "blocked": 0 }
+                  }
+                }
+              }
+            ],
+            "choices": {
+              "potionsUsed": ["POTION.WEAK_POTION"]
+            },
+            "stats": {
+              "hp": 3500, "maxHp": 3500, "dp": 7000, "maxDp": 7000, "gold": 16,
+              "goldGained": 0, "goldSpent": 0, "goldLost": 0, "damageTaken": 0, "hpHealed": 0
+            }
+          }
+        ]
+      }
+    ],
+    "final": {
+      "floor": 6,
+      "hp": 3500,
+      "maxHp": 3500,
+      "dp": 7000,
+      "maxDp": 7000,
+      "gold": 16,
+      "deck": [
+        { "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.STRIKE_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.DEFEND_HBRGO_SAKI", "upgrade": 0, "floorAdded": 1 },
+        { "id": "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI", "upgrade": 1, "floorAdded": 1 },
+        { "id": "CARD.SWALLOW_REVERSAL_HBRGO_SAKI", "upgrade": 0, "floorAdded": 2 }
+      ],
+      "relics": [
+        { "id": "RELIC.ELECTRONIC_SOLDIER_MANUAL_31_O", "floorAdded": 1 },
+        { "id": "RELIC.SOUL_OF_ANCHOR", "floorAdded": 1 },
+        { "id": "RELIC.DEFLECTOR_PROTECTION", "floorAdded": 1 },
+        { "id": "RELIC.OVERCLOCK", "floorAdded": 1 },
+        { "id": "RELIC.ARCANE_SCROLL", "floorAdded": 1 }
+      ],
+      "potions": [],
+      "hbr": {
+        "battleLevel": 2,
+        "stats": { "strength": 130, "dexterity": 144, "intelligence": 128, "vitality": 128, "spirit": 128, "luck": 128 },
+        "senses": { "madness": 6, "leadershipCharm": 13, "talent": 5, "gentleness": 5, "mentalStrength": 5, "simplicity": 5 },
+        "unspentSensePoints": 0,
+        "critRatePercent": 0,
+        "equipment": {
+          "equipped": [
+            {
+              "slot": "booster", "index": 0,
+              "item": { "itemId": 1, "template": "SBooster_0101", "kind": "booster", "stars": 1, "name": "第一阶段", "rolls": [], "plus": [] }
+            }
+          ],
+          "bonus": { "strength": 14, "dexterity": 14, "intelligence": 14, "vitality": 14, "spirit": 14, "luck": 14, "dp": 0, "critRatePercent": 0 },
+          "effects": {},
+          "inventory": [
+            { "itemId": 1, "template": "SBooster_0101", "kind": "booster", "stars": 1, "name": "第一阶段", "rolls": [], "plus": [] }
+          ]
+        }
+      }
+    },
+    "names": {
+      "CHARACTER.HBRGO_SAKI_31O": "丰川祥子（31O）",
+      "CARD.STRIKE_HBRGO_SAKI": "打击",
+      "CARD.DEFEND_HBRGO_SAKI": "防御",
+      "CARD.MAGIC_SWORD_LUCKY_SEVEN_HBRGO_SAKI": "魔剑幸运七",
+      "CARD.SWALLOW_REVERSAL_HBRGO_SAKI": "燕反",
+      "CARD.PER_TURN_CHARGE_HBRGO_SAKI": "每回合充能",
+      "CARD.SLIDE_STEP_HBRGO_SAKI": "滑步",
+      "CARD.DRINK_TEA_HBRGO_SAKI": "大吉岭红茶",
+      "CARD.QUICK_SWITCH_HBRGO_SAKI": "快速切换",
+      "CARD.STRENGTHEN_HBRGO_SAKI": "强化",
+      "RELIC.ELECTRONIC_SOLDIER_MANUAL_31_O": "丰川祥子（31O）的电子军人手册",
+      "RELIC.SOUL_OF_ANCHOR": "出目历史",
+      "RELIC.DEFLECTOR_PROTECTION": "偏导护盾",
+      "RELIC.OVERCLOCK": "超频",
+      "POTION.DP_POTION_HBRGO_SAKI": "DP药水",
+      "EVENT.HBRGO_SAKI_MOD_EVENT_GYM_HBRGO_SAKI": "健身房",
+      "ENCOUNTER.CREST_HOPPER_WEAK": "CrestHopper",
+      "ENCOUNTER.SMALL_HOPPERS_WEAK": "两只杂鱼",
+      "MONSTER.CREST_HOPPER": "CrestHopper",
+      "MONSTER.SMALL_HOPPER": "SmallHopper",
+      "POWER.DESTRUCTION_RATE_POWER": "破坏率"
+    }
+  }
+}

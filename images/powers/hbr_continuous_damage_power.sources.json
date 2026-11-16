@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "name": "IconContinuousDamage.png",
+  "importedPath": "res://images/powers/hbr_continuous_damage_power.png",
+  "sha256": "9332e6052338cc8e32f366a889ab8732aa989adc00ccf912b081b8b4df688eee",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical original decoded Texture2D; no crop, recoloring, resizing or generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconContinuousDamage.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "7089305054661418040",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/.ai-collab/handoffs/monster-req-20261114/icons/IconContinuousDamage.png",
+    "sourceSha256": "9332e6052338cc8e32f366a889ab8732aa989adc00ccf912b081b8b4df688eee",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrContinuousDamagePower",
+    "small": "res://images/powers/hbr_continuous_damage_power.png",
+    "big": "res://images/powers/hbr_continuous_damage_power.png"
+  },
+  "limits": "Asset provenance only; no Godot import or rendering."
+}

@@ -131,7 +131,7 @@ public sealed class HotaruExtendedCoda : HotaruCannonCard
     public override IEnumerable<CardKeyword> CanonicalKeywords => new[] { CardKeyword.Exhaust };
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
-        EnergyCost.CapturedXValue = DualSwordsCopyHelper.PeekXEnergySpent(this, EnergyCost.CapturedXValue);
+        EnergyCost.CapturedXValue = CardCopyContextHelper.PeekXEnergySpent(this, EnergyCost.CapturedXValue);
         return Owner.GetRelic<Millsage>().ChargeFromCard(context, play.Target,
             (int)Math.Min(int.MaxValue, (long)Math.Max(0, ResolveEnergyXValue()) + DynamicVars["ExtraActions"].IntValue), this);
     }

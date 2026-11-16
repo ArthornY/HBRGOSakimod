@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "name": "HBR IconTarget original icon",
+  "importedPath": "res://images/powers/hbr_provoke_power.png",
+  "sha256": "d2e49b448d08efc637732d64edf1febbcbf9c7d4e95983474847119419216433",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "None. Byte-identical copy of the original locally decoded Texture2D; no resizing, recoloring, crop or AI generation.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconTarget.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "5001818595441929768",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:\\stsmod\\.ai-collab\\handoffs\\monster-req-20261114\\icons\\IconTarget.png",
+    "sourceSha256": "d2e49b448d08efc637732d64edf1febbcbf9c7d4e95983474847119419216433"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrProvokePower",
+    "small": "res://images/powers/hbr_provoke_power.png",
+    "big": "res://images/powers/hbr_provoke_power.png"
+  },
+  "limits": "Source asset provenance only. No Godot importer, package or in-game visual run."
+}

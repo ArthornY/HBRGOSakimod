@@ -15,7 +15,7 @@ internal static class HbrNativeAnchorBlockSkillPatch
     private static bool Prefix(Creature creature, BlockVar blockVar, CardPlay cardPlay, bool fast,
         ref Task<decimal> __result)
     {
-        if (!HbrNativeEffectSkillHelper.TryResolveAnchorBlock(blockVar, creature, out decimal amount)) return true;
+        if (!HbrNativeEffectSkillHelper.TryResolveNativeBlock(blockVar, creature, out decimal amount)) return true;
         // The native typed adapter only forwards BaseValue/Props. Keep the
         // complete decimal command, original flags, hooks and actual gain.
         __result = CreatureCmd.GainBlock(creature, amount, blockVar.Props, cardPlay, fast);

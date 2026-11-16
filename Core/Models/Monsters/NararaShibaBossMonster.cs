@@ -61,6 +61,13 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
         WorkStatusTypes.Length * WorkStatusPiles.Length;
 
     private MoveState _awakeStartState;
+    private MoveState _workState;
+
+    internal bool UsesAnkoRules => Creature?.Side == CombatSide.Enemy && HbrBattleStatsHelper.IsEnabled(Creature);
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int ForcedWakeCount { get; private set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool NextWorkReducedHits { get; private set; }
     private bool _hasInitializedStartingPowers;
 
     // Event combat freezes this value before Creature construction. Old saves
@@ -136,9 +143,6 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int TriggeredHpThresholdsMask { get; private set; }
 
-    internal bool CanBreakDpLayerThisRound =>
-        LastDpBreakRound != Math.Max(1, CombatState?.RoundNumber ?? 1);
-
     internal void InitializeDpLayers()
     {
         AssertMutable();
@@ -160,32 +164,6 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
             LastDpTurnEndTriggered = true;
             NararaForcedTurnEndHelper.Request(Creature);
         }
-    }
-
-    public override Task AfterCurrentHpChanged(Creature creature, decimal delta)
-    {
-        if (creature != Creature || delta >= 0m || Creature?.Side != CombatSide.Enemy ||
-            !Creature.IsAlive || LargeCreatureHealthHelper.GetMaxHp(Creature) <= 0) return Task.CompletedTask;
-
-        int crossed = 0;
-        for (int threshold = 1; threshold <= 3; threshold++)
-        {
-            // Decimal cross multiplication keeps 75/50/25% exact for odd HP
-            // totals and avoids overflow or rounding away a threshold.
-            if (LargeCreatureHealthHelper.GetCurrentHp(Creature) * 4m <=
-                LargeCreatureHealthHelper.GetMaxHp(Creature) * (4 - threshold))
-                crossed |= 1 << (threshold - 1);
-        }
-        int newThresholds = crossed & ~TriggeredHpThresholdsMask;
-        if (newThresholds == 0) return Task.CompletedTask;
-
-        AssertMutable();
-        // Consume every crossed threshold together. Healing, restored DP and
-        // extra turns never reset these once-per-combat milestones. If the
-        // player turn is already ending, do not carry them into the next turn.
-        TriggeredHpThresholdsMask |= newThresholds;
-        NararaForcedTurnEndHelper.Request(Creature);
-        return Task.CompletedTask;
     }
 
     internal bool EnsureRecoveredActiveDpLayer()
@@ -230,6 +208,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
         await base.AfterAddedToRoom();
         if (HasInitializedStartingPowers)
         {
+            await EnsureHpLayers();
             return;
         }
 
@@ -248,6 +227,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
         // Normalize HP before installing starting powers. The outer room
         // wrapper uses the same idempotent helper and will not multiply twice.
         EnemyHealthScalingHelper.ApplyInitialHealth(Creature);
+        await EnsureHpLayers();
 
         var choiceContext = new ThrowingPlayerChoiceContext();
         await PowerCmd.Apply<TourGuidePower>(
@@ -268,8 +248,11 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
             1,
             Creature,
             null);
-        await PowerCmd.Apply<NararaNullificationPower>(
-            choiceContext, Creature, 1, Creature, null);
+        if (UsesAnkoRules)
+        {
+            await PowerCmd.Apply<NararaNullificationPower>(choiceContext, Creature, 1, Creature, null);
+            await PowerCmd.Apply<NararaPressurePower>(choiceContext, Creature, 1, Creature, null);
+        }
         await PowerCmd.Apply<NararaSleepingPower>(
             choiceContext,
             Creature,
@@ -281,6 +264,22 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
         // Preserve its existing initial DP and plating at this entry point.
         if (Creature.Side != CombatSide.Enemy)
             await InitializeStartingDp(choiceContext);
+    }
+
+    private async Task EnsureHpLayers()
+    {
+        if (Creature.Side != CombatSide.Enemy) return;
+        var context = new ThrowingPlayerChoiceContext();
+        // Retire the old turn budget when restoring an older mutable boss too.
+        if (Creature.GetPower<HardenedShellPower>() is { } oldCap)
+        {
+            await PowerCmd.Remove(oldCap);
+            Creature.HpDisplay = HpDisplay.Normal;
+        }
+        if (Creature.HasPower<NararaLayeredHpPower>()) return;
+        int layers = NararaLayeredHpHelper.CalculateRemainingLayers(
+            LargeCreatureHealthHelper.GetCurrentHp(Creature), LargeCreatureHealthHelper.GetMaxHp(Creature));
+        if (layers > 0) await PowerCmd.Apply<NararaLayeredHpPower>(context, Creature, layers, Creature, null);
     }
 
     internal async Task InitializeStartingDp(PlayerChoiceContext choiceContext)
@@ -328,7 +327,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
             LotsOfMoneyMoveId,
             LotsOfMoneyMove,
             new SingleAttackIntent(() => GetLotsOfMoneyDamage()));
-        MoveState work = Move(
+        MoveState work = _workState = Move(
             WorkMoveId,
             WorkMove,
             new MultiAttackIntent(WorkDamage, GetWorkHitCount),
@@ -377,7 +376,24 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
             return;
         }
 
-        SetMoveImmediate(_awakeStartState, forceTransition: true);
+        SetMoveImmediate(UsesAnkoRules && NextWorkReducedHits && _workState != null
+            ? _workState : _awakeStartState, forceTransition: true);
+    }
+
+    internal async Task WakeFromPressure(PlayerChoiceContext context)
+    {
+        if (!UsesAnkoRules || Creature.GetPower<NararaSleepingPower>() is not { Amount: > 0 } sleep) return;
+        AssertMutable();
+        NextWorkReducedHits = true;
+        ForcedWakeCount = ForcedWakeCount == int.MaxValue ? int.MaxValue : ForcedWakeCount + 1;
+        Creature.GetPower<NararaPressurePower>()?.ResetPressure();
+        await PowerCmd.Remove(sleep);
+        decimal basis = 15m;
+        for (int i = 1; i < ForcedWakeCount && basis < decimal.MaxValue; i++)
+            basis = DamageAmplificationLimits.MultiplySaturated(basis, 2m);
+        HbrEffectProfile profile = new(HbrEffectLimit.Default, HbrEffectExit.Eternal, 1);
+        await HbrEffectApplication.Apply<HbrAttackUpPower>(context, Creature, basis, Creature, profile: profile);
+        await HbrEffectApplication.Apply<HbrDefenseUpPower>(context, Creature, basis, Creature, profile: profile);
     }
 
     private static MoveState Move(
@@ -420,7 +436,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
         }
 
         var choiceContext = new ThrowingPlayerChoiceContext();
-        await HbrPercentDebuffApplication.ApplyAttackDown(
+        await HbrBossDebuffApplication.ApplyAttackDown(
             choiceContext,
             targets,
             99,
@@ -432,7 +448,7 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
             99,
             Creature,
             null);
-        await HbrPercentDebuffApplication.ApplyDefenseDown(
+        await HbrBossDebuffApplication.ApplyDefenseDown(
             choiceContext,
             targets,
             99,
@@ -462,7 +478,9 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
 
     private async Task WorkMove(IReadOnlyList<Creature> _)
     {
-        await PerformAttack(WorkDamage, GetWorkHitCount());
+        int hits = GetWorkHitCount();
+        if (UsesAnkoRules) NextWorkReducedHits = false;
+        await PerformAttack(WorkDamage, hits);
 
         foreach (Player player in CombatState.Players.Where(
                      player => player.Creature.IsAlive))
@@ -497,7 +515,10 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
 
         await CreatureCmd.SetMaxHp(
             Creature,
-            LargeCreatureHealthHelper.GetMaxHp(Creature) + statusCount * 100m);
+            BigCombatNumbers.ClampStat(DamageAmplificationLimits.AddSaturated(
+                LargeCreatureHealthHelper.GetMaxHp(Creature), UsesAnkoRules
+                    ? decimal.Floor(DamageAmplificationLimits.MultiplySaturated(
+                        LargeCreatureHealthHelper.GetMaxHp(Creature), .005m * statusCount)) : statusCount * 100m)));
         var choiceContext = new ThrowingPlayerChoiceContext();
         await PowerCmd.Apply<StrengthPower>(
             choiceContext,
@@ -561,9 +582,8 @@ public sealed class NararaShibaBossMonster : HbrgoStaticMonster
 
     private int GetWorkHitCount()
     {
-        return CombatState?.RunState.AscensionLevel >=
-            AscendedWorkLevel
-                ? AscendedWorkHitCount
-                : NormalWorkHitCount;
+        int hits = CombatState?.RunState.AscensionLevel >= AscendedWorkLevel
+            ? AscendedWorkHitCount : NormalWorkHitCount;
+        return UsesAnkoRules && NextWorkReducedHits ? hits - 2 : hits;
     }
 }

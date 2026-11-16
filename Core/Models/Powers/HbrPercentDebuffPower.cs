@@ -20,19 +20,29 @@ namespace HBRGOSakiMod.Core.Models.Powers;
 
 // These are independent HBR abilities. Native Weak/Vulnerable continue to own
 // their original duration, stacking, damage hooks and item interactions.
-public abstract class HbrPercentDebuffPower : PowerModel, ICustomPower
+public abstract class HbrPercentDebuffPower : PowerModel, ICustomPower, IHbrEffectInstance
 {
     private decimal? _effectPercent;
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public int HbrModifierCount { get; protected set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HbrUnlimitedInstances { get; protected set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int HbrExitOverride { get; protected set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int HbrLimitOverride { get; protected set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public int HbrDefaultRemainingOverride { get; protected set; }
+    [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+    public bool HbrWaitForOwnerTurnStart { get; protected set; }
 
     [SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
     public string HbrEffectData
     {
         get => _effectPercent?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         protected set => _effectPercent = decimal.TryParse(value, NumberStyles.Number,
-            CultureInfo.InvariantCulture, out decimal parsed) ? Math.Max(0m, parsed) : null;
+            CultureInfo.InvariantCulture, out decimal parsed) ? parsed : null;
     }
 
     internal int ModifierAmount => HbrModifierCount > 0 ? HbrModifierCount : Math.Max(0, Amount);
@@ -42,13 +52,27 @@ public abstract class HbrPercentDebuffPower : PowerModel, ICustomPower
     internal void Configure(decimal percent, int modifiers)
     {
         AssertMutable();
-        _effectPercent = Math.Max(0m, percent);
+        _effectPercent = percent;
         HbrModifierCount = Math.Max(1, modifiers);
     }
+    internal void SetUnlimited(bool unlimited) { AssertMutable(); HbrUnlimitedInstances = unlimited; }
+    internal void WaitForNextOwnerTurn() { AssertMutable(); HbrWaitForOwnerTurnStart = true; }
+    internal void ConfigureProfile(HbrEffectProfile profile)
+    {
+        AssertMutable(); HbrExitOverride = (int)profile.Exit + 1; HbrLimitOverride = (int)profile.Limit + 1;
+        HbrDefaultRemainingOverride = profile.DefaultRemaining; HbrUnlimitedInstances = profile.Limit == HbrEffectLimit.None;
+    }
+    internal HbrEffectProfile CurrentEffectProfile => new(
+        HbrUnlimitedInstances ? HbrEffectLimit.None : HbrLimitOverride > 0 ? (HbrEffectLimit)(HbrLimitOverride - 1) : HbrEffectLimit.Default,
+        HbrExitOverride > 0 ? (HbrEffectExit)(HbrExitOverride - 1) : HbrEffectExit.EnemyTurnEnd,
+        HbrDefaultRemainingOverride > 0 ? HbrDefaultRemainingOverride : 1);
 
     public override PowerType Type => PowerType.Debuff;
     public override PowerStackType StackType => PowerStackType.Counter;
     public override PowerInstanceType InstanceType => PowerInstanceType.Instanced;
+    decimal IHbrEffectInstance.EffectPotency => EffectPercent;
+    int IHbrEffectInstance.Remaining => Amount;
+    HbrEffectProfile IHbrEffectInstance.EffectProfile => CurrentEffectProfile;
     public abstract string CustomPackedIconPath { get; }
     public string CustomBigIconPath => CustomPackedIconPath;
     public string CustomBigBetaIconPath => CustomPackedIconPath;
@@ -64,18 +88,28 @@ public abstract class HbrPercentDebuffPower : PowerModel, ICustomPower
                 .ToString("0.#", CultureInfo.InvariantCulture));
             text.Add("ModifierCount", ModifierAmount);
             text.Add("Turns", Math.Max(0, Amount));
+            text.Add("Duration", HbrEffectProfileResolver.Duration(CurrentEffectProfile, Amount));
+            text.Add("LifetimeRule", HbrEffectProfileResolver.LifetimeRule(CurrentEffectProfile, Amount));
+            text.Add("SlotRule", HbrEffectProfileResolver.SlotRule(CurrentEffectProfile));
             return text;
         }
     }
 
-    public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext,
+    public override Task BeforeSideTurnStart(PlayerChoiceContext context, CombatSide side,
+        IReadOnlyList<Creature> participants, ICombatState combatState)
+    {
+        if (Owner != null && side == Owner.Side &&
+            (participants.Contains(Owner) || Owner.PetOwner is { } owner && participants.Contains(owner.Creature)))
+            HbrWaitForOwnerTurnStart = false;
+        return Task.CompletedTask;
+    }
+
+    public override Task AfterSideTurnEnd(PlayerChoiceContext choiceContext,
         CombatSide side, IEnumerable<Creature> participants)
     {
-        if (Owner == null || side != Owner.Side || !participants.Contains(Owner) ||
-            Amount <= 0 || ExtraTurnDurationHelper.ShouldSuppressDurationTick(this)) return;
         SkipNextDurationTick = false;
-        Flash();
-        await PowerCmd.TickDownDuration(this);
+        return HbrWaitForOwnerTurnStart ? Task.CompletedTask :
+            HbrEffectRules.Tick(this, ((IHbrEffectInstance)this).EffectProfile, side, participants);
     }
 }
 
@@ -87,7 +121,7 @@ public sealed class HbrAttackDownPower : HbrPercentDebuffPower
     public decimal ModifyDamageMultiplicative(Creature target, decimal amount,
         ValueProp props, Creature dealer, CardModel cardSource) =>
         Amount > 0 && dealer == Owner && props.IsPoweredAttack()
-            ? Math.Max(0m, 1m - HotaruUnfadingScarsPower.EnhanceEffect(Owner, EffectPercent) / 100m)
+            ? 1m - HotaruUnfadingScarsPower.EnhanceEffect(Owner, EffectPercent) / 100m
             : 1m;
 }
 

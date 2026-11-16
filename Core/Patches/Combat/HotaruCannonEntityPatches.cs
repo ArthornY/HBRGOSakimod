@@ -1,4 +1,5 @@
 using System;
+using HBRGOSakiMod.Core.Compatibility;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -39,7 +40,7 @@ internal static class HotaruCannonSelectablePatch
     private static void Postfix(NCreature __instance)
     {
         if (__instance.Entity?.Monster is not HotaruCannonModel) return;
-        __instance.ToggleIsInteractable(on: true);
+        __instance.ToggleIsInteractableCompat(on: true);
         NHotaruCannonLayout.HideHealth(__instance);
     }
 }
@@ -56,7 +57,7 @@ internal static class HotaruCannonPetSelectablePatch
         foreach (NCreature node in __instance.CreatureNodes)
         {
             if (!Millsage.IsOwnedCannon(node.Entity, owner)) continue;
-            node.ToggleIsInteractable(on: true);
+            node.ToggleIsInteractableCompat(on: true);
             NHotaruCannonLayout.HideHealth(node);
         }
     }
@@ -80,22 +81,15 @@ internal static class HotaruCannonAttackTargetPatch
 [HarmonyPatch]
 internal static class HotaruCannonDirectDamagePatch
 {
-    private static MethodBase TargetMethod() => typeof(CreatureCmd).GetMethods(BindingFlags.Public | BindingFlags.Static)
-        .Where(method => method.Name == nameof(CreatureCmd.Damage))
-        .Where(method =>
-        {
-            ParameterInfo[] parameters = method.GetParameters();
-            return parameters.Length is 6 or 7 && parameters[0].ParameterType == typeof(PlayerChoiceContext) &&
-                parameters[1].ParameterType == typeof(IEnumerable<Creature>) && parameters[2].ParameterType == typeof(decimal) &&
-                parameters[3].ParameterType == typeof(ValueProp) && parameters[4].ParameterType == typeof(Creature) &&
-                parameters[5].ParameterType == typeof(CardModel);
-        })
-        .OrderBy(method => method.GetParameters().Length).FirstOrDefault() ??
-        throw new MissingMethodException(typeof(CreatureCmd).FullName, nameof(CreatureCmd.Damage));
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.Command;
 
     [HarmonyPriority(Priority.Last)]
-    private static void Prefix(ref IEnumerable<Creature> targets) =>
-        targets = targets.Where(creature => creature?.Monster is not HotaruCannonModel).ToArray();
+    private static void Prefix(object[] __args)
+    {
+        IEnumerable<Creature> targets = NativeDamageApiCompatibility.ReadTargets(__args);
+        NativeDamageApiCompatibility.WriteTargets(__args, targets,
+            targets.Where(creature => creature?.Monster is not HotaruCannonModel).ToArray());
+    }
 }
 
 [HarmonyPatch(typeof(CreatureCmd), "KillWithoutCheckingWinCondition")]

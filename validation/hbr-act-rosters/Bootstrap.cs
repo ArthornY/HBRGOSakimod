@@ -22,9 +22,13 @@ static class ActRosterBootstrap
                 Environment.SetEnvironmentVariable("HBR_NATIVE_PROFILE", manifest.RootElement.GetProperty("name").GetString());
             }
             string godotDirectory = Path.GetDirectoryName(Path.GetFullPath(args[3]))!;
+            string nativePath = Path.Combine(dependencies, "sts2.dll");
+            Environment.SetEnvironmentVariable("HBR_NATIVE_SOURCE_SHA256", Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(nativePath))));
+            if (args.Length > 5 && args[5] == "--isolate-telemetry") nativePath = TelemetryIsolation.Create(nativePath, Path.GetFullPath(args[4]));
             AssemblyLoadContext.Default.Resolving += (context, name) =>
             {
                 if (name.Name == "HBRGOSakiMod") return context.LoadFromAssemblyPath(mod);
+                if (name.Name == "sts2") return context.LoadFromAssemblyPath(nativePath);
                 foreach (string directory in new[] { dependencies, Path.GetDirectoryName(mod)!, godotDirectory })
                 {
                     string path = Path.Combine(directory, name.Name + ".dll");

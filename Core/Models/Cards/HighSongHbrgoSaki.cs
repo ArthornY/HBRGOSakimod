@@ -36,6 +36,14 @@ public sealed class HighSongHbrgoSaki : CardModel
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        // A replay (Moonlight's, say) runs OnPlay again after the first run has already
+        // replaced this card with a song and removed it from combat. There is nothing left
+        // to replace: a second song would duplicate it, and removing the card again throws.
+        if (Pile?.IsCombatPile != true)
+        {
+            return;
+        }
+
         CardModel[] choices =
         {
             Owner.Creature.CombatState.CreateCard<ShadowDanceSongHbrgoSaki>(Owner),

@@ -10,17 +10,22 @@ using MegaCrit.Sts2.Core.Localization;
 
 namespace HBRGOSakiMod.Core.Nodes.Screens;
 
+// Hotaru's cannon upgrades in the phone manual's page style (ui-concepts/manual-phone-20261104,
+// 浮游炮): the rules and the five cannons as a list of cards on the left, the chosen entry on the right.
 public partial class NManualCannonUpgradesPanel : Control
 {
-    private static readonly Color Accent = new("#ed72aa");
-    private static readonly Color Muted = new("#a7afb7");
+    private const float ListWidth = 300f;
     private static readonly IReadOnlyList<HotaruCannonKind> Kinds = HotaruCannonKinds.Original;
     private readonly Dictionary<HotaruCannonKind, Button> _buttons = new();
+    private readonly Dictionary<HotaruCannonKind, Label> _captions = new();
+    private readonly Dictionary<HotaruCannonKind, TextureRect> _pictures = new();
     private Millsage _relic;
     private HotaruCannonKind _selected = HotaruCannonKind.Happiness;
     private bool _showRules = true;
     private Button _rulesButton;
-    private GridContainer _navigation;
+    private ScrollContainer _listScroll;
+    private VBoxContainer _navigation;
+    private PanelContainer _detail;
     private ScrollContainer _detailScroll;
     private TextureRect _icon;
     private Label _title;
@@ -37,63 +42,55 @@ public partial class NManualCannonUpgradesPanel : Control
         ClipContents = true;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         BuildUi();
-        LayoutNavigation();
+        LayoutContent();
         Refresh(_relic);
     }
 
     public override void _Notification(int what)
     {
-        if (what == NotificationResized) LayoutNavigation();
+        if (what == NotificationResized) LayoutContent();
     }
 
     internal void Refresh(Millsage relic)
     {
         _relic = relic;
         if (_navigation == null) return;
-        _rulesButton.SetPressedNoSignal(_showRules);
-        StyleButton(_rulesButton, _showRules);
+        HbrManualPhoneStyle.ListEntry(_rulesButton, _showRules, 24);
         foreach (HotaruCannonKind kind in Kinds)
         {
             int level = Level(kind);
             bool unlocked = IsUnlocked(kind);
-            Button button = _buttons[kind];
-            button.Text = HotaruCannonUpgrades.CannonTitle(kind) +
-                $"\n{level}/{Millsage.MaximumCannonUpgradeLevel}" + (unlocked ? "" :
+            bool selected = !_showRules && kind == _selected;
+            _captions[kind].Text = HotaruCannonUpgrades.CannonTitle(kind) +
+                $"  {level}/{Millsage.MaximumCannonUpgradeLevel}" + (unlocked ? "" :
                     _relic?.WasCannonRetired(kind) == true ? " · 已永久失去" : " · 未拥有");
-            button.TooltipText = $"查看{HotaruCannonUpgrades.CannonTitle(kind)}的全部升级效果";
-            button.SetPressedNoSignal(!_showRules && kind == _selected);
-            StyleButton(button, !_showRules && kind == _selected);
+            _captions[kind].AddThemeColorOverride("font_color", unlocked ? Colors.White : HbrManualPhoneStyle.Dim);
+            _pictures[kind].Modulate = unlocked ? Colors.White : new Color(1f, 1f, 1f, 0.45f);
+            _buttons[kind].TooltipText = $"查看{HotaruCannonUpgrades.CannonTitle(kind)}的全部升级效果";
+            HbrManualPhoneStyle.ListEntry(_buttons[kind], selected, 21);
         }
         RefreshDescription();
     }
 
     private void BuildUi()
     {
-        VBoxContainer layout = new()
+        _listScroll = new ScrollContainer
         {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
+            Name = "CannonList", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            FocusMode = FocusModeEnum.None
         };
-        AddChild(layout);
-        layout.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        layout.AddThemeConstantOverride("separation", 12);
-        Label introduction = MakeLabel(
-            "通用规则介绍倍率、磨损、恢复和活力。选择一门浮游炮，可同时查看当前等级、已获得与未解锁的升级效果。",
-            17, Muted);
-        introduction.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        layout.AddChild(introduction);
-
-        _navigation = new GridContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _navigation.AddThemeConstantOverride("h_separation", 8);
-        _navigation.AddThemeConstantOverride("v_separation", 8);
-        layout.AddChild(_navigation);
+        HbrManualPhoneStyle.Scroll(_listScroll);
+        AddChild(_listScroll);
+        _navigation = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _navigation.AddThemeConstantOverride("separation", 12);
+        _listScroll.AddChild(_navigation);
         _rulesButton = new Button
         {
-            Name = "CannonRules", Text = "通用规则", ToggleMode = true,
-            CustomMinimumSize = new Vector2(0, 64), SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            FocusMode = FocusModeEnum.All, MouseDefaultCursorShape = CursorShape.PointingHand
+            Name = "CannonRules", Text = "通用规则", CustomMinimumSize = new Vector2(0, 64),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill, FocusMode = FocusModeEnum.All,
+            MouseDefaultCursorShape = CursorShape.PointingHand,
+            TooltipText = "通用规则介绍倍率、磨损、恢复和活力。选择一门浮游炮，可同时查看当前等级、已获得与未解锁的升级效果。"
         };
-        _rulesButton.AddThemeFontSizeOverride("font_size", 16);
         _rulesButton.Pressed += () =>
         {
             bool changed = !_showRules;
@@ -104,28 +101,37 @@ public partial class NManualCannonUpgradesPanel : Control
         _navigation.AddChild(_rulesButton);
         foreach (HotaruCannonKind kind in Kinds)
         {
+            // .cn: the cannon art (280x70) over its caption in a 112px card.
             Button button = new()
             {
-                Name = $"Cannon{kind}",
-                CustomMinimumSize = new Vector2(0, 64),
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                FocusMode = FocusModeEnum.All,
-                MouseDefaultCursorShape = CursorShape.PointingHand,
-                ToggleMode = true
+                Name = $"Cannon{kind}", CustomMinimumSize = new Vector2(0, 112),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill, FocusMode = FocusModeEnum.All,
+                MouseDefaultCursorShape = CursorShape.PointingHand
             };
-            button.AddThemeFontSizeOverride("font_size", 16);
             button.Pressed += () => Select(kind);
+            TextureRect picture = new()
+            {
+                Texture = PreloadManager.Cache.GetTexture2D(HotaruCannonUpgrades.IconPath(kind)),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                Position = new Vector2(10f, 10f), Size = new Vector2(ListWidth - 20f, 70f),
+                MouseFilter = MouseFilterEnum.Ignore
+            };
+            button.AddChild(picture);
+            Label caption = HbrManualPhoneStyle.Label("", 21, Colors.White);
+            caption.HorizontalAlignment = HorizontalAlignment.Center;
+            caption.Position = new Vector2(0f, 80f);
+            caption.Size = new Vector2(ListWidth, 28f);
+            button.AddChild(caption);
             _navigation.AddChild(button);
             _buttons.Add(kind, button);
+            _captions.Add(kind, caption);
+            _pictures.Add(kind, picture);
         }
 
-        PanelContainer detail = new()
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        detail.AddThemeStyleboxOverride("panel", Surface(new Color("#191b20"), new Color("#645562"), 1, 16));
-        layout.AddChild(detail);
+        _detail = new PanelContainer();
+        _detail.AddThemeStyleboxOverride("panel", HbrManualPhoneStyle.Panel(18, 22f, 18f));
+        AddChild(_detail);
         _detailScroll = new ScrollContainer
         {
             Name = "CannonUpgradeDescriptionScroll",
@@ -135,9 +141,10 @@ public partial class NManualCannonUpgradesPanel : Control
             SizeFlagsVertical = SizeFlags.ExpandFill,
             FocusMode = FocusModeEnum.All
         };
-        detail.AddChild(_detailScroll);
+        HbrManualPhoneStyle.Scroll(_detailScroll);
+        _detail.AddChild(_detailScroll);
         VBoxContainer content = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        content.AddThemeConstantOverride("separation", 12);
+        content.AddThemeConstantOverride("separation", 10);
         _detailScroll.AddChild(content);
         HBoxContainer heading = new();
         heading.AddThemeConstantOverride("separation", 14);
@@ -152,15 +159,14 @@ public partial class NManualCannonUpgradesPanel : Control
         };
         heading.AddChild(_icon);
         VBoxContainer titles = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        titles.AddThemeConstantOverride("separation", 6);
+        titles.AddThemeConstantOverride("separation", 4);
         heading.AddChild(titles);
-        _title = MakeLabel("", 25, Colors.White);
-        _title.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        // #c-detail h3 30px cyan, .st 22px pink.
+        _title = HbrManualPhoneStyle.Label("", 30, HbrManualPhoneArt.Cyan, wrap: true);
         titles.AddChild(_title);
-        _status = MakeLabel("", 17, Accent);
-        _status.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _status = HbrManualPhoneStyle.Label("", 20, HbrManualPhoneArt.Pink, wrap: true);
         titles.AddChild(_status);
-        content.AddChild(new HSeparator());
+        content.AddChild(HbrManualPhoneStyle.Separator());
         _description = new MegaRichTextLabel
         {
             Name = "CannonUpgradeDescription",
@@ -173,9 +179,10 @@ public partial class NManualCannonUpgradesPanel : Control
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             MouseFilter = MouseFilterEnum.Pass
         };
-        _description.AddThemeFontSizeOverride("normal_font_size", 19);
-        _description.AddThemeFontSizeOverride("bold_font_size", 19);
-        _description.AddThemeColorOverride("default_color", new Color("#d7dce1"));
+        _description.AddThemeFontSizeOverride("normal_font_size", 20);
+        _description.AddThemeFontSizeOverride("bold_font_size", 20);
+        _description.AddThemeColorOverride("default_color", HbrManualPhoneStyle.Text);
+        _description.AddThemeConstantOverride("line_separation", 6);
         foreach (string font in new[] { "normal_font", "bold_font", "italics_font", "bold_italics_font", "mono_font" })
             _description.AddThemeFontOverride(font, GetThemeFont(font, "RichTextLabel"));
         content.AddChild(_description);
@@ -214,6 +221,7 @@ public partial class NManualCannonUpgradesPanel : Control
     }
 
     // Reference pages only read saved levels; browsing must not grant or spend upgrade points.
+    // Obtained tiers are cyan; locked tiers are dimmed, as .line.locked in the preview.
     internal static string BuildDescription(Millsage relic, HotaruCannonKind kind)
     {
         int level = Math.Clamp(relic?.GetCannonUpgradeLevel(kind) ?? 0, 0, Millsage.MaximumCannonUpgradeLevel);
@@ -224,15 +232,16 @@ public partial class NManualCannonUpgradesPanel : Control
         text.Append(Format(HotaruCannonUpgrades.DamageMultiplierText(level,
             relic?.GetCannonDamagePercent(kind) ?? Millsage.InitialCannonDamagePercent)));
         text.Append("\n\n");
-        text.Append("[b]基础效果[/b]\n");
+        text.Append($"[b][color=#{HbrManualPhoneLayout.Cyan}]基础效果[/color][/b]\n");
         text.Append(Format(HotaruCannonUpgrades.BaseText(kind, relic?.Owner)));
         for (int tier = 1; tier <= Millsage.MaximumCannonUpgradeLevel; tier++)
         {
             bool obtained = tier <= level;
             string status = obtained ? "已获得" : unlocked && tier == level + 1 ? "未解锁 · 下一项" : "未解锁";
-            string color = obtained ? "#ed72aa" : "#a7afb7";
+            string color = obtained ? "#" + HbrManualPhoneLayout.Cyan2 : "#" + HbrManualPhoneLayout.Muted;
             text.Append($"\n\n[b][color={color}]第{tier}级 · {status}[/color][/b]\n");
-            text.Append(Format(HotaruCannonUpgrades.UpgradeText(kind, tier, relic?.Owner)));
+            string body = Format(HotaruCannonUpgrades.UpgradeText(kind, tier, relic?.Owner));
+            text.Append(obtained ? body : $"[color=#dcebee80]{body}[/color]");
         }
         return text.ToString();
     }
@@ -245,48 +254,18 @@ public partial class NManualCannonUpgradesPanel : Control
     private static string Format(string raw) =>
         HbrManualGlossaryPresentation.FormatDescription(raw, "hotaru_cannon");
 
-    private void LayoutNavigation()
+    // #c-list 300px on the left, #c-detail beside it 16px apart.
+    private void LayoutContent()
     {
         if (_navigation == null) return;
-        _navigation.Columns = Size.X >= 880 ? 6 : Size.X >= 480 ? 3 : 2;
+        bool wide = Size.X >= 650f;
+        float listWidth = wide ? ListWidth : Size.X;
+        float listHeight = wide ? Size.Y : Math.Min(Size.Y * 0.45f, 300f);
+        _listScroll.Position = Vector2.Zero;
+        _listScroll.Size = new Vector2(listWidth, listHeight);
+        _detail.Position = wide ? new Vector2(ListWidth + 16f, 0f) : new Vector2(0f, listHeight + 12f);
+        _detail.Size = wide
+            ? new Vector2(Math.Max(0f, Size.X - ListWidth - 16f), Size.Y)
+            : new Vector2(Size.X, Math.Max(0f, Size.Y - listHeight - 12f));
     }
-
-    private static Label MakeLabel(string text, int size, Color color)
-    {
-        Label label = new() { Text = text, MouseFilter = MouseFilterEnum.Ignore };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color);
-        return label;
-    }
-
-    private static void StyleButton(Button button, bool selected)
-    {
-        foreach (string state in new[] { "normal", "hover", "pressed", "focus" })
-        {
-            Color background = selected ? new Color("#f2dbe6") :
-                state == "normal" ? new Color("#25282e") : new Color("#3c303b");
-            button.AddThemeStyleboxOverride(state,
-                Surface(background, Accent, selected || state == "focus" ? 2 : 0, 8));
-        }
-        foreach (string color in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
-            button.AddThemeColorOverride(color, selected ? new Color("#7c3058") : Colors.White);
-    }
-
-    private static StyleBoxFlat Surface(Color background, Color border, int width, int padding) => new()
-    {
-        BgColor = background,
-        BorderColor = border,
-        BorderWidthLeft = width,
-        BorderWidthRight = width,
-        BorderWidthTop = width,
-        BorderWidthBottom = width,
-        ContentMarginLeft = padding,
-        ContentMarginRight = padding,
-        ContentMarginTop = 8,
-        ContentMarginBottom = 8,
-        CornerRadiusTopLeft = 5,
-        CornerRadiusTopRight = 5,
-        CornerRadiusBottomLeft = 5,
-        CornerRadiusBottomRight = 5
-    };
 }

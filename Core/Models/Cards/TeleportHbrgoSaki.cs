@@ -89,27 +89,23 @@ public sealed class TeleportHbrgoSaki : CardModel
         bool wasInMagicSwordMode =
             Owner.Creature.HasPower<MagicSwordModePower>();
 
-        if (consumedSwordheart > 0m)
+        MagicSwordModePower magicSwordMode = Owner.Creature.GetPower<MagicSwordModePower>();
+        if (magicSwordMode != null)
         {
-            MagicSwordModePower magicSwordMode =
-                Owner.Creature.GetPower<MagicSwordModePower>();
-            if (magicSwordMode != null)
-            {
-                await magicSwordMode.SpendSwordheart(
-                    choiceContext,
-                    consumedSwordheart,
-                    this);
-            }
-            else
-            {
-                await PowerCmd.ModifyAmount(
+            await magicSwordMode.ExitForEmergencyRetreat(choiceContext, this);
+        }
+        else if (consumedSwordheart > 0m)
+        {
+            await PowerCmd.ModifyAmount(
                     choiceContext,
                     swordheart,
                     -consumedSwordheart,
                     Owner.Creature,
                     this);
-            }
+        }
 
+        if (consumedSwordheart > 0m)
+        {
             await CreatureCmd.GainBlock(
                 Owner.Creature,
                 consumedSwordheart * DynamicVars.Block.BaseValue,

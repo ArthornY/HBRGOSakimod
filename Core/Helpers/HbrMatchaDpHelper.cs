@@ -17,23 +17,32 @@ internal static class HbrMatchaDpHelper
 {
     internal static async Task Restore(PlayerChoiceContext choiceContext, Player player,
         decimal percent, bool convertOverflow, CardModel source = null)
+        => await RestoreCore(choiceContext, player, percent, convertOverflow, source, false);
+
+    internal static Task RestoreFromAbility(PlayerChoiceContext choiceContext, Player player, decimal percent, bool convertOverflow)
+        => RestoreCore(choiceContext, player, percent, convertOverflow, null, true);
+
+    private static async Task RestoreCore(PlayerChoiceContext choiceContext, Player player,
+        decimal percent, bool convertOverflow, CardModel source, bool fromAbility)
     {
+        percent = YanagiButlerCombatHelper.ScaleRecovery(source, percent);
         // Resolve at execution time so deferred recovery follows the current
         // main phantom, including one summoned after the card was played.
         if (player?.Character is HbrgoSaki30A &&
             PhantomHelper.GetLivingPhantom(player) is { } phantom)
         {
-            await RestorePhantom(choiceContext, player, phantom, percent, convertOverflow, source);
+            await RestorePhantom(choiceContext, player, phantom, percent, convertOverflow, source, fromAbility);
             return;
         }
 
         if (player?.GetRelic<DeflectorProtection>() is not { } protection) return;
-        protection.RestoreDpByMaxPercent(percent, out int overflow);
+        int restored = protection.RestoreDpByMaxPercent(percent, out int overflow);
+        MariaRepentanceCombatHelper.OnDpRestored(player.Creature, restored, source, fromAbility);
         await ConvertOverflow(player.Creature, overflow, convertOverflow);
     }
 
     private static async Task RestorePhantom(PlayerChoiceContext choiceContext, Player player,
-        Creature phantom, decimal percent, bool convertOverflow, CardModel source)
+        Creature phantom, decimal percent, bool convertOverflow, CardModel source, bool fromAbility)
     {
         if (percent <= 0m || phantom.HasPower<LastStandPower>()) return;
 
@@ -50,6 +59,7 @@ internal static class HbrMatchaDpHelper
             maxDp, percent * recoveryMultiplier));
         if (recovery <= 0) return;
         decimal capacity = Math.Max(0m, maxDp - Math.Max(0m, shell?.CurrentDp ?? 0m));
+        decimal before = shell?.CurrentDp ?? 0m;
         decimal overflow = Math.Max(0m, recovery - capacity);
 
         if (shell != null)
@@ -74,6 +84,8 @@ internal static class HbrMatchaDpHelper
                 choiceContext, phantom, Math.Min(recovery, maxDp), player.Creature, source);
         }
 
+        MariaRepentanceCombatHelper.OnDpRestored(phantom,
+            (phantom.GetPower<HighDimensionalShellPower>()?.CurrentDp ?? 0m) - before, source, fromAbility);
         await ConvertOverflow(phantom, overflow, convertOverflow);
     }
 

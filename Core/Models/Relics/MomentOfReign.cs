@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Godot;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Integration;
 using HBRGOSakiMod.Core.Models.Cards;
@@ -241,7 +242,7 @@ internal readonly record struct PhantomRosterEntry(
     }
 }
 
-public partial class MomentOfReign : RelicModel, IModRightClickableRelic
+public partial class MomentOfReign : RelicModel, IModRightClickableRelic, IHbrAfterDeathListener
 {
     private const int PhantomReviveDelayTurns = 4;
 
@@ -491,6 +492,8 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         PendingCardRemovalRewards = source.PendingCardRemovalRewards;
         PendingThievingHopperCardRewards = PhantomThievingHopperHelper.CopyPendingRewards(
             source.PendingThievingHopperCardRewards);
+        LastSummonedRosterEntryId = source.LastSummonedRosterEntryId;
+        LastSummonedTemporaryData = source.LastSummonedTemporaryData;
     }
 
     public override decimal ModifyMerchantPrice(
@@ -651,7 +654,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         {
             room.AddExtraReward(
                 Owner,
-                new CardReward(
+                NativeRewardApiCompatibility.Card(
                     CardCreationOptions.ForRoom(Owner, room.RoomType),
                     optionCount,
                     Owner));
@@ -699,7 +702,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
             room.AddExtraReward(Owner, new CardRemovalReward(Owner));
     }
 
-    public override async Task AfterDeath(
+    public async Task AfterDeath(
         PlayerChoiceContext choiceContext,
         Creature target,
         bool wasRemovalPrevented,
@@ -772,6 +775,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         if (side == Owner.Creature.Side && participants.Contains(Owner.Creature))
         {
             ResetPhantomTurnHistory();
+            Owner.GetRelic<PhantomsOfBygoneDaysThirtyA>()?.BeforeOwnTurnReset();
         }
 
         if (PhantomReviveTurnNumber <= 0 ||
@@ -891,7 +895,9 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
     public override Task AfterCurrentHpChanged(Creature creature, decimal delta)
     {
         StorePhantomHp(creature);
-        return Task.CompletedTask;
+        return delta > 0m && creature != null && LargeCreatureHealthHelper.GetCurrentHp(creature) > 0m &&
+            LargeCreatureHealthHelper.GetCurrentHp(creature) - delta <= 0m && PhantomHelper.IsOwnedMainPhantom(creature, Owner)
+            ? ThirtyAClassRelicsHelper.AfterRevival(creature) : Task.CompletedTask;
     }
 
     public override Task BeforeDeath(Creature creature)
@@ -2235,7 +2241,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         };
         int materialExperience = materials.Sum(entry =>
             NormalizeExperienceValue(entry.ExperienceValue));
-        upgradedEntry = upgradedEntry.AddExperience(materialExperience);
+        upgradedEntry = upgradedEntry.AddExperience(ThirtyAClassRelicsHelper.TicketExperience(Owner, materialExperience));
         return true;
     }
 
@@ -2261,7 +2267,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         long doubledExperience = Math.Min(
             PhantomRosterEntry.MaximumStoredExperience,
             materialExperience * 2L);
-        upgradedEntry = target.AddExperience((int)doubledExperience);
+        upgradedEntry = target.AddExperience(ThirtyAClassRelicsHelper.TicketExperience(Owner, doubledExperience));
         return true;
     }
 
@@ -2298,10 +2304,12 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         foreach (ModelId monsterId in monsterIds.Where(id =>
             IsAllowedRosterMonster(id)))
         {
+            bool formerFoe = Owner.GetRelic<FormerFoesThirtyA>()?.IsActive == true &&
+                Owner.RunState.CurrentRoom?.RoomType == RoomType.Elite && !entries.Any(entry => entry.MonsterId == monsterId);
             AddObtainedRosterEntry(entries, CreateNewRosterEntry(
                 monsterId,
                 experienceValue,
-                1));
+                formerFoe ? 2 : 1));
         }
 
         SetRosterEntries(entries);
@@ -2480,9 +2488,8 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         int familiarity = Owner.Creature?
             .GetPower<PhantomFamiliarityPower>()?
             .Amount ?? 0;
-        return (int)Math.Min(
-            PhantomRosterEntry.MaximumStoredExperience,
-            (long)Math.Max(0, amount) + Math.Max(0, familiarity));
+        return ThirtyAClassRelicsHelper.TicketExperience(Owner,
+            (long)Math.Max(0, amount) * (1L + Math.Max(0, familiarity)));
     }
 
     private void SetRosterEntries(
@@ -2908,6 +2915,7 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
                 null);
 
             HasSummonedThisCombat = true;
+            RememberSummonedForClassRelics(rosterEntry);
             if (!isReplacement)
             {
                 await PhantomHelper.ApplyOnSummonFusionEffects(phantom);
@@ -2919,9 +2927,10 @@ public partial class MomentOfReign : RelicModel, IModRightClickableRelic
         }
 
         PhantomAscensionHelper.RefreshEnemyAscensionEffects(combatState);
-        NCombatRoom.Instance?.SetCreatureIsInteractable(
+        NCombatRoom.Instance?.SetCreatureIsInteractableCompat(
             phantom,
             on: true);
+        if (isRevival) await ThirtyAClassRelicsHelper.AfterRevival(phantom);
     }
 
     internal static decimal GetPhantomRevivalHp(decimal maxHp, decimal fraction) =>

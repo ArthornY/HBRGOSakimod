@@ -30,13 +30,14 @@ internal static class AncientEventDeflectorProtectionPatch
     {
         await original;
 
-        if (ancientEvent.Owner == null || ancientEvent.Owner.Character is HbrgoHotaru)
+        if (ancientEvent.Owner == null)
         {
             return;
         }
 
         // Ancient healing is a fraction of missing health, not maximum health.
         // DP uses its own missing amount even when the player is at full HP.
+        // Hotaru's separate HP-recovery guard must not suppress DP recovery.
         decimal recoveryPercent = AscensionHelper.GetValueIfAscension(
             AscensionLevel.WearyTraveler,
             0.8m,

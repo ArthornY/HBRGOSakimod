@@ -24,12 +24,18 @@ internal static class HbrCardLibraryVisibility
     internal static void IncludeHbrCards(
         IEnumerable<CardModel> cards,
         HashSet<ModelId> seenCards,
-        HashSet<CardModel> unlockedCards)
+        object unlockedCards)
     {
+        Action<CardModel> unlock = unlockedCards switch
+        {
+            HashSet<CardModel> models => card => models.Add(card),
+            HashSet<ModelId> ids => card => ids.Add(card.Id),
+            _ => throw new InvalidOperationException("Unsupported card-library unlock collection.")
+        };
         foreach (CardModel card in cards.Where(IsHbrCard))
         {
             seenCards.Add(card.Id);
-            unlockedCards.Add(card);
+            unlock(card);
         }
     }
 }
@@ -39,7 +45,7 @@ internal static class HbrCardLibraryRefreshVisibilityPatch
 {
     private static void Postfix(
         HashSet<ModelId> ____seenCards,
-        HashSet<CardModel> ____unlockedCards)
+        object ____unlockedCards)
     {
         // These are the library's copies, not the progress save or acquisition pools.
         HbrCardLibraryVisibility.IncludeHbrCards(

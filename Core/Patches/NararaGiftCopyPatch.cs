@@ -109,7 +109,7 @@ internal static class NararaGiftXCapturePatch
     }
 }
 
-[HarmonyPatch(typeof(DualSwordsCopyHelper), nameof(DualSwordsCopyHelper.RecordXEnergySpent))]
+[HarmonyPatch(typeof(CardCopyContextHelper), nameof(CardCopyContextHelper.RecordXEnergySpent))]
 internal static class NararaGiftDualSwordsXCapturePatch
 {
     // This helper explicitly receives total energy spent, while its consumers
@@ -118,7 +118,7 @@ internal static class NararaGiftDualSwordsXCapturePatch
         energySpent = NararaGiftCopyHelper.SubtractXSurcharge(card, energySpent);
 }
 
-[HarmonyPatch(typeof(DualSwordsCopyHelper), nameof(DualSwordsCopyHelper.TakeXEnergySpent))]
+[HarmonyPatch(typeof(CardCopyContextHelper), nameof(CardCopyContextHelper.TakeXEnergySpent))]
 internal static class NararaGiftDualSwordsXFallbackPatch
 {
     // Blade Dance, Dragon Arrow and Pale Moon pass total energy spent as their

@@ -17,24 +17,33 @@ internal static class PhantomPortraitHelper
         internal CacheEntry(ImageTexture texture) => Texture = texture;
     }
 
-    private static readonly Dictionary<ModelId, CacheEntry> Cache = new();
+    // Card art and roster cutouts are separate textures and renders: the card art keeps no alpha to cut the
+    // monster out of. The cap of 128 covers both styles together.
+    private static readonly Dictionary<(ModelId Monster, PhantomPortraitStyle Style), CacheEntry> Cache = new();
     private static NPhantomPortraitRenderer _renderer;
 
-    internal static Texture2D GetPortrait(ModelId monsterId)
+    internal static Texture2D GetPortrait(ModelId monsterId) => Get(monsterId, PhantomPortraitStyle.Card);
+
+    // The monster alone, with the renderer's alpha, for the phantom roster to lay over its dark backdrop.
+    internal static Texture2D GetCutout(ModelId monsterId) => Get(monsterId, PhantomPortraitStyle.Cutout);
+
+    private static Texture2D Get(ModelId monsterId, PhantomPortraitStyle style)
     {
-        if (!Cache.TryGetValue(monsterId, out CacheEntry entry))
+        if (!Cache.TryGetValue((monsterId, style), out CacheEntry entry))
         {
-            using Image white = Image.CreateEmpty(PhantomPortraitCompositor.Width, PhantomPortraitCompositor.Height,
+            using Image placeholder = Image.CreateEmpty(PhantomPortraitCompositor.Width, PhantomPortraitCompositor.Height,
                 false, Image.Format.Rgba8);
-            white.Fill(Colors.White);
-            entry = new CacheEntry(ImageTexture.CreateFromImage(white));
-            // Eviction never disposes textures still displayed by a card.
+            // Until its render lands a card shows white and a cutout shows nothing, so the roster's dark circle
+            // never flashes white.
+            placeholder.Fill(style == PhantomPortraitStyle.Cutout ? new Color(0f, 0f, 0f, 0f) : Colors.White);
+            entry = new CacheEntry(ImageTexture.CreateFromImage(placeholder));
+            // Eviction never disposes textures still displayed by a card or a roster circle.
             if (Cache.Count >= 128)
             {
                 using var iterator = Cache.Keys.GetEnumerator();
                 if (iterator.MoveNext()) Cache.Remove(iterator.Current);
             }
-            Cache[monsterId] = entry;
+            Cache[(monsterId, style)] = entry;
         }
 
         if (!entry.Request.CanBegin(System.Environment.TickCount64)) return entry.Texture;
@@ -52,7 +61,7 @@ internal static class PhantomPortraitHelper
             }
             // Keep the entry, not a later lookup by id: an evicted request must only
             // complete its own texture, including references already held by cards.
-            _renderer.Enqueue(monster, entry.Texture,
+            _renderer.Enqueue(monster, entry.Texture, style,
                 (success, retryable) => entry.Request.Complete(success, System.Environment.TickCount64, retryable));
         }
         catch (Exception exception)
@@ -62,6 +71,14 @@ internal static class PhantomPortraitHelper
         }
         return entry.Texture;
     }
+}
+
+internal enum PhantomPortraitStyle
+{
+    // Composited on white: the phantom card art.
+    Card,
+    // Straight alpha, no background: the phantom roster's circles.
+    Cutout
 }
 
 internal enum PhantomPortraitRequestStatus

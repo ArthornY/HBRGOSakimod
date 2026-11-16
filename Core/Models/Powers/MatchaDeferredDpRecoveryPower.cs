@@ -69,7 +69,7 @@ public sealed class MatchaDeferredDpRecoveryPower : PowerModel, ICustomPower
         Flash();
         await PowerCmd.ModifyAmount(choiceContext, this, -count, null, null);
         foreach (int convertOverflow in pending)
-            await HbrMatchaDpHelper.Restore(choiceContext, player, 0.10m, convertOverflow != 0);
+            await HbrMatchaDpHelper.RestoreFromAbility(choiceContext, player, 0.10m, convertOverflow != 0);
     }
 
     protected override void AfterCloned()

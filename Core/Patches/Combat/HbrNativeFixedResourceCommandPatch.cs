@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -10,6 +11,9 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Modifiers;
 using MegaCrit.Sts2.Core.Models.Monsters;
@@ -53,7 +57,7 @@ internal static class HbrNativeFixedResourceCommandPatch
         return body ?? throw new MissingMethodException("Missing declared native Regen healing hook.");
     }
 
-    private static MethodInfo Body(Type type, string name)
+    internal static MethodInfo Body(Type type, string name)
     {
         MethodInfo method = AccessTools.Method(type, name);
         Type state = method.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType;
@@ -76,7 +80,8 @@ internal static class HbrNativeFixedResourceCommandPatch
                 if (name != null)
                 {
                     instruction.opcode = OpCodes.Call;
-                    instruction.operand = AccessTools.Method(typeof(HbrNativeFixedResourceCommandPatch), name);
+                    instruction.operand = AccessTools.Method(typeof(HbrNativeFixedResourceCommandPatch), name,
+                        call.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
                 }
             }
             yield return instruction;
@@ -87,6 +92,71 @@ internal static class HbrNativeFixedResourceCommandPatch
         CreatureCmd.Heal(creature, HbrResourceValueHelper.Fixed(creature, amount), playAnim);
     private static Task GainMaxHp(Creature creature, decimal amount) =>
         CreatureCmd.GainMaxHp(creature, HbrResourceValueHelper.Fixed(creature, amount));
-    private static Task LoseMaxHp(PlayerChoiceContext choiceContext, Creature creature, decimal amount, bool showVfx) =>
-        CreatureCmd.LoseMaxHp(choiceContext, creature, HbrResourceValueHelper.Fixed(creature, amount), showVfx);
+    private static Task LoseMaxHp(PlayerChoiceContext choiceContext, Creature creature, decimal amount, bool isFromCard) =>
+        CreatureCommandCompatibility.LoseMaxHp(choiceContext, creature,
+            HbrResourceValueHelper.Fixed(creature, amount), isFromCard);
+    private static Task LoseMaxHp(PlayerChoiceContext choiceContext, Creature creature, decimal amount, CardModel cardSource) =>
+        CreatureCommandCompatibility.LoseMaxHp(choiceContext, creature,
+            HbrResourceValueHelper.Fixed(creature, amount), cardSource != null, cardSource);
+}
+
+// Corrupted loses a literal 2 HP and Regret 1 HP per card in hand, passed
+// straight to the decimal Damage command on their owner. Only that amount
+// converts; flags, source and the command itself stay native. Beta adds a
+// CardPlay argument, so the wrapper copies whichever signature is present.
+[HarmonyPatch]
+internal static class HbrNativeFixedHpLossCommandPatch
+{
+    private static readonly List<DynamicMethod> Wrappers = new();
+
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        yield return HbrNativeFixedResourceCommandPatch.Body(typeof(Corrupted), nameof(Corrupted.OnPlay));
+        yield return HbrNativeFixedResourceCommandPatch.Body(typeof(Regret), "OnTurnEndInHand");
+    }
+
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions,
+        MethodBase __originalMethod)
+    {
+        int matches = 0;
+        foreach (CodeInstruction instruction in instructions)
+        {
+            if (instruction.operand is MethodInfo call && call.DeclaringType == typeof(CreatureCmd) &&
+                call.Name == nameof(CreatureCmd.Damage) &&
+                call.GetParameters().Any(parameter => parameter.ParameterType == typeof(decimal)))
+            {
+                instruction.operand = Wrapper(call);
+                matches++;
+            }
+            yield return instruction;
+        }
+        if (matches != 1)
+            throw new InvalidOperationException("Expected one fixed HP loss command in " +
+                __originalMethod.DeclaringType?.FullName);
+    }
+
+    private static MethodInfo Wrapper(MethodInfo command)
+    {
+        ParameterInfo[] parameters = command.GetParameters();
+        int target = Array.FindIndex(parameters, parameter => parameter.Name == "target" &&
+            parameter.ParameterType == typeof(Creature));
+        int amount = Array.FindIndex(parameters, parameter => parameter.ParameterType == typeof(decimal));
+        if (target < 0 || amount < 0)
+            throw new InvalidOperationException("Expected a single-target decimal Damage command.");
+        DynamicMethod wrapper = new("HbrFixedHpLoss_" + Wrappers.Count, command.ReturnType,
+            Array.ConvertAll(parameters, parameter => parameter.ParameterType),
+            typeof(HbrNativeFixedHpLossCommandPatch), true);
+        ILGenerator il = wrapper.GetILGenerator();
+        for (int index = 0; index < parameters.Length; index++)
+        {
+            if (index == amount) il.Emit(OpCodes.Ldarg, (short)target);
+            il.Emit(OpCodes.Ldarg, (short)index);
+            if (index == amount)
+                il.Emit(OpCodes.Call, AccessTools.Method(typeof(HbrResourceValueHelper), nameof(HbrResourceValueHelper.Fixed)));
+        }
+        il.Emit(OpCodes.Call, command);
+        il.Emit(OpCodes.Ret);
+        Wrappers.Add(wrapper);
+        return wrapper;
+    }
 }

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HBRGOSakiMod.Core.Helpers;
 using HBRGOSakiMod.Core.Models.Characters;
 using HBRGOSakiMod.Core.Models.Powers;
+using HBRGOSakiMod.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -28,43 +30,30 @@ public sealed class MagicSwordModeHbrgoSaki : CardModel
 
     protected override IEnumerable<IHoverTip> ExtraHoverTips => new IHoverTip[]
     {
-        HoverTipFactory.FromPower<MagicSwordModePower>(),
-        HoverTipFactory.FromPower<ReptureDualSwordsPower>()
+        HoverTipFactory.FromPower<MagicSwordModePower>()
     };
 
     protected override bool IsPlayable =>
         Owner?.Character is HbrgoSaki31O &&
-        Owner.Creature?.HasPower<MagicSwordModePower>() != true;
+        Owner.Creature?.HasPower<MagicSwordModePower>() != true &&
+        HbrMagicSwordToggle.Swordheart(Owner) >= HbrMagicSwordToggle.MinimumSwordheart;
 
     public MagicSwordModeHbrgoSaki()
         : base(0, CardType.Skill, CardRarity.Token, TargetType.Self, shouldShowInCardLibrary: false)
     {
     }
 
+    // No longer generated (the magic sword opens from the HUD button since 2026-11-09). A copy
+    // left in an older save opens it like the button, deferring the crack until exit.
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         if (Owner.Character is not HbrgoSaki31O ||
-            Owner.Creature.HasPower<MagicSwordModePower>())
+            Owner.Creature.HasPower<MagicSwordModePower>() ||
+            HbrMagicSwordToggle.Swordheart(Owner) < HbrMagicSwordToggle.MinimumSwordheart)
         {
             return;
         }
 
-        bool wasInNormalState = Owner.Creature.HasPower<NormalStatePower>();
-        await PowerCmd.Apply<MagicSwordModePower>(
-            choiceContext,
-            Owner.Creature,
-            1m,
-            Owner.Creature,
-            this);
-
-        if (wasInNormalState)
-        {
-            await PowerCmd.Apply<ReptureDualSwordsPower>(
-                choiceContext,
-                Owner.Creature,
-                1m,
-                Owner.Creature,
-                this);
-        }
+        await MagicSwordModePower.ApplyForNewOpening(choiceContext, Owner.Creature, this);
     }
 }

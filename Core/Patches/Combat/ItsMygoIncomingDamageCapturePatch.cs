@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
+using HBRGOSakiMod.Core.Compatibility;
 using HBRGOSakiMod.Core.Helpers;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -19,29 +20,7 @@ namespace HBRGOSakiMod.Core.Patches.Combat;
 [HarmonyPatch]
 internal static class ItsMygoIncomingDamageCapturePatch
 {
-    private static MethodBase TargetMethod()
-    {
-        MethodInfo damageMethod = AccessTools.GetDeclaredMethods(typeof(CreatureCmd))
-            .Where(method => method.Name == nameof(CreatureCmd.Damage))
-            .Where(method =>
-            {
-                ParameterInfo[] parameters = method.GetParameters();
-                return parameters.Length is 6 or 7 &&
-                    parameters[0].ParameterType == typeof(PlayerChoiceContext) &&
-                    parameters[1].ParameterType == typeof(IEnumerable<Creature>) &&
-                    parameters[2].ParameterType == typeof(decimal) &&
-                    parameters[3].ParameterType == typeof(ValueProp) &&
-                    parameters[4].ParameterType == typeof(Creature) &&
-                    parameters[5].ParameterType == typeof(CardModel);
-            })
-            .OrderBy(method => method.GetParameters().Length)
-            .FirstOrDefault() ?? throw new MissingMethodException(
-                typeof(CreatureCmd).FullName, nameof(CreatureCmd.Damage));
-        AsyncStateMachineAttribute attribute =
-            damageMethod.GetCustomAttribute<AsyncStateMachineAttribute>() ??
-            throw new InvalidOperationException("CreatureCmd.Damage is no longer async.");
-        return PrivateAccess.Method(attribute.StateMachineType, "MoveNext");
-    }
+    private static System.Reflection.MethodBase TargetMethod() => NativeDamageApiCompatibility.MoveNext;
 
     private static void Prefix(out int __state)
     {

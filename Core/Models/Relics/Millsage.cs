@@ -60,6 +60,7 @@ public sealed partial class Millsage : RelicModel
         _combat = new HotaruCannonCombatState();
         ResetOverclockPhaseGuards();
         ResetCriticalCannonRewards();
+        HotaruClassRelicCombatHelper.ResetBattle(Owner);
         if (Owner?.Creature?.CombatState is not { } combatState) return;
         _combat.EndRewardPending = true;
         if (HasCannonUpgrade(HotaruCannonKind.Happiness, 1))
@@ -91,6 +92,7 @@ public sealed partial class Millsage : RelicModel
             await PowerCmd.Apply<MegaCrit.Sts2.Core.Models.Powers.StrengthPower>(new BlockingPlayerChoiceContext(),
                 Owner.Creature, 2m, Owner.Creature, null);
         await HotaruCannonSupportUpgradeHelper.OnCombatStart(this);
+        await HotaruClassRelicCombatHelper.OnCannonsReady(this);
         foreach (HotaruCannonKind kind in Enum.GetValues<HotaruCannonKind>())
             if (GetCannon(kind) is { } cannon) await RefreshIntent(cannon);
     }
@@ -139,6 +141,7 @@ public sealed partial class Millsage : RelicModel
     {
         await HotaruUncommonCardHelper.OnDebuffApplied(context, Owner, power, amount, applier, source);
         await HotaruRareDebuffHelper.OnDebuffApplied(context, Owner, power, amount, applier, source);
+        await HotaruRareCannonHelper.OnEnemyDebuffGained(context, Owner, power, amount, source);
     }
 
     public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay play) =>
@@ -214,6 +217,7 @@ public sealed partial class Millsage : RelicModel
     private async Task RunTurnStart(PlayerChoiceContext context, object overclockToken)
     {
         if (!TryBeginTurnPhase(HotaruCannonPhase.Start, overclockToken)) return;
+        await HotaruClassRelicCombatHelper.OnOwnTurnStart(context, this);
         using var automaticCannons = HotaruAutomaticCannonContext.Begin(Owner, HotaruCannonPhase.Start);
         using var turnPhase = HotaruUncommonCannonHelper.BeginTurnPhase();
         HotaruFirstManualCardHelper.ResetTurn(Owner, overclockToken);
@@ -276,6 +280,8 @@ public sealed partial class Millsage : RelicModel
         CardModel cardSource = null, CardPlay cardPlay = null, decimal baseValueBonus = 0m,
         bool reuseVigorBatch = false, bool suppressCritical = false, HotaruCannonActionModifier modifier = null)
     {
+        if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
+        await HotaruClassRelicCombatHelper.OnActivation(choiceContext, Owner);
         if (!CanAct() || !IsOwnedCannon(cannon, Owner)) return;
         HotaruCannonKind kind = ((HotaruCannonModel)cannon.Monster).Kind;
         baseValueBonus = Math.Clamp(baseValueBonus, 0m, HotaruCannonState.MaximumStoredValue);
@@ -488,7 +494,7 @@ public sealed partial class Millsage : RelicModel
                             Creature target = fixedTarget ?? RandomEnemy();
                             if (target != null)
                                 await DealDamage(cannon, target,
-                                    HotaruCannonSkillPowerHelper.ContestEndDamage + SixSenseCombatHelper.TargetResistanceBreakCount(target) * HotaruCannonSkillPowerHelper.ContestResistanceDamage + baseValueBonus,
+                                    HotaruCannonSkillPowerHelper.ContestEndDamage + HbrMissingDebuffHelper.DebuffKinds(target) * HotaruCannonSkillPowerHelper.ContestResistanceDamage + baseValueBonus,
                                     context, cardSource, cardPlay);
                         }
                         break;

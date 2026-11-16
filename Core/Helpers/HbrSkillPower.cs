@@ -70,6 +70,17 @@ internal static class HbrSkillPower
             BlockBaseFromUnits(nativeUnits, unitScale),
             Math.Max(0m, intelligence) / BlockReferenceIntelligence));
 
+    // Incoming skills retain their authored defensive weights and unit scale,
+    // but share the single linear coefficient without endpoint thresholds.
+    internal static decimal EvaluateIncomingDamageFromUnits(decimal nativeUnits,
+        decimal enemyParameter, decimal defensiveParameter, decimal unitScale = 100m)
+    {
+        if (nativeUnits <= 0m) return 0m;
+        decimal factor = 1m + (enemyParameter - defensiveParameter) / AttackAttributeScale;
+        return Math.Max(1m, DamageAmplificationLimits.MultiplySaturated(
+            DamageBaseFromUnits(nativeUnits, unitScale), factor));
+    }
+
     // Enemy support retains its separate existing adaptation. It does not use
     // the player/phantom/cannon intelligence coefficient above.
     internal static decimal EvaluateEnemyBlockFromUnits(decimal nativeUnits, decimal parameter,

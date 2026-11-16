@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "name": "HBR DefenseUp icon",
+  "importedPath": "res://images/powers/hbr_defense_up_power.png",
+  "sha256": "58cbce25d8d41a880d86400b6da8f9733f0597d74bd12f59252de7f9e52df5c1",
+  "dimensions": [
+    64,
+    64
+  ],
+  "pngMode": "RGBA",
+  "transformation": "Original texture with a programmatic corner arrow composited over it (Pillow polygon, 8x supersampled, orange-red up arrow with a dark outline, bottom-right corner). No resizing, recoloring of the original pixels outside the arrow, crop or AI generation. Reason: the original shares this base art between the buff and the debuff and draws the up/down label separately; the mod marks the up power with this up arrow and, since 2026-11-08, the attack/defense down powers with the matching down arrow.",
+  "original": {
+    "assetPath": "Assets/UI/Texture/BattleIcon/IconBuffDefense.png",
+    "bundleKey": "cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518",
+    "serializedFile": "CAB-8f5db85a7cfc75a401e4dd8d69ff15be",
+    "texturePathId": "-7485474821332022595",
+    "textureFormat": "BC7",
+    "sourceTexturePath": "D:/stsmod/HeavenBurnsRedEditor/extracted/images/cache/77f052d6efa63013ec76f34a8c09096e/412a4d09f39e4da4547dd046ec38e518/80d7edd0ae4a73d8_-7485474821332022595_IconBuffDefense.png",
+    "sourceSha256": "53db86932618cfc3971e09aa6cb8b300fee3e2bbfde08bd629228ff8ab202042",
+    "imageIndex": "D:/stsmod/HeavenBurnsRedEditor/extracted/image-index.jsonl"
+  },
+  "usage": {
+    "power": "HBRGOSakiMod.Core.Models.Powers.HbrDefenseUpPower",
+    "originalEffect": "DefenseUp",
+    "small": "res://images/powers/hbr_defense_up_power.png",
+    "big": "res://images/powers/hbr_defense_up_power.png",
+    "note": "The original has one 64x64 Texture2D; both icon roles reuse it."
+  },
+  "limits": "Original icon asset identity and provenance only. No Godot importer, package or game run was performed."
+}

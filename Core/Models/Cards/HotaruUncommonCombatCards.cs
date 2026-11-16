@@ -226,16 +226,15 @@ public sealed class HotaruBeneathFracture : HotaruCannonCard
 {
     public HotaruBeneathFracture() : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy) { }
     protected override IEnumerable<DynamicVar> CanonicalVars =>
-        new DynamicVar[] { HbrSkillVars.Damage(800m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("BreakDamage", 500m, divisor: 3m) };
-    protected override IEnumerable<IHoverTip> ExtraHoverTips =>
-        new IHoverTip[] { HoverTipFactory.FromPower<SixSenseResistancePower>() };
+        new DynamicVar[] { HbrSkillVars.Damage(800m, ValueProp.Move, divisor: 3m), HbrSkillVars.DamageBonus("DebuffDamage", 500m, divisor: 3m) };
 
+    // It needed a broken six-sense resistance before 2026-11-09; any debuff now.
     protected override async Task OnPlay(PlayerChoiceContext context, CardPlay play)
     {
         ArgumentNullException.ThrowIfNull(play.Target);
         decimal damage = DynamicVars.Damage.BaseValue;
-        if (SixSenseCombatHelper.TargetResistanceBreakCount(play.Target) > 0)
-            damage += DynamicVars["BreakDamage"].BaseValue;
+        if (HbrMissingDebuffHelper.DebuffKinds(play.Target) > 0)
+            damage += DynamicVars["DebuffDamage"].BaseValue;
         await DamageCmd.Attack(damage).FromCardCompat(this, play).Targeting(play.Target)
             .WithHitFx("vfx/vfx_attack_slash").Execute(context);
     }

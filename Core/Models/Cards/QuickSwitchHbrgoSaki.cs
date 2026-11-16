@@ -82,11 +82,11 @@ public sealed class QuickSwitchHbrgoSaki : CardModel
     {
         if (!IsMutable || Owner?.Creature == null)
         {
-            return "[gold]Repture-双剑[/gold]/[gold]Repture-弓[/gold]";
+            return "[gold]Rapture-双剑[/gold]/[gold]Rapture-弓[/gold]";
         }
 
         return Owner.Creature.HasPower<ReptureDualSwordsPower>()
-            ? "[gold]Repture-弓[/gold]"
-            : "[gold]Repture-双剑[/gold]";
+            ? "[gold]Rapture-弓[/gold]"
+            : "[gold]Rapture-双剑[/gold]";
     }
 }

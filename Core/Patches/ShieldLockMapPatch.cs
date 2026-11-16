@@ -46,7 +46,7 @@ internal static class ShieldLockEliteRewardPatch
         }
 
         __result.Rewards.Add(
-            new RelicReward(
+            NativeRewardApiCompatibility.Relic(
                 ModelDb.Relic<ShieldLock>().ToMutable(),
                 __instance.Player));
     }

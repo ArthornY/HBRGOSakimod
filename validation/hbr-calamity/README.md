@@ -1,68 +1,18 @@
-# HBR Calamity checks
+# HBR Calamity validation
 
-This focused fixture loads an exact candidate DLL by SHA256 and reuses the
-native setup from `hbr-fragile`; it does not rerun that fixture's full suite.
-It exercises real generic/non-generic `PowerCmd.Apply`, `ModifyAmount`, native
-Artifact receiver hooks, captured Narara immunity, native removal/clone, actual
-holder-side turn-start callbacks, HBR stat helpers, cannon attack previews and
-native cannon `GainBlock` scopes and block writer.
+The focused fixture verifies a hash-checked candidate against the selected native stable/beta profile. It reuses the managed setup from `hbr-fragile` without running that suite.
 
-The new custom `HbrCalamityPower` has a unique `HBR_CALAMITY_POWER` ID and icon.
-Its Amount is reduction strength, its saved RemainingTurns is an independent
-two-turn clock. Accepted positive applications keep the stronger effective
-strength and refresh the clock, including weaker or equal incoming effects.
-Artifact and immunity can reject a weaker refresh before either state changes.
-Explicit nonpositive amount changes do not refresh the clock. The fixture also
-checks that native Doom and the original native Calamity buff retain additive
-behavior and are not replaced.
+Current original-game policy is **None / EnemyTurnEnd 2**. Every application creates its own native instanced power. All active fixed reductions add, there is no two-instance cap, and weaker/equal applications never refresh or replace older clocks. Player and enemy holders both count enemy-side ends; turn starts and player-side ends do not count. Native amount mutations change only the chosen strength, while the actual Double card doubles that strength and its own remaining duration.
 
-All six allied attributes and enemy E are checked, including zero floors,
-phantoms' independent debuffs, owner-plus-local cannon reduction exactly once,
-preview state restoration and read-only progression snapshots. The actual
-Happiness Lv3 preview observes its real outgoing stat result: the extra
-Strength must be combined before flooring, so base100 + two Strength bonuses
-of10 - owner Calamity105 - local Calamity10 gives5; owner Calamity200 gives0.
+Coverage includes real generic/non-generic `PowerCmd.Apply`, normalized `ModifyAmount`, Artifact receiving/consumption, switched-off Narara scope, independent clocks and expiration, native clone plus saved-property value roundtrip, the actual Double card, all six allied stats and enemy E, owner-plus-local cannon reduction, live cannon block preview/Gain writer and Happiness's extra Strength ordering. Native Doom and the original native Calamity buff remain distinct.
 
-```powershell
-dotnet build validation/hbr-calamity/Checks.csproj -c Release `
-  -p:ModAssemblyPath='<absolute candidate DLL>'
+Build `Checks.csproj` with `ModAssemblyPath`, `NativeAssemblyPath`, `NativeRitsuAssemblyPath` and `BetaNativeChecks` for the selected profile. Run the built executable with candidate DLL, SHA256, dependency profile and GodotSharp path. It writes `report.json` beside the executable. Current per-profile evidence is under `outputs/hbr-effect-framework-20261114/{stable,beta}/calamity-checks/report.json`; each report records the actual candidate/native hashes.
 
-$env:HBR_NATIVE_PROFILE='stable-0.107.1-current-dependencies'
-dotnet validation/hbr-calamity/bin/Release/net9.0/Checks.dll `
-  '<absolute candidate DLL>' '<candidate SHA256>' '<stable dependency profile>' `
-  'C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll'
-```
+Only managed fixture-world construction, listener enumeration, logging/StringName and sound/VFX leaves are isolated. Saved-property checks do not simulate a complete native save-file load. No Godot scene, rendered UI, multiplayer session, packaging or publishing is performed.
 
-For beta, build the fixture against matching native override signatures while
-keeping the same stable-compiled mod DLL:
+Final verification on 2026-11-14: both native profiles passed **119 checks** after loading the final candidate.
 
-```powershell
-dotnet build validation/hbr-calamity/Checks.csproj -c Release `
-  -p:ModAssemblyPath='<same stable-compiled mod DLL>' `
-  -p:NativeAssemblyPath='<isolated beta sts2.dll>' `
-  -p:NativeRitsuAssemblyPath='<matching monolithic beta STS2-RitsuLib.dll>' `
-  -p:BetaNativeChecks=true
-
-$env:HBR_NATIVE_PROFILE='beta-0.111.0-current-dependencies'
-dotnet validation/hbr-calamity/bin/Release/net9.0/Checks.dll `
-  '<same stable-compiled mod DLL>' '<candidate SHA256>' '<beta dependency profile>' `
-  'C:/Users/ROG/.nuget/packages/godotsharp/4.5.1/lib/net8.0/GodotSharp.dll'
-```
-
-The final candidate SHA256
-`47E96800843E79CAB8F3F0BF77BB746CA5232B5163783393672A025533152989`
-passes 116 checks on stable0.107.1 and 116 on beta0.111.0, with current dependency
-profiles (BaseLib3.4.7; Ritsu0.6.10 facade and forwarded assemblies). Each build
-has zero warnings and errors. `bin/Release/net9.0/report.json` records each
-assertion and candidate/native hashes; save it separately between runs.
-
-Only Godot StringName/logging, hook-listener enumeration and the sound/VFX
-leaves are isolated. Combat arithmetic, PowerCmd, Artifact, history, turn
-countdown, stat adaptation and cannon block writing are real. The saved-property
-roundtrip checks metadata and values, not a complete native save-file load.
-Beta uses the previously verified telemetry-isolated DLL with SHA256
-`0C0C1CC3DD3FFF8E2D10BDE4FDA76A5E7743402047B518B4B188A7ED8B65BFAA`;
-the five-byte Sentry module-initializer call is the only removed call, with all
-production APIs unchanged. See `../hbr-fragile/README.md` and the beta audit
-boundary report for the original DLL hash and byte verification. These checks
-do not start Godot, render UI, verify multiplayer, package or upload.
+| Profile | Candidate SHA256 |
+| --- | --- |
+| stable | `495E550A68EE2000E5D5F4C56ED8FFC1FD22FF338FB553D014349D541C53903B` |
+| beta | `597318EB2C34FD2E566F3331B84EF160DF5336F059BB6811E2180A98B68CCB0D` |

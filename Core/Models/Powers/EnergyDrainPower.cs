@@ -74,7 +74,8 @@ public sealed class EnergyDrainPower : PowerModel
                 // Player DP remains native-sized; bound the accepted recovery
                 // before narrowing so a huge monster pool cannot overflow it.
                 int capacity = System.Math.Max(0, protection.MaxDp - protection.Dp);
-                protection.RestoreDp((int)System.Math.Min(restoreAmount, capacity));
+                int restored = protection.RestoreDp((int)System.Math.Min(restoreAmount, capacity));
+                HBRGOSakiMod.Core.Helpers.MariaRepentanceCombatHelper.OnDpRestored(Owner, restored, null, fromAbility: true);
             }
             Flash();
         }

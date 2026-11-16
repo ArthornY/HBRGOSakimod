@@ -34,6 +34,18 @@ internal static class HbrOriginalNumericFormula
     internal const decimal AttackOverflowPerPoint = 0.0025m;
     internal const decimal BuffOverflowPerPoint = 0.0002m;
     internal const decimal DebuffOverflowPerPoint = 0.001m;
+    internal const decimal BuffReferenceParameter = 100m;
+
+    // Authored base effects are anchored at the reference attribute. These
+    // linear rules deliberately retain signed differences and signed results;
+    // no endpoint, diff-for-max threshold, or potency floor participates.
+    internal static decimal EvaluateLinearBuffPotency(decimal basis, decimal parameter,
+        decimal reference = BuffReferenceParameter) => Multiply(basis,
+            Add(1m, Multiply(Add(parameter, -reference), BuffOverflowPerPoint)));
+
+    internal static decimal EvaluateLinearDebuffPotency(decimal basis, decimal parameter,
+        decimal enemyParameter) => Multiply(basis,
+            Add(1m, Multiply(Add(parameter, -enemyParameter), DebuffOverflowPerPoint)));
 
     // Normalize before summing so even maximal decimal stats/weights remain safe.
     // The reference uses weight 2 for ref_status_1 and 1 for each other reference.
@@ -147,38 +159,15 @@ internal static class HbrOriginalNumericFormula
     }
 
     internal static decimal EvaluateBuffPotency(decimal parameter, HbrSkillPowerCurve curve,
-        int level = 1)
-    {
-        decimal extraLevels = Math.Max(0m, (decimal)level - 1m);
-        decimal minimum = Multiply(Positive(curve.MinimumPower), Add(1m, extraLevels * 0.03m));
-        decimal maximum = Math.Max(minimum,
-            Multiply(Positive(curve.MaximumPower), Add(1m, extraLevels * 0.02m)));
-        decimal limit = Positive(curve.ParameterLimit);
-        decimal stat = Positive(parameter);
-        if (limit == 0m) return maximum;
-        return stat < limit
-            ? Add(minimum, Multiply(maximum - minimum, stat / limit))
-            : Multiply(maximum, Add(1m, Multiply(stat - limit, BuffOverflowPerPoint)));
-    }
+        int level = 1) => EvaluateLinearBuffPotency(curve.MinimumPower, parameter);
 
     internal static decimal EvaluateDebuffPotency(HbrBattleStats stats, HbrStatWeights weights,
         decimal enemyParameter, HbrSkillPowerCurve curve, int level = 1) =>
         EvaluateDebuffPotency(EvaluateWeightedStat(stats, weights), enemyParameter, curve, level);
 
     internal static decimal EvaluateDebuffPotency(decimal parameter, decimal enemyParameter,
-        HbrSkillPowerCurve curve, int level = 1)
-    {
-        HbrSkillPowerCurve scaled = ScaleAttackCurveForLevel(curve, level);
-        decimal minimum = scaled.MinimumPower;
-        decimal maximum = Math.Max(minimum, scaled.MaximumPower);
-        decimal limit = scaled.ParameterLimit;
-        decimal difference = Positive(parameter) - Positive(enemyParameter);
-        if (limit == 0m) return maximum;
-        if (difference <= 0m) return minimum;
-        return difference < limit
-            ? Add(minimum, Multiply(maximum - minimum, difference / limit))
-            : Multiply(maximum, Add(1m, Multiply(difference - limit, DebuffOverflowPerPoint)));
-    }
+        HbrSkillPowerCurve curve, int level = 1) =>
+        EvaluateLinearDebuffPotency(curve.MinimumPower, parameter, enemyParameter);
 
     // Values are percentage points. Call separately for each compatible buff kind;
     // two attack-up instances and two elemental-up instances are separate slots.

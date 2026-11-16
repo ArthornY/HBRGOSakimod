@@ -116,7 +116,7 @@ public sealed class SummerGrassDreamHbrgoSaki : CardModel
         int resolvedX = 0;
         if (HasUpgradeEffect(3))
         {
-            EnergyCost.CapturedXValue = DualSwordsCopyHelper.TakeXEnergySpent(this, EnergyCost.CapturedXValue);
+            EnergyCost.CapturedXValue = CardCopyContextHelper.TakeXEnergySpent(this, EnergyCost.CapturedXValue);
             resolvedX = ResolveEnergyXValue();
         }
         int hits = GetHitCount(resolvedX);
