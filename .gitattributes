@@ -1,2 +1,4 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+/build/HBRGOSakiMod.pck filter=lfs diff=lfs merge=lfs -text
+/build/HBRGOSakiMod.json -text whitespace=cr-at-eol
